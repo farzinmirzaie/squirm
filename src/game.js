@@ -15,7 +15,10 @@ const C = {
 const canvas=document.getElementById('c'), stage=document.getElementById('stage');
 let renderer;
 try{ renderer=new THREE.WebGLRenderer({canvas,antialias:true}); }catch(e){ document.getElementById('noGL').classList.add('show'); return; }
-renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,1.75));
+// quality 2 = full, 1 = lighter shadows, 0 = also lower resolution; drops automatically on slow devices
+let quality=2; try{ const q=parseInt(localStorage.getItem('squirm-quality'),10); if(q>=0&&q<=2) quality=q; }catch(e){}
+const pixelRatio=()=>Math.min(window.devicePixelRatio||1,quality===2?1.75:quality===1?1.5:1);
+renderer.setPixelRatio(pixelRatio());
 renderer.setClearColor(C.lawn);
 renderer.shadowMap.enabled=true; renderer.shadowMap.type=THREE.PCFSoftShadowMap;
 const scene=new THREE.Scene();
@@ -23,7 +26,7 @@ const camera=new THREE.PerspectiveCamera(34,1,0.1,300);
 scene.add(new THREE.HemisphereLight(0xfffaf0,0xb7d79a,0.38));
 scene.add(new THREE.AmbientLight(0xfff4e2,0.2));
 const sun=new THREE.DirectionalLight(0xfff1dc,0.55);
-sun.position.set(-4,10,5); sun.castShadow=true; sun.shadow.mapSize.set(2048,2048);
+sun.position.set(-4,10,5); sun.castShadow=true; sun.shadow.mapSize.setScalar(quality===2?2048:1024);
 sun.shadow.radius=4; sun.shadow.bias=-0.0012; scene.add(sun); scene.add(sun.target);
 const garden=new THREE.Group(), board=new THREE.Group(), wormG=new THREE.Group(), fx=new THREE.Group(), flyers=new THREE.Group();
 scene.add(garden,board,wormG,fx,flyers);
@@ -449,7 +452,7 @@ function syncThemeColor(c){ const h='#'+c.getHexString(); if(h!==themeHex&&theme
 const TOD={ morning:{sun:0xFFE9CF,si:.5,hemi:.38,amb:[1,.97,.93],lawn:[1,.99,.95]}, day:{sun:0xFFF1DC,si:.55,hemi:.38,amb:[1,.96,.89],lawn:[1,1,1]},
   evening:{sun:0xFFC58A,si:.5,hemi:.32,amb:[1,.86,.78],lawn:[1,.9,.8]}, night:{sun:0xC4D0FF,si:.36,hemi:.3,amb:[.74,.78,.98],lawn:[.74,.82,.95]} };
 let todName='day', tod=TOD.day, fireflies=null;
-function pickTod(){ const h=new Date().getHours()+new Date().getMinutes()/60; todName= h>=6&&h<10?'morning' : h>=10&&h<17?'day' : h>=17&&h<20?'evening' : 'night'; tod=TOD[todName];
+function pickTod(){ if(typeof renderHome==='function'&&$('homeOv').classList.contains('show')) renderHome(); const h=new Date().getHours()+new Date().getMinutes()/60; todName= h>=6&&h<10?'morning' : h>=10&&h<17?'day' : h>=17&&h<20?'evening' : 'night'; tod=TOD[todName];
   sun.color.setHex(tod.sun); document.documentElement.dataset.tod=todName; buildFireflies(); }
 function buildFireflies(){ if(fireflies){ removeObj(fireflies); fireflies=null; } if(todName!=='night'&&todName!=='evening') return;
   fireflies=new THREE.Group(); const mt=new THREE.MeshBasicMaterial({color:0xFFF3A0,transparent:true,opacity:.9}); const n=todName==='night'?18:8;
@@ -823,14 +826,15 @@ function hudSub(){ if(mode==='garden'){ const ch=CHAPTERS.find(c=>li>=c.from&&li
 function updateHUD(silent){
   $('lvlNum').style.fontSize=String(mode==='garden'?li+1:0).length>2?'16px':''; $('lvlNum').textContent= mode==='garden' ? li+1 : L.daily ? new Date().getDate() : (progress.endless[endlessDiff].cleared+1); $('lvlName').textContent=L.name;
   $('lvlSub').textContent=hudSub(); document.body.dataset.mode=mode;
-  const mv=$('moves'), mvHtml=`${sticker(ICON.steps)}<b>${state.moves}</b><span class="par">par ${curPar()}</span>`;
+  const now=starsFor(state.moves,curPar(),hintsUsed>0), meter=[0,1,2].map(j=>`<i class="${j<now?'on':''}"></i>`).join('');
+  const mv=$('moves'), mvHtml=`${sticker(ICON.steps)}<b>${state.moves}</b><span class="par">par ${curPar()}</span><em class="mini" aria-hidden="true">${meter}</em>`;
   if(mv.innerHTML!==mvHtml){ mv.innerHTML=mvHtml; if(!silent) pulse(mv); }
-  mv.setAttribute('aria-label',`${state.moves} ${state.moves===1?'move':'moves'}, par ${curPar()}`); mv.classList.toggle('over',state.moves>curPar());
+  mv.setAttribute('aria-label',`${state.moves} ${state.moves===1?'move':'moves'}, par ${curPar()}, on track for ${now} ${now===1?'star':'stars'}`); mv.classList.toggle('over',state.moves>curPar());
   const chips=[];
   const flagsTotal=L.map.join('').split('C').length-1;
   if(flagsTotal){ const left=countChar(state,'C'); chips.push(`<span class="stat ${left===0?'done':''}" aria-label="Flags ${flagsTotal-left} of ${flagsTotal}">${sticker(ICON.flag)}<b>${flagsTotal-left}</b><small>/${flagsTotal}</small></span>`); }
   if(L.map.join('').includes('K')) chips.push(`<span class="stat" aria-label="${state.keys} ${state.keys===1?'key':'keys'}">${sticker(ICON.key)}<b>${state.keys}</b></span>`);
-  if(L.map.join('').includes('R')) chips.push(`<span class="stat" aria-label="${state.raining?'Raining':'Sunny'}">${sticker(state.raining?ICON.rain:ICON.sun)}<small>${state.raining?'Rain':'Sun'}</small></span>`);
+  if(L.map.join('').includes('R')) chips.push(`<span class="stat wx" aria-label="${state.raining?'Raining':'Sunny'}">${sticker(state.raining?ICON.rain:ICON.sun)}<small>${state.raining?'Rain':'Sun'}</small></span>`);
   const ok=state.segs.length===state.exitLen;
   chips.push(`<span class="stat ${ok?'done':''}" aria-label="Length ${state.segs.length}, burrow fits ${state.exitLen}">${sticker(ICON.worm)}<b>${state.segs.length}</b><span class="to" aria-hidden="true">${ok?'=':'&rarr;'}</span>${sticker(ICON.burrow)}<b>${state.exitLen}</b></span>`);
   const html=chips.join(''); if($('chips').innerHTML!==html){ const old=[...$('chips').children].map(c=>c.textContent); $('chips').innerHTML=html; if(!silent) [...$('chips').children].forEach((c,i)=>{ if(old[i]!==c.textContent) pulse(c); }); }
@@ -986,7 +990,11 @@ function renderHome(){
   const tot=['easy','medium','hard'].reduce((a,d)=>a+progress.endless[d].cleared,0);
   $('eSub').textContent= tot ? `${tot} patches grown and cleared` : 'Fresh patches, forever';
   const k=todayKey(), dr=progress.daily.results[k]; $('dailyDay').textContent=new Date().getDate();
-  $('dailyBtn').classList.toggle('done',!!dr); $('dailySub').textContent = dr ? `Done in ${dr.moves} moves. Streak ${progress.daily.streak}.` : (progress.daily.streak?`Keep your ${progress.daily.streak} day streak going`:'One patch for everyone today');
+  const mid=new Date(); mid.setHours(24,0,0,0); const left=Math.max(1,Math.ceil((mid-new Date())/60000)), wait=left>=60?`${Math.floor(left/60)}h ${left%60}m`:`${left}m`;
+  $('dailyBtn').classList.toggle('done',!!dr); $('dailySub').textContent = dr ? `Done in ${dr.moves} moves. Next one in ${wait}.` : (progress.daily.streak?`Keep your ${progress.daily.streak} day streak going`:'One patch for everyone today');
+  $('dailyWeek').innerHTML=[6,5,4,3,2,1,0].map(n=>{ const d=new Date(); d.setDate(d.getDate()-n); return `<i class="${progress.daily.results[dateKey(d)]?'on':''} ${n?'':'today'}"></i>`; }).join('');
+  const ni=nextGardenIndex(), started=LEVELS.some((l,i)=>isCleared(i));
+  $('playTitle').textContent=started?'Continue':'Play'; $('playSub').textContent=`Patch ${ni+1} · ${LEVELS[ni].name}`;
   renderMute(); renderHaptic();
 }
 function renderEndless(){
@@ -998,6 +1006,10 @@ function renderEndless(){
   $('eStats').innerHTML=`<span class="pill">Streak ${e.streak}</span><span class="pill">Best streak ${e.best}</span><span class="pill">${ICON.star} ${e.stars}</span>`;
   const r=readResume('endless'); $('homeEndlessCont').hidden=!(r&&r.def&&!r.def.daily&&r.diff===endlessDiff);
 }
+// the patch to continue with: the current one, or the next if the current one is already cleared
+function nextGardenIndex(){ const i=currentGardenIndex(); if(!isCleared(i)) return i;
+  for(let j=i+1;j<LEVELS.length;j++) if(!isCleared(j)&&isUnlocked(j)) return j; return i; }
+$('homePlay').onclick=()=>{ ensureAudio(); hideAll(); loadLevel(nextGardenIndex()); enterGame(); };
 $('homeGarden').onclick=()=>{ ensureAudio(); renderLevelList(); show('lvOv'); pushLayer('list'); };
 $('homeEndless').onclick=()=>{ ensureAudio(); renderEndless(); show('endlessOv'); pushLayer('endless'); };
 $('endlessClose').onclick=()=>{ hide('endlessOv'); popLayer('endless'); };
@@ -1104,7 +1116,8 @@ function renderLevelList(){
   const total=Object.values(stars).reduce((a,b)=>a+b,0); $('lvTotal').innerHTML=`${STAR(true,0).replace('width="44" height="44"','width="20" height="20"')} ${total} of ${LEVELS.length*3} stars`;
   CHAPTERS.forEach(ch=>{ const h=document.createElement('div'); h.className='chapter'; let cs=0; for(let i=ch.from;i<=ch.to;i++) cs+=stars[i]||0;
     let allDone=true; for(let i=ch.from;i<=ch.to;i++) if(!isCleared(i)) allDone=false;
-    h.innerHTML=`<span>${ch.name}${allDone?' <small class="done">&#10003;</small>':''}</span><small>${cs} of ${(ch.to-ch.from+1)*3}</small>`; g.appendChild(h);
+    let fresh=ch.from>0&&isUnlocked(ch.from); for(let i=ch.from;i<=ch.to;i++) if(isCleared(i)) fresh=false;
+    h.innerHTML=`<span>${ch.name}${allDone?' <small class="done">&#10003;</small>':''}${fresh?' <small class="new">New</small>':''}</span><small>${cs} of ${(ch.to-ch.from+1)*3}</small>`; g.appendChild(h);
     for(let i=ch.from;i<=ch.to;i++){ const lv=LEVELS[i]; const b=document.createElement('button'); b.className='lv'+(i===li?' cur':'');
       const best=bests[i], s=stars[i]||0; if(s===3) b.classList.add('par'); const locked=!isUnlocked(i); if(locked){ b.classList.add('locked'); b.setAttribute('aria-disabled','true'); }
       const mini=[0,1,2].map(j=>`<i class="${j<s?'on':''}"></i>`).join('');
@@ -1209,7 +1222,11 @@ $('hapticBtn').onclick=()=>{ hapticsOn=!hapticsOn; try{ localStorage.setItem('sq
 renderHaptic();
 
 // ---------- loop ----------
-let last=performance.now();
+let last=performance.now(), last0=last, frameN=0, slowT=0, sampleT=0;
+function watchSpeed(ms){ if(quality===0||ms>250) return; sampleT+=ms; if(ms>28) slowT+=ms;
+  if(sampleT<4000) return; const slow=slowT/sampleT>.5; sampleT=slowT=0; if(!slow) return;
+  quality--; try{ localStorage.setItem('squirm-quality',String(quality)); }catch(e){}
+  renderer.setPixelRatio(pixelRatio()); sun.shadow.mapSize.setScalar(1024); if(sun.shadow.map){ sun.shadow.map.dispose(); sun.shadow.map=null; } fitCamera(false); }
 function frame(now){
   const dt=Math.min(50,now-last); last=now; idleT+=dt/1000;
   for(let i=tweens.length-1;i>=0;i--){ const t=tweens[i]; if(!t) continue; t.t+=dt; const k=Math.min(1,t.t/t.dur); t.fn(ease(k),k); if(k>=1){ const j=tweens.indexOf(t); if(j>=0) tweens.splice(j,1); t.done&&t.done(); } }
@@ -1243,7 +1260,11 @@ function frame(now){
   updateHead(dt);
   updateRain(dt); ambient(dt);
   updateWorm();
-  if(!$('genOv').classList.contains('show')) renderer.render(scene,camera);
+  // behind menus the garden is blurred, so a third of the frames is plenty
+  const behind=anyOverlay(); frameN++;
+  if(!$('genOv').classList.contains('show') && (!behind || frameN%3===0)) renderer.render(scene,camera);
+  if(!behind && !document.hidden) watchSpeed(now-last0);
+  last0=now;
   if(!document.hidden) requestAnimationFrame(frame); else paused=true;
 }
 let paused=false; document.addEventListener('visibilitychange',()=>{ if(ac){ try{ document.hidden?ac.suspend():ac.resume(); }catch(e){} } if(!document.hidden&&paused){ paused=false; last=performance.now(); requestAnimationFrame(frame); } if(rainGain&&ac) rainGain.gain.setTargetAtTime(document.hidden?0:(state&&state.raining&&!muted?.07:0),ac.currentTime,.2); });

@@ -4,9 +4,10 @@
 //   dist/fonts/              Grandstander and Nunito (latin subset)
 //   dist/icons/, manifest    PWA install metadata (from public/)
 //   dist/sw.js               service worker that precaches all of the above
-// usage: node tools/build.js [--debug]
+// usage: node tools/build.js [--debug] [--out <dir>]
 const fs=require('fs'), path=require('path'), crypto=require('crypto');
-const root=path.join(__dirname,'..'), dist=path.join(root,'dist');
+const root=path.join(__dirname,'..'), outArg=process.argv.indexOf('--out');
+const dist=outArg>0?path.resolve(process.argv[outArg+1]):path.join(root,'dist');
 const src=f=>fs.readFileSync(path.join(root,'src',f),'utf8');
 const stripExports=s=>s.replace(/if\(typeof module!=='undefined'\)[^\n]*\n?/,'');
 
@@ -32,7 +33,7 @@ for(const [,pkg] of FONTS) fs.copyFileSync(require.resolve(`@fontsource/${pkg}/L
 // the page
 let game=src('game.js');
 // --debug exposes a few hooks for browser automation, inserted before the IIFE closes at the end of game.js
-if(process.argv.includes('--debug')) game=game.replace(/\}\)\(\);\s*$/,"window.__squirm={load:(i,intro)=>{hideAll(); loadLevel(i,!!intro);},move:k=>tryMove(k),st:()=>JSON.stringify({s:state.segs,st:state.status,m:state.moves})};\n})();\n");
+if(process.argv.includes('--debug')) game=game.replace(/\}\)\(\);\s*$/,"window.__squirm={load:(i,intro)=>{hideAll(); loadLevel(i,!!intro);},move:k=>tryMove(k),busy:()=>animating>0||queue.length>0,names:()=>LEVELS.map(l=>l.name),st:()=>JSON.stringify({s:state.segs,st:state.status,m:state.moves})};\n})();\n");
 let sha=(process.env.GITHUB_SHA||'').slice(0,7);
 if(!sha){ try{ sha=require('child_process').execSync('git rev-parse --short HEAD',{cwd:root,stdio:['ignore','pipe','ignore']}).toString().trim(); }catch(e){ sha='dev'; } }
 const build=`v${require('../package.json').version} · ${sha}`;
@@ -50,4 +51,4 @@ const assets=['./',...files];
 fs.writeFileSync(path.join(dist,'sw.js'),src('sw.js').replace('__VERSION__',version).replace('__ASSETS__',()=>JSON.stringify(assets)));
 
 const kb=f=>Math.round(fs.statSync(path.join(dist,f)).size/1024);
-console.log(`built dist/ (${files.length+1} files, index.html ${kb('index.html')}KB, version ${version})`);
+const shown=path.relative(root,dist); console.log(`built ${shown.startsWith('..')?dist:shown}/ (${files.length+1} files, index.html ${kb('index.html')}KB, version ${version})`);

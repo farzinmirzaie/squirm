@@ -225,6 +225,40 @@ body.at-home #app{visibility:hidden}
 .gen{max-width:300px}
 .spin{animation:spin 1.6s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
+
+/* ---- home: the big play button, daily week ---- */
+.play{display:flex;align-items:center;gap:14px;width:100%;padding:12px 18px 12px 12px;border-radius:26px;cursor:pointer;text-align:left;color:#fff;font:inherit;
+  background:var(--leaf) linear-gradient(180deg,rgba(255,255,255,.35),transparent 60%);border:3px solid var(--leaf-dark);box-shadow:0 6px 0 var(--leaf-dark),0 14px 28px var(--shadow);transition:transform .08s}
+.play:active{transform:translateY(6px);box-shadow:0 0 0 var(--leaf-dark)}
+.play-ico{flex:none;width:58px;height:58px;border-radius:50%;display:grid;place-items:center;background:rgba(0,0,0,.12);border:3px solid rgba(255,255,255,.5);padding-left:4px}
+.play .pt{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
+.play b{font:800 28px/1 "Grandstander",ui-rounded,system-ui,sans-serif;text-shadow:0 2px 0 var(--leaf-dark)}
+.play small{font-weight:800;font-size:14px;opacity:.95;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.week{display:flex;gap:5px;margin-top:3px}
+.week i{width:10px;height:10px;border-radius:50%;background:var(--paper-2);border:2px solid var(--edge)}
+.week i.on{background:var(--berry);border-color:#C95C73}
+.week i.today{outline:2px solid var(--honey);outline-offset:1px}
+/* ---- patch list: chapter headers stay put while scrolling ---- */
+.list .chapter{position:sticky;top:-2px;z-index:1;margin:6px 0 0;padding:6px 4px;background:var(--paper)}
+.chapter .new{margin-left:6px;padding:3px 7px;border-radius:999px;background:var(--berry);color:#fff;font:800 11px/1 "Nunito",sans-serif;text-transform:uppercase;letter-spacing:.06em;vertical-align:2px}
+.stat .mini{margin-left:3px}
+.stat .mini i{width:12px;height:12px}
+/* ---- short screens (phones in landscape): one compact HUD row, smaller controls ---- */
+@media (max-height:520px){
+  #app{max-width:none;padding:6px 12px 8px}
+  header.hud{flex-direction:row;flex-wrap:wrap;align-items:center;gap:6px}
+  .hud-top{display:contents}
+  .plaque{flex:0 1 250px;order:0}.toggles{order:2;margin-left:auto}.hud-stats{order:1;flex-wrap:nowrap}
+  .stat .par,.stat.wx small{display:none}.stat{padding-right:10px;gap:4px}
+  .plaque{padding:3px 14px 3px 3px}.badge{width:42px;height:42px}.badge span{font-size:17px}
+  .sub{display:none} h1{font-size:18px}
+  .round{width:40px;height:40px}
+  .stat{height:34px;font-size:16px}
+  nav{gap:10px}.disc{width:48px;height:48px}.disc svg{width:22px;height:22px}
+  .gbtn.hint .disc{width:58px;height:58px}.gbtn.hint .disc svg{width:28px;height:28px}
+  .lbl{display:none}
+  #toast{margin-bottom:6px}
+}
 @media (prefers-reduced-motion: reduce){ .spin,.logo svg,.gbtn.hint .disc svg{animation:none} #tutorial .hand{animation:none} .star{animation:none;transform:none} .pop{animation:none} .dialog{animation:none} #toast{transition:none} .petals{display:none} }
 </style>
 </head>
@@ -242,17 +276,17 @@ body.at-home #app{visibility:hidden}
         </div>
         <div class="title"><h1 id="lvlName">First wiggle</h1><p class="sub" id="lvlSub">First sprouts</p></div>
       </div>
-      <div class="toggles"><button id="hapticBtn" class="round" aria-pressed="true"></button><button id="muteBtn" class="round" aria-pressed="false"></button></div>
+      <div class="toggles"><button id="hapticBtn" class="round" aria-pressed="true"></button><button id="muteBtn" class="round" aria-pressed="false" title="Sound (M)"></button></div>
     </div>
     <div class="hud-stats"><span class="stat moves" id="moves"></span><span class="chips" id="chips" aria-live="polite"></span></div>
   </header>
   <div class="bottom">
     <div id="toast" class="card" role="status"></div>
     <nav>
-      <button id="levelsBtn" class="gbtn"><span class="disc"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10" fill="#FBEBD0"/><path d="M10 20v-5h4v5"/></svg></span><span class="lbl">Home</span></button>
-      <button id="undoBtn" class="gbtn"><span class="disc"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg></span><span class="lbl">Undo</span></button>
-      <button id="hintBtn" class="gbtn hint"><span class="disc"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z" fill="#FFF6D6"/></svg></span><span class="lbl">Hint</span></button>
-      <button id="restartBtn" class="gbtn"><span class="disc"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg></span><span class="lbl">Restart</span></button>
+      <button id="levelsBtn" class="gbtn" title="Home (Esc)"><span class="disc"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10" fill="#FBEBD0"/><path d="M10 20v-5h4v5"/></svg></span><span class="lbl">Home</span></button>
+      <button id="undoBtn" class="gbtn" title="Undo (Z, hold to rewind)"><span class="disc"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg></span><span class="lbl">Undo</span></button>
+      <button id="hintBtn" class="gbtn hint" title="Hint (H)"><span class="disc"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z" fill="#FFF6D6"/></svg></span><span class="lbl">Hint</span></button>
+      <button id="restartBtn" class="gbtn" title="Restart (R)"><span class="disc"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg></span><span class="lbl">Restart</span></button>
       <button id="skipBtn" class="gbtn" hidden><span class="disc"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5l8 7-8 7z" fill="#FFE7A0"/><path d="M18 5v14"/></svg></span><span class="lbl">Skip</span></button>
     </nav>
   </div>
@@ -279,6 +313,7 @@ body.at-home #app{visibility:hidden}
     <h1 class="brand" aria-label="Squirm"><span>S</span><span>q</span><span>u</span><span>i</span><span>r</span><span>m</span></h1>
     <p class="tagline">a cozy garden puzzle</p>
   </div>
+  <button class="play" id="homePlay"><span class="play-ico" aria-hidden="true"><svg width="30" height="30" viewBox="0 0 24 24"><path d="M8 5.5v13l10.5-6.5z" fill="#fff" stroke="#fff" stroke-width="2" stroke-linejoin="round"/></svg></span><span class="pt"><b id="playTitle">Play</b><small id="playSub">Patch 1</small></span></button>
   <button class="big card" id="homeGarden">
     <span class="mode-ico garden-ico" aria-hidden="true"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#5B4436" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21V11"/><path d="M12 14c-4 0-7-2-7-6 4 0 7 2 7 6zM12 11c0-4 3-6 7-6 0 4-3 6-7 6z" fill="#9FDA86"/></svg></span>
     <span class="bt"><b>Garden patches</b><small id="gSub">0 of 32 patches</small></span><span class="go" aria-hidden="true">&#8250;</span>
@@ -289,7 +324,7 @@ body.at-home #app{visibility:hidden}
   </button>
   <button class="big card" id="dailyBtn">
     <span class="mode-ico daily-ico" aria-hidden="true"><span class="cal" id="dailyDay">11</span></span>
-    <span class="bt"><b>Daily patch</b><small id="dailySub">One patch for everyone today</small></span><span class="go" aria-hidden="true">&#8250;</span>
+    <span class="bt"><b>Daily patch</b><small id="dailySub">One patch for everyone today</small><span class="week" id="dailyWeek" aria-hidden="true"></span></span><span class="go" aria-hidden="true">&#8250;</span>
   </button>
   <div class="home-tools"><button class="round" id="homeSound"></button><button class="round" id="homeHaptic"></button><button class="round" id="installBtn" aria-label="Install Squirm as an app" hidden><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7 10l5 5 5-5"/><path d="M5 19h14"/></svg></button></div>
   <p class="version">__BUILD__</p>

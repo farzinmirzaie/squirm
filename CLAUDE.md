@@ -39,7 +39,7 @@ public/          manifest and icons, copied as-is into dist/
 tools/build.js   builds dist/ (see above) and syntax-checks the game script; --debug adds window.__squirm hooks
 tools/analyze.js BFS solver used for par, state count and "winnable %" (share of reachable states that can still win)
 tools/verify-levels.js  must pass before shipping level changes
-test/            node:test unit tests for the rules in logic.js
+test/            logic.test.js: node:test unit tests for the rules; smoke.js: plays patch 1 in headless Chromium (npm run smoke, also in CI)
 tools/curate.js  generates candidate levels with the in-game generator and picks a difficulty spread
 ```
 
@@ -120,6 +120,9 @@ level-list thumbnails, and `introAt` in `tools/verify-levels.js`.
 - **Endless mode:** `genCandidate` + `analyzeCapped` + difficulty scoring in
   `generateEndless`. The daily patch uses a date seed with a fixed number of tries so it's
   deterministic.
+- **Performance:** `watchSpeed` lowers `quality` (pixel ratio, shadow map size) when most frames
+  take over 28 ms, and remembers it in `squirm-quality`. Behind menus the blurred garden is drawn
+  every third frame only.
 - **Saved data:** everything in `localStorage` under keys starting with `squirm-`. Don't rename
   the keys or players lose progress. Other projects can share the origin (`<user>.github.io`), so
   keep the prefix on every key and every cache name. The secret reset (hold the worm's head on

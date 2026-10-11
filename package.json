@@ -18,6 +18,7 @@
     "serve": "npx --yes serve dist",
     "test": "npm run test:unit && npm run verify && npm run build",
     "test:unit": "node --test test/*.test.js",
+    "smoke": "node test/smoke.js",
     "verify": "node tools/verify-levels.js",
     "analyze": "node tools/analyze.js",
     "curate": "node tools/curate.js"
@@ -25,6 +26,7 @@
   "devDependencies": {
     "@fontsource/grandstander": "5.3.0",
     "@fontsource/nunito": "5.3.0",
+    "playwright": "1.56.1",
     "three": "0.128.0"
   }
 }

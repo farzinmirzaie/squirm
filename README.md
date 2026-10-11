@@ -37,6 +37,7 @@ npm run serve        # serve dist/ locally
 npm run verify       # check every level is solvable, pars are correct, pacing is right
 npm run analyze      # print par, state count and winnable % for every level
 npm test             # rule unit tests + level checks + build
+npm run smoke        # play patch 1 in headless Chromium (npx playwright install chromium first)
 ```
 
 Every push to `master` is verified, built and deployed to GitHub Pages by
