@@ -23,10 +23,8 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - name: Verify levels
-        run: npm run verify
-      - name: Build
-        run: npm run build
+      - name: Verify levels and build
+        run: npm test
       - if: github.event_name != 'pull_request'
         uses: actions/configure-pages@v5
       - if: github.event_name != 'pull_request'

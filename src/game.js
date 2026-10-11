@@ -100,6 +100,7 @@ progress.endless=progress.endless||{}; ['easy','medium','hard'].forEach(d=>{ pro
 let endlessOpts={flags:true,fruit:true,keys:true,portals:false,dry:true,rain:false,rivers:false};
 try{ const o=JSON.parse(localStorage.getItem('squirm-endless-opts')||'null'); if(o){ Object.assign(endlessOpts,o.opts||{}); if(o.diff) endlessDiff=o.diff; } }catch(e){}
 const curPar=()=> L.par;
+function askPersist(){ try{ const st=navigator.storage; if(st&&st.persist) st.persisted().then(p=>p||st.persist()).catch(()=>{}); }catch(e){} }
 const save=()=>{ try{ localStorage.setItem('squirm-progress',JSON.stringify(progress)); }catch(e){} };
 function wp(x,y,yy=0){ return new THREE.Vector3(x-(state.w-1)/2, yy, y-(state.h-1)/2); }
 function rng(seed){ return ()=>{ seed|=0; seed=seed+0x6D2B79F5|0; let t=Math.imul(seed^seed>>>15,1|seed); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
@@ -726,12 +727,13 @@ function onWin(){ shareText=''; newBest=false; chapterDone=null;
     $('winNext').textContent = last ? 'Back to patch 1' : 'Next patch';
   } else if(L.daily){
     const D=progress.daily, k=L.daily, prev=D.results[k];
-    if(!prev){ const y=new Date(); y.setDate(y.getDate()-1); const yk=y.getFullYear()+'-'+String(y.getMonth()+1).padStart(2,'0')+'-'+String(y.getDate()).padStart(2,'0');
+    if(!prev){ const y=new Date(); y.setDate(y.getDate()-1); const yk=dateKey(y);
       D.streak = D.last===yk ? D.streak+1 : 1; D.best=Math.max(D.best,D.streak); D.last=k; }
     if(!prev||mv<prev.moves) D.results[k]={moves:mv,stars:Math.max(st,prev?prev.stars:0)};
+    const old=new Date(); old.setDate(old.getDate()-90); const ok=dateKey(old); for(const d in D.results) if(d<ok) delete D.results[d];
     $('winTitle').textContent="Today's patch, done!"; $('winNext').textContent='Back home';
     extra=`<div class="stat-row"><span class="pill">Daily streak ${D.streak}</span><span class="pill">Best ${D.best}</span></div>`;
-    shareText=`Squirm, daily patch ${k}: ${mv} moves (par ${par}) ${'★'.repeat(st)}${'☆'.repeat(3-st)}`;
+    shareText=`Squirm, daily patch ${k}: ${mv} moves (par ${par}) ${'★'.repeat(st)}${'☆'.repeat(3-st)}`+(GAME_URL?'\n'+GAME_URL:'');
   } else {
     const e=progress.endless[endlessDiff]; e.cleared++; e.streak++; e.best=Math.max(e.best,e.streak); e.stars+=st;
     $('winTitle').textContent = titles[e.cleared%titles.length];
@@ -739,7 +741,7 @@ function onWin(){ shareText=''; newBest=false; chapterDone=null;
     shareText='';
     extra=`<div class="stat-row"><span class="pill">${DIFF_NAME[endlessDiff]}: ${e.cleared} cleared</span><span class="pill">Streak ${e.streak}</span></div>`;
   }
-  save();
+  save(); askPersist();
   $('winText').textContent = mv<=par ? `${mv} moves. Right on par.` : `${mv} moves. Par is ${par}, so there's a shorter way.`;
   $('winMedal').innerHTML = `<div class="stars">${[0,1,2].map(i=>STAR(i<st,i)).join('')}</div>` + (hintsUsed?`<p class="note">You used ${hintsUsed} ${hintsUsed===1?'hint':'hints'}. Solve it on your own for 3 stars.</p>`:'') + extra;
   for(let i=0;i<st;i++) setTimeout(()=>buzz(12),200+i*180);
@@ -925,7 +927,9 @@ async function generateEndless(diff,o,seed,fixedTries){
   best.tries=n; best.seed=seed; best.hint=feats.length?`A fresh ${DIFF_NAME[diff].toLowerCase()} patch with ${feats.join(', ')}.`:`A fresh ${DIFF_NAME[diff].toLowerCase()} patch.`;
   return best;
 }
-const todayKey=()=>{ const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); };
+const dateKey=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+const todayKey=()=>dateKey(new Date());
+const GAME_URL=/^https?:$/.test(location.protocol)?location.origin+location.pathname.replace(/index\.html$/,''):'';
 const DAILY_OPTS={flags:true,fruit:true,keys:true,dry:true,portals:true};
 progress.daily=Object.assign({streak:0,best:0,last:null,results:{}},progress.daily||{});
 async function startDaily(){ if(generating) return; generating=true; hideAll(); show('genOv'); $('genText').textContent="Growing today's patch...";
@@ -1018,6 +1022,7 @@ function initHomeWorm(){ try{ homeR=new THREE.WebGLRenderer({canvas:homeCanvas,a
   ['pointerup','pointerleave','pointercancel'].forEach(ev=>homeCanvas.addEventListener(ev,()=>{ const short=holdT && performance.now()-holdStart<600; endHold();
     if(short&&!held){ homeReact(EXPRS[Math.floor(Math.random()*EXPRS.length)]); sfx('grow'); } else if(!held && hHead) applyExpr(hHead,'smile'); }));
   homeCanvas.addEventListener('contextmenu',e=>e.preventDefault());
+  homeCanvas.addEventListener('keydown',e=>{ if(e.key!=='Enter'&&e.key!==' ') return; e.preventDefault(); ensureAudio(); homeReact(EXPRS[Math.floor(Math.random()*EXPRS.length)]); sfx('grow'); });
 }
 function homeReact(e){ if(!hHead) return; applyExpr(hHead,e); hReactT=1.4; hExprT=0; const b=hHead.userData.body;
   tween(380,(x,k)=>{ const s=1+Math.sin(k*Math.PI)*.14; b.scale.set(s,1/s,s); b.position.y=Math.sin(k*Math.PI)*.12; },()=>{ b.scale.set(1,1,1); b.position.y=0; }); }
@@ -1125,7 +1130,8 @@ function fitCamera(refit){
   for(const row of cells) for(const c of row) if(c.item) faceCamera(c.item);
   if(refit!==false) placeTrees();
 }
-window.addEventListener('resize',()=>fitCamera());
+let resizeQueued=false;
+window.addEventListener('resize',()=>{ if(resizeQueued) return; resizeQueued=true; requestAnimationFrame(()=>{ resizeQueued=false; fitCamera(); }); });
 
 // ---------- input ----------
 function screenVec(d){
@@ -1159,7 +1165,7 @@ function tapMove(e){
   tryMove(Object.keys(DIRS).find(k=>DIRS[k][0]===dx&&DIRS[k][1]===dy));
 }
 const KEYMAP={ArrowUp:[0,-1],KeyW:[0,-1],ArrowDown:[0,1],KeyS:[0,1],ArrowLeft:[-1,0],KeyA:[-1,0],ArrowRight:[1,0],KeyD:[1,0]};
-window.addEventListener('keydown',e=>{ ensureAudio();
+window.addEventListener('keydown',e=>{ if(e.ctrlKey||e.metaKey||e.altKey) return; ensureAudio();
   if((e.code==='Enter'||e.code==='Space') && $('winOv').classList.contains('show')){ e.preventDefault(); $('winNext').click(); return; }
   if((e.code==='Enter'||e.code==='Space') && $('introOv').classList.contains('show')){ e.preventDefault(); closeIntro(false); return; }
   if(KEYMAP[e.code] && !anyOverlay()){ e.preventDefault(); tryMove(dirFromScreen(...KEYMAP[e.code])); }
@@ -1229,7 +1235,10 @@ function frame(now){
 let paused=false; document.addEventListener('visibilitychange',()=>{ if(!document.hidden&&paused){ paused=false; last=performance.now(); requestAnimationFrame(frame); } if(rainGain&&ac) rainGain.gain.setTargetAtTime(document.hidden?0:(state&&state.raining&&!muted?.07:0),ac.currentTime,.2); });
 
 // ---------- offline play and install ----------
-if('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
+if('serviceWorker' in navigator && /^https?:$/.test(location.protocol)){
+  const hadWorker=!!navigator.serviceWorker.controller;
+  navigator.serviceWorker.addEventListener('controllerchange',()=>{ if(hadWorker) toast('A fresh version of Squirm is ready. It loads next time you open it.',4000); });
+  window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{})); }
 let installEvt=null;
 window.addEventListener('beforeinstallprompt',e=>{ e.preventDefault(); installEvt=e; $('installBtn').hidden=false; });
 window.addEventListener('appinstalled',()=>{ installEvt=null; $('installBtn').hidden=true; });
@@ -1237,6 +1246,7 @@ $('installBtn').onclick=async()=>{ const e=installEvt; if(!e) return; installEvt
 
 // ---------- boot ----------
 const start=()=>{ const i=currentGardenIndex(); pickTod(); setInterval(pickTod,60000); initHomeWorm();
-  mode='garden'; li=i; startLevel(LEVELS[i],false); requestAnimationFrame(frame); showHome(); };
+  mode='garden'; li=i; startLevel(LEVELS[i],false); requestAnimationFrame(frame); showHome();
+  if(new URLSearchParams(location.search).get('play')==='daily'){ try{ window.history.replaceState(null,'',location.pathname); }catch(e){} $('dailyBtn').onclick(); } };
 (document.fonts&&document.fonts.ready? document.fonts.ready : Promise.resolve()).then(start);
 })();

@@ -14,6 +14,9 @@
 <meta property="og:title" content="Squirm">
 <meta property="og:description" content="A cozy turn-based worm puzzle in a 2.5D garden.">
 <meta property="og:type" content="website">
+<meta property="og:url" content="https://farzinmirzaie.github.io/squirm/">
+<meta property="og:image" content="https://farzinmirzaie.github.io/squirm/icons/icon-512.png">
+<meta name="twitter:card" content="summary">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
@@ -167,6 +170,7 @@ body.at-home #app{visibility:hidden}
 .home{z-index:4;place-items:center;background:linear-gradient(180deg,rgba(255,248,234,.55),rgba(140,198,115,.25));overflow:auto;touch-action:pan-y;padding:calc(18px + env(safe-area-inset-top,0px)) 14px calc(24px + env(safe-area-inset-bottom,0px))}
 .home-inner{width:min(100%,420px);margin:auto 0;align-items:stretch;display:flex;flex-direction:column;gap:14px;animation:pop .4s cubic-bezier(.2,1.3,.4,1)}
 .logo{display:flex;flex-direction:column;align-items:center;text-align:center;margin:6px 0 2px}
+#homeWorm:focus-visible{outline:3px solid var(--honey);outline-offset:2px;border-radius:24px}
 #homeWorm{position:static;display:block;margin:0 auto -8px;width:220px;height:150px;cursor:pointer;-webkit-touch-callout:none;user-select:none;touch-action:none}
 .brand{display:inline-block;margin:0;padding:6px 26px 10px;letter-spacing:.02em;white-space:normal;overflow:visible;font:800 46px/1.1 "Grandstander",ui-rounded,system-ui,sans-serif;color:var(--ink);background:var(--paper);border:2px solid var(--edge);border-radius:22px;box-shadow:0 4px 0 var(--edge),0 10px 24px var(--shadow)}
 .share{width:100%;margin:-4px 0 12px}
@@ -235,7 +239,7 @@ body.at-home #app{visibility:hidden}
 <div class="petals" id="petals"></div>
 <div class="home ov" id="homeOv"><div class="home-inner">
   <div class="logo">
-    <canvas id="homeWorm" width="220" height="150" aria-label="The worm, tap to say hi"></canvas>
+    <canvas id="homeWorm" width="220" height="150" role="button" tabindex="0" aria-label="The worm. Tap to say hi"></canvas>
     <h1 class="brand" aria-label="Squirm"><span>S</span><span>q</span><span>u</span><span>i</span><span>r</span><span>m</span></h1>
     <p class="tagline">a cozy garden puzzle</p>
   </div>
