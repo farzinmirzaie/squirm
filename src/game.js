@@ -72,12 +72,13 @@ const SFX={
   bump:()=>{ tone(180,.09,{type:'triangle',vol:.12,slide:.8}); },
   stuck:()=>{ tone(392,.18,{type:'triangle',vol:.1}); tone(330,.3,{type:'triangle',vol:.1,delay:.16}); },
   undo:()=>{ tone(520,.09,{type:'triangle',vol:.1,slide:.7}); },
+  tap:()=>{ tone(880,.05,{type:'triangle',vol:.07,slide:1.2}); },
   win:()=>{ [523,659,784,1046].forEach((f,i)=>tone(f,.28,{type:'triangle',vol:.14,delay:i*.11})); tone(1318,.6,{vol:.1,delay:.46}); tone(1568,.7,{vol:.08,delay:.5}); },
   ready:()=>{ tone(880,.15,{vol:.08}); tone(1320,.25,{vol:.07,delay:.08}); },
 };
 let hapticsOn=true; try{ hapticsOn=localStorage.getItem('squirm-haptics')!=='0'; }catch(e){}
 const HAPTIC={move:8,grow:[10,30,14],shrink:[14,30,10],key:[8,25,8,25,12],gate:22,flag:[12,40,16],portal:[10,30,24],crumble:28,bump:[14,30,14],stuck:[40,70,40],undo:6,
-  win:[30,60,30,60,90],ready:[10,40,10],rainOn:[30,50,15],creak:[20,40,20,40,20],rainOff:[15,50,30]};
+  tap:5,win:[30,60,30,60,90],ready:[10,40,10],rainOn:[30,50,15],creak:[20,40,20,40,20],rainOff:[15,50,30]};
 const iosHaptic=(()=>{ try{ const l=document.createElement('label'); l.setAttribute('aria-hidden','true'); l.style.cssText='position:fixed;left:-200px;top:0;width:1px;height:1px;opacity:0;pointer-events:none';
   const i=document.createElement('input'); i.type='checkbox'; i.setAttribute('switch',''); i.tabIndex=-1; l.appendChild(i); document.body.appendChild(l); return l; }catch(e){ return null; } })();
 function buzz(p){ if(!hapticsOn||p==null) return;
@@ -812,21 +813,28 @@ const ICON={
   flag:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5B4436" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V4"/><path d="M5 4h12l-3 4 3 4H5" fill="#F27DA2"/></svg>',
   key:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5B4436" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="4.5" fill="#F7C64F"/><path d="M11 11l8 8M16 16l2-2M18.5 18.5l2-2"/></svg>',
   worm:'<svg width="20" height="18" viewBox="0 0 26 22" fill="none" stroke="#5B4436" stroke-width="2" stroke-linecap="round"><path d="M3 15c3-6 6-6 8 0s5 6 8 0" stroke="#FF97B4" stroke-width="5"/><circle cx="21" cy="11" r="4" fill="#FF8FAF"/><circle cx="22" cy="10" r="1" fill="#5B4436" stroke="none"/></svg>',
+  steps:'<svg width="18" height="18" viewBox="0 0 24 24" fill="#E8B98F" stroke="#5B4436" stroke-width="1.8"><ellipse cx="8.5" cy="9" rx="3.2" ry="4.6" transform="rotate(-12 8.5 9)"/><ellipse cx="15.5" cy="15.5" rx="3.2" ry="4.6" transform="rotate(12 15.5 15.5)"/></svg>',
+  burrow:'<svg width="18" height="18" viewBox="0 0 24 24" stroke="#5B4436" stroke-width="1.8"><ellipse cx="12" cy="14" rx="9.5" ry="6" fill="#B07B57"/><ellipse cx="12" cy="13.6" rx="5.2" ry="2.9" fill="#3A2A22" stroke="none"/></svg>',
   leaf:'<svg width="18" height="18" viewBox="0 0 24 24" fill="#78B65C" stroke="#5B4436" stroke-width="2" stroke-linejoin="round"><path d="M5 19C5 10 10 5 20 4c0 10-5 15-15 15z"/><path d="M5 19l8-8" fill="none"/></svg>'
 };
+const sticker=svg=>`<span class="ic" aria-hidden="true">${svg}</span>`;
+function hudSub(){ if(mode==='garden'){ const ch=CHAPTERS.find(c=>li>=c.from&&li<=c.to); return ch?ch.name:''; }
+  if(L.daily) return 'Daily patch'; return 'Endless · '+DIFF_NAME[endlessDiff]; }
 function updateHUD(silent){
   $('lvlNum').style.fontSize=String(mode==='garden'?li+1:0).length>2?'16px':''; $('lvlNum').textContent= mode==='garden' ? li+1 : L.daily ? new Date().getDate() : (progress.endless[endlessDiff].cleared+1); $('lvlName').textContent=L.name;
-  document.body.dataset.mode=mode;
-  const mvTxt=(mode==='endless'?(L.daily?'Daily, ':DIFF_NAME[endlessDiff]+', '):'')+`${state.moves} ${state.moves===1?'move':'moves'}, par ${curPar()}`; if($('moves').textContent!==mvTxt){ $('moves').textContent=mvTxt; if(!silent) pulse($('moves')); }
+  $('lvlSub').textContent=hudSub(); document.body.dataset.mode=mode;
+  const mv=$('moves'), mvHtml=`${sticker(ICON.steps)}<b>${state.moves}</b><span class="par">par ${curPar()}</span>`;
+  if(mv.innerHTML!==mvHtml){ mv.innerHTML=mvHtml; if(!silent) pulse(mv); }
+  mv.setAttribute('aria-label',`${state.moves} ${state.moves===1?'move':'moves'}, par ${curPar()}`); mv.classList.toggle('over',state.moves>curPar());
   const chips=[];
   const flagsTotal=L.map.join('').split('C').length-1;
-  if(flagsTotal){ const left=countChar(state,'C'); chips.push(`<span class="chip ${left===0?'done':''}">${ICON.flag}${flagsTotal-left} of ${flagsTotal}</span>`); }
-  if(L.map.join('').includes('K')) chips.push(`<span class="chip">${ICON.key}${state.keys} ${state.keys===1?'key':'keys'}</span>`);
-  if(L.map.join('').includes('R')) chips.push(`<span class="chip">${state.raining?ICON.rain+'Raining':ICON.sun+'Sunny'}</span>`);
+  if(flagsTotal){ const left=countChar(state,'C'); chips.push(`<span class="stat ${left===0?'done':''}" aria-label="Flags ${flagsTotal-left} of ${flagsTotal}">${sticker(ICON.flag)}<b>${flagsTotal-left}</b><small>/${flagsTotal}</small></span>`); }
+  if(L.map.join('').includes('K')) chips.push(`<span class="stat" aria-label="${state.keys} ${state.keys===1?'key':'keys'}">${sticker(ICON.key)}<b>${state.keys}</b></span>`);
+  if(L.map.join('').includes('R')) chips.push(`<span class="stat" aria-label="${state.raining?'Raining':'Sunny'}">${sticker(state.raining?ICON.rain:ICON.sun)}<small>${state.raining?'Rain':'Sun'}</small></span>`);
   const ok=state.segs.length===state.exitLen;
-  chips.push(`<span class="chip ${ok?'done':''}">${ICON.worm}Length ${state.segs.length}, burrow fits ${state.exitLen}</span>`);
+  chips.push(`<span class="stat ${ok?'done':''}" aria-label="Length ${state.segs.length}, burrow fits ${state.exitLen}">${sticker(ICON.worm)}<b>${state.segs.length}</b><span class="to" aria-hidden="true">${ok?'=':'&rarr;'}</span>${sticker(ICON.burrow)}<b>${state.exitLen}</b></span>`);
   const html=chips.join(''); if($('chips').innerHTML!==html){ const old=[...$('chips').children].map(c=>c.textContent); $('chips').innerHTML=html; if(!silent) [...$('chips').children].forEach((c,i)=>{ if(old[i]!==c.textContent) pulse(c); }); }
-  $('undoBtn').disabled=!history.length; $('restartBtn').disabled=state.moves===0; $('moves').classList.toggle('over',state.moves>curPar());
+  $('undoBtn').disabled=!history.length; $('restartBtn').disabled=state.moves===0;
   const ready = countChar(state,'C')===0 && ok;
   if(ready && !wasReady && !silent && state.status==='play') sfx('ready');
   wasReady=ready;
@@ -834,7 +842,7 @@ function updateHUD(silent){
 }
 let toastTimer=0;
 $('toast').addEventListener('click',()=>$('toast').classList.remove('show'));
-function toast(msg,ms=2600){ const t=$('toast'); t.innerHTML=ICON.leaf+'<span></span>'; t.querySelector('span').textContent=msg; t.classList.add('show'); clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove('show'),ms); }
+function toast(msg,ms=2600){ const t=$('toast'); t.innerHTML=sticker(ICON.leaf)+'<span></span>'; t.querySelector('span').textContent=msg; t.classList.add('show'); clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove('show'),ms); }
 function show(id){ $(id).classList.add('show'); if(id==='homeOv'){ document.body.classList.add('at-home'); return; } const b=$(id).querySelector('.primary')||$(id).querySelector('button'); b&&b.focus({preventScroll:true}); }
 function hide(id){ $(id).classList.remove('show'); if(id==='homeOv') document.body.classList.remove('at-home'); }
 function hideAll(){ ['winOv','lvOv','homeOv','endlessOv'].forEach(hide); }
@@ -1147,6 +1155,7 @@ function dirFromScreen(dx,dy){
   const s=new THREE.Vector2(dx,dy).normalize(); let best=null,bd=-2;
   for(const k of ['N','S','W','E']){ const dd=screenVec(DIRS[k]).dot(s); if(dd>bd){bd=dd;best=k;} } return best;
 }
+document.addEventListener('click',e=>{ const b=e.target.closest&&e.target.closest('.ov button,.home button,.lv'); if(b&&!b.closest('#homeWorm')) sfx('tap'); });
 const SWIPE=22, TAP=10; let gest=null;
 const ignoreTarget=t=>t.closest && t.closest('button,.ov,.home,.dialog');
 document.addEventListener('pointerdown',e=>{ ensureAudio(); if(e.button>0||ignoreTarget(e.target)) return;
@@ -1159,7 +1168,7 @@ document.addEventListener('pointerup',e=>{ if(!gest||e.pointerId!==gest.id) retu
   if(!gest.fired){ if(dist>=TAP) tryMove(dirFromScreen(dx,dy)); else if(gest.onBoard) tapMove(e); }
   gest=null; },{passive:true});
 document.addEventListener('pointercancel',()=>{ gest=null; });
-document.addEventListener('touchmove',e=>{ if(!e.target.closest('.list,.home')) e.preventDefault(); },{passive:false});
+document.addEventListener('touchmove',e=>{ if(!e.target.closest('.list,.home,.dialog')) e.preventDefault(); },{passive:false});
 document.addEventListener('gesturestart',e=>e.preventDefault());
 const ray=new THREE.Raycaster(); const plane=new THREE.Plane(new THREE.Vector3(0,1,0),0);
 function tapMove(e){
