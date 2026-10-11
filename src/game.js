@@ -1,6 +1,8 @@
 (function(){
 
-const reduceMotion = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+const motionQuery = window.matchMedia ? matchMedia('(prefers-reduced-motion: reduce)') : null;
+let reduceMotion = !!(motionQuery && motionQuery.matches);
+if(motionQuery && motionQuery.addEventListener) motionQuery.addEventListener('change',e=>{ reduceMotion=e.matches; });
 const C = {
   turf1:0xB9E49E, turf2:0xAADB8E, dry:0xEBD59C, soil:0x9A6A4C, soilDark:0x7E543B, wood:0xD29A62, lawn:0x8CC673,
   head:0xFFB0C6, riverWater:0x8CCFEA, plank:0xD9A56E, plankDark:0xB98352, leafBig:0x7CC95F, water:0x9ED6EF, mud:0x8A5E43, cloud:0xFFFFFF, rainCloud:0xAEBBD2, eye:0xFFFFFF, pupil:0x3B2A22, cheek:0xFF6F96,
@@ -440,6 +442,8 @@ function syncWeather(animate){
   if(ac){ if(!rainGain){ const s=ac.createBufferSource(); if(!noiseBuf){ noise(.01,{vol:.0001}); } s.buffer=noiseBuf; s.loop=true; const f=ac.createBiquadFilter(); f.type='lowpass'; f.frequency.value=1400; rainGain=ac.createGain(); rainGain.gain.value=0; s.connect(f); f.connect(rainGain); rainGain.connect(master); s.start(); }
     rainGain.gain.setTargetAtTime(state.raining&&!muted?.07:0,ac.currentTime,.4); }
 }
+const themeMeta=document.querySelector('meta[name="theme-color"]'); let themeHex='';
+function syncThemeColor(c){ const h='#'+c.getHexString(); if(h!==themeHex&&themeMeta){ themeHex=h; themeMeta.setAttribute('content',h); } }
 // time of day: soft morning, bright noon, golden evening, blue night with fireflies
 const TOD={ morning:{sun:0xFFE9CF,si:.5,hemi:.38,amb:[1,.97,.93],lawn:[1,.99,.95]}, day:{sun:0xFFF1DC,si:.55,hemi:.38,amb:[1,.96,.89],lawn:[1,1,1]},
   evening:{sun:0xFFC58A,si:.5,hemi:.32,amb:[1,.86,.78],lawn:[1,.9,.8]}, night:{sun:0xC4D0FF,si:.36,hemi:.3,amb:[.74,.78,.98],lawn:[.74,.82,.95]} };
@@ -452,7 +456,7 @@ function buildFireflies(){ if(fireflies){ removeObj(fireflies); fireflies=null; 
 function updateRain(dt){
   wet+=((state&&state.raining?1:0)-wet)*(1-Math.exp(-dt/1000*2.5));
   lawnMat.color.setRGB(tod.lawn[0]*(1-.2*wet),tod.lawn[1]*(1-.12*wet),tod.lawn[2]*(1-.05*wet)); sun.intensity=tod.si-.22*wet; hemi.intensity=tod.hemi-.06*wet; amb.color.setRGB(tod.amb[0]*(1-.12*wet),tod.amb[1]*(1-.06*wet),tod.amb[2]);
-  const lc=lawnDry.clone().lerp(lawnWet,wet).multiply(new THREE.Color(tod.lawn[0],tod.lawn[1],tod.lawn[2])); renderer.setClearColor(lc);
+  const lc=lawnDry.clone().lerp(lawnWet,wet).multiply(new THREE.Color(tod.lawn[0],tod.lawn[1],tod.lawn[2])); renderer.setClearColor(lc); syncThemeColor(lc);
   if(fireflies) fireflies.children.forEach((f,i)=>{ const u=f.userData, t=idleT*u.s+u.ph; f.position.set(Math.cos(t)*u.r,u.y+Math.sin(t*2.3)*.25,Math.sin(t*1.4)*u.r*.8); f.material.opacity=.35+.55*Math.max(0,Math.sin(idleT*2+u.ph*3)); });
   if(rainLines){ rainLines.material.opacity=.75*wet; rainLines.visible=wet>.02;
     if(rainLines.visible){ const a=rainLines.geometry.attributes.position, sp=rainLines.geometry.userData.sp, d=dt/1000;
@@ -763,12 +767,12 @@ function restart(){ if(!L) return; clearHint(); tweens.length=0; clearDying(); a
 
 // ---------- hints ----------
 let hintsUsed=0, hintMesh=null, hintBusy=false;
-function solveFrom(s0,cap=350000){
+function solveFrom(s0,cap=350000,ms=2500){ const until=performance.now()+ms;
   const key=s=>s.segs.map(p=>p[0]+','+p[1]).join(';')+'|'+s.grid.map(r=>r.join('')).join('')+'|'+s.keys+(s.raining?'r':'')+'|'+(s.snails||[]).map(n=>n.x+','+n.y+','+n.dx+','+n.dy).join(';');
   const seen=new Set([key(s0)]); let q=[[s0,null]];
   while(q.length){ const nq=[];
     for(const [s,first] of q){ for(const d of ['N','S','W','E']){ const r=step(s,d); if(r.blocked) continue; const f=first||d;
-        if(r.state.status==='won') return f; const k=key(r.state); if(seen.has(k)) continue; seen.add(k); if(seen.size>cap) return undefined; nq.push([r.state,f]); } }
+        if(r.state.status==='won') return f; const k=key(r.state); if(seen.has(k)) continue; seen.add(k); if(seen.size>cap||((seen.size&1023)===0&&performance.now()>until)) return undefined; nq.push([r.state,f]); } }
     q=nq; }
   return null; }
 function clearHint(){ if(hintMesh){ removeObj(hintMesh); hintMesh=null; } }
@@ -934,7 +938,8 @@ const DAILY_OPTS={flags:true,fruit:true,keys:true,dry:true,portals:true};
 progress.daily=Object.assign({streak:0,best:0,last:null,results:{}},progress.daily||{});
 async function startDaily(){ if(generating) return; generating=true; hideAll(); show('genOv'); $('genText').textContent="Growing today's patch...";
   const k=todayKey(); let seed=0; for(const ch of 'daily'+k) seed=(seed*31+ch.charCodeAt(0))|0;
-  const def=await generateEndless('medium',{...DAILY_OPTS},seed,30); def.daily=k; def.name="Today's patch"; def.hint='The same patch for every gardener today.';
+  let def=null; try{ const c=JSON.parse(localStorage.getItem('squirm-daily-patch')||'null'); if(c&&c.daily===k) def=c; }catch(e){}
+  if(!def){ def=await generateEndless('medium',{...DAILY_OPTS},seed,30); def.daily=k; try{ localStorage.setItem('squirm-daily-patch',JSON.stringify(def)); }catch(e){} } def.name="Today's patch"; def.hint='The same patch for every gardener today.';
   hide('genOv'); generating=false; mode='endless'; startLevel(def,true); enterGame(); }
 let generating=false, prefetch=null;
 const optsKey=()=>endlessDiff+JSON.stringify(endlessOpts);
@@ -966,7 +971,7 @@ window.addEventListener('popstate',()=>{ if(ignorePop>0){ ignorePop--; return; }
   else if(top==='game'){ hideAll(); showHome(); } });
 
 // ---------- home ----------
-function showHome(){ renderHome(); show('homeOv'); }
+function showHome(){ if(updateReady){ location.reload(); return; } renderHome(); show('homeOv'); }
 function renderHome(){
   const cleared=LEVELS.filter((l,i)=>isCleared(i)).length, stars=LEVELS.reduce((a,l)=>a+(progress.stars[l.name]||0),0);
   $('gSub').textContent=`${cleared} of ${LEVELS.length} patches, ${stars} of ${LEVELS.length*3} stars`;
@@ -1036,15 +1041,15 @@ function renderHomeWorm(dt){ if(!homeR) return; const t=idleT;
 
 // ---------- first time you meet a mechanic ----------
 const MECH={
-  basics:{t:'Crawl to the burrow',d:'Swipe to crawl. The burrow only fits a worm of the exact length on its sign.',k:/E/,i:'<svg width="40" height="40" viewBox="0 0 24 24"><ellipse cx="12" cy="15" rx="8" ry="5" fill="#B07B57" stroke="#5B4436" stroke-width="1.6"/><ellipse cx="12" cy="15" rx="4.5" ry="2.6" fill="#3A2A22"/><rect x="15" y="3" width="7" height="6" rx="1.5" fill="#D9A56E" stroke="#5B4436" stroke-width="1.4"/><text x="18.5" y="7.9" font-size="5" text-anchor="middle" font-weight="800" fill="#5B4436">3</text></svg>'},
+  basics:{t:'Crawl to the burrow',d:'Swipe to crawl. The burrow only fits a worm of the exact length on its sign.',k:/E/,i:'<svg width="40" height="40" viewBox="0 0 24 24" stroke="#5B4436" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"><ellipse cx="10" cy="16.5" rx="8" ry="4.6" fill="#B07B57"/><ellipse cx="10" cy="16.2" rx="4.8" ry="2.5" fill="#3A2A22" stroke="none"/><path d="M18.5 15V9.5" fill="none"/><rect x="14.5" y="3" width="8" height="6.5" rx="1.5" fill="#D9A56E"/><text x="18.5" y="8.1" font-size="5.5" font-family="sans-serif" font-weight="800" text-anchor="middle" fill="#5B4436" stroke="none">3</text></svg>'},
   flags:{t:'Flags',d:'Touch every flag before the burrow will let you in.',k:/C/,i:'<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#5B4436" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 21V3"/><path d="M6 4h12l-3 4 3 4H6" fill="#F27DA2"/></svg>'},
-  fruit:{t:'Peaches and mushrooms',d:'A peach makes you one longer. A mushroom makes you one shorter. Shorter worms can turn in tight spots.',k:/[+-]/,i:'<svg width="40" height="40" viewBox="0 0 24 24" stroke="#5B4436" stroke-width="1.5"><circle cx="8" cy="14" r="5" fill="#FFA27C"/><path d="M8 9c1-2 3-2 4-2" fill="none"/><path d="M14 13a5 5 0 0 1 10 0z" fill="#B79CF2"/><rect x="17.5" y="13" width="3" height="5" rx="1" fill="#FFF1DE"/></svg>'},
+  fruit:{t:'Peaches and mushrooms',d:'A peach makes you one longer. A mushroom makes you one shorter. Shorter worms can turn in tight spots.',k:/[+-]/,i:'<svg width="40" height="40" viewBox="0 0 24 24" stroke="#5B4436" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"><circle cx="7.5" cy="14.5" r="5.3" fill="#FFA27C"/><path d="M7.5 9.2c0-1.4.5-2.5 1.4-3.1" fill="none"/><path d="M8.9 6.6c1.5-1.3 3.3-1.2 4-.3-1.1 1.3-2.7 1.5-4 .3z" fill="#6CC97A"/><rect x="16.4" y="13.6" width="3.2" height="6" rx="1.2" fill="#FFF1DE"/><path d="M13.2 14.2a4.8 4.8 0 0 1 9.6 0z" fill="#B79CF2"/><circle cx="16.4" cy="11.6" r=".8" fill="#fff" stroke="none"/><circle cx="19.4" cy="10.9" r=".9" fill="#fff" stroke="none"/></svg>'},
   keys:{t:'Keys and gates',d:'Pick up a key to open one wooden gate. Each key works once.',k:/[KG]/,i:'<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#5B4436" stroke-width="1.8" stroke-linecap="round"><circle cx="8" cy="8" r="4.5" fill="#F7C64F"/><path d="M11 11l8 8M16 16l2-2M18.5 18.5l2-2"/></svg>'},
   dry:{t:'Dry patches',d:'Cracked ground sinks into the soil once your tail leaves it. You only get one visit.',k:/x/,i:'<svg width="40" height="40" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="4" fill="#EBD59C" stroke="#5B4436" stroke-width="1.6"/><path d="M6 8l5 3 2 6 4 2M11 11l6-3" fill="none" stroke="#9A6E52" stroke-width="1.6" stroke-linecap="round"/></svg>'},
   portals:{t:'Tunnels',d:'Worms dig! Crawl into a tunnel and come out of the one marked with the same flowers.',k:/[1-9]/,i:'<svg width="40" height="40" viewBox="0 0 24 24"><ellipse cx="12" cy="14" rx="9" ry="6" fill="#A9744F" stroke="#5B4436" stroke-width="1.5"/><ellipse cx="12" cy="14" rx="5" ry="3.2" fill="#2E2019"/><circle cx="5" cy="9" r="2" fill="#7FCFEA" stroke="#5B4436" stroke-width="1"/><circle cx="19" cy="9" r="2" fill="#7FCFEA" stroke="#5B4436" stroke-width="1"/></svg>'},
   rain:{t:'Rain',d:'Step on a cloud stone to start or stop the rain. Rain grows seedlings into leaves you can cross, and fills puddles so you can\'t.',k:/[Rsw]/,i:'<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#5B4436" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M7 14a4 4 0 0 1-.5-8A5.5 5.5 0 0 1 17 5.5 4 4 0 0 1 17.5 14z" fill="#C9D6EA"/><path d="M8 17l-1 3M12 17l-1 3M16 17l-1 3" stroke="#6FA9D6"/></svg>'},
-  snails:{t:'Snails',d:'A snail slides one tile every time you move and turns around when something blocks it. You cannot crawl through a snail, so time your moves.',k:/[<>^v]/,i:'<svg width="40" height="40" viewBox="0 0 24 24" stroke="#5B4436" stroke-width="1.4"><path d="M3 18h15c2 0 3-1.5 3-3" fill="#F6E2B0"/><circle cx="10" cy="12" r="6" fill="#C9A0E6"/><path d="M10 12a2 2 0 1 1 2 2 4 4 0 1 1-4-4" fill="none" stroke="#A67CCB" stroke-width="1.6"/><path d="M18 15l1-5M20 15l2-4"/></svg>'},
-  rivers:{t:'Rivers and bridges',d:'Water blocks the way. Bridges only go along their planks, and a crank swings every bridge you are not standing on.',k:/[~=|L]/,i:'<svg width="40" height="40" viewBox="0 0 24 24" stroke="#5B4436" stroke-width="1.4"><rect x="2" y="8" width="20" height="8" rx="2" fill="#8CCFEA"/><rect x="9" y="5" width="6" height="14" rx="1" fill="#D9A56E"/><path d="M9 9h6M9 12h6M9 15h6" stroke="#B98352"/></svg>'},
+  snails:{t:'Snails',d:'A snail slides one tile every time you move and turns around when something blocks it. You cannot crawl through a snail, so time your moves.',k:/[<>^v]/,i:'<svg width="40" height="40" viewBox="0 0 24 24" stroke="#5B4436" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"><path d="M18.6 11.4l-.8-3.6M20.6 11.4l1.2-3.3" fill="none"/><circle cx="17.8" cy="7.6" r="1" fill="#5B4436" stroke="none"/><circle cx="21.9" cy="7.9" r="1" fill="#5B4436" stroke="none"/><path d="M2.5 19.6c0-1 .8-1.6 1.8-1.6h12.6l.7-3.6a2.4 2.4 0 0 1 4.7.5V18c0 1-.8 1.6-1.8 1.6z" fill="#F6E2B0"/><circle cx="10" cy="12.6" r="5.6" fill="#C9A0E6"/><path d="M10.2 12.8a1.2 1.2 0 1 1 1.3-1.5 2.6 2.6 0 0 1-2.4 3.7 3.6 3.6 0 0 1-2.5-6" fill="none" stroke="#7D5A9E"/></svg>'},
+  rivers:{t:'Rivers and bridges',d:'Water blocks the way. Bridges only go along their planks, and a crank swings every bridge you are not standing on.',k:/[~=|L]/,i:'<svg width="40" height="40" viewBox="0 0 24 24" stroke="#5B4436" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"><rect x="1.5" y="8" width="21" height="8" rx="2.5" fill="#8CCFEA"/><path d="M3.5 12c1-.8 2-.8 3 0M17.5 12c1-.8 2-.8 3 0" fill="none" stroke="#fff"/><rect x="8.5" y="3.5" width="7" height="17" rx="1.4" fill="#D9A56E"/><path d="M8.5 8h7M8.5 12h7M8.5 16h7" fill="none" stroke="#B98352"/></svg>'},
 };
 let seenMech={}; try{ seenMech=JSON.parse(localStorage.getItem('squirm-seen')||'{}'); }catch(e){}
 let introDone=null;
@@ -1232,13 +1237,26 @@ function frame(now){
   if(!$('genOv').classList.contains('show')) renderer.render(scene,camera);
   if(!document.hidden) requestAnimationFrame(frame); else paused=true;
 }
-let paused=false; document.addEventListener('visibilitychange',()=>{ if(!document.hidden&&paused){ paused=false; last=performance.now(); requestAnimationFrame(frame); } if(rainGain&&ac) rainGain.gain.setTargetAtTime(document.hidden?0:(state&&state.raining&&!muted?.07:0),ac.currentTime,.2); });
+let paused=false; document.addEventListener('visibilitychange',()=>{ if(ac){ try{ document.hidden?ac.suspend():ac.resume(); }catch(e){} } if(!document.hidden&&paused){ paused=false; last=performance.now(); requestAnimationFrame(frame); } if(rainGain&&ac) rainGain.gain.setTargetAtTime(document.hidden?0:(state&&state.raining&&!muted?.07:0),ac.currentTime,.2); });
 
 // ---------- offline play and install ----------
+// A new deploy installs a new worker in the background. Installed apps are usually resumed rather
+// than relaunched, so check for one whenever the app comes back to the foreground, and reload into
+// the new version at a calm moment: right away on the home screen, otherwise on the way back home.
+let updateReady=false;
+const calmMoment=()=>$('homeOv').classList.contains('show') && !generating && !['winOv','lvOv','genOv','endlessOv','introOv','resetOv'].some(id=>$(id).classList.contains('show'));
 if('serviceWorker' in navigator && /^https?:$/.test(location.protocol)){
-  const hadWorker=!!navigator.serviceWorker.controller;
-  navigator.serviceWorker.addEventListener('controllerchange',()=>{ if(hadWorker) toast('A fresh version of Squirm is ready. It loads next time you open it.',4000); });
-  window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{})); }
+  const hadWorker=!!navigator.serviceWorker.controller; let controlled=hadWorker, reg=null;
+  const check=()=>{ if(reg&&navigator.onLine!==false) reg.update().catch(()=>{}); };
+  navigator.serviceWorker.addEventListener('controllerchange',()=>{
+    if(!controlled){ controlled=true; return; } // first install taking over, same version as this page
+    if(updateReady) return; updateReady=true;
+    if(calmMoment()) location.reload(); else toast('New patches arrived. They load when you head home.',4000); });
+  navigator.serviceWorker.ready.then(()=>{ let told=false; try{ told=localStorage.getItem('squirm-offline-told')==='1'; localStorage.setItem('squirm-offline-told','1'); }catch(e){}
+    if(!told&&!hadWorker) setTimeout(()=>toast('Squirm is saved on this device. It plays offline too.',3200),1500); });
+  window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>{ reg=r; }).catch(()=>{}));
+  document.addEventListener('visibilitychange',()=>{ if(!document.hidden) check(); });
+  setInterval(check,30*60*1000); }
 let installEvt=null;
 window.addEventListener('beforeinstallprompt',e=>{ e.preventDefault(); installEvt=e; $('installBtn').hidden=false; });
 window.addEventListener('appinstalled',()=>{ installEvt=null; $('installBtn').hidden=true; });

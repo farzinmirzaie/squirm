@@ -5,7 +5,10 @@ const ASSETS = __ASSETS__;
 const CACHE = 'squirm-' + VERSION;
 
 self.addEventListener('install', e => {
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting()));
+  // cache: 'reload' skips the HTTP cache, so a new version never precaches files from the old one
+  e.waitUntil(caches.open(CACHE)
+    .then(c => c.addAll(ASSETS.map(url => new Request(url, { cache: 'reload' }))))
+    .then(() => self.skipWaiting()));
 });
 
 self.addEventListener('activate', e => {

@@ -39,6 +39,7 @@ public/          manifest and icons, copied as-is into dist/
 tools/build.js   builds dist/ (see above) and syntax-checks the game script; --debug adds window.__squirm hooks
 tools/analyze.js BFS solver used for par, state count and "winnable %" (share of reachable states that can still win)
 tools/verify-levels.js  must pass before shipping level changes
+test/            node:test unit tests for the rules in logic.js
 tools/curate.js  generates candidate levels with the in-game generator and picks a difficulty spread
 ```
 
@@ -123,8 +124,11 @@ level-list thumbnails, and `introAt` in `tools/verify-levels.js`.
   the keys or players lose progress. Other projects can share the origin (`<user>.github.io`), so
   keep the prefix on every key and every cache name. The secret reset (hold the worm's head on
   the home screen for 3 s) clears these keys.
-- **Offline and install:** `sw.js` is registered at boot (http/https only). The home screen
-  shows an install button when the browser fires `beforeinstallprompt`.
+- **Offline, install and updates:** `sw.js` is registered at boot (http/https only) and checked
+  for updates whenever the app returns to the foreground and every 30 minutes. A new worker
+  takes over right away; the page reloads into it at a calm moment (immediately on the home
+  screen, otherwise the next time the player heads home). The home screen shows an install
+  button when the browser fires `beforeinstallprompt`, and the build id (`__BUILD__`).
 
 ## Conventions
 

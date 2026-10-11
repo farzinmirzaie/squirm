@@ -32,8 +32,11 @@ for(const [,pkg] of FONTS) fs.copyFileSync(require.resolve(`@fontsource/${pkg}/L
 // the page
 let game=src('game.js');
 // --debug exposes a few hooks for browser automation, inserted before the IIFE closes at the end of game.js
-if(process.argv.includes('--debug')) game=game.replace(/\}\)\(\);\s*$/,"window.__squirm={load:i=>{hideAll(); loadLevel(i,false);},move:k=>tryMove(k),st:()=>JSON.stringify({s:state.segs,st:state.status,m:state.moves})};\n})();\n");
-const html=src('shell.html').replace('/*__FONTS__*/',()=>fontCss.trim()).replace('/*__LOGIC__*/',()=>stripExports(src('logic.js')))
+if(process.argv.includes('--debug')) game=game.replace(/\}\)\(\);\s*$/,"window.__squirm={load:(i,intro)=>{hideAll(); loadLevel(i,!!intro);},move:k=>tryMove(k),st:()=>JSON.stringify({s:state.segs,st:state.status,m:state.moves})};\n})();\n");
+let sha=(process.env.GITHUB_SHA||'').slice(0,7);
+if(!sha){ try{ sha=require('child_process').execSync('git rev-parse --short HEAD',{cwd:root,stdio:['ignore','pipe','ignore']}).toString().trim(); }catch(e){ sha='dev'; } }
+const build=`v${require('../package.json').version} · ${sha}`;
+const html=src('shell.html').replace('__BUILD__',build).replace('/*__FONTS__*/',()=>fontCss.trim()).replace('/*__LOGIC__*/',()=>stripExports(src('logic.js')))
   .replace('/*__LEVELS__*/',()=>stripExports(src('levels.js'))).replace('/*__GAME__*/',()=>game);
 new Function(html.split('<script>')[1].split('</script>')[0]); // syntax check
 fs.writeFileSync(path.join(dist,'index.html'),html);

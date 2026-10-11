@@ -10,16 +10,17 @@
   },
   "homepage": "https://farzinmirzaie.github.io/squirm/",
   "engines": {
-    "node": ">=18"
+    "node": ">=20"
   },
   "scripts": {
     "build": "node tools/build.js",
     "build:debug": "node tools/build.js --debug",
     "serve": "npx --yes serve dist",
+    "test": "npm run test:unit && npm run verify && npm run build",
+    "test:unit": "node --test test/*.test.js",
     "verify": "node tools/verify-levels.js",
     "analyze": "node tools/analyze.js",
-    "curate": "node tools/curate.js",
-    "test": "npm run verify && npm run build"
+    "curate": "node tools/curate.js"
   },
   "devDependencies": {
     "@fontsource/grandstander": "5.3.0",
