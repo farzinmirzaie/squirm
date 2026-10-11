@@ -84,13 +84,14 @@ h1{margin:0;font:800 21px/1.2 "Grandstander",ui-rounded,system-ui,sans-serif;whi
   font-weight:800;font-size:15px;line-height:1.35;opacity:0;transform:translateY(10px) scale(.96);transition:opacity .2s,transform .25s cubic-bezier(.2,1.5,.4,1);pointer-events:none}
 #toast.show{opacity:1;transform:none}
 #toast .ic{width:32px;height:32px}
+#toast .msg{min-width:0}
 /* ---- controls: chunky round game buttons ---- */
 .bottom{display:flex;flex-direction:column}
-nav{display:flex;justify-content:center;align-items:flex-end;gap:14px}
+nav{display:flex;justify-content:center;align-items:flex-end;gap:16px}
 .gbtn{display:flex;flex-direction:column;align-items:center;gap:5px;padding:0;border:0;background:none;cursor:pointer;color:var(--ink);-webkit-tap-highlight-color:transparent}
 .disc{width:60px;height:60px;border-radius:50%;display:grid;place-items:center;background:var(--paper) linear-gradient(180deg,var(--gloss),transparent 60%);border:3px solid var(--edge);
   box-shadow:0 5px 0 var(--edge),0 10px 20px var(--shadow);transition:transform .08s}
-.gbtn.hint .disc{width:74px;height:74px;background-color:var(--honey);border-color:var(--honey-dark);color:#5B4436;box-shadow:0 5px 0 var(--honey-dark),0 10px 22px var(--shadow)}
+.gbtn.hint .disc{background-color:var(--honey);border-color:var(--honey-dark);color:#5B4436;box-shadow:0 5px 0 var(--honey-dark),0 10px 22px var(--shadow)}
 .gbtn:active .disc{transform:translateY(5px);box-shadow:0 0 0 var(--edge)}
 .gbtn.hint:active .disc{box-shadow:0 0 0 var(--honey-dark)}
 .lbl{font:800 13px/1 "Grandstander",ui-rounded,system-ui,sans-serif;color:#FFF8EA;letter-spacing:.02em;
@@ -235,6 +236,14 @@ body.at-home #app{visibility:hidden}
 .play b{font:800 28px/1 "Grandstander",ui-rounded,system-ui,sans-serif;text-shadow:0 2px 0 var(--leaf-dark)}
 .play small{font-weight:800;font-size:14px;opacity:.95;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .week{display:flex;gap:5px;margin-top:3px}
+.swatches{display:flex;justify-content:center;gap:10px}
+.swatches button{width:36px;height:36px;border-radius:50%;padding:0;cursor:pointer;display:grid;place-items:center;background:var(--sw);border:3px solid var(--paper);box-shadow:0 0 0 2px var(--edge),0 3px 0 2px var(--edge);transition:transform .12s}
+.swatches button.on{transform:scale(1.15);box-shadow:0 0 0 3px var(--outline),0 3px 0 3px var(--outline)}
+.swatches button.locked{filter:saturate(.35);opacity:.75}
+.stat{cursor:pointer}
+.pill.unlock{background:var(--honey);border-color:var(--honey-dark);color:#5B4436}
+#winNext{animation:beckon 1.8s ease-in-out 1.4s infinite}
+@keyframes beckon{0%,70%,100%{transform:none}80%{transform:scale(1.05)}90%{transform:scale(.98)}}
 .week i{width:10px;height:10px;border-radius:50%;background:var(--paper-2);border:2px solid var(--edge)}
 .week i.on{background:var(--berry);border-color:#C95C73}
 .week i.today{outline:2px solid var(--honey);outline-offset:1px}
@@ -255,11 +264,10 @@ body.at-home #app{visibility:hidden}
   .round{width:40px;height:40px}
   .stat{height:34px;font-size:16px}
   nav{gap:10px}.disc{width:48px;height:48px}.disc svg{width:22px;height:22px}
-  .gbtn.hint .disc{width:58px;height:58px}.gbtn.hint .disc svg{width:28px;height:28px}
   .lbl{display:none}
   #toast{margin-bottom:6px}
 }
-@media (prefers-reduced-motion: reduce){ .spin,.logo svg,.gbtn.hint .disc svg{animation:none} #tutorial .hand{animation:none} .star{animation:none;transform:none} .pop{animation:none} .dialog{animation:none} #toast{transition:none} .petals{display:none} }
+@media (prefers-reduced-motion: reduce){ .spin,.logo svg,.gbtn.hint .disc svg,#winNext{animation:none} #tutorial .hand{animation:none} .star{animation:none;transform:none} .pop{animation:none} .dialog{animation:none} #toast{transition:none} .petals{display:none} }
 </style>
 </head>
 <body>
@@ -278,16 +286,16 @@ body.at-home #app{visibility:hidden}
       </div>
       <div class="toggles"><button id="hapticBtn" class="round" aria-pressed="true"></button><button id="muteBtn" class="round" aria-pressed="false" title="Sound (M)"></button></div>
     </div>
-    <div class="hud-stats"><span class="stat moves" id="moves"></span><span class="chips" id="chips" aria-live="polite"></span></div>
+    <div class="hud-stats"><span class="stat moves" id="moves" data-tip="moves"></span><span class="chips" id="chips" aria-live="polite"></span></div>
   </header>
   <div class="bottom">
     <div id="toast" class="card" role="status"></div>
     <nav>
-      <button id="levelsBtn" class="gbtn" title="Home (Esc)"><span class="disc"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10" fill="#FBEBD0"/><path d="M10 20v-5h4v5"/></svg></span><span class="lbl">Home</span></button>
+      <button id="levelsBtn" class="gbtn" title="Home (Esc)"><span class="disc"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-5h4v5"/></svg></span><span class="lbl">Home</span></button>
       <button id="undoBtn" class="gbtn" title="Undo (Z, hold to rewind)"><span class="disc"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg></span><span class="lbl">Undo</span></button>
-      <button id="hintBtn" class="gbtn hint" title="Hint (H)"><span class="disc"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z" fill="#FFF6D6"/></svg></span><span class="lbl">Hint</span></button>
+      <button id="hintBtn" class="gbtn hint" title="Hint (H)"><span class="disc"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z" fill="#FFF6D6"/></svg></span><span class="lbl">Hint</span></button>
       <button id="restartBtn" class="gbtn" title="Restart (R)"><span class="disc"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg></span><span class="lbl">Restart</span></button>
-      <button id="skipBtn" class="gbtn" hidden><span class="disc"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5l8 7-8 7z" fill="#FFE7A0"/><path d="M18 5v14"/></svg></span><span class="lbl">Skip</span></button>
+      <button id="skipBtn" class="gbtn" hidden><span class="disc"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5l8 7-8 7z" fill="currentColor"/><path d="M18 5v14"/></svg></span><span class="lbl">Skip</span></button>
     </nav>
   </div>
 </div>
@@ -326,6 +334,7 @@ body.at-home #app{visibility:hidden}
     <span class="mode-ico daily-ico" aria-hidden="true"><span class="cal" id="dailyDay">11</span></span>
     <span class="bt"><b>Daily patch</b><small id="dailySub">One patch for everyone today</small><span class="week" id="dailyWeek" aria-hidden="true"></span></span><span class="go" aria-hidden="true">&#8250;</span>
   </button>
+  <div class="swatches" id="swatches" role="group" aria-label="Worm colour"></div>
   <div class="home-tools"><button class="round" id="homeSound"></button><button class="round" id="homeHaptic"></button><button class="round" id="installBtn" aria-label="Install Squirm as an app" hidden><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7 10l5 5 5-5"/><path d="M5 19h14"/></svg></button></div>
   <p class="version">__BUILD__</p>
 </div></div>

@@ -530,6 +530,12 @@ let tailExtras=[];
 const tubeMat=new THREE.MeshToonMaterial({color:0xffffff,vertexColors:true,gradientMap:gradTex});
 const capMat=new THREE.MeshToonMaterial({color:0xffffff,gradientMap:gradTex});
 const COL_A=new THREE.Color(0xFFB3C8), tmpC=new THREE.Color();
+// worm colours, earned with garden stars: [name, body, head, stars needed]
+const WORM_COLS=[['Blossom',0xFFB3C8,0xFFB0C6,0],['Mint',0xA8E6C2,0x9EE0BA,15],['Butter',0xFFE08A,0xFFDA7A,45],['Lavender',0xCDB8F5,0xC5AEF2,90],['Sky',0xA9D8F5,0x9FD2F2,150]];
+const starTotal=()=>LEVELS.reduce((a,l)=>a+(progress.stars[l.name]||0),0);
+const coloursUnlocked=()=>WORM_COLS.filter(c=>starTotal()>=c[3]).length;
+let wormCol=0; try{ wormCol=Math.max(0,Math.min(WORM_COLS.length-1,parseInt(localStorage.getItem('squirm-colour')||'0',10)||0)); }catch(e){}
+function applyWormColour(){ if(wormCol>=coloursUnlocked()) wormCol=0; const c=WORM_COLS[wormCol]; COL_A.setHex(c[1]); m('head').color.setHex(c[2]); }
 const tubePool=[], capPool=[];
 function tubeGeo(geo,pts,rads,cols,extra){
   const S=pts.length, RS=20, verts=S*RS;
@@ -720,7 +726,7 @@ function petals(){ if(reduceMotion) return; const box=$('petals'); box.innerHTML
 function starsFor(mv,par,hinted){ let s = mv<=par?3 : mv<=Math.ceil(par*1.3)?2 : 1; if(hinted) s=Math.min(s,2); return s; }
 const STAR=(on,i)=>`<svg class="star ${on?'on':''}" style="animation-delay:${.15+i*.18}s" width="44" height="44" viewBox="0 0 24 24"><path d="M12 2.8l2.8 5.8 6.3.9-4.6 4.4 1.1 6.3L12 17.2l-5.6 3 1.1-6.3L2.9 9.5l6.3-.9z" fill="${on?'#FFD866':'#EADCC4'}" stroke="#5B4436" stroke-width="1.6" stroke-linejoin="round"/></svg>`;
 let shareText='', newBest=false, chapterDone=null;
-function onWin(){ shareText=''; newBest=false; chapterDone=null;
+function onWin(){ shareText=''; newBest=false; chapterDone=null; const coloursBefore=coloursUnlocked();
   const par=curPar(), mv=state.moves; const st=starsFor(mv,par,hintsUsed>0); clearResume();
   const titles=['Snug as a bug!','Home sweet burrow!','Wiggle well done!','Cozy and curled up!'];
   let extra='';
@@ -731,6 +737,7 @@ function onWin(){ shareText=''; newBest=false; chapterDone=null;
     const last=li===LEVELS.length-1;
     $('winTitle').textContent = last ? 'The whole garden!' : chapterDone ? 'Chapter complete!' : titles[li%titles.length];
     if(chapterDone) extra=`<div class="stat-row"><span class="pill">${ICON.leaf} ${chapterDone} finished</span></div>`;
+    if(!chapterDone && ch){ let left=0; for(let i=ch.from;i<=ch.to;i++) if(i!==li&&!isCleared(i)) left++; if(left) extra=`<div class="stat-row"><span class="pill">${ICON.leaf} ${left} more in ${ch.name}</span></div>`; }
     if(newBest) extra+='<span class="newbest">New best</span>';
     $('winNext').textContent = last ? 'Back to patch 1' : 'Next patch';
   } else if(L.daily){
@@ -750,6 +757,7 @@ function onWin(){ shareText=''; newBest=false; chapterDone=null;
     extra=`<div class="stat-row"><span class="pill">${DIFF_NAME[endlessDiff]}: ${e.cleared} cleared</span><span class="pill">Streak ${e.streak}</span></div>`;
   }
   save(); askPersist();
+  if(coloursUnlocked()>coloursBefore){ const c=WORM_COLS[coloursUnlocked()-1]; extra+=`<div class="stat-row"><span class="pill unlock">New worm colour: ${c[0]}</span></div>`; }
   $('winText').textContent = mv<=par ? `${mv} moves. Right on par.` : `${mv} moves. Par is ${par}, so there's a shorter way.`;
   $('winMedal').innerHTML = `<div class="stars">${[0,1,2].map(i=>STAR(i<st,i)).join('')}</div>` + (hintsUsed?`<p class="note">You used ${hintsUsed} ${hintsUsed===1?'hint':'hints'}. Solve it on your own for 3 stars.</p>`:'') + extra;
   for(let i=0;i<st;i++) setTimeout(()=>buzz(12),200+i*180);
@@ -823,6 +831,14 @@ const ICON={
 const sticker=svg=>`<span class="ic" aria-hidden="true">${svg}</span>`;
 function hudSub(){ if(mode==='garden'){ const ch=CHAPTERS.find(c=>li>=c.from&&li<=c.to); return ch?ch.name:''; }
   if(L.daily) return 'Daily patch'; return 'Endless · '+DIFF_NAME[endlessDiff]; }
+function statTip(k){ const par=curPar(), len=state.segs.length, fruit=/[+-]/.test(state.grid.map(r=>r.join('')).join(''));
+  if(k==='moves') return `Par is ${par}. Finish in ${par} moves for 3 stars, or within ${Math.ceil(par*1.3)} for 2.`;
+  if(k==='flags') return 'Touch every flag before the burrow will let you in.';
+  if(k==='keys') return 'Each key opens one gate, then it is used up.';
+  if(k==='weather') return state.raining?'Raining: leaves are up and puddles are full. A cloud stone stops it.':'Sunny: seedlings are small and puddles are dry. A cloud stone brings rain.';
+  if(len===state.exitLen) return 'You are just the right length for the burrow.';
+  return `The burrow fits a worm of ${state.exitLen}. You are ${len}.`+(fruit?(len<state.exitLen?' A peach makes you longer.':' A mushroom makes you shorter.'):''); }
+document.querySelector('.hud-stats').addEventListener('click',e=>{ const st=e.target.closest('.stat'); if(!st||!state) return; sfx('tap'); toast(statTip(st.dataset.tip||'moves'),3400); });
 function updateHUD(silent){
   $('lvlNum').style.fontSize=String(mode==='garden'?li+1:0).length>2?'16px':''; $('lvlNum').textContent= mode==='garden' ? li+1 : L.daily ? new Date().getDate() : (progress.endless[endlessDiff].cleared+1); $('lvlName').textContent=L.name;
   $('lvlSub').textContent=hudSub(); document.body.dataset.mode=mode;
@@ -832,11 +848,11 @@ function updateHUD(silent){
   mv.setAttribute('aria-label',`${state.moves} ${state.moves===1?'move':'moves'}, par ${curPar()}, on track for ${now} ${now===1?'star':'stars'}`); mv.classList.toggle('over',state.moves>curPar());
   const chips=[];
   const flagsTotal=L.map.join('').split('C').length-1;
-  if(flagsTotal){ const left=countChar(state,'C'); chips.push(`<span class="stat ${left===0?'done':''}" aria-label="Flags ${flagsTotal-left} of ${flagsTotal}">${sticker(ICON.flag)}<b>${flagsTotal-left}</b><small>/${flagsTotal}</small></span>`); }
-  if(L.map.join('').includes('K')) chips.push(`<span class="stat" aria-label="${state.keys} ${state.keys===1?'key':'keys'}">${sticker(ICON.key)}<b>${state.keys}</b></span>`);
-  if(L.map.join('').includes('R')) chips.push(`<span class="stat wx" aria-label="${state.raining?'Raining':'Sunny'}">${sticker(state.raining?ICON.rain:ICON.sun)}<small>${state.raining?'Rain':'Sun'}</small></span>`);
+  if(flagsTotal){ const left=countChar(state,'C'); chips.push(`<span class="stat ${left===0?'done':''}" data-tip="flags" aria-label="Flags ${flagsTotal-left} of ${flagsTotal}">${sticker(ICON.flag)}<b>${flagsTotal-left}</b><small>/${flagsTotal}</small></span>`); }
+  if(L.map.join('').includes('K')) chips.push(`<span class="stat" data-tip="keys" aria-label="${state.keys} ${state.keys===1?'key':'keys'}">${sticker(ICON.key)}<b>${state.keys}</b></span>`);
+  if(L.map.join('').includes('R')) chips.push(`<span class="stat wx" data-tip="weather" aria-label="${state.raining?'Raining':'Sunny'}">${sticker(state.raining?ICON.rain:ICON.sun)}<small>${state.raining?'Rain':'Sun'}</small></span>`);
   const ok=state.segs.length===state.exitLen;
-  chips.push(`<span class="stat ${ok?'done':''}" aria-label="Length ${state.segs.length}, burrow fits ${state.exitLen}">${sticker(ICON.worm)}<b>${state.segs.length}</b><span class="to" aria-hidden="true">${ok?'=':'&rarr;'}</span>${sticker(ICON.burrow)}<b>${state.exitLen}</b></span>`);
+  chips.push(`<span class="stat ${ok?'done':''}" data-tip="length" aria-label="Length ${state.segs.length}, burrow fits ${state.exitLen}">${sticker(ICON.worm)}<b>${state.segs.length}</b><span class="to" aria-hidden="true">${ok?'=':'&rarr;'}</span>${sticker(ICON.burrow)}<b>${state.exitLen}</b></span>`);
   const html=chips.join(''); if($('chips').innerHTML!==html){ const old=[...$('chips').children].map(c=>c.textContent); $('chips').innerHTML=html; if(!silent) [...$('chips').children].forEach((c,i)=>{ if(old[i]!==c.textContent) pulse(c); }); }
   $('undoBtn').disabled=!history.length; $('restartBtn').disabled=state.moves===0;
   const ready = countChar(state,'C')===0 && ok;
@@ -846,7 +862,7 @@ function updateHUD(silent){
 }
 let toastTimer=0;
 $('toast').addEventListener('click',()=>$('toast').classList.remove('show'));
-function toast(msg,ms=2600){ const t=$('toast'); t.innerHTML=sticker(ICON.leaf)+'<span></span>'; t.querySelector('span').textContent=msg; t.classList.add('show'); clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove('show'),ms); }
+function toast(msg,ms=2600){ const t=$('toast'); t.innerHTML=sticker(ICON.leaf)+'<span class="msg"></span>'; t.querySelector('.msg').textContent=msg; t.classList.add('show'); clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove('show'),ms); }
 function show(id){ $(id).classList.add('show'); if(id==='homeOv'){ document.body.classList.add('at-home'); return; } const b=$(id).querySelector('.primary')||$(id).querySelector('button'); b&&b.focus({preventScroll:true}); }
 function hide(id){ $(id).classList.remove('show'); if(id==='homeOv') document.body.classList.remove('at-home'); }
 function hideAll(){ ['winOv','lvOv','homeOv','endlessOv'].forEach(hide); }
@@ -995,8 +1011,14 @@ function renderHome(){
   $('dailyWeek').innerHTML=[6,5,4,3,2,1,0].map(n=>{ const d=new Date(); d.setDate(d.getDate()-n); return `<i class="${progress.daily.results[dateKey(d)]?'on':''} ${n?'':'today'}"></i>`; }).join('');
   const ni=nextGardenIndex(), started=LEVELS.some((l,i)=>isCleared(i));
   $('playTitle').textContent=started?'Continue':'Play'; $('playSub').textContent=`Patch ${ni+1} · ${LEVELS[ni].name}`;
-  renderMute(); renderHaptic();
+  renderMute(); renderHaptic(); renderSwatches();
 }
+function renderSwatches(){ const have=coloursUnlocked();
+  $('swatches').innerHTML=WORM_COLS.map((c,i)=>{ const locked=i>=have, hex='#'+c[1].toString(16).padStart(6,'0');
+    return `<button data-i="${i}" class="${i===wormCol?'on':''} ${locked?'locked':''}" style="--sw:${hex}" aria-pressed="${i===wormCol}" aria-label="${c[0]} worm${locked?`, unlocks at ${c[3]} stars`:''}">${locked?'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#5B4436" stroke-width="3" stroke-linecap="round"><rect x="5" y="11" width="14" height="10" rx="2.5" fill="#FFF8EA"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>':''}</button>`; }).join('');
+  $('swatches').querySelectorAll('button').forEach(b=>b.onclick=()=>{ const i=+b.dataset.i, c=WORM_COLS[i];
+    if(i>=coloursUnlocked()){ sfx('bump'); toast(`${c[0]} unlocks at ${c[3]} stars. You have ${starTotal()}.`,2600); return; }
+    wormCol=i; try{ localStorage.setItem('squirm-colour',String(i)); }catch(e){} applyWormColour(); if(hHead) homeReact('joy'); renderSwatches(); }); }
 function renderEndless(){
   $('diffSeg').innerHTML=['easy','medium','hard'].map(d=>`<button role="radio" aria-checked="${d===endlessDiff}" data-d="${d}" class="${d===endlessDiff?'on':''}"><b>${DIFF_NAME[d]}</b><small>${progress.endless[d].cleared} cleared</small></button>`).join('');
   $('diffSeg').querySelectorAll('button').forEach(b=>b.onclick=()=>{ endlessDiff=b.dataset.d; buzz(8); renderEndless(); });
@@ -1086,7 +1108,8 @@ function dismissTutorial(){ const t=$('tutorial'); if(!t.classList.contains('sho
 
 // ---------- levels ----------
 function loadLevel(i,withHint=true){ mode='garden'; li=i; startLevel(LEVELS[i],withHint); try{ localStorage.setItem('squirm-current-name',LEVELS[i].name); }catch(e){} }
-function startLevel(def,withHint=true){
+let nudged=false;
+function startLevel(def,withHint=true){ nudged=false; pulse(document.querySelector('.plaque'));
   L=def; state=initState(L); history=[]; queue.length=0; wasReady=false; hintsUsed=0; clearHint();
   buildBoard(); snapWorm(); fitCamera(); updateHUD(true); lastMoveT=idleT;
   const resumed=tryResume(); if(!resumed) clearResume();
@@ -1173,9 +1196,11 @@ const SWIPE=22, TAP=10; let gest=null;
 const ignoreTarget=t=>t.closest && t.closest('button,.ov,.home,.dialog');
 document.addEventListener('pointerdown',e=>{ ensureAudio(); if(e.button>0||ignoreTarget(e.target)) return;
   gest={x:e.clientX,y:e.clientY,id:e.pointerId,fired:false,onBoard:!e.target.closest('header,nav,#toast')}; },{passive:true});
-document.addEventListener('pointermove',e=>{ if(!gest||e.pointerId!==gest.id||gest.fired) return;
+// one swipe is one move; keep the finger down and every further stretch of drag is another move
+const CHAIN=48;
+document.addEventListener('pointermove',e=>{ if(!gest||e.pointerId!==gest.id) return;
   const dx=e.clientX-gest.x, dy=e.clientY-gest.y;
-  if(Math.hypot(dx,dy)>=SWIPE){ gest.fired=true; tryMove(dirFromScreen(dx,dy)); } },{passive:true});
+  if(Math.hypot(dx,dy)>=(gest.fired?CHAIN:SWIPE)){ gest.fired=true; gest.x=e.clientX; gest.y=e.clientY; tryMove(dirFromScreen(dx,dy)); } },{passive:true});
 document.addEventListener('pointerup',e=>{ if(!gest||e.pointerId!==gest.id) return; ensureAudio();
   const dx=e.clientX-gest.x, dy=e.clientY-gest.y, dist=Math.hypot(dx,dy);
   if(!gest.fired){ if(dist>=TAP) tryMove(dirFromScreen(dx,dy)); else if(gest.onBoard) tapMove(e); }
@@ -1194,6 +1219,8 @@ function tapMove(e){
 const KEYMAP={ArrowUp:[0,-1],KeyW:[0,-1],ArrowDown:[0,1],KeyS:[0,1],ArrowLeft:[-1,0],KeyA:[-1,0],ArrowRight:[1,0],KeyD:[1,0]};
 window.addEventListener('keydown',e=>{ if(e.ctrlKey||e.metaKey||e.altKey) return; ensureAudio();
   if((e.code==='Enter'||e.code==='Space') && $('winOv').classList.contains('show')){ e.preventDefault(); $('winNext').click(); return; }
+  if(e.code==='KeyR' && $('winOv').classList.contains('show')){ e.preventDefault(); $('winReplay').click(); return; }
+  if(e.code==='Enter' && calmMoment() && (document.activeElement===document.body||!document.activeElement)){ e.preventDefault(); $('homePlay').click(); return; }
   if((e.code==='Enter'||e.code==='Space') && $('introOv').classList.contains('show')){ e.preventDefault(); closeIntro(false); return; }
   if(KEYMAP[e.code] && !anyOverlay()){ e.preventDefault(); tryMove(dirFromScreen(...KEYMAP[e.code])); }
   else if((e.code==='KeyZ'||e.code==='Backspace'||e.code==='KeyU') && !anyOverlay()){ e.preventDefault(); undo(); }
@@ -1246,6 +1273,8 @@ function frame(now){
       const sh=b.userData.shadow; if(sh){ const inBed=Math.abs(x-bedBox.cx)<bedBox.hw&&Math.abs(z-bedBox.cz)<bedBox.hd; const gx=Math.round(x+(state.w-1)/2), gz=Math.round(z+(state.h-1)/2), onTile=tileAt(state,gx,gz)!==' '; sh.position.set(x,onTile?.02:inBed?-.2:-.33,z); const k=1.15-(y-1.05)*.6; sh.scale.setScalar(k); sh.material.opacity=.55+.25*(1.55-y); }
       const f=Math.sin(idleT*22+i)*1.0; b.userData['w-1'].rotation.z=-f; b.userData['w1'].rotation.z=f; });
   }
+  if(!nudged && state && state.status==='play' && state.moves>0 && idleT-lastMoveT>45 && !anyOverlay() && !document.body.classList.contains('at-home')){
+    nudged=true; toast('Stuck? Tap the bulb for a hint.',3200); pulse($('hintBtn')); }
   if(segMeshes[0]){ const hp=segMeshes[0].position; camTgt.set(THREE.MathUtils.clamp(hp.x*.06,-.35,.35),0,THREE.MathUtils.clamp(hp.z*.06,-.35,.35)); if(reduceMotion) camTgt.set(0,0,0);
     camOff.lerp(camTgt,1-Math.exp(-dt/1000*1.6)); camera.position.copy(basePos).add(camOff); }
   if(!reduceMotion){ fxTimer-=dt;
@@ -1268,6 +1297,13 @@ function frame(now){
   if(!document.hidden) requestAnimationFrame(frame); else paused=true;
 }
 let paused=false; document.addEventListener('visibilitychange',()=>{ if(ac){ try{ document.hidden?ac.suspend():ac.resume(); }catch(e){} } if(!document.hidden&&paused){ paused=false; last=performance.now(); requestAnimationFrame(frame); } if(rainGain&&ac) rainGain.gain.setTargetAtTime(document.hidden?0:(state&&state.raining&&!muted?.07:0),ac.currentTime,.2); });
+
+// ---------- unexpected errors: tell the player instead of failing silently ----------
+let errorShown=false;
+const onGameError=src=>{ if(errorShown||(src&&!String(src).startsWith(location.origin))) return; errorShown=true;
+  try{ animating=0; queue.length=0; toast('Oops, the garden hiccupped. If something looks stuck, restart the patch.',4200); }catch(e){} };
+window.addEventListener('error',e=>onGameError(e.filename));
+window.addEventListener('unhandledrejection',()=>onGameError(null));
 
 // ---------- offline play and install ----------
 // A new deploy installs a new worker in the background. Installed apps are usually resumed rather
@@ -1293,7 +1329,7 @@ window.addEventListener('appinstalled',()=>{ installEvt=null; $('installBtn').hi
 $('installBtn').onclick=async()=>{ const e=installEvt; if(!e) return; installEvt=null; $('installBtn').hidden=true; try{ await e.prompt(); }catch(err){} };
 
 // ---------- boot ----------
-const start=()=>{ const i=currentGardenIndex(); pickTod(); setInterval(pickTod,60000); initHomeWorm();
+const start=()=>{ const i=currentGardenIndex(); applyWormColour(); pickTod(); setInterval(pickTod,60000); initHomeWorm();
   mode='garden'; li=i; startLevel(LEVELS[i],false); requestAnimationFrame(frame); showHome();
   if(new URLSearchParams(location.search).get('play')==='daily'){ try{ window.history.replaceState(null,'',location.pathname); }catch(e){} $('dailyBtn').onclick(); } };
 (document.fonts&&document.fonts.ready? document.fonts.ready : Promise.resolve()).then(start);

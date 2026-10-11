@@ -43,6 +43,12 @@ const errors = [];
     await page.click('#introOk');
     step('Play opens patch 1 with its intro');
 
+    await page.click('#moves');
+    await page.waitForSelector('#toast.show');
+    assert.match(await page.textContent('#toast .msg'), /^Par is 6\./);
+    assert.ok((await page.$eval('#toast', t => t.getBoundingClientRect().width)) > 150, 'toast is too narrow to read');
+    step('tapping the move counter explains par in a readable toast');
+
     for (const d of 'SSEEES') {
       await page.waitForFunction(() => !window.__squirm.busy(), null, { timeout: 30000 });
       await page.evaluate(d => window.__squirm.move(d), d);
