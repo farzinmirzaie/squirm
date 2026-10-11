@@ -1,0 +1,134 @@
+# CLAUDE.md
+
+Context for working on **Squirm**, a cozy turn-based worm puzzle game.
+
+## What it is
+
+The player steers a fixed-length worm on a grid of garden tiles, one swipe per move. The worm
+can't reverse into its own body or crawl onto soil. To finish a patch the worm must touch every
+flag and enter the burrow at exactly the length shown on the burrow's sign. Mechanics layer on
+top of that (listed below). Visual style: soft cartoon, pastel, cozy garden, perspective camera
+tilted about 56 degrees, mobile-first with swipe controls.
+
+## Shipping format
+
+`npm run build` writes a static site to `dist/` (git-ignored), which CI deploys to GitHub Pages on
+every push to `master`. It is an installable PWA that works fully offline:
+
+- `index.html`: markup, CSS and all game code joined from `src/`
+- `vendor/three.min.js`: three.js **r128** (UMD build), pinned as a devDependency. Don't upgrade
+  casually: later versions change color management and lighting, which shifts the whole look.
+- `fonts/`: Grandstander and Nunito woff2 (latin subset) from Fontsource
+- `manifest.webmanifest`, `icons/`: copied from `public/`
+- `sw.js`: built from `src/sw.js`. It precaches every file above under a cache named after a
+  content hash, so each deploy replaces the old cache.
+
+All paths are relative, so the site works from any sub-path. All 3D models are built
+procedurally in code, and all sounds are synthesized with Web Audio. Keep it that way: no
+bundler, no runtime dependencies besides three.js, no network requests at runtime.
+
+## Layout
+
+```
+src/shell.html   page markup + all CSS; has /*__FONTS__*/ /*__LOGIC__*/ /*__LEVELS__*/ /*__GAME__*/ slots
+src/logic.js     pure game rules: parseLevel, initState, step, tileAt, partner, cloneState (no DOM)
+src/levels.js    LEVELS array (110 handmade levels) + CHAPTER_NAMES
+src/game.js      everything else, in one IIFE: rendering, input, UI, audio, generator, solver
+src/sw.js        service worker template (version and file list filled in by the build)
+public/          manifest and icons, copied as-is into dist/
+tools/build.js   builds dist/ (see above) and syntax-checks the game script; --debug adds window.__squirm hooks
+tools/analyze.js BFS solver used for par, state count and "winnable %" (share of reachable states that can still win)
+tools/verify-levels.js  must pass before shipping level changes
+tools/curate.js  generates candidate levels with the in-game generator and picks a difficulty spread
+```
+
+`logic.js` and `levels.js` are plain scripts in the browser and CommonJS modules in Node (guarded
+`module.exports`), so the same rules run in the game, the hint solver and the tools.
+
+## Level format
+
+```js
+{ name:"Shell Corner", hint:"", par:18, exitLen:3, rain:false,
+  worm:[[x,y],...],            // head first, all orthogonally adjacent
+  map:[ ".Cv   ", "E.. . ", ... ] }
+```
+
+| char | meaning |
+|---|---|
+| `.` | grass tile |
+| ` ` | soil (blocked; decorated with plants) |
+| `E` | burrow (exit); needs all flags touched and length == exitLen |
+| `C` / `c` | flag / touched flag |
+| `+` / `-` | peach (grow 1) / mushroom (shrink 1) |
+| `x` | dry patch; sinks into the soil once the worm fully leaves it |
+| `K` / `G` | key / gate (each key opens one gate) |
+| `1`-`9` | tunnel pairs (internally still called "portals") |
+| `R` | cloud stone: toggles rain |
+| `s` / `w` | seedling (walkable only while raining) / puddle (blocked while raining) |
+| `~` | river (blocked) |
+| `=` / `\|` | bridge, crossable only along its axis (E-W / N-S) |
+| `L` | crank: rotates every bridge not under the worm |
+| `>` `<` `^` `v` | snail with its starting direction (tile underneath is `.`) |
+
+Snails move one tile after every worm move, only onto plain `.` tiles, and reverse instead of
+moving when blocked. The worm can't enter a snail's tile.
+
+## Hard rules for levels
+
+- Every level must be **solvable**, and `par` must equal the BFS shortest solution.
+  Run `npm run verify`.
+- **Pacing:** chapters are 10 levels each. A mechanic may not appear before its chapter:
+  flags from level 6, fruit 11, dry 21, keys 31, tunnels 41, rain 51, rivers 61, snails 101.
+  Chapters 8-10 mix earlier mechanics at rising difficulty. The first level of a chapter
+  should be a gentle introduction to its mechanic.
+- Difficulty inside a chapter rises. Use `par * (1 - winnable)` from `tools/analyze.js` as
+  a rough difficulty score.
+- Progress is stored **by level name**, so names must stay unique and shouldn't be renamed
+  once shipped.
+
+## Adding levels
+
+1. Hand-write, or generate candidates:
+   `LO=.5 HI=.95 node tools/curate.js ch12 '{"flags":true,"snails":true}' snails medium 5 1401 90`
+   (writes `gen/gen_ch12.json`, which is git-ignored). For snails, the tool also requires
+   that removing the snails shortens the solution, so they actually matter.
+2. Add entries to `src/levels.js`, extend `CHAPTER_NAMES` if starting a new chapter.
+3. `npm test` (verify + build).
+
+## Adding a mechanic
+
+Touch these places in order: rules in `src/logic.js` (`step`, and `cloneState` if it adds
+state), the solver keys (`tools/analyze.js`, plus `solveFrom` and `analyzeCapped` in
+`game.js`), rendering (`makeTile` / `makeItem` / a sync function in `game.js`), the intro
+dialog entry in `MECH`, `FEATURES` and `genCandidate` for endless mode, `THUMB_COL` for
+level-list thumbnails, and `introAt` in `tools/verify-levels.js`.
+
+## Key systems in game.js
+
+- **Scene:** perspective camera fitted so the board sits between the header and nav bar
+  (`fitCamera`). It may rotate 90 degrees for wide boards; swipes are mapped through the
+  projected grid directions, so controls always match the screen.
+- **Worm body:** a tube rebuilt every frame through segment anchors (`updateWorm`), with
+  tapered radius, segment rings and a crawl bulge. Tunnels split the body into chains
+  that dive into the ground.
+- **Head:** expressions (`applyExpr`), blinking, an idle look-at-camera cycle, reactions,
+  and falling asleep after 25 s.
+- **Overlays and back button:** a small layer stack mirrored to `window.history`
+  (`pushLayer` / `popLayer`). Note: inside the IIFE, `history` is the **undo stack**, not
+  the browser history. Always use `window.history`.
+- **Endless mode:** `genCandidate` + `analyzeCapped` + difficulty scoring in
+  `generateEndless`. The daily patch uses a date seed with a fixed number of tries so it's
+  deterministic.
+- **Saved data:** everything in `localStorage` under keys starting with `squirm-`. Don't rename
+  the keys or players lose progress. Other projects can share the origin (`<user>.github.io`), so
+  keep the prefix on every key and every cache name. The secret reset (hold the worm's head on
+  the home screen for 3 s) clears these keys.
+- **Offline and install:** `sw.js` is registered at boot (http/https only). The home screen
+  shows an install button when the browser fires `beforeinstallprompt`.
+
+## Conventions
+
+- Cozy, friendly UI copy, no jargon. Patches, not levels, in player-facing text.
+- Respect `prefers-reduced-motion`.
+- Wrap `localStorage` access in try/catch.
+- Keep the mobile performance budget in mind. Scenery is the first thing to trim.

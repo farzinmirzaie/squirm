@@ -1,0 +1,18 @@
+const {initState, step} = require('../src/logic');
+const key = s => s.segs.map(p=>p.join(',')).join(';')+'|'+s.grid.map(r=>r.join('')).join('/')+'|'+s.keys+'|'+(s.raining?1:0)+'|'+(s.snails||[]).map(n=>n.x+','+n.y+','+n.dx+','+n.dy).join(';');
+function analyze(L){
+  const s0=initState(L); const id=new Map(), states=[], edges=[], dist=[]; 
+  const add=(s,d)=>{const k=key(s); if(id.has(k)) return id.get(k); id.set(k,states.length); states.push(s); edges.push([]); dist.push(d); return states.length-1;};
+  add(s0,0); let wins=[], best=null, path={0:''};
+  for(let i=0;i<states.length;i++){ const s=states[i];
+    for(const d of ['N','S','W','E']){ const r=step(s,d); if(r.blocked) continue;
+      if(r.state.status==='won'){ wins.push(i); if(best===null||dist[i]+1<best.len) best={len:dist[i]+1,p:path[i]+d}; continue; }
+      if(r.state.status!=='play') continue;
+      const before=states.length; const j=add(r.state,dist[i]+1); edges[i].push(j); if(j===before) path[j]=path[i]+d; } }
+  // states that can still win
+  const rev=states.map(()=>[]); edges.forEach((es,i)=>es.forEach(j=>rev[j].push(i)));
+  const good=new Set(wins), st=[...wins]; while(st.length){ const x=st.pop(); for(const p of rev[x]) if(!good.has(p)){good.add(p); st.push(p);} }
+  return {states:states.length, good:good.size, par:best&&best.len, sol:best&&best.p};
+}
+module.exports=analyze;
+if(require.main===module){ const LV=require(process.argv[2]||'../src/levels'); LV.forEach((L,i)=>{const a=analyze(L); console.log(i+1,L.name,'par',a.par,'states',a.states,'winnable',(100*a.good/a.states).toFixed(0)+'%',a.sol);}); }
