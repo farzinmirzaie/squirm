@@ -40,7 +40,8 @@ const lineMat=new THREE.MeshBasicMaterial({color:C.line,side:THREE.BackSide});
 function outline(mesh,t=.028,r){ if(!mesh.geometry.boundingSphere) mesh.geometry.computeBoundingSphere();
   const rad=r||mesh.geometry.boundingSphere.radius; const o=new THREE.Mesh(mesh.geometry,lineMat); o.scale.setScalar(1+t/rad); mesh.add(o); return o; }
 function outlineBox(mesh,t,w,h,d){ const o=new THREE.Mesh(mesh.geometry,lineMat); o.scale.set(1+2*t/w,1+2*t/h,1+2*t/d); mesh.add(o); return o; }
-const GC={}; const sph=(r,ws=28,hs=20)=>{ const k=r+'_'+ws+'_'+hs; return GC[k]||(GC[k]=new THREE.SphereGeometry(r,ws,hs)); };
+// sphere geometries are cached by size; radii are rounded so random scenery sizes don't grow the cache forever
+const GC={}; const sph=(r,ws=28,hs=20)=>{ r=Math.round(r*100)/100; const k=r+'_'+ws+'_'+hs; return GC[k]||(GC[k]=new THREE.SphereGeometry(r,ws,hs)); };
 
 // ---------- audio ----------
 const AC=window.AudioContext||window.webkitAudioContext; let ac=null, master=null, muted=false;
@@ -155,7 +156,7 @@ function tree(r,s=1){ const g=new THREE.Group(); const h=1.1+r()*.5;
   if(r()<.5){ const fc=toon(r()<.5?0xFF9E9E:0xFFF0A8); for(let i=0;i<6;i++){ const f=new THREE.Mesh(sph(.05,10,8),fc); const a=r()*Math.PI*2; f.position.set(Math.cos(a)*.5,h+.2+r()*.5,Math.sin(a)*.5); g.add(f); } }
   g.scale.setScalar(s); return g; }
 const trees=new THREE.Group(); scene.add(trees);
-function placeTrees(){ trees.clear(); if(!state) return; const r=rng((mode==='garden'?li*31+7:(L.seed|0))+99);
+function placeTrees(){ disposeTree(trees); trees.clear(); if(!state) return; const r=rng((mode==='garden'?li*31+7:(L.seed|0))+99);
   const yaw=camYaw*Math.PI/180, fx=Math.sin(yaw), fz=Math.cos(yaw), sx=Math.cos(yaw), sz=-Math.sin(yaw);
   const hw=(camYaw%180===0?state.w:state.h)/2+1.4, hd=(camYaw%180===0?state.h:state.w)/2+1.4;
   for(let t=0;t<16;t++){ let side,along;
@@ -177,7 +178,7 @@ const blobTex=(()=>{ const cv=document.createElement('canvas'); cv.width=cv.heig
   gr.addColorStop(0,'rgba(40,30,25,.32)'); gr.addColorStop(1,'rgba(40,30,25,0)'); c.fillStyle=gr; c.fillRect(0,0,64,64); return new THREE.CanvasTexture(cv); })();
 let flyShadows=[], bedBox={cx:0,cz:0,hw:1,hd:1};
 function buildGarden(){ swayers=[];
-  garden.clear(); const r=rng(mode==='garden'?li*97+13:(L.seed|0));
+  disposeTree(garden); garden.clear(); const r=rng(mode==='garden'?li*97+13:(L.seed|0));
   const lawn=new THREE.Mesh(new THREE.PlaneGeometry(240,240),lawnMat); lawn.rotation.x=-Math.PI/2; lawn.rotation.z=.12; lawn.position.y=-.34; lawn.receiveShadow=true; garden.add(lawn);
   let x0=1e9,x1=-1e9,y0=1e9,y1=-1e9;
   for(let y=0;y<state.h;y++) for(let x=0;x<state.w;x++) if(state.grid[y][x]!==' '){ x0=Math.min(x0,x); x1=Math.max(x1,x); y0=Math.min(y0,y); y1=Math.max(y1,y); }
@@ -207,7 +208,7 @@ function buildGarden(){ swayers=[];
   Object.assign(sun.shadow.camera,{left:-s,right:s,top:s,bottom:-s,near:.5,far:40}); sun.shadow.camera.updateProjectionMatrix();
   sun.target.position.set(cx,0,cz); sun.position.set(cx-4,10,cz+5);
   // butterflies
-  flyers.clear(); flyShadows.forEach(removeObj); flyShadows=[]; bedBox={cx,cz,hw:bw/2,hd:bd/2}; for(let i=0;i<2;i++){ const b=new THREE.Group(); const col=[0xFFB3C9,0xFFE07A][i];
+  disposeTree(flyers); flyers.clear(); flyShadows.forEach(o=>{ disposeTree(o); removeObj(o); }); flyShadows=[]; bedBox={cx,cz,hw:bw/2,hd:bd/2}; for(let i=0;i<2;i++){ const b=new THREE.Group(); const col=[0xFFB3C9,0xFFE07A][i];
     const body=new THREE.Mesh(sph(.025,10,8),m('pupil')); body.scale.set(1,1,3); b.add(body);
     for(const sd of [-1,1]){ const piv=new THREE.Group(); const w=new THREE.Mesh(new THREE.CircleGeometry(.09,16),toon(col,{side:THREE.DoubleSide})); w.position.x=sd*.08; w.scale.set(1,1.3,1); w.rotation.x=-Math.PI/2; piv.add(w); b.add(piv); b.userData['w'+sd]=piv; }
     b.userData.ph=r()*10; b.userData.c=[cx,cz]; b.userData.R=R*.8+.5; flyers.add(b);
@@ -346,8 +347,16 @@ function makeItem(x,y,ch){
   else return null;
   faceCamera(g); board.add(g); return g;
 }
+// Each patch builds its own meshes; free their GPU memory when the next patch replaces them.
+// Cached and module-level geometries, materials and textures are shared, so they are kept.
+function disposeTree(root){
+  const keepG=new Set([...Object.values(GC),TURF,WATER,sparkGeo,ringGeo]);
+  const keepM=new Set([...Object.values(MC),lineMat,tubeMat,capMat,waterMatH,waterMatV,lawnMat,sparkMat]);
+  const keepT=new Set([gradTex,turfTex,crackTex,swirlTex,lawnTex,flowH,flowV,blobTex,zTex]);
+  root.traverse(o=>{ if(o.geometry&&!keepG.has(o.geometry)) o.geometry.dispose();
+    for(const mt of o.material?[].concat(o.material):[]){ if(keepM.has(mt)) continue; if(mt.map&&!keepT.has(mt.map)) mt.map.dispose(); mt.dispose(); } }); }
 function buildBoard(){
-  board.clear(); fx.clear(); cells=[];
+  disposeTree(board); disposeTree(fx); board.clear(); fx.clear(); cells=[];
   for(let y=0;y<state.h;y++){ const row=[]; for(let x=0;x<state.w;x++){
     const ch=state.grid[y][x]; row.push({ch, tile: ch===' '?null:makeTile(x,y,ch), item: makeItem(x,y,ch)}); } cells.push(row); }
   buildGarden(); buildRain(); syncWeather(false); buildSnails();
@@ -531,7 +540,7 @@ const tubeMat=new THREE.MeshToonMaterial({color:0xffffff,vertexColors:true,gradi
 const capMat=new THREE.MeshToonMaterial({color:0xffffff,gradientMap:gradTex});
 const COL_A=new THREE.Color(0xFFB3C8), tmpC=new THREE.Color();
 // worm colours, earned with garden stars: [name, body, head, stars needed]
-const WORM_COLS=[['Blossom',0xFFB3C8,0xFFB0C6,0],['Mint',0xA8E6C2,0x9EE0BA,15],['Butter',0xFFE08A,0xFFDA7A,45],['Lavender',0xCDB8F5,0xC5AEF2,90],['Sky',0xA9D8F5,0x9FD2F2,150]];
+const WORM_COLS=[['Blossom',0xFFB3C8,0xFFB0C6,0],['Mint',0x7FD9B0,0x74D3A6,15],['Butter',0xFFE08A,0xFFDA7A,45],['Lavender',0xCDB8F5,0xC5AEF2,90],['Sky',0xA9D8F5,0x9FD2F2,150]];
 const starTotal=()=>LEVELS.reduce((a,l)=>a+(progress.stars[l.name]||0),0);
 const coloursUnlocked=()=>WORM_COLS.filter(c=>starTotal()>=c[3]).length;
 let wormCol=0; try{ wormCol=Math.max(0,Math.min(WORM_COLS.length-1,parseInt(localStorage.getItem('squirm-colour')||'0',10)||0)); }catch(e){}
@@ -726,6 +735,7 @@ function petals(){ if(reduceMotion) return; const box=$('petals'); box.innerHTML
 function starsFor(mv,par,hinted){ let s = mv<=par?3 : mv<=Math.ceil(par*1.3)?2 : 1; if(hinted) s=Math.min(s,2); return s; }
 const STAR=(on,i)=>`<svg class="star ${on?'on':''}" style="animation-delay:${.15+i*.18}s" width="44" height="44" viewBox="0 0 24 24"><path d="M12 2.8l2.8 5.8 6.3.9-4.6 4.4 1.1 6.3L12 17.2l-5.6 3 1.1-6.3L2.9 9.5l6.3-.9z" fill="${on?'#FFD866':'#EADCC4'}" stroke="#5B4436" stroke-width="1.6" stroke-linejoin="round"/></svg>`;
 let shareText='', newBest=false, chapterDone=null;
+const shareLine=(what,mv,par,st)=>`Squirm, ${what}: ${mv} moves (par ${par}) ${'★'.repeat(st)}${'☆'.repeat(3-st)}`+(GAME_URL?'\n'+GAME_URL:'');
 function onWin(){ shareText=''; newBest=false; chapterDone=null; const coloursBefore=coloursUnlocked();
   const par=curPar(), mv=state.moves; const st=starsFor(mv,par,hintsUsed>0); clearResume();
   const titles=['Snug as a bug!','Home sweet burrow!','Wiggle well done!','Cozy and curled up!'];
@@ -739,7 +749,11 @@ function onWin(){ shareText=''; newBest=false; chapterDone=null; const coloursBe
     if(chapterDone) extra=`<div class="stat-row"><span class="pill">${ICON.leaf} ${chapterDone} finished</span></div>`;
     if(!chapterDone && ch){ let left=0; for(let i=ch.from;i<=ch.to;i++) if(i!==li&&!isCleared(i)) left++; if(left) extra=`<div class="stat-row"><span class="pill">${ICON.leaf} ${left} more in ${ch.name}</span></div>`; }
     if(newBest) extra+='<span class="newbest">New best</span>';
-    $('winNext').textContent = last ? 'Back to patch 1' : 'Next patch';
+    // 5. say so when the next patch opens a new chapter
+    const nextCh=!last&&CHAPTERS.find(c=>c.from===li+1);
+    $('winNext').textContent = last ? 'Back to patch 1' : nextCh ? 'Next chapter' : 'Next patch';
+    if(nextCh) extra+=`<div class="stat-row"><span class="pill unlock">Next up: ${nextCh.name}</span></div>`;
+    shareText=shareLine(`patch ${li+1} (${nm})`,mv,par,st);
   } else if(L.daily){
     const D=progress.daily, k=L.daily, prev=D.results[k];
     if(!prev){ const y=new Date(); y.setDate(y.getDate()-1); const yk=dateKey(y);
@@ -748,12 +762,12 @@ function onWin(){ shareText=''; newBest=false; chapterDone=null; const coloursBe
     const old=new Date(); old.setDate(old.getDate()-90); const ok=dateKey(old); for(const d in D.results) if(d<ok) delete D.results[d];
     $('winTitle').textContent="Today's patch, done!"; $('winNext').textContent='Back home';
     extra=`<div class="stat-row"><span class="pill">Daily streak ${D.streak}</span><span class="pill">Best ${D.best}</span></div>`;
-    shareText=`Squirm, daily patch ${k}: ${mv} moves (par ${par}) ${'★'.repeat(st)}${'☆'.repeat(3-st)}`+(GAME_URL?'\n'+GAME_URL:'');
+    shareText=shareLine(`daily patch ${k}`,mv,par,st);
   } else {
     const e=progress.endless[endlessDiff]; e.cleared++; e.streak++; e.best=Math.max(e.best,e.streak); e.stars+=st;
     $('winTitle').textContent = titles[e.cleared%titles.length];
     $('winNext').textContent = 'Grow another'; setTimeout(startPrefetch,900);
-    shareText='';
+    shareText=shareLine(`${DIFF_NAME[endlessDiff].toLowerCase()} endless patch, streak ${e.streak}`,mv,par,st);
     extra=`<div class="stat-row"><span class="pill">${DIFF_NAME[endlessDiff]}: ${e.cleared} cleared</span><span class="pill">Streak ${e.streak}</span></div>`;
   }
   save(); askPersist();
@@ -830,7 +844,7 @@ const ICON={
 };
 const sticker=svg=>`<span class="ic" aria-hidden="true">${svg}</span>`;
 function hudSub(){ if(mode==='garden'){ const ch=CHAPTERS.find(c=>li>=c.from&&li<=c.to); return ch?ch.name:''; }
-  if(L.daily) return 'Daily patch'; return 'Endless · '+DIFF_NAME[endlessDiff]; }
+  if(L.daily) return 'Daily patch'; const k=progress.endless[endlessDiff].streak; return 'Endless · '+DIFF_NAME[endlessDiff]+(k?` · streak ${k}`:''); }
 function statTip(k){ const par=curPar(), len=state.segs.length, fruit=/[+-]/.test(state.grid.map(r=>r.join('')).join(''));
   if(k==='moves') return `Par is ${par}. Finish in ${par} moves for 3 stars, or within ${Math.ceil(par*1.3)} for 2.`;
   if(k==='flags') return 'Touch every flag before the burrow will let you in.';
@@ -842,6 +856,7 @@ document.querySelector('.hud-stats').addEventListener('click',e=>{ const st=e.ta
 function updateHUD(silent){
   $('lvlNum').style.fontSize=String(mode==='garden'?li+1:0).length>2?'16px':''; $('lvlNum').textContent= mode==='garden' ? li+1 : L.daily ? new Date().getDate() : (progress.endless[endlessDiff].cleared+1); $('lvlName').textContent=L.name;
   $('lvlSub').textContent=hudSub(); document.body.dataset.mode=mode;
+  const tabTitle=(mode==='garden'?`${li+1} · `:'')+L.name+' · Squirm'; if(document.title!==tabTitle&&!$('homeOv').classList.contains('show')) document.title=tabTitle;
   const now=starsFor(state.moves,curPar(),hintsUsed>0), meter=[0,1,2].map(j=>`<i class="${j<now?'on':''}"></i>`).join('');
   const mv=$('moves'), mvHtml=`${sticker(ICON.steps)}<b>${state.moves}</b><span class="par">par ${curPar()}</span><em class="mini" aria-hidden="true">${meter}</em>`;
   if(mv.innerHTML!==mvHtml){ mv.innerHTML=mvHtml; if(!silent) pulse(mv); }
@@ -999,7 +1014,7 @@ window.addEventListener('popstate',()=>{ if(ignorePop>0){ ignorePop--; return; }
   else if(top==='game'){ hideAll(); showHome(); } });
 
 // ---------- home ----------
-function showHome(){ if(updateReady){ location.reload(); return; } renderHome(); show('homeOv'); }
+function showHome(){ if(updateReady){ location.reload(); return; } document.title='Squirm'; renderHome(); show('homeOv'); }
 function renderHome(){
   const cleared=LEVELS.filter((l,i)=>isCleared(i)).length, stars=LEVELS.reduce((a,l)=>a+(progress.stars[l.name]||0),0);
   $('gSub').textContent=`${cleared} of ${LEVELS.length} patches, ${stars} of ${LEVELS.length*3} stars`;
@@ -1043,6 +1058,19 @@ $('homeEndlessCont').onclick=()=>{ hide('endlessOv'); continueEndless(); };
 $('lvClose').onclick=()=>{ hide('lvOv'); popLayer('list'); };
 $('homeSound').onclick=()=>$('muteBtn').onclick();
 $('homeHaptic').onclick=()=>$('hapticBtn').onclick();
+// colour theme: follow the system, or force light or dark
+const THEMES=['auto','light','dark'];
+let theme='auto'; try{ theme=localStorage.getItem('squirm-theme')||'auto'; }catch(e){} if(!THEMES.includes(theme)) theme='auto';
+function applyTheme(){ if(theme==='auto') delete document.documentElement.dataset.theme; else document.documentElement.dataset.theme=theme;
+  const b=$('themeBtn'), label={auto:'Theme: matches your device',light:'Theme: light',dark:'Theme: dark'}[theme];
+  b.setAttribute('aria-label',label+'. Tap to change'); b.title=label;
+  b.innerHTML='<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">'+
+    (theme==='light'?'<circle cx="12" cy="12" r="4.5" fill="currentColor"/><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4"/>'
+    :theme==='dark'?'<path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z" fill="currentColor"/>'
+    :'<circle cx="12" cy="12" r="8.5"/><path d="M12 3.5a8.5 8.5 0 0 1 0 17z" fill="currentColor"/>')+'</svg>'; }
+$('themeBtn').onclick=()=>{ theme=THEMES[(THEMES.indexOf(theme)+1)%THEMES.length]; try{ localStorage.setItem('squirm-theme',theme); }catch(e){} applyTheme();
+  toast({auto:'Colours follow your device.',light:'Light garden, always.',dark:'Cozy dark garden, always.'}[theme],1800); };
+applyTheme();
 
 // ---------- secret reset ----------
 function askReset(){ sfx('stuck'); show('resetOv'); pushLayer('reset'); }

@@ -267,6 +267,12 @@ body.at-home #app{visibility:hidden}
   .lbl{display:none}
   #toast{margin-bottom:6px}
 }
+/* players who ask for more contrast get darker secondary text and stronger edges */
+@media (prefers-contrast: more){
+  :root{--ink-soft:#5B4436;--edge:#B8955F}
+  :root[data-theme="dark"]{--ink-soft:#FBEFDD;--edge:#A08468}
+}
+@media (prefers-contrast: more) and (prefers-color-scheme: dark){ :root:not([data-theme="light"]){--ink-soft:#FBEFDD;--edge:#A08468} }
 @media (prefers-reduced-motion: reduce){ .spin,.logo svg,.gbtn.hint .disc svg,#winNext{animation:none} #tutorial .hand{animation:none} .star{animation:none;transform:none} .pop{animation:none} .dialog{animation:none} #toast{transition:none} .petals{display:none} }
 </style>
 </head>
@@ -335,7 +341,7 @@ body.at-home #app{visibility:hidden}
     <span class="bt"><b>Daily patch</b><small id="dailySub">One patch for everyone today</small><span class="week" id="dailyWeek" aria-hidden="true"></span></span><span class="go" aria-hidden="true">&#8250;</span>
   </button>
   <div class="swatches" id="swatches" role="group" aria-label="Worm colour"></div>
-  <div class="home-tools"><button class="round" id="homeSound"></button><button class="round" id="homeHaptic"></button><button class="round" id="installBtn" aria-label="Install Squirm as an app" hidden><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7 10l5 5 5-5"/><path d="M5 19h14"/></svg></button></div>
+  <div class="home-tools"><button class="round" id="homeSound"></button><button class="round" id="homeHaptic"></button><button class="round" id="themeBtn"></button><button class="round" id="installBtn" aria-label="Install Squirm as an app" hidden><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7 10l5 5 5-5"/><path d="M5 19h14"/></svg></button></div>
   <p class="version">__BUILD__</p>
 </div></div>
 <div class="ov" id="endlessOv"><div role="dialog" aria-modal="true" aria-labelledby="endlessTitle" class="dialog card sheet">

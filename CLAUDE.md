@@ -39,7 +39,8 @@ public/          manifest and icons, copied as-is into dist/
 tools/build.js   builds dist/ (see above) and syntax-checks the game script; --debug adds window.__squirm hooks
 tools/analyze.js BFS solver used for par, state count and "winnable %" (share of reachable states that can still win)
 tools/verify-levels.js  must pass before shipping level changes
-test/            logic.test.js: node:test unit tests for the rules; smoke.js: plays patch 1 in headless Chromium (npm run smoke, also in CI)
+test/            logic.test.js: rules; generator.test.js: daily/endless generation; smoke.js: plays patch 1 in headless Chromium (npm run smoke, also in CI)
+tools/load-generator.js  loads the endless generator from game.js into Node (used by curate.js and tests)
 tools/curate.js  generates candidate levels with the in-game generator and picks a difficulty spread
 ```
 
@@ -123,6 +124,9 @@ level-list thumbnails, and `introAt` in `tools/verify-levels.js`.
 - **Performance:** `watchSpeed` lowers `quality` (pixel ratio, shadow map size) when most frames
   take over 28 ms, and remembers it in `squirm-quality`. Behind menus the blurred garden is drawn
   every third frame only.
+- **GPU memory:** `disposeTree` frees a patch's meshes when the next one is built. Anything
+  cached or defined at module level (`GC`, `MC`, the shared textures and materials) is kept; add
+  new shared resources to its keep lists. `sph` rounds radii so its cache stays bounded.
 - **Saved data:** everything in `localStorage` under keys starting with `squirm-`. Don't rename
   the keys or players lose progress. Other projects can share the origin (`<user>.github.io`), so
   keep the prefix on every key and every cache name. The secret reset (hold the worm's head on

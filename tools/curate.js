@@ -3,13 +3,8 @@
 // usage: [LO=0.3 HI=0.9] node tools/curate.js <tag> <allowedFeaturesJSON> <required|none> <easy,medium,hard> <count> <seed> <seconds>
 // example: LO=.5 HI=.95 node tools/curate.js ch12 '{"flags":true,"snails":true}' snails medium 5 1401 90
 // output: gen/gen_<tag>.json
-const fs=require('fs'); const g=fs.readFileSync(require('path').join(__dirname,'../src/game.js'),'utf8');
-const logic=fs.readFileSync(require('path').join(__dirname,'../src/logic.js'),'utf8').replace(/if\(typeof module.*$/m,'');
-const seg=g.slice(g.indexOf('// ---------- endless meadow ----------'), g.indexOf('const todayKey'));
-const rngSrc=g.match(/function rng\(seed\)\{[^\n]*\n?/)[0];
-const code=logic+'\n'+rngSrc+'\nconst performance={now:()=>Date.now()}; const $=()=>({}); const progress={};\n'+seg+'\nmodule.exports={genCandidate,analyzeCapped,usage};';
-fs.writeFileSync(require('path').join(require('os').tmpdir(),'squirm_eg.js'),code);
-const {genCandidate,analyzeCapped,usage}=require(require('path').join(require('os').tmpdir(),'squirm_eg.js'));
+const fs=require('fs');
+const {genCandidate,analyzeCapped,usage}=require('./load-generator')();
 // args: name allowedJSON required diffsCSV count seed timeLimitSec
 const [ , , tag, allowedJ, required, diffsCSV, countS, seedS, tl]=process.argv;
 const allowed=JSON.parse(allowedJ), diffs=diffsCSV.split(','), count=+countS; let seed=+seedS;
