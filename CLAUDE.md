@@ -127,6 +127,11 @@ level-list thumbnails, and `introAt` in `tools/verify-levels.js`.
 - **GPU memory:** `disposeTree` frees a patch's meshes when the next one is built. Anything
   cached or defined at module level (`GC`, `MC`, the shared textures and materials) is kept; add
   new shared resources to its keep lists. `sph` rounds radii so its cache stays bounded.
+- **Settings and backups:** the gear on the home screen opens `setOv` (sound, vibration, theme,
+  save code, start over). A save code is `SQUIRM1:` + base64 JSON of every `squirm-` key except
+  the throwaway ones in `SAVE_SKIP`; restoring replaces those keys and reloads.
+- **Ambient motion:** river tiles register in `flowTiles` (drifting leaf, glints, ripple, a
+  water-babble sound loop); snails leave a slime strip (`trail`) that grows from tile to tile.
 - **Saved data:** everything in `localStorage` under keys starting with `squirm-`. Don't rename
   the keys or players lose progress. Other projects can share the origin (`<user>.github.io`), so
   keep the prefix on every key and every cache name. The secret reset (hold the worm's head on

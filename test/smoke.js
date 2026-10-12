@@ -59,6 +59,14 @@ const errors = [];
     assert.equal(progress.stars['First wiggle'], 3);
     step('solves patch 1 on par and saves 3 stars');
 
+    await page.keyboard.press('Escape');
+    const mem = async () => { for (const i of [40, 60, 91, 100, 30]) { await page.evaluate(i => window.__squirm.load(i), i); await page.waitForTimeout(400); }
+      return page.evaluate(() => window.__squirm.mem()); };
+    const m1 = await mem(), m2 = await mem();
+    assert.ok(m2.geometries - m1.geometries < 40, `GPU geometries grew from ${m1.geometries} to ${m2.geometries}`);
+    assert.equal(m2.textures, m1.textures, 'GPU textures grew');
+    step(`GPU memory stays flat across patches (${m1.geometries} -> ${m2.geometries} geometries)`);
+
     await ctx.setOffline(true);
     await page.reload();
     await page.waitForSelector('#homeOv.show', { timeout: 30000 });

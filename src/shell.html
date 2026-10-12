@@ -174,6 +174,14 @@ button[hidden]{display:none!important}
 .big small{font-weight:700;color:var(--ink-soft);font-size:14px}
 .big .go{flex:none;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:var(--leaf);border:2.5px solid var(--leaf-dark);color:#fff;font:800 24px/1 "Grandstander",sans-serif;padding-bottom:3px;box-shadow:0 3px 0 var(--leaf-dark)}
 .home-tools{display:flex;justify-content:center;gap:10px;margin-top:4px}
+.set-row{display:flex;justify-content:space-between;align-items:center;font:800 18px/1 "Grandstander",ui-rounded,system-ui,sans-serif;padding:2px 2px}
+.switch{position:relative;width:58px;height:34px;flex:none;border-radius:999px;border:3px solid var(--edge);background:var(--paper-2);cursor:pointer;padding:0;transition:background .2s}
+.switch i{position:absolute;top:2px;left:2px;width:24px;height:24px;border-radius:50%;background:var(--paper);box-shadow:0 2px 0 var(--edge);transition:transform .2s cubic-bezier(.2,1.4,.4,1)}
+.switch[aria-checked="true"]{background:var(--leaf);border-color:var(--leaf-dark)}
+.switch[aria-checked="true"] i{transform:translateX(24px);background:#fff}
+.set-note{margin:-4px 0 0!important;font-size:14px!important;text-align:left}
+#saveCode{width:100%;resize:none;border-radius:16px;border:3px solid var(--edge);background:var(--paper-2);color:var(--ink);font:700 13px/1.3 ui-monospace,Menlo,monospace;padding:10px;user-select:text;-webkit-user-select:text;touch-action:auto}
+.link.danger{align-self:center;color:#D2566F}
 .version{margin:-4px 0 0;text-align:center;font-size:12px;font-weight:700;color:var(--ink-soft);opacity:.75}
 .sheet h2{margin-bottom:12px}
 .sheet{display:flex;flex-direction:column;gap:12px;text-align:left}
@@ -341,8 +349,7 @@ body.at-home #app{visibility:hidden}
     <span class="bt"><b>Daily patch</b><small id="dailySub">One patch for everyone today</small><span class="week" id="dailyWeek" aria-hidden="true"></span></span><span class="go" aria-hidden="true">&#8250;</span>
   </button>
   <div class="swatches" id="swatches" role="group" aria-label="Worm colour"></div>
-  <div class="home-tools"><button class="round" id="homeSound"></button><button class="round" id="homeHaptic"></button><button class="round" id="themeBtn"></button><button class="round" id="installBtn" aria-label="Install Squirm as an app" hidden><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7 10l5 5 5-5"/><path d="M5 19h14"/></svg></button></div>
-  <p class="version">__BUILD__</p>
+  <div class="home-tools"><button class="round" id="homeSound"></button><button class="round" id="settingsBtn" aria-label="Settings" title="Settings"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.8v2.4M12 18.8v2.4M2.8 12h2.4M18.8 12h2.4M5.5 5.5l1.7 1.7M16.8 16.8l1.7 1.7M5.5 18.5l1.7-1.7M16.8 7.2l1.7-1.7"/><circle cx="12" cy="12" r="6.6"/></svg></button><button class="round" id="installBtn" aria-label="Install Squirm as an app" hidden><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7 10l5 5 5-5"/><path d="M5 19h14"/></svg></button></div>
 </div></div>
 <div class="ov" id="endlessOv"><div role="dialog" aria-modal="true" aria-labelledby="endlessTitle" class="dialog card sheet">
   <h2 id="endlessTitle">Endless meadow</h2>
@@ -353,6 +360,22 @@ body.at-home #app{visibility:hidden}
   <div class="stat-row" id="eStats"></div>
   <div class="row"><button class="btn" id="homeEndlessCont" hidden>Resume</button><button class="btn primary" id="endlessGo">Grow a patch</button></div>
   <button class="btn ghost" id="endlessClose">Back</button>
+</div></div>
+<div class="ov" id="setOv"><div role="dialog" aria-modal="true" aria-labelledby="setTitle" class="dialog card sheet">
+  <h2 id="setTitle">Settings</h2>
+  <div class="set-row"><span>Sound</span><button class="switch" id="setSound" role="switch" aria-checked="true" aria-label="Sound"><i></i></button></div>
+  <div class="set-row"><span>Vibration</span><button class="switch" id="setHaptic" role="switch" aria-checked="true" aria-label="Vibration"><i></i></button></div>
+  <p class="label">Colours</p>
+  <div class="seg" id="setTheme" role="radiogroup" aria-label="Colours">
+    <button role="radio" data-t="auto"><b>Auto</b><small>Like device</small></button><button role="radio" data-t="light"><b>Light</b><small>Sunny</small></button><button role="radio" data-t="dark"><b>Dark</b><small>Cozy</small></button>
+  </div>
+  <p class="label">Your garden</p>
+  <p class="set-note">Copy a save code to move your stars and streaks to another device.</p>
+  <textarea id="saveCode" rows="3" hidden spellcheck="false" autocomplete="off" aria-label="Save code" placeholder="Paste a save code here"></textarea>
+  <div class="row"><button class="btn" id="saveCopy">Copy code</button><button class="btn" id="saveLoad">Restore</button></div>
+  <button class="link danger" id="setReset">Start over</button>
+  <button class="btn primary" id="setClose">Done</button>
+  <p class="version">__BUILD__</p>
 </div></div>
 <div class="ov" id="resetOv"><div role="dialog" aria-modal="true" aria-labelledby="resetTitle" class="dialog card">
   <h2 id="resetTitle">Start over?</h2><p>This clears every star, best score, streak and setting. Your worm will forget everything.</p>
