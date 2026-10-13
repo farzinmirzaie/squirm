@@ -32,7 +32,7 @@ bundler, no runtime dependencies besides three.js, no network requests at runtim
 ```
 src/shell.html   page markup + all CSS; has /*__FONTS__*/ /*__LOGIC__*/ /*__LEVELS__*/ /*__GAME__*/ slots
 src/logic.js     pure game rules: parseLevel, initState, step, tileAt, partner, cloneState (no DOM)
-src/levels.js    LEVELS array (110 handmade levels) + CHAPTER_NAMES
+src/levels.js    LEVELS array (130 levels) + CHAPTER_NAMES
 src/game.js      everything else, in one IIFE: rendering, input, UI, audio, generator, solver
 src/sw.js        service worker template (version and file list filled in by the build)
 public/          manifest and icons, copied as-is into dist/
@@ -71,16 +71,25 @@ tools/curate.js  generates candidate levels with the in-game generator and picks
 | `=` / `\|` | bridge, crossable only along its axis (E-W / N-S) |
 | `L` | crank: rotates every bridge not under the worm |
 | `>` `<` `^` `v` | snail with its starting direction (tile underneath is `.`) |
+| `B` / `H` | flower button / hedge: every hedge is open while any worm segment is on a flower |
+| `i` | wet leaf: the head keeps sliding the same way until it is off the leaves or blocked |
 
 Snails move one tile after every worm move, only onto plain `.` tiles, and reverse instead of
 moving when blocked. The worm can't enter a snail's tile.
+
+The head may enter a hedge only if the worm still covers a flower *after* that move, so a hedge
+within reach of the flower needs a long enough worm. Hedge state is derived from the worm, so it
+adds nothing to the solver key. A slide is one move: `step` calls `advance` repeatedly, snails
+move once at the end, and `ev.slide` carries the in-between states so the game can animate each
+tile of the slide.
 
 ## Hard rules for levels
 
 - Every level must be **solvable**, and `par` must equal the BFS shortest solution.
   Run `npm run verify`.
 - **Pacing:** chapters are 10 levels each. A mechanic may not appear before its chapter:
-  flags from level 6, fruit 11, dry 21, keys 31, tunnels 41, rain 51, rivers 61, snails 101.
+  flags from level 6, fruit 11, dry 21, keys 31, tunnels 41, rain 51, rivers 61, snails 101,
+  flower buttons 111, wet leaves 121.
   Chapters 8-10 mix earlier mechanics at rising difficulty. The first level of a chapter
   should be a gentle introduction to its mechanic.
 - Difficulty inside a chapter rises. Use `par * (1 - winnable)` from `tools/analyze.js` as

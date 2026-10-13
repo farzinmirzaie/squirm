@@ -30,3 +30,13 @@ test('generated patches are solvable and their par is the true shortest solution
     assert.ok(L.par >= 5, `${diff} patch is too short`);
   }
 });
+
+test('endless patches with flower buttons and wet leaves use them and are solvable', async () => {
+  for (const [opts, seed] of [[{ flags: true, buttons: true }, 5], [{ flags: true, leaves: true }, 6]]) {
+    const L = await generateEndless('medium', opts, seed, 15);
+    const a = analyze(L);
+    assert.ok(a.par, 'unsolvable');
+    assert.equal(L.par, a.par);
+    assert.ok(/[HBi]/.test(L.map.join('')), 'the mechanic is not on the board');
+  }
+});

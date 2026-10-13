@@ -1,7 +1,7 @@
 // Unit tests for the pure game rules in src/logic.js. Run with `npm test`.
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { initState, step, tileAt } = require('../src/logic');
+const { initState, step, tileAt, hedgesOpen } = require('../src/logic');
 const LEVELS = require('../src/levels');
 
 const level = (map, worm, o = {}) => ({ name: 'test', par: 0, exitLen: worm.length, rain: false, map, worm, ...o });
@@ -100,6 +100,41 @@ test('snails slide after every move, turn around when blocked and block the worm
   r = play(r.state, ['E']);
   assert.deepEqual([r.state.snails[0].x, r.state.snails[0].dx], [3, -1]);
   assert.equal(step(r.state, 'E').blocked, 'snail');
+});
+
+test('a hedge opens only while the worm still holds a flower after the move', () => {
+  const map = ['B.H..', '.....'];
+  // length 2 with the tail on the flower: the tail lifts off as the head reaches the hedge
+  const short = initState(level(map, [[1, 0], [0, 0]]));
+  assert.equal(hedgesOpen(short), true);
+  assert.equal(step(short, 'E').blocked, 'hedge');
+  // length 3: the middle is still on the flower when the head enters the hedge
+  const long = initState(level(map, [[1, 0], [0, 0], [0, 1]]));
+  const r = play(long, ['E']);
+  assert.deepEqual(r.state.segs[0], [2, 0]);
+  // past the hedge it can carry on even though the flower is let go
+  const on = play(r.state, ['E']);
+  assert.equal(hedgesOpen(on.state), false);
+});
+
+test('wet leaves slide the worm until it is off the leaves, as one move', () => {
+  const s = initState(level(['.iii..'], [[0, 0]]));
+  const r = play(s, ['E']);
+  assert.deepEqual(r.state.segs[0], [4, 0]);
+  assert.equal(r.state.moves, 1);
+  assert.equal(r.ev.slide.length, 3);
+});
+
+test('a slide stops early when something is in the way', () => {
+  const r = play(initState(level(['.ii ', '....'], [[0, 0]])), ['E']);
+  assert.deepEqual(r.state.segs[0], [2, 0]);
+  const g = initState(level(['.iiG.'], [[0, 0]]));
+  assert.deepEqual(play(g, ['E']).state.segs[0], [2, 0]);
+});
+
+test('snails move once per swipe, even after a long slide', () => {
+  const r = play(initState(level(['.iii.', '.....', '>....'], [[0, 0]])), ['E']);
+  assert.equal(r.state.snails[0].x, 1);
 });
 
 test('moves never change the state they were given', () => {

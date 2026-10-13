@@ -9,7 +9,7 @@ garden patches, touch every flag, and slip into the burrow at exactly the right 
 
 <p align="center"><img src="docs/screenshot-home.png" width="260" alt="Squirm home screen"> <img src="docs/screenshot-game.png" width="260" alt="A worm crawling to its burrow"></p>
 
-- 110 handmade patches in 11 chapters, each introducing one mechanic
+- 130 patches in 13 chapters, each introducing one mechanic
 - Endless mode with generated, solver-checked patches (easy / medium / hard)
 - A daily patch that's the same for everyone, with stars, streaks, hints and undo
 - Haptics and synthesized sound, with no audio or image files
@@ -23,7 +23,8 @@ flag, then crawl into the burrow at exactly the length shown on its sign.
 
 New garden helpers and hazards arrive chapter by chapter: peaches and mushrooms change your
 length, dry patches sink once you leave them, keys open gates, tunnels connect, cloud stones
-toggle rain (seedlings grow, puddles fill), cranks swing bridges, and snails get in the way.
+toggle rain (seedlings grow, puddles fill), cranks swing bridges, snails get in the way,
+flowers hold hedges open while you rest on them, and wet leaves send you sliding.
 Finish a patch in par moves for three stars; stuck? Undo, restart, or ask for a hint.
 
 ## Develop

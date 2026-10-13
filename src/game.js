@@ -8,6 +8,7 @@ const C = {
   head:0xFFB0C6, riverWater:0x8CCFEA, plank:0xD9A56E, plankDark:0xB98352, leafBig:0x7CC95F, water:0x9ED6EF, mud:0x8A5E43, cloud:0xFFFFFF, rainCloud:0xAEBBD2, eye:0xFFFFFF, pupil:0x3B2A22, cheek:0xFF6F96,
   peach:0xFFA27C, leaf:0x6CC97A, cap:0xB79CF2, stem:0xFFF1DE, key:0xF7C64F, gateWood:0xC88A55,
   flag:0xF27DA2, flagDone:0x79C95F, pole:0xB98A62,
+  wetLeaf:0x8EE0B4, leafVein:0x5DBA8A, dew:0xEAF8FF, hedge:0x5FA64F, hedgeDark:0x4E8F40, petalB:0xF7A8C4,
   burrow:0x3A2A22, mound:0xB07B57, ready:0x8EDB72, line:0x5B4436,
   portal:{ '1':0x7FCFEA, '2':0xC69CF7, '3':0xFFB877, '4':0x9BE39B }
 };
@@ -79,11 +80,14 @@ const SFX={
   tap:()=>{ tone(880,.05,{type:'triangle',vol:.07,slide:1.2}); },
   win:()=>{ [523,659,784,1046].forEach((f,i)=>tone(f,.28,{type:'triangle',vol:.14,delay:i*.11})); tone(1318,.6,{vol:.1,delay:.46}); tone(1568,.7,{vol:.08,delay:.5}); },
   ready:()=>{ tone(880,.15,{vol:.08}); tone(1320,.25,{vol:.07,delay:.08}); },
+  slide:()=>{ noise(.16,{freq:2600,slide:.5,vol:.05,q:1.5}); tone(620,.14,{type:'sine',vol:.05,slide:1.4}); },
+  hedgeOpen:()=>{ noise(.3,{freq:900,vol:.09,q:1.2,slide:.5}); tone(392,.2,{type:'triangle',vol:.06,slide:.8}); },
+  hedgeClose:()=>{ noise(.26,{freq:500,vol:.08,q:1.2,slide:1.6}); tone(294,.18,{type:'triangle',vol:.05,slide:1.2}); },
   snail:()=>{ tone(330,.14,{type:'sine',vol:.05,slide:.75}); tone(250,.12,{type:'sine',vol:.035,slide:.8,delay:.08}); },
 };
 let hapticsOn=true; try{ hapticsOn=localStorage.getItem('squirm-haptics')!=='0'; }catch(e){}
 const HAPTIC={move:8,grow:[10,30,14],shrink:[14,30,10],key:[8,25,8,25,12],gate:22,flag:[12,40,16],portal:[10,30,24],crumble:28,bump:[14,30,14],stuck:[40,70,40],undo:6,
-  tap:5,win:[30,60,30,60,90],ready:[10,40,10],rainOn:[30,50,15],creak:[20,40,20,40,20],rainOff:[15,50,30]};
+  tap:5,win:[30,60,30,60,90],ready:[10,40,10],slide:6,hedgeOpen:[12,30,12],hedgeClose:14,rainOn:[30,50,15],creak:[20,40,20,40,20],rainOff:[15,50,30]};
 const iosHaptic=(()=>{ try{ const l=document.createElement('label'); l.setAttribute('aria-hidden','true'); l.style.cssText='position:fixed;left:-200px;top:0;width:1px;height:1px;opacity:0;pointer-events:none';
   const i=document.createElement('input'); i.type='checkbox'; i.setAttribute('switch',''); i.tabIndex=-1; l.appendChild(i); document.body.appendChild(l); return l; }catch(e){ return null; } })();
 function buzz(p){ if(!hapticsOn||p==null) return;
@@ -249,6 +253,15 @@ function makeBridge(ch){ const br=new THREE.Group(); const wm=m('plank'), dm=m('
 function makeTile(x,y,ch){
   const g=new THREE.Group(); const dry=ch==='x';
   if(ch==='~'||ch==='='||ch==='|'){ waterTile(g,x,y); if(ch!=='~'){ const br=makeBridge(ch); g.add(br); g.userData.bridge=br; } g.userData.river=true; g.position.copy(wp(x,y)); board.add(g); return g; }
+  if(ch==='i'){ // a big wet leaf lying on the grass: slippery
+    const top=new THREE.Mesh(TURF,m('turf2')); top.position.y=-.15; top.receiveShadow=true; outlineBox(top,.02,.94,.3,.94); g.add(top);
+    const leaf=new THREE.Group(); leaf.position.y=.01; leaf.rotation.y=(x*5+y*3)%4*.35; g.add(leaf);
+    const pad=new THREE.Mesh(sph(.44,32,14),m('wetLeaf')); pad.scale.set(1.05,.07,.95); pad.receiveShadow=true; outline(pad,.02); leaf.add(pad);
+    const vein=new THREE.Mesh(new THREE.BoxGeometry(.72,.012,.03),m('leafVein')); vein.position.y=.032; leaf.add(vein);
+    for(const sd of [-1,1]) for(const t of [-.16,.14]){ const v=new THREE.Mesh(new THREE.BoxGeometry(.22,.012,.022),m('leafVein')); v.position.set(t,.032,sd*.09); v.rotation.y=sd*.7; leaf.add(v); }
+    const shine=new THREE.Mesh(new THREE.CircleGeometry(.2,20),new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:.35,depthWrite:false})); shine.rotation.x=-Math.PI/2; shine.scale.set(1.3,.35,1); shine.position.set(-.08,.036,-.12); leaf.add(shine);
+    for(let i=0;i<3;i++){ const dw=new THREE.Mesh(sph(.035,10,8),m('dew')); dw.scale.y=.6; dw.position.set(Math.cos(i*2.3+x)*.22,.045,Math.sin(i*2.3+y)*.2); leaf.add(dw); }
+    g.userData.wetLeaf=leaf; g.position.copy(wp(x,y)); board.add(g); return g; }
   if(ch==='s'){ // a seedling in the soil; rain grows it into a big leaf you can crawl on
     const sp=sprout(Math.random); sp.position.y=-.22; sp.scale.setScalar(1.6); g.add(sp); g.userData.sprout=sp;
     const leaf=new THREE.Group(); const lm=m('leafBig');
@@ -330,6 +343,16 @@ function makeItem(x,y,ch){
       for(let k=0;k<5;k++){ const pt=new THREE.Mesh(sph(.032,10,8),fm); const b=k/5*Math.PI*2; pt.position.set(Math.cos(b)*.04,.04,Math.sin(b)*.04); pt.scale.y=.5; f.add(pt); }
       const c=new THREE.Mesh(sph(.024,10,8),toon(0xFFD866)); c.position.y=.05; f.add(c); g.add(f); }
     g.userData.tunnel=hole; }
+  else if(ch==='B'){ // a big flower lying flat: a button that holds the hedges open while the worm rests on it
+    const fl=new THREE.Group(); fl.position.y=.02; g.add(fl); g.userData.flower=fl;
+    const base=mk(new THREE.CylinderGeometry(.36,.38,.04,24),m('leaf'),fl,[0,.0,0],.014); base.receiveShadow=true;
+    for(let i=0;i<8;i++){ const a=i/8*Math.PI*2; const pt=new THREE.Mesh(sph(.13,16,10),m('petalB')); pt.scale.set(1.2,.28,.62); pt.position.set(Math.cos(a)*.21,.05,Math.sin(a)*.21); pt.rotation.y=-a; pt.castShadow=true; outline(pt,.012); fl.add(pt); }
+    const c=mk(sph(.12,18,12),m('key'),fl,[0,.07,0],.014); c.scale.y=.5; }
+  else if(ch==='H'){ // a little hedge that sinks into the ground while a flower is held
+    const hg=new THREE.Group(); g.add(hg); g.userData.hedge=hg;
+    const box=new THREE.Mesh(new THREE.BoxGeometry(.8,.5,.8),m('hedge')); box.position.y=.25; box.castShadow=true; box.receiveShadow=true; outlineBox(box,.02,.8,.5,.8); hg.add(box);
+    for(let i=0;i<9;i++){ const b=new THREE.Mesh(sph(.17,14,10),i%2?m('hedge'):m('hedgeDark')); b.position.set(((i%3)-1)*.27,.5+((i*7)%3)*.02,(Math.floor(i/3)-1)*.27); b.castShadow=true; hg.add(b); }
+    for(let i=0;i<4;i++){ const fl=new THREE.Mesh(sph(.04,10,8),m('petalB')); fl.position.set(Math.cos(i*1.7)*.3,.62,Math.sin(i*1.7)*.3); hg.add(fl); } }
   else if(ch==='L'){ mk(new THREE.CylinderGeometry(.14,.17,.1,18),toon(0xD8CFC4),g,[0,.05,0],.014);
     mk(new THREE.BoxGeometry(.09,.5,.09),m('plankDark'),g,[0,.3,0],.014);
     const wheel=new THREE.Group(); wheel.position.set(0,.5,.07); g.add(wheel); g.userData.wheel=wheel; g.userData.faceCam=true;
@@ -372,8 +395,15 @@ function buildBoard(){
   disposeTree(board); disposeTree(fx); board.clear(); fx.clear(); cells=[]; flowTiles=[];
   for(let y=0;y<state.h;y++){ const row=[]; for(let x=0;x<state.w;x++){
     const ch=state.grid[y][x]; row.push({ch, tile: ch===' '?null:makeTile(x,y,ch), item: makeItem(x,y,ch)}); } cells.push(row); }
-  buildGarden(); buildRain(); syncWeather(false); buildSnails();
+  buildGarden(); buildRain(); syncWeather(false); buildSnails(); syncHedges(false);
 }
+// hedges stand while no flower is held and sink while one is (or while the worm is inside them)
+function syncHedges(animate){ if(!state) return; const open=hedgesOpen(state); let changed=false;
+  for(let y=0;y<state.h;y++) for(let x=0;x<state.w;x++){ const it=cells[y]&&cells[y][x]&&cells[y][x].item; if(!it) continue; const u=it.userData;
+    if(u.flower){ const want=occupied(x,y)?.35:1; if(u.pressed!==want){ u.pressed=want; const f=u.flower, s0=f.scale.y; if(animate) tween(180,e=>{ f.scale.y=s0+(want-s0)*e; }); else f.scale.y=want; } }
+    if(u.hedge){ const want=open||occupied(x,y)?.06:1; if(u.hedgeH!==want){ if(u.hedgeH!==undefined) changed=true; u.hedgeH=want; const h=u.hedge, s0=h.scale.y;
+        if(animate) tween(300,e=>{ h.scale.y=Math.max(.06,s0+(want-s0)*e); h.position.y=-(1-h.scale.y)*.06; }); else { h.scale.y=want; h.position.y=-(1-want)*.06; } } } }
+  if(changed&&animate) sfx(open?'hedgeOpen':'hedgeClose'); }
 function removeObj(o){ if(o&&o.parent) o.parent.remove(o); }
 // ---------- snails ----------
 let snailMeshes=[];
@@ -689,8 +719,10 @@ function tryMove(dir){
     if(r.blocked==='bridge') toast('Bridges only go along their planks.');
     if(r.blocked==='flooded') toast('That puddle is full of water. Wait for the sun.');
     if(r.blocked==='sprout') toast('Just a seedling. It needs rain to grow into a leaf.');
+    if(r.blocked==='hedge') toast('The hedge only opens while part of you rests on a flower.');
     nudge(dir); return; }
   history.push(state); const prev=state; state=r.state; lastMoveT=idleT; clearHint(); saveResume(); dismissTutorial();
+  if(r.ev.slide){ slideSteps=r.ev.slide.slice(1).map(x=>({state:x.state,ev:x.ev})).concat([{state:r.state,ev:r.ev}]); state=r.ev.slide[0].state; animateMove(prev,r.ev.slide[0].ev,dir); return; }
   animateMove(prev,r.ev,dir);
 }
 function nudge(dir){ // the head leans toward the blocked spot and springs back
@@ -698,11 +730,12 @@ function nudge(dir){ // the head leans toward the blocked spot and springs back
   const look=Math.atan2(d[0],d[1]); h.rotation.y=angLerp(h.rotation.y,look,.6);
   tween(260,(e,k)=>{ const s=Math.sin(k*Math.PI)*.13*(1-k*.3); h.position.set(base.x+d[0]*s,base.y,base.z+d[1]*s); },()=>{ h.position.copy(base); animating--; if(queue.length) tryMove(queue.shift()); });
 }
-function animateMove(prev,ev,dir){
+let slideSteps=[];
+function animateMove(prev,ev,dir,sliding){
   animating++;
   const d=DIRS[dir]; headDir=[d[0],d[1]];
-  sfx(ev.portal?'portal':'move',state.moves);
-  syncBoard(true); syncWeather(true); if(ev.snails) syncSnails(true,ev);
+  sfx(ev.portal?'portal':sliding?'slide':'move',state.moves);
+  syncBoard(true); syncWeather(true); syncHedges(true); if(ev.snails) syncSnails(true,ev);
   if(ev.swung){ sfx('creak'); const it=cells[state.segs[0][1]][state.segs[0][0]].item; if(it&&it.userData.wheel){ const w=it.userData.wheel, z0=w.rotation.z; tween(600,(e)=>{ w.rotation.z=z0-e*Math.PI*1.5; }); }
     if(!ev.swung.length) toast('Nothing turned. Bridges with you on them stay put.',2400); }
   if(ev.rain!==undefined){ sfx(ev.rain?'rainOn':'rainOff'); toast(ev.rain?'Rain is falling. Leaves grow, puddles fill.':'The sun is back. Puddles dry, leaves fold away.',2400); }
@@ -715,7 +748,7 @@ function animateMove(prev,ev,dir){
   const tele=segMeshes.map((s,i)=>{ if(i===0||starts[i].distanceTo(targets[i])<1.3) return null; const q=state.segs[i]; const pp=partner(state,q[0],q[1]);
     return pp ? {down:wp(pp[0],pp[1],-.3), up:wp(q[0],q[1],-.3)} : {down:starts[i].clone().setY(-.3), up:targets[i].clone().setY(-.3)}; });
   const ex0=extras.map(s=>s.position.clone()); const exT=extras.map((s,j)=>j===0?starts[n-1]:ex0[j-1]);
-  const dur=queue.length?110:170;
+  const dur=sliding?95:queue.length?110:170;
   tween(dur,(e,k)=>{ crawlK=k;
     segMeshes.forEach((s,i)=>{
       const sc=sc0[i]+(1-sc0[i])*e;
@@ -730,7 +763,9 @@ function animateMove(prev,ev,dir){
     crawlK=-1; extras.forEach(removeObj); tailExtras=[]; squishTile(state.segs[0]);
     segMeshes.forEach(s=>s.scale.setScalar(1));
     if(ev.portal) burst(wp(ev.via[0],ev.via[1],.3),C.portal[tileAt(state,ev.via[0],ev.via[1])]||0xffffff);
-    animating--; lastMoveT=idleT; updateHUD();
+    animating--; lastMoveT=idleT;
+    if(slideSteps.length){ const p=state, nx=slideSteps.shift(); state=nx.state; animateMove(p,nx.ev,dir,true); return; }
+    updateHUD();
     if(state.status==='won') return winSeq();
     if(ev.exitNote) toast(ev.exitNote==='flags'?'The burrow opens once every flag is touched.':`This burrow fits a length of ${state.exitLen}. You're ${state.segs.length}.`);
     else if(!canMove()){ queue.length=0; sfx('stuck'); pulse($('undoBtn')); toast('No way forward from here. Undo or restart.',3600); }
@@ -804,15 +839,15 @@ function onWin(){ shareText=''; newBest=false; chapterDone=null; const coloursBe
   $('winShare').hidden=!shareText; petals(); show('winOv'); pushLayer('win');
 }
 function undo(){
-  if(!history.length) return; tweens.length=0; animating=0; queue.length=0; sfx('undo'); lastMoveT=idleT;
-  clearDying(); clearHint(); const cur=state; state=history.pop(); syncBoard(false); syncWeather(false); syncSnails(false); updateHUD(true); saveResume();
+  if(!history.length) return; tweens.length=0; animating=0; queue.length=0; slideSteps.length=0; sfx('undo'); lastMoveT=idleT;
+  clearDying(); clearHint(); const cur=state; state=history.pop(); syncBoard(false); syncWeather(false); syncSnails(false); syncHedges(false); updateHUD(true); saveResume();
   if(reduceMotion||cur.segs.length!==state.segs.length||segMeshes.length!==state.segs.length){ snapWorm(); return; }
   const n=state.segs.length, starts=segMeshes.map(s=>s.position.clone()), targets=state.segs.map((p,i)=>wp(p[0],p[1],segY(i,n)));
   const a=state.segs[0], b=state.segs[1]; if(b&&Math.abs(a[0]-b[0])+Math.abs(a[1]-b[1])===1) headDir=[a[0]-b[0],a[1]-b[1]];
   animating++; tween(150,(e)=>{ segMeshes.forEach((s,i)=>{ if(starts[i].distanceTo(targets[i])>1.3){ s.position.copy(targets[i]); return; } s.position.lerpVectors(starts[i],targets[i],e); }); },()=>{ animating--; if(queue.length) tryMove(queue.shift()); });
 }
-function restart(){ if(!L) return; clearHint(); tweens.length=0; clearDying(); animating=0; queue.length=0; hideAll(); sfx('undo');
-  if(state.status==='play' && state.moves>0){ history.push(state); state=initState(L); syncBoard(false); snapWorm(); syncSnails(false); syncWeather(false); updateHUD(true); saveResume(); lastMoveT=idleT;
+function restart(){ if(!L) return; clearHint(); tweens.length=0; clearDying(); animating=0; queue.length=0; slideSteps.length=0; hideAll(); sfx('undo');
+  if(state.status==='play' && state.moves>0){ history.push(state); state=initState(L); syncBoard(false); snapWorm(); syncSnails(false); syncWeather(false); syncHedges(false); updateHUD(true); saveResume(); lastMoveT=idleT;
     toast('Fresh start. Undo brings your moves back.',2400); return; }
   clearResume(); hintsUsed=0; if(mode==='garden') loadLevel(li,false); else startLevel(L,false); }
 
@@ -865,6 +900,7 @@ const ICON={
   worm:'<svg width="20" height="18" viewBox="0 0 26 22" fill="none" stroke="#5B4436" stroke-width="2" stroke-linecap="round"><path d="M3 15c3-6 6-6 8 0s5 6 8 0" stroke="#FF97B4" stroke-width="5"/><circle cx="21" cy="11" r="4" fill="#FF8FAF"/><circle cx="22" cy="10" r="1" fill="#5B4436" stroke="none"/></svg>',
   steps:'<svg width="18" height="18" viewBox="0 0 24 24" fill="#E8B98F" stroke="#5B4436" stroke-width="1.8"><ellipse cx="8.5" cy="9" rx="3.2" ry="4.6" transform="rotate(-12 8.5 9)"/><ellipse cx="15.5" cy="15.5" rx="3.2" ry="4.6" transform="rotate(12 15.5 15.5)"/></svg>',
   burrow:'<svg width="18" height="18" viewBox="0 0 24 24" stroke="#5B4436" stroke-width="1.8"><ellipse cx="12" cy="14" rx="9.5" ry="6" fill="#B07B57"/><ellipse cx="12" cy="13.6" rx="5.2" ry="2.9" fill="#3A2A22" stroke="none"/></svg>',
+  hedge:'<svg width="18" height="18" viewBox="0 0 24 24" stroke="#5B4436" stroke-width="1.8" stroke-linejoin="round"><path d="M3 20V11a3 3 0 0 1 3-3 3.5 3.5 0 0 1 6-1.5A3.5 3.5 0 0 1 18 8a3 3 0 0 1 3 3v9z" fill="#5FA64F"/><circle cx="8" cy="12" r="1.2" fill="#F7A8C4" stroke="none"/><circle cx="15" cy="14" r="1.2" fill="#F7A8C4" stroke="none"/></svg>',
   leaf:'<svg width="18" height="18" viewBox="0 0 24 24" fill="#78B65C" stroke="#5B4436" stroke-width="2" stroke-linejoin="round"><path d="M5 19C5 10 10 5 20 4c0 10-5 15-15 15z"/><path d="M5 19l8-8" fill="none"/></svg>'
 };
 const sticker=svg=>`<span class="ic" aria-hidden="true">${svg}</span>`;
@@ -874,6 +910,7 @@ function statTip(k){ const par=curPar(), len=state.segs.length, fruit=/[+-]/.tes
   if(k==='moves') return `Par is ${par}. Finish in ${par} moves for 3 stars, or within ${Math.ceil(par*1.3)} for 2.`;
   if(k==='flags') return 'Touch every flag before the burrow will let you in.';
   if(k==='keys') return 'Each key opens one gate, then it is used up.';
+  if(k==='hedges') return hedgesOpen(state)?'You are resting on a flower, so every hedge is open.':'Hedges open while any part of you rests on a flower.';
   if(k==='weather') return state.raining?'Raining: leaves are up and puddles are full. A cloud stone stops it.':'Sunny: seedlings are small and puddles are dry. A cloud stone brings rain.';
   if(len===state.exitLen) return 'You are just the right length for the burrow.';
   return `The burrow fits a worm of ${state.exitLen}. You are ${len}.`+(fruit?(len<state.exitLen?' A peach makes you longer.':' A mushroom makes you shorter.'):''); }
@@ -890,6 +927,7 @@ function updateHUD(silent){
   const flagsTotal=L.map.join('').split('C').length-1;
   if(flagsTotal){ const left=countChar(state,'C'); chips.push(`<span class="stat ${left===0?'done':''}" data-tip="flags" aria-label="Flags ${flagsTotal-left} of ${flagsTotal}">${sticker(ICON.flag)}<b>${flagsTotal-left}</b><small>/${flagsTotal}</small></span>`); }
   if(L.map.join('').includes('K')) chips.push(`<span class="stat" data-tip="keys" aria-label="${state.keys} ${state.keys===1?'key':'keys'}">${sticker(ICON.key)}<b>${state.keys}</b></span>`);
+  if(L.map.join('').includes('H')){ const op=hedgesOpen(state); chips.push(`<span class="stat ${op?'done':''}" data-tip="hedges" aria-label="Hedges ${op?'open':'closed'}">${sticker(ICON.hedge)}<small>${op?'Open':'Shut'}</small></span>`); }
   if(L.map.join('').includes('R')) chips.push(`<span class="stat wx" data-tip="weather" aria-label="${state.raining?'Raining':'Sunny'}">${sticker(state.raining?ICON.rain:ICON.sun)}<small>${state.raining?'Rain':'Sun'}</small></span>`);
   const ok=state.segs.length===state.exitLen;
   chips.push(`<span class="stat ${ok?'done':''}" data-tip="length" aria-label="Length ${state.segs.length}, burrow fits ${state.exitLen}">${sticker(ICON.worm)}<b>${state.segs.length}</b><span class="to" aria-hidden="true">${ok?'=':'&rarr;'}</span>${sticker(ICON.burrow)}<b>${state.exitLen}</b></span>`);
@@ -914,7 +952,7 @@ function renderMute(){ if($('homeSound')){ const hb=$('homeSound'); hb.setAttrib
 
 // ---------- endless meadow ----------
 const DIFF_NAME={easy:'Easy',medium:'Medium',hard:'Hard'};
-const FEATURES=[['flags','Flags'],['fruit','Fruit'],['keys','Keys & gates'],['portals','Tunnels'],['dry','Dry patches'],['rain','Rain'],['rivers','Rivers'],['snails','Snails']];
+const FEATURES=[['flags','Flags'],['buttons','Flower buttons'],['leaves','Wet leaves'],['fruit','Fruit'],['keys','Keys & gates'],['portals','Tunnels'],['dry','Dry patches'],['rain','Rain'],['rivers','Rivers'],['snails','Snails']];
 const ADJ=['Clover','Mossy','Sunny','Dewy','Puddle','Bramble','Tulip','Daisy','Mint','Fern','Pebble','Willow','Honey','Petal','Thistle','Bluebell','Acorn','Buttercup'];
 const NOUN=['Corner','Patch','Hollow','Nook','Lane','Bend','Meadow','Path','Dell','Knoll','Row','Glade'];
 function analyzeCapped(Ld,cap){
@@ -933,6 +971,7 @@ function analyzeCapped(Ld,cap){
 function genCandidate(r,diff,o){
   const ri=n=>Math.floor(r()*n), pick=a=>a[ri(a.length)];
   const cfg={easy:{w:[5,6],h:[5,7],fill:.5,len:3,flags:1,dry:.14,cap:12000},medium:{w:[6,7],h:[6,8],fill:.56,len:3,flags:2,dry:.2,cap:25000},hard:{w:[7,8],h:[7,9],fill:.5,len:r()<.6?4:3,flags:2,dry:.3,cap:12000}}[diff];
+  if(o.size){ cfg.w=o.size.w; cfg.h=o.size.h; } if(o.fill) cfg.fill=o.fill; if(o.dryRate!=null) cfg.dry=o.dryRate;
   const W=cfg.w[0]+ri(cfg.w[1]-cfg.w[0]+1), H=cfg.h[0]+ri(cfg.h[1]-cfg.h[0]+1);
   const g=Array.from({length:H},()=>Array(W).fill(' ')); const target=Math.floor(W*H*cfg.fill); let cnt=0;
   const walkers=[[W>>1,H>>1],[W>>1,H>>1],[ri(W),ri(H)]];
@@ -964,6 +1003,13 @@ function genCandidate(r,diff,o){
     for(const c of pl){ if(put(c,notNearHead)) exitLen+= c==='+'?1:-1; } if(exitLen<2) return null; }
   if(o.keys){ if(!put('G',p=>corridor(p)&&notNearHead(p))) return null; put('K',notNearHead); }
   if(o.portals){ const a=put('1',notNearHead); if(!a) return null; const b=put('1',p=>Math.abs(p[0]-a[0])+Math.abs(p[1]-a[1])>=3); if(!b) return null; }
+  if(o.buttons){ for(let k=0;k<(diff==='hard'?2:1);k++){ const h=put('H',p=>corridor(p)&&notNearHead(p)); if(!h){ if(k) break; return null; }
+      if(!k&&!put('B',p=>{ const d=Math.abs(p[0]-h[0])+Math.abs(p[1]-h[1]); return d>=2&&d<=cfg.len+1&&notNearHead(p); })) return null; } }
+  if(o.leaves){ let made=0;
+    for(let t=0;t<30&&made<(diff==='easy'?1:2);t++){ const f=floor().filter(p=>!used.has(p+'')); if(!f.length) break; const p=pick(f), d=pick([[1,0],[-1,0],[0,1],[0,-1]]); const run=[];
+      for(let k=0;k<5;k++){ const q=[p[0]+d[0]*k,p[1]+d[1]*k]; if(at(q[0],q[1])!=='.'||used.has(q+'')) break; run.push(q); }
+      if(run.length<2) continue; run.slice(0,2+ri(Math.min(3,run.length-1))).forEach(q=>{ g[q[1]][q[0]]='i'; used.add(q+''); }); made++; }
+    if(!made) return null; }
   if(o.rain){ put('R'); if(diff!=='easy') put('R'); for(let i=0;i<1+ri(2);i++) put('s',corridor); for(let i=0;i<1+ri(2);i++) put('w',notNearHead); }
   if(o.rivers){ put('L'); if(diff==='hard'&&r()<.6) put('L'); }
   if(o.dry){ for(const p of floor()){ if(!used.has(p+'') && r()<cfg.dry) g[p[1]][p[0]]='x'; } }
@@ -975,11 +1021,11 @@ function genCandidate(r,diff,o){
   return {name:pick(ADJ)+' '+pick(NOUN), exitLen, worm, map:g.map(row=>row.join('')), rain:false};
 }
 function usage(Ld,sol){ let s=initState(Ld); const u=new Set();
-  for(const d of sol){ const r=step(s,d); const ev=r.ev||{}; if(ev.portal) u.add('portals'); if(ev.rain!==undefined) u.add('rain'); if(ev.swung&&ev.swung.length) u.add('rivers');
+  for(const d of sol){ const r=step(s,d); const ev=r.ev||{}; if(ev.slide) u.add('leaves'); const hd=r.state&&r.state.segs[0]; if(hd&&tileAt(s,hd[0],hd[1])==='H') u.add('buttons'); if(ev.portal) u.add('portals'); if(ev.rain!==undefined) u.add('rain'); if(ev.swung&&ev.swung.length) u.add('rivers');
     if(ev.eaten==='+'||ev.eaten==='-') u.add('fruit'); const h0=r.state&&r.state.segs[0]; if(h0&&r.state.snails&&r.state.snails.some(n=>Math.abs(n.x-h0[0])+Math.abs(n.y-h0[1])<=1)) u.add('snails'); if(ev.eaten==='G') u.add('keys'); if(ev.crumbled&&ev.crumbled.length) u.add('dry'); s=r.state; } return u; }
 async function generateEndless(diff,o,seed,fixedTries){
   const r=rng(seed); const budget={easy:1400,medium:2600,hard:4800}[diff]; const t0=performance.now(); let best=null, bestScore=-1e9, n=0;
-  const enabled=['fruit','keys','portals','dry','rain','rivers','snails'].filter(k=>o[k]); const needUse=Math.min(enabled.length,diff==='easy'?1:2);
+  const enabled=['fruit','keys','portals','dry','rain','rivers','snails','buttons','leaves'].filter(k=>o[k]); const needUse=Math.min(enabled.length,diff==='easy'?1:2);
   while(true){ n++; const Ld=genCandidate(r,diff,o);
     if(Ld){ const cap={easy:4000,medium:10000,hard:12000}[diff]; const a=analyzeCapped(Ld,cap);
       if(a&&a.par>=5){ const win=a.good/a.states; const u=usage(Ld,a.sol); const used=enabled.filter(k=>u.has(k)).length;
@@ -995,7 +1041,7 @@ async function generateEndless(diff,o,seed,fixedTries){
     if(n>3) $('genText').textContent=['Planting seeds','Digging tunnels','Watering the soil','Checking every path'][Math.floor(el/700)%4]+'...';
     await new Promise(res=>setTimeout(res,0)); // let the page breathe between candidates
   }
-  const feats=FEATURES.filter(([k])=>k!=='flags'&&o[k]&&best.map.join('').match({fruit:/[+-]/,keys:/K/,portals:/1/,dry:/x/,rain:/R/,rivers:/L|=|\|/,snails:/[<>^v]/}[k])).map(([,n])=>n.toLowerCase());
+  const feats=FEATURES.filter(([k])=>k!=='flags'&&o[k]&&best.map.join('').match({buttons:/H/,leaves:/i/,fruit:/[+-]/,keys:/K/,portals:/1/,dry:/x/,rain:/R/,rivers:/L|=|\|/,snails:/[<>^v]/}[k])).map(([,n])=>n.toLowerCase());
   best.tries=n; best.seed=seed; best.hint=feats.length?`A fresh ${DIFF_NAME[diff].toLowerCase()} patch with ${feats.join(', ')}.`:`A fresh ${DIFF_NAME[diff].toLowerCase()} patch.`;
   return best;
 }
@@ -1077,7 +1123,7 @@ $('homeGarden').onclick=()=>{ ensureAudio(); renderLevelList(); show('lvOv'); pu
 $('homeEndless').onclick=()=>{ ensureAudio(); renderEndless(); show('endlessOv'); pushLayer('endless'); };
 $('endlessClose').onclick=()=>{ hide('endlessOv'); popLayer('endless'); };
 $('endlessGo').onclick=()=>{ hide('endlessOv'); newEndless(); };
-$('surprise').onclick=()=>{ const ks=['fruit','keys','portals','dry','rain','rivers','snails']; ks.forEach(k=>endlessOpts[k]=false); endlessOpts.flags=Math.random()<.8;
+$('surprise').onclick=()=>{ const ks=['fruit','keys','portals','dry','rain','rivers','snails','buttons','leaves']; ks.forEach(k=>endlessOpts[k]=false); endlessOpts.flags=Math.random()<.8;
   const n=2+Math.floor(Math.random()*2); for(let i=0;i<n;i++) endlessOpts[ks[Math.floor(Math.random()*ks.length)]]=true; sfx('ready'); renderEndless(); };
 $('dailyBtn').onclick=()=>{ ensureAudio(); const r=readResume('endless'); if(r&&r.def&&r.def.daily===todayKey()){ mode='endless'; hideAll(); startLevel(r.def,false); enterGame(); return; } startDaily(); };
 $('homeEndlessCont').onclick=()=>{ hide('endlessOv'); continueEndless(); };
@@ -1161,6 +1207,8 @@ const MECH={
   portals:{t:'Tunnels',d:'Worms dig! Crawl into a tunnel and come out of the one marked with the same flowers.',k:/[1-9]/,i:'<svg width="40" height="40" viewBox="0 0 24 24"><ellipse cx="12" cy="14" rx="9" ry="6" fill="#A9744F" stroke="#5B4436" stroke-width="1.5"/><ellipse cx="12" cy="14" rx="5" ry="3.2" fill="#2E2019"/><circle cx="5" cy="9" r="2" fill="#7FCFEA" stroke="#5B4436" stroke-width="1"/><circle cx="19" cy="9" r="2" fill="#7FCFEA" stroke="#5B4436" stroke-width="1"/></svg>'},
   rain:{t:'Rain',d:'Step on a cloud stone to start or stop the rain. Rain grows seedlings into leaves you can cross, and fills puddles so you can\'t.',k:/[Rsw]/,i:'<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#5B4436" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M7 14a4 4 0 0 1-.5-8A5.5 5.5 0 0 1 17 5.5 4 4 0 0 1 17.5 14z" fill="#C9D6EA"/><path d="M8 17l-1 3M12 17l-1 3M16 17l-1 3" stroke="#6FA9D6"/></svg>'},
   snails:{t:'Snails',d:'A snail slides one tile every time you move and turns around when something blocks it. You cannot crawl through a snail, so time your moves.',k:/[<>^v]/,i:'<svg width="40" height="40" viewBox="0 0 24 24" stroke="#5B4436" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"><path d="M18.6 11.4l-.8-3.6M20.6 11.4l1.2-3.3" fill="none"/><circle cx="17.8" cy="7.6" r="1" fill="#5B4436" stroke="none"/><circle cx="21.9" cy="7.9" r="1" fill="#5B4436" stroke="none"/><path d="M2.5 19.6c0-1 .8-1.6 1.8-1.6h12.6l.7-3.6a2.4 2.4 0 0 1 4.7.5V18c0 1-.8 1.6-1.8 1.6z" fill="#F6E2B0"/><circle cx="10" cy="12.6" r="5.6" fill="#C9A0E6"/><path d="M10.2 12.8a1.2 1.2 0 1 1 1.3-1.5 2.6 2.6 0 0 1-2.4 3.7 3.6 3.6 0 0 1-2.5-6" fill="none" stroke="#7D5A9E"/></svg>'},
+  buttons:{t:'Flower buttons',d:'Hedges open while any part of you rests on a big flower. Keep your tail on the flower while your head slips through.',k:/[BH]/,i:'<svg width="40" height="40" viewBox="0 0 24 24" stroke="#5B4436" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"><path d="M12 21V12.5a2.6 2.6 0 0 1 2.6-2.6 3 3 0 0 1 5.4-1 2.6 2.6 0 0 1 2.5 2.6V21z" fill="#5FA64F"/><g fill="#F7A8C4"><circle cx="5" cy="13.5" r="2.4"/><circle cx="8.6" cy="16" r="2.4"/><circle cx="7.3" cy="20" r="2.4"/><circle cx="2.7" cy="20" r="2.4"/><circle cx="1.4" cy="16" r="2.4"/></g><circle cx="5" cy="17.2" r="1.9" fill="#F7C64F"/></svg>'},
+  leaves:{t:'Wet leaves',d:'Dewy leaves are slippery. Crawl onto one and you slide along until you reach dry grass or bump into something.',k:/i/,i:'<svg width="40" height="40" viewBox="0 0 24 24" stroke="#5B4436" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"><path d="M3 13c2-6 9-9 18-8-1 9-7 14-14 13-2 0-3.5-2.5-4-5z" fill="#8EE0B4"/><path d="M5 17L17 8" fill="none" stroke="#5DBA8A"/><circle cx="12.5" cy="15.5" r="1.4" fill="#EAF8FF"/><circle cx="16" cy="12" r="1" fill="#EAF8FF"/><path d="M1 21h5M8.5 21h3" fill="none" stroke="#6FA9D6"/></svg>'},
   rivers:{t:'Rivers and bridges',d:'Water blocks the way. Bridges only go along their planks, and a crank swings every bridge you are not standing on.',k:/[~=|L]/,i:'<svg width="40" height="40" viewBox="0 0 24 24" stroke="#5B4436" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"><rect x="1.5" y="8" width="21" height="8" rx="2.5" fill="#8CCFEA"/><path d="M3.5 12c1-.8 2-.8 3 0M17.5 12c1-.8 2-.8 3 0" fill="none" stroke="#fff"/><rect x="8.5" y="3.5" width="7" height="17" rx="1.4" fill="#D9A56E"/><path d="M8.5 8h7M8.5 12h7M8.5 16h7" fill="none" stroke="#B98352"/></svg>'},
 };
 let seenMech={}; try{ seenMech=JSON.parse(localStorage.getItem('squirm-seen')||'{}'); }catch(e){}
@@ -1181,7 +1229,7 @@ function loadLevel(i,withHint=true){ mode='garden'; li=i; startLevel(LEVELS[i],w
 let nudged=false, playT=0;
 const playTime=()=>{ const s=Math.round(playT); return s<60?`${s}s`:`${Math.floor(s/60)}m ${String(s%60).padStart(2,'0')}s`; };
 function startLevel(def,withHint=true){ nudged=false; playT=0; pulse(document.querySelector('.plaque'));
-  L=def; state=initState(L); history=[]; queue.length=0; wasReady=false; hintsUsed=0; clearHint();
+  L=def; state=initState(L); history=[]; queue.length=0; slideSteps.length=0; wasReady=false; hintsUsed=0; clearHint();
   buildBoard(); snapWorm(); fitCamera(); updateHUD(true); lastMoveT=idleT;
   const resumed=tryResume(); if(!resumed) clearResume();
   introAnim();
@@ -1200,7 +1248,7 @@ function introAnim(){ if(reduceMotion) return;
     ()=>{ items.forEach(it=>{ it.o.scale.setScalar(1); it.o.position.y=it.y0; }); worm.forEach(s=>s.scale.setScalar(1)); wormG.visible=true; animating--; if(queue.length) tryMove(queue.shift()); });
 }
 const CHAPTERS=CHAPTER_NAMES.map((name,k)=>({name,from:k*10,to:Math.min(LEVELS.length-1,k*10+9)}));
-const THUMB_COL={'<':'#C9A0E6','>':'#C9A0E6','^':'#C9A0E6','v':'#C9A0E6','.':'#B9E49E','x':'#EBD59C','~':'#8CCFEA','=':'#D9A56E','|':'#D9A56E','E':'#3A2A22','C':'#F27DA2','K':'#F7C64F','G':'#C88A55','+':'#FFA27C','-':'#B79CF2','R':'#C9D6EA','w':'#9ED6EF','s':'#7CC95F','L':'#B98352'};
+const THUMB_COL={'B':'#F7A8C4','H':'#4E8F40','i':'#8EE0B4','<':'#C9A0E6','>':'#C9A0E6','^':'#C9A0E6','v':'#C9A0E6','.':'#B9E49E','x':'#EBD59C','~':'#8CCFEA','=':'#D9A56E','|':'#D9A56E','E':'#3A2A22','C':'#F27DA2','K':'#F7C64F','G':'#C88A55','+':'#FFA27C','-':'#B79CF2','R':'#C9D6EA','w':'#9ED6EF','s':'#7CC95F','L':'#B98352'};
 function drawThumb(cv,lv){ const g=cv.getContext('2d'); const h=lv.map.length, w=Math.max(...lv.map.map(r=>r.length)); const s=Math.floor(80/Math.max(w,h)), ox=(88-w*s)/2, oy=(88-h*s)/2;
   g.fillStyle='#9A6A4C'; g.fillRect(0,0,88,88);
   for(let y=0;y<h;y++) for(let x=0;x<w;x++){ const c=lv.map[y][x]||' '; if(c===' ') continue; g.fillStyle=THUMB_COL[c]||(c>='1'&&c<='9'?'#7FCFEA':'#B9E49E'); g.fillRect(ox+x*s+1,oy+y*s+1,s-2,s-2); }

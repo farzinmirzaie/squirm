@@ -21,9 +21,13 @@ function cloneState(s){ return { ...s, grid: s.grid.map(r=>r.slice()), segs: s.s
 function snailAt(s,x,y){ return (s.snails||[]).some(n=>n.x===x&&n.y===y); }
 function countChar(s,c){ let n=0; for(const r of s.grid) for(const t of r) if(t===c) n++; return n; }
 
-// returns {state, events} or {blocked: reason}
-function step(s, dirKey){
-  if(s.status!=='play') return { blocked:'over' };
+// flower buttons: every hedge is open while any part of the worm rests on a flower
+function onFlower(s,segs){ return segs.some(p=>tileAt(s,p[0],p[1])==='B'); }
+function hedgesOpen(s){ return onFlower(s,s.segs); }
+
+// One crawl of the head by one tile, with everything it touches. No snails, no win check:
+// step() runs this once, or several times while the worm slides over wet leaves.
+function advance(s, dirKey){
   const d = DIRS[dirKey];
   const head = s.segs[0];
   const nx = head[0]+d[0], ny = head[1]+d[1];
@@ -46,6 +50,8 @@ function step(s, dirKey){
   if(t==='-') newLen = Math.max(1,len-1);
   const newSegs = [dest, ...s.segs].slice(0,newLen);
   for(let i=1;i<newSegs.length;i++) if(newSegs[i][0]===dest[0]&&newSegs[i][1]===dest[1]) return { blocked:'body' };
+  // a hedge lets the head in only if the worm is still holding a flower after this move
+  if(t==='H' && !onFlower(s,newSegs)) return { blocked:'hedge' };
   const ns = cloneState(s);
   ns.segs = newSegs; ns.moves++;
   ev.eaten = null;
@@ -62,6 +68,28 @@ function step(s, dirKey){
     if(tileAt(ns,p[0],p[1])!=='x') continue;
     if(!newSegs.some(q=>q[0]===p[0]&&q[1]===p[1])){ ns.grid[p[1]][p[0]]=' '; ev.crumbled.push([p[0],p[1]]); }
   }
+  return { state:ns, ev };
+}
+
+// returns {state, ev} or {blocked: reason}. One swipe is one move, even when it slides.
+function step(s, dirKey){
+  if(s.status!=='play') return { blocked:'over' };
+  let r = advance(s,dirKey);
+  if(r.blocked) return r;
+  // wet leaves: keep sliding the same way until the head is off the leaves or something is in the way
+  const slide = [];
+  for(let n=0; n<s.w*s.h; n++){
+    const h = r.state.segs[0];
+    if(tileAt(r.state,h[0],h[1])!=='i') break;
+    const nx = advance(r.state,dirKey);
+    if(nx.blocked) break;
+    slide.push(r); r = nx;
+  }
+  for(const x of slide) x.state.moves = s.moves+1;
+  const ns = r.state, ev = r.ev;
+  ns.moves = s.moves+1;
+  if(slide.length) ev.slide = slide;
+  const newSegs = ns.segs, dest = newSegs[0];
   // snails slide one tile after every move, turning around when something is in the way
   if(ns.snails.length){ ev.snails=[];
     for(const n of ns.snails){ const tx=n.x+n.dx, ty=n.y+n.dy; const from=[n.x,n.y];
@@ -69,9 +97,9 @@ function step(s, dirKey){
       if(free){ n.x=tx; n.y=ty; ev.snails.push({from,to:[tx,ty],turned:false}); } else { n.dx=-n.dx; n.dy=-n.dy; ev.snails.push({from,to:from,turned:true}); } } }
   if(tileAt(ns,dest[0],dest[1])==='E'){
     const left = countChar(ns,'C');
-    if(left===0 && newLen===ns.exitLen){ ns.status='won'; ev.won=true; }
+    if(left===0 && newSegs.length===ns.exitLen){ ns.status='won'; ev.won=true; }
     else ev.exitNote = left>0 ? 'flags' : 'length';
   }
   return { state:ns, ev };
 }
-if(typeof module!=='undefined') module.exports = { DIRS, initState, step, tileAt, countChar, cloneState };
+if(typeof module!=='undefined') module.exports = { DIRS, initState, step, tileAt, countChar, cloneState, hedgesOpen };
