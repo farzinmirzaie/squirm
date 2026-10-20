@@ -538,20 +538,14 @@ function syncWeather(animate){
 }
 const themeMeta=document.querySelector('meta[name="theme-color"]'); let themeHex='';
 function syncThemeColor(c){ const h='#'+c.getHexString(); if(h!==themeHex&&themeMeta){ themeHex=h; themeMeta.setAttribute('content',h); } }
-// time of day: soft morning, bright noon, golden evening, blue night with fireflies
-const TOD={ morning:{sun:0xFFE9CF,si:.5,hemi:.38,amb:[1,.97,.93],lawn:[1,.99,.95]}, day:{sun:0xFFF1DC,si:.55,hemi:.38,amb:[1,.96,.89],lawn:[1,1,1]},
-  evening:{sun:0xFFC58A,si:.5,hemi:.32,amb:[1,.86,.78],lawn:[1,.9,.8]}, night:{sun:0xC4D0FF,si:.36,hemi:.3,amb:[.74,.78,.98],lawn:[.74,.82,.95]} };
-let todName='day', tod=TOD.day, fireflies=null;
-function pickTod(){ if(typeof renderHome==='function'&&$('homeOv').classList.contains('show')) renderHome(); const h=new Date().getHours()+new Date().getMinutes()/60; todName= h>=6&&h<10?'morning' : h>=10&&h<17?'day' : h>=17&&h<20?'evening' : 'night'; tod=TOD[todName];
-  sun.color.setHex(tod.sun); document.documentElement.dataset.tod=todName; buildFireflies(); }
-function buildFireflies(){ if(fireflies){ removeObj(fireflies); fireflies=null; } if(todName!=='night'&&todName!=='evening') return;
-  fireflies=new THREE.Group(); const mt=new THREE.MeshBasicMaterial({color:0xFFF3A0,transparent:true,opacity:.9}); const n=todName==='night'?18:8;
-  for(let i=0;i<n;i++){ const f=new THREE.Mesh(sph(.035,8,6),mt.clone()); f.userData={ph:Math.random()*10,r:1+Math.random()*4,s:.2+Math.random()*.3,y:.4+Math.random()*1.2}; fireflies.add(f); } scene.add(fireflies); }
+// the garden is always lit like a bright day; the time of day only sets the music's mood
+const tod={si:.55,hemi:.38,amb:[1,.96,.89],lawn:[1,1,1]};
+let todName='day';
+function pickTod(){ if(typeof renderHome==='function'&&$('homeOv').classList.contains('show')) renderHome(); const h=new Date().getHours()+new Date().getMinutes()/60; todName= h>=6&&h<10?'morning' : h>=10&&h<17?'day' : h>=17&&h<20?'evening' : 'night'; }
 function updateRain(dt){
   wet+=((state&&state.raining?1:0)-wet)*(1-Math.exp(-dt/1000*2.5));
   lawnMat.color.setRGB(tod.lawn[0]*(1-.2*wet),tod.lawn[1]*(1-.12*wet),tod.lawn[2]*(1-.05*wet)); sun.intensity=tod.si-.22*wet; hemi.intensity=tod.hemi-.06*wet; amb.color.setRGB(tod.amb[0]*(1-.12*wet),tod.amb[1]*(1-.06*wet),tod.amb[2]);
   const lc=lawnDry.clone().lerp(lawnWet,wet).multiply(new THREE.Color(tod.lawn[0],tod.lawn[1],tod.lawn[2])); renderer.setClearColor(lc); syncThemeColor(lc);
-  if(fireflies) fireflies.children.forEach((f,i)=>{ const u=f.userData, t=idleT*u.s+u.ph; f.position.set(Math.cos(t)*u.r,u.y+Math.sin(t*2.3)*.25,Math.sin(t*1.4)*u.r*.8); f.material.opacity=.35+.55*Math.max(0,Math.sin(idleT*2+u.ph*3)); });
   if(rainLines){ rainLines.material.opacity=.75*wet; rainLines.visible=wet>.02;
     if(rainLines.visible){ const a=rainLines.geometry.attributes.position, sp=rainLines.geometry.userData.sp, d=dt/1000;
       for(let i=0;i<sp.length;i++){ let y=a.array[i*6+1]-sp[i]*d; if(y<-.25) y+=5; a.array[i*6+1]=y; a.array[i*6+4]=y+.28; } a.needsUpdate=true; } }
@@ -921,8 +915,8 @@ function undo(){
   animating++; tween(150,(e)=>{ segMeshes.forEach((s,i)=>{ if(starts[i].distanceTo(targets[i])>1.3){ s.position.copy(targets[i]); return; } s.position.lerpVectors(starts[i],targets[i],e); }); },()=>{ animating--; if(queue.length) tryMove(queue.shift()); });
 }
 function restart(){ if(!L) return; clearHint(); tweens.length=0; clearDying(); animating=0; queue.length=0; slideSteps.length=0; hideAll(); sfx('undo');
-  if(state.status==='play' && state.moves>0){ history.push(state); state=initState(L); syncBoard(false); snapWorm(); syncSnails(false); syncWeather(false); syncHedges(false); updateHUD(true); saveResume(); lastMoveT=idleT;
-    toast('Fresh start. Undo brings your moves back.',2400); return; }
+  if(state.status==='play' && state.moves>0){ history=[]; state=initState(L); syncBoard(false); snapWorm(); syncSnails(false); syncWeather(false); syncHedges(false); updateHUD(true); saveResume(); lastMoveT=idleT;
+    toast('Fresh start.',1800); return; }
   clearResume(); hintsUsed=0; if(mode==='garden') loadLevel(li,false); else startLevel(L,false); }
 
 // ---------- hints ----------
