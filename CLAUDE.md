@@ -150,7 +150,7 @@ level-list thumbnails, and `introAt` in `tools/verify-levels.js`.
   moves that bump a counter in `progress.stats`; earned ones live in `progress.badges`. `HATS` unlock
   by finishing a chapter and are built once (`buildHat`) and cloned into the head's `hatSlot`.
 - **Music:** `musicTick` schedules a generated tune (pad, bass, melody, echo) a little ahead on the
-  Web Audio clock; its mood follows `todName` (time of day; the lighting itself is always daytime) and rain. Toggle: `squirm-music`, volume: `squirm-music-vol` (0-1).
+  Web Audio clock; its mood follows `todName` (time of day, which also brings fireflies in the evening and at night; the lighting itself is always daytime) and rain. Toggle: `squirm-music`, volume: `squirm-music-vol` (0-1).
 - **Saved data:** everything in `localStorage` under keys starting with `squirm-`. Don't rename
   the keys or players lose progress. Other projects can share the origin (`<user>.github.io`), so
   keep the prefix on every key and every cache name. The secret reset (hold the worm's head on

@@ -538,11 +538,17 @@ function syncWeather(animate){
 }
 const themeMeta=document.querySelector('meta[name="theme-color"]'); let themeHex='';
 function syncThemeColor(c){ const h='#'+c.getHexString(); if(h!==themeHex&&themeMeta){ themeHex=h; themeMeta.setAttribute('content',h); } }
-// the garden is always lit like a bright day; the time of day only sets the music's mood
+// the garden is always lit like a bright day; the time of day sets the music's mood and
+// brings out fireflies in the evening and at night
 const tod={si:.55,hemi:.38,amb:[1,.96,.89],lawn:[1,1,1]};
-let todName='day';
-function pickTod(){ if(typeof renderHome==='function'&&$('homeOv').classList.contains('show')) renderHome(); const h=new Date().getHours()+new Date().getMinutes()/60; todName= h>=6&&h<10?'morning' : h>=10&&h<17?'day' : h>=17&&h<20?'evening' : 'night'; }
+let todName='day', fireflies=null;
+function pickTod(){ if(typeof renderHome==='function'&&$('homeOv').classList.contains('show')) renderHome(); const h=new Date().getHours()+new Date().getMinutes()/60;
+  const was=todName; todName= h>=6&&h<10?'morning' : h>=10&&h<17?'day' : h>=17&&h<20?'evening' : 'night'; if(was!==todName||!fireflies) buildFireflies(); }
+function buildFireflies(){ if(fireflies){ disposeTree(fireflies); removeObj(fireflies); fireflies=null; } if(todName!=='night'&&todName!=='evening') return;
+  fireflies=new THREE.Group(); const n=todName==='night'?18:8;
+  for(let i=0;i<n;i++){ const f=new THREE.Mesh(sph(.035,8,6),new THREE.MeshBasicMaterial({color:0xFFF3A0,transparent:true,opacity:.9})); f.userData={ph:Math.random()*10,r:1+Math.random()*4,s:.2+Math.random()*.3,y:.4+Math.random()*1.2}; fireflies.add(f); } scene.add(fireflies); }
 function updateRain(dt){
+  if(fireflies) fireflies.children.forEach(f=>{ const u=f.userData, t=idleT*u.s+u.ph; f.position.set(Math.cos(t)*u.r,u.y+Math.sin(t*2.3)*.25,Math.sin(t*1.4)*u.r*.8); f.material.opacity=.35+.55*Math.max(0,Math.sin(idleT*2+u.ph*3)); });
   wet+=((state&&state.raining?1:0)-wet)*(1-Math.exp(-dt/1000*2.5));
   lawnMat.color.setRGB(tod.lawn[0]*(1-.2*wet),tod.lawn[1]*(1-.12*wet),tod.lawn[2]*(1-.05*wet)); sun.intensity=tod.si-.22*wet; hemi.intensity=tod.hemi-.06*wet; amb.color.setRGB(tod.amb[0]*(1-.12*wet),tod.amb[1]*(1-.06*wet),tod.amb[2]);
   const lc=lawnDry.clone().lerp(lawnWet,wet).multiply(new THREE.Color(tod.lawn[0],tod.lawn[1],tod.lawn[2])); renderer.setClearColor(lc); syncThemeColor(lc);
