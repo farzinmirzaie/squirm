@@ -985,6 +985,11 @@ function showHint(){
 }
 function screenWord(d){ const v=screenVec(DIRS[d]); return Math.abs(v.x)>Math.abs(v.y) ? (v.x>0?'E':'W') : (v.y>0?'S':'N'); }
 function pulse(el){ el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop'); }
+function animOnce(el,cls){ el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls); const end=e=>{ if(e.target!==el) return; el.classList.remove(cls); el.removeEventListener('animationend',end); }; el.addEventListener('animationend',end); }
+// a new patch: the HUD pieces drop in one after another, the buttons rise from below
+function hudIntro(){ const top=[document.querySelector('.plaque'),$('muteBtn'),document.querySelector('.hud-stats'),...document.querySelectorAll('.hud-stats .stat')];
+  const low=[...document.querySelectorAll('nav .gbtn')].filter(b=>!b.hidden);
+  [[top,0,45],[low,120,55]].forEach(([els,d0,step])=>els.forEach((el,i)=>{ el.style.setProperty('--d',(d0+i*step)+'ms'); el.classList.remove('pop'); animOnce(el,'enter'); })); }
 
 // ---------- resume an unfinished patch after reload ----------
 function saveResume(){ try{ localStorage.setItem('squirm-resume-'+mode,JSON.stringify({li,name:mode==='garden'?LEVELS[li].name:null,diff:endlessDiff,def:mode==='endless'?L:null,hints:hintsUsed,states:history.concat([state]).slice(-120)})); }catch(e){} }
@@ -1022,13 +1027,15 @@ function statTip(k){ const par=curPar(), len=state.segs.length, fruit=/[+-]/.tes
   return `The burrow fits a worm of ${state.exitLen}. You are ${len}.`+(fruit?(len<state.exitLen?' A peach makes you longer.':' A mushroom makes you shorter.'):''); }
 document.querySelector('.hud-stats').addEventListener('keydown',e=>{ if((e.key==='Enter'||e.key===' ')&&e.target.closest('.stat')){ e.preventDefault(); e.target.click(); } });
 document.querySelector('.hud-stats').addEventListener('click',e=>{ const st=e.target.closest('.stat'); if(!st||!state) return; sfx('tap'); toast(statTip(st.dataset.tip||'moves'),3400); });
+let shownStars=3;
 function updateHUD(silent){
   $('lvlNum').style.fontSize=String(mode==='garden'?li+1:0).length>2?'16px':''; $('lvlNum').textContent= mode==='garden' ? li+1 : L.daily ? new Date().getDate() : (progress.endless[endlessDiff].cleared+1); $('lvlName').textContent=L.name;
   $('lvlSub').textContent=hudSub(); document.body.dataset.mode=mode;
   const tabTitle=(mode==='garden'?`${li+1} · `:'')+L.name+' · Squirm'; if(document.title!==tabTitle&&!$('homeOv').classList.contains('show')) document.title=tabTitle;
   const now=starsFor(state.moves,curPar(),hintsUsed>0), meter=[0,1,2].map(j=>`<i class="${j<now?'on':''}"></i>`).join('');
   const mv=$('moves'), mvHtml=`<span class="v">${sticker(ICON.steps)}<b>${state.moves}</b></span><span class="k mv"><em class="mini" aria-hidden="true">${meter}</em><span class="par">par ${curPar()}</span></span>`;
-  if(mv.innerHTML!==mvHtml){ mv.innerHTML=mvHtml; if(!silent) pulse(mv); }
+  if(mv.innerHTML!==mvHtml){ mv.innerHTML=mvHtml; if(!silent){ if(now<shownStars) animOnce(mv,'lost'); else pulse(mv); } }
+  shownStars=now;
   mv.setAttribute('aria-label',`${state.moves} ${state.moves===1?'move':'moves'}, par ${curPar()}, on track for ${now} ${now===1?'star':'stars'}`); mv.classList.toggle('over',state.moves>curPar());
   const chips=[];
   const flagsTotal=L.map.join('').split('C').length-1;
@@ -1038,8 +1045,9 @@ function updateHUD(silent){
   if(L.map.join('').includes('R')) chips.push(`<span role="button" tabindex="0" class="stat wx" data-tip="weather" aria-label="${state.raining?'Raining':'Sunny'}"><span class="v">${sticker(state.raining?ICON.rain:ICON.sun)}</span><span class="k">${state.raining?'Rainy':'Sunny'}</span></span>`);
   const ok=state.segs.length===state.exitLen;
   chips.push(`<span role="button" tabindex="0" class="stat ${ok?'done':''}" data-tip="length" aria-label="Length ${state.segs.length}, burrow fits ${state.exitLen}"><span class="v">${sticker(ICON.worm)}<b>${state.segs.length}</b><span class="to" aria-hidden="true">${ok?'=':'&rarr;'}</span><b>${state.exitLen}</b></span><span class="k">${ok?'Fits!':'Length'}</span></span>`);
-  const html=chips.join(''); if($('chips').innerHTML!==html){ const old=[...$('chips').children].map(c=>c.textContent); $('chips').innerHTML=html; if(!silent) [...$('chips').children].forEach((c,i)=>{ if(old[i]!==c.textContent) pulse(c); }); }
-  $('undoBtn').disabled=!history.length; $('restartBtn').disabled=state.moves===0;
+  const html=chips.join(''); if($('chips').innerHTML!==html){ const prev=[...$('chips').children], old=prev.map(c=>c.textContent), wasDone=prev.map(c=>c.classList.contains('done')); $('chips').innerHTML=html;
+    if(!silent) [...$('chips').children].forEach((c,i)=>{ if(c.classList.contains('done')&&!wasDone[i]) animOnce(c,'cheer'); else if(old[i]!==c.textContent) pulse(c); }); }
+  for(const [id,off] of [['undoBtn',!history.length],['restartBtn',state.moves===0]]){ const b=$(id); if(b.disabled&&!off&&!silent) animOnce(b,'pop'); b.disabled=off; }
   const ready = countChar(state,'C')===0 && ok;
   if(ready && !wasReady && !silent && state.status==='play'){ sfx('ready'); glanceT=1.4; }
   wasReady=ready;
@@ -1408,9 +1416,9 @@ function dismissTutorial(){ const t=$('tutorial'); if(!t.classList.contains('sho
 function loadLevel(i,withHint=true){ mode='garden'; li=i; startLevel(LEVELS[i],withHint); try{ localStorage.setItem('squirm-current-name',LEVELS[i].name); }catch(e){} }
 let nudged=false, playT=0;
 const playTime=()=>{ const s=Math.round(playT); return s<60?`${s}s`:`${Math.floor(s/60)}m ${String(s%60).padStart(2,'0')}s`; };
-function startLevel(def,withHint=true){ nudged=false; playT=0; pulse(document.querySelector('.plaque'));
+function startLevel(def,withHint=true){ nudged=false; playT=0;
   L=def; state=initState(L); history=[]; queue.length=0; slideSteps.length=0; wasReady=false; hintsUsed=0; clearHint();
-  buildBoard(); snapWorm(); fitCamera(); updateHUD(true); lastMoveT=idleT;
+  buildBoard(); snapWorm(); fitCamera(); updateHUD(true); hudIntro(); lastMoveT=idleT;
   const resumed=tryResume(); if(!resumed) clearResume();
   introAnim();
   if(resumed) toast('Picking up where you left off.',2400);
@@ -1544,7 +1552,7 @@ $('winShare').onclick=async()=>{ try{ if(navigator.share){ await navigator.share
   try{ await navigator.clipboard.writeText(shareText); toast('Result copied. Paste it anywhere.',2200); }catch(e){ toast(shareText,5000); } };
 $('winReplay').onclick=()=>{ hideAll(); popLayer('win'); if(mode==='garden') loadLevel(li,false); else startLevel(L,false); };
 $('winNext').onclick=()=>{ hideAll(); if(L.daily){ popLayer('game'); showHome(); return; } popLayer('win'); if(mode==='garden') loadLevel(li===LEVELS.length-1?0:li+1); else newEndless(); };
-$('muteBtn').onclick=()=>{ ensureAudio(); muted=!muted; try{ localStorage.setItem('squirm-muted',muted?'1':'0'); }catch(e){} renderMute(); if(state) syncWeather(false); if(!muted) sfx('ready'); };
+$('muteBtn').onclick=()=>{ ensureAudio(); muted=!muted; pulse($('muteBtn')); try{ localStorage.setItem('squirm-muted',muted?'1':'0'); }catch(e){} renderMute(); if(state) syncWeather(false); if(!muted) sfx('ready'); };
 renderMute();
 function renderHaptic(){ const b=$('hapticBtn'); b.setAttribute('aria-pressed',String(hapticsOn)); b.setAttribute('aria-label',hapticsOn?'Turn vibration off':'Turn vibration on');
   b.innerHTML='<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="7.5" y="4" width="9" height="16" rx="2.5"/>'+(hapticsOn?'<path d="M4 9v6M20 9v6M1.5 10.5v3M22.5 10.5v3"/>':'<path d="M3 3l18 18"/>')+'</svg>'; }

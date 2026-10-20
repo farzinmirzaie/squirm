@@ -142,6 +142,17 @@ button:focus-visible{outline:3px solid var(--honey);outline-offset:2px}
 @keyframes glow{0%,80%,100%{transform:none}88%{transform:rotate(-10deg) scale(1.08)}94%{transform:rotate(8deg) scale(1.08)}}
 @keyframes wiggle{50%{transform:rotate(12deg) scale(1.1)}}
 .pop{animation:popin .35s cubic-bezier(.2,1.6,.4,1)}
+/* HUD motion: pieces drop in when a patch starts, tiles cheer when a goal is met */
+.enter{animation:hudIn .5s cubic-bezier(.2,1.5,.4,1) var(--d,0ms) both}
+nav .enter{animation-name:navIn}
+@keyframes hudIn{from{opacity:0;transform:translateY(-16px) scale(.92)}to{opacity:1;transform:none}}
+@keyframes navIn{from{opacity:0;transform:translateY(22px) scale(.9)}to{opacity:1;transform:none}}
+.stat.cheer{animation:cheer .6s cubic-bezier(.2,1.6,.4,1)}
+.stat.cheer .ic{animation:wiggle .3s ease-in-out 2}
+@keyframes cheer{0%{transform:scale(1)}30%{transform:scale(1.14) rotate(-3deg)}60%{transform:scale(.97) rotate(2deg)}100%{transform:none}}
+.stat.lost .mini{animation:nope .45s ease-in-out}
+.gbtn.pop .disc{animation:popin .35s cubic-bezier(.2,1.6,.4,1)}
+.gbtn.pop{animation:none}
 @keyframes popin{0%{transform:scale(.85)}60%{transform:scale(1.08)}100%{transform:none}}
 .stars{display:flex;justify-content:center;gap:6px;margin:0 0 12px}
 .star{transform:scale(0);animation:starIn .45s cubic-bezier(.2,1.6,.4,1) forwards}
@@ -380,7 +391,7 @@ body.at-home #app{visibility:hidden}
   :root[data-theme="dark"]{--ink-soft:#FBEFDD;--edge:#A08468}
 }
 @media (prefers-contrast: more) and (prefers-color-scheme: dark){ :root:not([data-theme="light"]){--ink-soft:#FBEFDD;--edge:#A08468} }
-@media (prefers-reduced-motion: reduce){ .spin,.logo svg,.gbtn.hint .disc svg,#winNext,.set-page.fwd,.set-page.back,.tab-page.enter{animation:none} #tutorial .hand{animation:none} .star{animation:none;transform:none} .pop{animation:none} .dialog{animation:none} #toast{transition:none} .petals{display:none} }
+@media (prefers-reduced-motion: reduce){ .spin,.logo svg,.gbtn.hint .disc svg,#winNext,.set-page.fwd,.set-page.back,.tab-page.enter{animation:none} #tutorial .hand{animation:none} .enter,.stat.cheer,.stat.cheer .ic,.stat.lost .mini,.gbtn.pop .disc{animation:none} .star{animation:none;transform:none} .pop{animation:none} .dialog{animation:none} #toast{transition:none} .petals{display:none} }
 </style>
 </head>
 <body>
