@@ -12,7 +12,7 @@ garden patches, touch every flag, and slip into the burrow at exactly the right 
 - 130 patches in 13 chapters, each introducing one mechanic
 - Endless mode with generated, solver-checked patches (easy / medium / hard)
 - A daily patch that's the same for everyone, with stars, streaks, hints and undo
-- Haptics and synthesized sound, with no audio or image files
+- Badges to earn, hats to unlock, gentle generated music, haptics and synthesized sound (no audio or image files)
 - Swipe, tap or use the keyboard: arrows/WASD to crawl, `Z` undo, `R` restart, `H` hint, `M` mute, `Esc` back
 
 ## How to play
