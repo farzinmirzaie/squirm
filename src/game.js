@@ -90,27 +90,36 @@ const SFX={
 };
 // ---------- music: a slow generated tune that follows the time of day and the rain ----------
 let musicOn=true, musicVol=.7; try{ musicOn=localStorage.getItem('squirm-music')!=='0'; const v=parseFloat(localStorage.getItem('squirm-music-vol')); if(v>=0&&v<=1) musicVol=v; }catch(e){}
-let mBus=null, mLp=null, mNext=0, mBeat=0, mDeg=2;
+let mBus=null, mLp=null, mNext=0, mStep=0, mDeg=2;
 const SCALES={major:[0,2,4,7,9],minor:[0,3,5,7,10]};
 const PROG={major:[[0,4,7],[-3,0,4],[5,9,12],[7,11,14]],minor:[[0,3,7],[-4,0,3],[3,7,10],[-2,2,5]]};
-const MOODS={morning:{root:62,scale:'major',bpm:76,bright:2600,prob:.6,wave:'sine'},day:{root:60,scale:'major',bpm:80,bright:3000,prob:.55,wave:'triangle'},
-  evening:{root:57,scale:'major',bpm:68,bright:1900,prob:.45,wave:'triangle'},night:{root:57,scale:'minor',bpm:60,bright:1400,prob:.35,wave:'sine'}};
+// arp: how many eighth notes of the bar carry a soft arpeggio note (8 = all, 4 = every other)
+const MOODS={morning:{root:62,scale:'major',bpm:76,bright:2600,prob:.75,wave:'sine',arp:8},day:{root:60,scale:'major',bpm:80,bright:3000,prob:.7,wave:'triangle',arp:8},
+  evening:{root:57,scale:'major',bpm:68,bright:1900,prob:.6,wave:'triangle',arp:8},night:{root:57,scale:'minor',bpm:60,bright:1400,prob:.5,wave:'sine',arp:4}};
 const midiHz=n=>440*Math.pow(2,(n-69)/12);
 function musicSetup(){ if(!ac||mBus) return; mBus=ac.createGain(); mBus.gain.value=0; mLp=ac.createBiquadFilter(); mLp.type='lowpass'; mLp.frequency.value=2600;
   const echo=ac.createDelay(1), fb=ac.createGain(), wet=ac.createGain(); echo.delayTime.value=.42; fb.gain.value=.3; wet.gain.value=.26;
   mBus.connect(mLp); mBus.connect(echo); echo.connect(fb); fb.connect(echo); echo.connect(wet); wet.connect(mLp); mLp.connect(master); }
-function mNote(hz,t,dur,vol,wave,attack){ const o=ac.createOscillator(), g=ac.createGain(); o.type=wave; o.frequency.value=hz;
-  g.gain.setValueAtTime(.0001,t); g.gain.exponentialRampToValueAtTime(vol,t+attack); g.gain.exponentialRampToValueAtTime(.0001,t+dur); o.connect(g); g.connect(mBus); o.start(t); o.stop(t+dur+.05); }
+// a note with a smooth attack, a held body and a gentle release, so consecutive notes overlap instead of leaving gaps
+function mNote(hz,t,attack,hold,release,vol,wave,detune){ const o=ac.createOscillator(), g=ac.createGain(); o.type=wave; o.frequency.value=hz; if(detune) o.detune.value=detune;
+  g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(vol,t+attack); g.gain.setValueAtTime(vol,t+attack+hold); g.gain.linearRampToValueAtTime(0,t+attack+hold+release);
+  o.connect(g); g.connect(mBus); o.start(t); o.stop(t+attack+hold+release+.05); }
 function musicTick(){ if(!ac||!mBus) return; const want=musicOn&&!muted&&!document.hidden&&ac.state==='running';
   mBus.gain.setTargetAtTime(want?1.4*musicVol:0,ac.currentTime,.3); if(!want){ mNext=0; return; }
-  const md=MOODS[todName]||MOODS.day, rain=!!(state&&state.raining), spb=60/(md.bpm*(rain?.85:1)), sc=SCALES[md.scale];
+  const md=MOODS[todName]||MOODS.day, rain=!!(state&&state.raining), spb=60/(md.bpm*(rain?.85:1)), e8=spb/2, sc=SCALES[md.scale];
   mLp.frequency.setTargetAtTime(rain?md.bright*.6:md.bright,ac.currentTime,1);
   if(mNext<ac.currentTime) mNext=ac.currentTime+.15;
-  while(mNext<ac.currentTime+.6){ const t=mNext, beat=mBeat%4, chord=PROG[md.scale][Math.floor(mBeat/4)%4];
-    if(beat===0){ chord.forEach(s=>mNote(midiHz(md.root-12+s),t,spb*4.3,.06,'sine',.6)); mNote(midiHz(md.root-24+chord[0]),t,spb*3.2,.11,'triangle',.04); }
-    if(Math.random()<md.prob*(rain?.6:1)){ mDeg=Math.max(0,Math.min(sc.length*2-1,mDeg+[-2,-1,-1,1,1,2][Math.floor(Math.random()*6)]));
-      const semi=sc[mDeg%sc.length]+12*Math.floor(mDeg/sc.length); mNote(midiHz(md.root+semi),t+(Math.random()<.25?spb/2:0),spb*1.7,.1,md.wave,.02); }
-    mBeat++; mNext+=spb; } }
+  while(mNext<ac.currentTime+.6){ const t=mNext, pos=mStep%8, chord=PROG[md.scale][Math.floor(mStep/8)%4];
+    // pad: each bar's chord swells in and lingers into the next bar, two slightly detuned voices
+    if(pos===0) chord.forEach(st=>{ mNote(midiHz(md.root-12+st),t,.9,spb*3.2,1.6,.014,'sine',-4); mNote(midiHz(md.root-12+st),t,.9,spb*3.2,1.6,.008,'triangle',5); });
+    // bass on beats 1 and 3
+    if(pos===0||pos===4) mNote(midiHz(md.root-24+chord[pos?2:0]-(pos?12:0)),t,.03,spb*1.4,.5,.04,'triangle');
+    // a soft running arpeggio over the chord keeps the music flowing between melody notes
+    if(pos%(8/md.arp)===0){ const up=[0,1,2,1,0,1,2,1][pos]; mNote(midiHz(md.root+chord[up]+(pos>=4&&up===0?12:0)),t,.02,e8*.6,e8*1.4,rain?.008:.012,'sine'); }
+    // melody: on the beat, held for one or two beats, wandering through the scale
+    if(pos%2===0&&Math.random()<md.prob*(rain?.65:1)){ mDeg=Math.max(0,Math.min(sc.length*2-1,mDeg+[-2,-1,-1,1,1,2][Math.floor(Math.random()*6)]));
+      const semi=sc[mDeg%sc.length]+12*Math.floor(mDeg/sc.length), beats=Math.random()<.4?2:1; mNote(midiHz(md.root+semi),t,.04,spb*beats*.7,spb*.9,.05,md.wave); }
+    mStep++; mNext+=e8; } }
 setInterval(musicTick,200);
 let hapticsOn=true; try{ hapticsOn=localStorage.getItem('squirm-haptics')!=='0'; }catch(e){}
 const HAPTIC={move:8,grow:[10,30,14],shrink:[14,30,10],key:[8,25,8,25,12],gate:22,flag:[12,40,16],portal:[10,30,24],crumble:28,bump:[14,30,14],stuck:[40,70,40],undo:6,
@@ -759,7 +768,7 @@ function burrowPos(){ for(let y=0;y<state.h;y++) for(let x=0;x<state.w;x++) if(s
 function updateHead(dt){
   const h=segMeshes[0]; if(!h||!h.userData.body) return;
   const asleep=!animating && state.status==='play' && idleT-lastMoveT>25 && reactT<=0;
-  if(asleep){ if(h.userData.expr!=='sleepy') applyExpr(h,'sleepy'); lookPhase='sleep';
+  if(asleep){ if(h.userData.expr!=='sleepy'){ applyExpr(h,'sleepy'); bumpStat('naps'); checkBadges(null); save(); } lookPhase='sleep';
     h.rotation.y=angLerp(h.rotation.y,Math.atan2(headDir[0],headDir[1]),1-Math.exp(-dt/1000*3)); h.userData.body.rotation.x+=(.25-h.userData.body.rotation.x)*(1-Math.exp(-dt/1000*3));
     h.userData.face.eyes.forEach(e=>e.scale.set(1,.22,1)); zT-=dt/1000; if(zT<0&&!reduceMotion){ zT=1.3; snore(h); } return; }
   if(lookPhase==='sleep'){ lookPhase='off'; applyExpr(h,'smile'); }
@@ -805,7 +814,7 @@ function tryMove(dir){
     if(r.blocked==='sprout') toast('Just a seedling. It needs rain to grow into a leaf.');
     if(r.blocked==='hedge') toast('The hedge only opens while part of you rests on a flower.');
     nudge(dir); return; }
-  history.push(state); const prev=state; state=r.state; lastMoveT=idleT; clearHint(); saveResume(); dismissTutorial();
+  history.push(state); const prev=state; state=r.state; lastMoveT=idleT; clearHint(); saveResume(); bumpStat('moves'); dismissTutorial();
   if(r.ev.slide){ slideSteps=r.ev.slide.slice(1).map(x=>({state:x.state,ev:x.ev})).concat([{state:r.state,ev:r.ev}]); state=r.ev.slide[0].state; animateMove(prev,r.ev.slide[0].ev,dir); return; }
   animateMove(prev,r.ev,dir);
 }
@@ -820,6 +829,8 @@ function animateMove(prev,ev,dir,sliding){
   const d=DIRS[dir]; headDir=[d[0],d[1]];
   sfx(ev.portal?'portal':sliding?'slide':'move',state.moves);
   if(sliding) bumpStat('slides'); if(ev.eaten==='+'||ev.eaten==='-') bumpStat('fruit');
+  if(ev.eaten==='C') bumpStat('flags'); if(ev.eaten==='G') bumpStat('gates'); if(ev.portal) bumpStat('tunnels'); if(ev.rain===true) bumpStat('rains');
+  if(ev.swung&&ev.swung.length) bumpStat('swings'); if(ev.crumbled&&ev.crumbled.length) bumpStat('crumbles',ev.crumbled.length);
   syncBoard(true); syncWeather(true); syncHedges(true); if(ev.snails) syncSnails(true,ev);
   if(ev.swung){ sfx('creak'); const it=cells[state.segs[0][1]][state.segs[0][0]].item; if(it&&it.userData.wheel){ const w=it.userData.wheel, z0=w.rotation.z; tween(600,(e)=>{ w.rotation.z=z0-e*Math.PI*1.5; }); }
     if(!ev.swung.length) toast('Nothing turned. Bridges with you on them stay put.',2400); }
@@ -850,7 +861,7 @@ function animateMove(prev,ev,dir,sliding){
     if(ev.portal) burst(wp(ev.via[0],ev.via[1],.3),C.portal[tileAt(state,ev.via[0],ev.via[1])]||0xffffff);
     animating--; lastMoveT=idleT;
     if(slideSteps.length){ const p=state, nx=slideSteps.shift(); state=nx.state; animateMove(p,nx.ev,dir,true); return; }
-    updateHUD(); if(state.status!=='won'&&checkBadges(null).length===0&&(sliding||ev.eaten)) save();
+    updateHUD(); if(state.status!=='won'&&checkBadges(null).length===0) save();
     if(state.status==='won') return winSeq();
     if(ev.exitNote) toast(ev.exitNote==='flags'?'The burrow opens once every flag is touched.':`This burrow fits a length of ${state.exitLen}. You're ${state.segs.length}.`);
     else if(!canMove()){ queue.length=0; sfx('stuck'); pulse($('undoBtn')); toast('No way forward from here. Undo or restart.',3600); }
@@ -931,7 +942,7 @@ function onWin(){ shareText=''; newBest=false; chapterDone=null; const coloursBe
   $('winShare').hidden=!shareText; petals(); show('winOv'); pushLayer('win');
 }
 function undo(){
-  if(!history.length) return; tweens.length=0; animating=0; queue.length=0; slideSteps.length=0; sfx('undo'); lastMoveT=idleT;
+  if(!history.length) return; bumpStat('undos'); checkBadges(null); save(); tweens.length=0; animating=0; queue.length=0; slideSteps.length=0; sfx('undo'); lastMoveT=idleT;
   clearDying(); clearHint(); const cur=state; state=history.pop(); syncBoard(false); syncWeather(false); syncSnails(false); syncHedges(false); updateHUD(true); saveResume();
   if(reduceMotion||cur.segs.length!==state.segs.length||segMeshes.length!==state.segs.length){ snapWorm(); return; }
   const n=state.segs.length, starts=segMeshes.map(s=>s.position.clone()), targets=state.segs.map((p,i)=>wp(p[0],p[1],segY(i,n)));
@@ -1257,7 +1268,6 @@ $('setSound').onclick=()=>{ $('muteBtn').onclick(); renderSettings(); };
 $('setHaptic').onclick=()=>{ $('hapticBtn').onclick(); renderSettings(); };
 $('setMusicVol').oninput=e=>{ musicVol=e.target.value/100; try{ localStorage.setItem('squirm-music-vol',String(musicVol)); }catch(err){} ensureAudio(); musicTick(); };
 $('setMusic').onclick=()=>{ musicOn=!musicOn; try{ localStorage.setItem('squirm-music',musicOn?'1':'0'); }catch(e){} ensureAudio(); renderSettings(); if(musicOn&&muted) toast('Turn sound on to hear the music.',2400); };
-$('setReset').onclick=()=>{ hide('setOv'); popLayer('settings'); askReset(); };
 // a save code is every squirm- key (except throwaway ones) as base64 JSON with a version prefix
 const SAVE_PREFIX='SQUIRM1:', SAVE_SKIP=['squirm-quality','squirm-offline-told','squirm-daily-patch'];
 function saveCode(){ const d={}; try{ for(const k of Object.keys(localStorage)) if(k.startsWith('squirm-')&&!SAVE_SKIP.includes(k)) d[k]=localStorage.getItem(k); }catch(e){}
@@ -1291,8 +1301,25 @@ const BADGES=[
   ['slides','&#127811;','Slip and slide','Slide across 50 wet leaves.',()=>progress.stats.slides>=50],
   ['hedges','&#127795;','Green thumb','Open hedges 20 times.',()=>progress.stats.hedges>=20],
   ['snacks','&#127825;','Snack attack','Eat 30 peaches and mushrooms.',()=>progress.stats.fruit>=30],
-  ['owl','&#129417;','Night owl','Finish a patch between 10 pm and 5 am.',c=>c&&c.won&&(c.hour>=22||c.hour<5)],
-  ['quick','&#9889;','Quick crawl','Finish a patch with a par of 10 or more in under 30 seconds.',c=>c&&c.won&&c.par>=10&&c.secs<30]];
+  ['owl','&#127771;','Night owl','Finish a patch between 10 pm and 5 am.',c=>c&&c.won&&(c.hour>=22||c.hour<5)],
+  ['quick','&#9889;','Quick crawl','Finish a patch with a par of 10 or more in under 30 seconds.',c=>c&&c.won&&c.par>=10&&c.secs<30],
+  ['flags','&#128681;','Flag collector','Touch 100 flags.',()=>progress.stats.flags>=100],
+  ['tunnels','&#128371;','Burrow buddy','Travel through tunnels 25 times.',()=>progress.stats.tunnels>=25],
+  ['gates','&#128273;','Key keeper','Open 15 gates.',()=>progress.stats.gates>=15],
+  ['crumbs','&#127964;','Crumbly ground','Watch 50 dry patches sink.',()=>progress.stats.crumbles>=50],
+  ['rain','&#127783;','Rain dancer','Start the rain 10 times.',()=>progress.stats.rains>=10],
+  ['bridges','&#127753;','Bridge keeper','Swing bridges 15 times.',()=>progress.stats.swings>=15],
+  ['moves','&#128062;','Long crawl','Crawl 1,000 moves.',()=>progress.stats.moves>=1000],
+  ['undos','&#9194;','Second thoughts','Take back 100 moves.',()=>progress.stats.undos>=100],
+  ['taps','&#128075;','Best friends','Say hi to the worm 20 times.',()=>progress.stats.taps>=20],
+  ['nap','&#128164;','Nap time','Let the worm doze off mid-patch.',()=>progress.stats.naps>=1],
+  ['sage','&#129417;','Puzzle sage','Finish 20 patches without a hint.',()=>Object.keys(progress.clean).length>=20],
+  ['shiny','&#10024;','Shining garden','Get three stars on 30 patches.',()=>LEVELS.filter(l=>progress.stars[l.name]===3).length>=30],
+  ['chapters','&#127804;','Seasoned gardener','Finish seven chapters.',()=>CHAPTERS.filter((ch,k)=>chapterCleared(k)).length>=7],
+  ['month','&#127769;','Month of wiggles','Keep a 30 day daily streak.',()=>progress.daily.best>=30],
+  ['fearless','&#129409;','Fearless','Clear ten hard endless patches.',()=>progress.endless.hard.cleared>=10],
+  ['dressup','&#127913;','Dress-up box','Unlock five hats.',()=>HATS.filter(h=>h[2]>=0&&hatUnlocked(h)).length>=5],
+  ['rainbow','&#127752;','Rainbow worm','Unlock every worm colour.',()=>coloursUnlocked()===WORM_COLS.length]];
 // returns the badges earned just now; quiet ones (earned before badges existed) don't celebrate
 function checkBadges(ctx,quiet){ const got=[];
   for(const b of BADGES){ if(progress.badges[b[0]]) continue; let ok=false; try{ ok=!!b[4](ctx); }catch(e){} if(ok){ progress.badges[b[0]]=Date.now(); got.push(b); } }
@@ -1327,7 +1354,7 @@ function initHomeWorm(){ try{ homeR=new THREE.WebGLRenderer({canvas:homeCanvas,a
       if(Math.floor(t*4)!==Math.floor((t-.05)*4)) buzz(Math.round(6+t*6));
       if(t>=3){ endHold(); held=true; askReset(); } },50); });
   ['pointerup','pointerleave','pointercancel'].forEach(ev=>homeCanvas.addEventListener(ev,()=>{ const short=holdT && performance.now()-holdStart<600; endHold();
-    if(short&&!held){ homeReact(EXPRS[Math.floor(Math.random()*EXPRS.length)]); sfx('grow'); } else if(!held && hHead) applyExpr(hHead,'smile'); }));
+    if(short&&!held){ homeReact(EXPRS[Math.floor(Math.random()*EXPRS.length)]); sfx('grow'); bumpStat('taps'); checkBadges(null); save(); } else if(!held && hHead) applyExpr(hHead,'smile'); }));
   homeCanvas.addEventListener('contextmenu',e=>e.preventDefault());
   homeCanvas.addEventListener('keydown',e=>{ if(e.key!=='Enter'&&e.key!==' ') return; e.preventDefault(); ensureAudio(); homeReact(EXPRS[Math.floor(Math.random()*EXPRS.length)]); sfx('grow'); });
 }
@@ -1472,7 +1499,7 @@ document.addEventListener('pointercancel',()=>{ gest=null; });
 document.addEventListener('touchmove',e=>{ if(!e.target.closest('.list,.home,.dialog')) e.preventDefault(); },{passive:false});
 document.addEventListener('gesturestart',e=>e.preventDefault());
 const ray=new THREE.Raycaster(); const plane=new THREE.Plane(new THREE.Vector3(0,1,0),0);
-function wormEmote(){ const h=segMeshes[0]; if(!h||animating||state.status!=='play') return; react(EXPRS[Math.floor(Math.random()*EXPRS.length)],1200); lastMoveT=idleT;
+function wormEmote(){ const h=segMeshes[0]; if(!h||animating||state.status!=='play') return; bumpStat('taps'); checkBadges(null); save(); react(EXPRS[Math.floor(Math.random()*EXPRS.length)],1200); lastMoveT=idleT;
   sfx('tap'); tone(660+Math.random()*300,.18,{type:'sine',vol:.08,slide:1.4}); buzz(10); const b=h.userData.body;
   if(!reduceMotion) tween(420,(e,k)=>{ const s=1+Math.sin(k*Math.PI)*.16; b.scale.set(s,1/s,s); b.rotation.z=Math.sin(k*Math.PI*3)*.25*(1-k); },()=>{ b.scale.set(1,1,1); b.rotation.z=0; }); }
 function tapMove(e){

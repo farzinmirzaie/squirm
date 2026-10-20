@@ -142,7 +142,7 @@ level-list thumbnails, and `introAt` in `tools/verify-levels.js`.
   the back button returns to Play; opening a patch from a tab replaces that layer with `game`.
 - **Settings and backups:** the gear on the home screen opens `setOv`, a short list whose rows open
   sub-pages (`setPage`, each pushing a `setpage` layer): Sound & music, Look, Your garden (save
-  code, start over) and About. A save code is `SQUIRM1:` + base64 JSON of every `squirm-` key except
+  code backup and restore) and About. Starting over is only the secret hold on the home worm. A save code is `SQUIRM1:` + base64 JSON of every `squirm-` key except
   the throwaway ones in `SAVE_SKIP`; restoring replaces those keys and reloads.
 - **Ambient motion:** river tiles register in `flowTiles` (drifting leaf, glints, ripple, a
   water-babble sound loop); snails leave a slime strip (`trail`) that grows from tile to tile.
