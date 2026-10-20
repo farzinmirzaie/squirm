@@ -33,7 +33,8 @@ jobs:
           path: dist
 
   smoke:
-    runs-on: ubuntu-latest
+    # pinned: Playwright 1.56 can't install its browser on newer Ubuntu images
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -45,7 +46,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.cache/ms-playwright
-          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          key: playwright-ubuntu-24.04-${{ hashFiles('package-lock.json') }}
       - run: npx playwright install --with-deps chromium
       - name: Play the game in a headless browser
         run: npm run smoke
