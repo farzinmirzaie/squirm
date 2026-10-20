@@ -237,16 +237,7 @@ body.at-home #app{visibility:hidden}
 #homeWorm:focus-visible{outline:3px solid var(--honey);outline-offset:2px;border-radius:24px}
 #homeWorm{position:static;display:block;margin:0 auto -8px;width:220px;height:150px;cursor:pointer;-webkit-touch-callout:none;user-select:none;touch-action:none}
 .brand{display:inline-block;margin:0;padding:6px 26px 10px;letter-spacing:.02em;white-space:normal;overflow:visible;font:800 46px/1.1 "Grandstander",ui-rounded,system-ui,sans-serif;color:var(--ink);background:var(--paper);border:2px solid var(--edge);border-radius:22px;box-shadow:0 4px 0 var(--edge),0 10px 24px var(--shadow)}
-.win-extra{margin:-4px 0 12px}
-.win-extra .btn{min-height:46px;font-size:16px}
-.seg.filter{grid-template-columns:1fr 1fr;margin:-4px 0 6px}
-.seg.filter button{min-height:40px}
-.list-empty{text-align:center;padding:20px 8px;font-weight:800;color:var(--ink-soft)}
-.journal{display:grid;grid-template-columns:1fr 1fr;gap:6px}
-.journal div{display:flex;flex-direction:column;gap:2px;padding:8px 10px;border-radius:14px;background:var(--paper-2);border:2px solid var(--edge)}
-.journal small{font-size:12px;font-weight:700;color:var(--ink-soft)}
-.journal b{font:800 18px/1.1 "Grandstander",ui-rounded,system-ui,sans-serif}
-#badgeCount{text-transform:none;letter-spacing:0}
+.share{width:100%;margin:-4px 0 12px}
 .mode-ico{flex:none;width:52px;height:52px;border-radius:16px;display:grid;place-items:center;border:2px solid var(--edge)}
 .garden-ico{background:#DDF1C9}.meadow-ico{background:#FFF1C4}
 .label{margin:0 0 -6px;font-weight:800;font-size:13px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.06em}
@@ -314,8 +305,6 @@ body.at-home #app{visibility:hidden}
 }
 @media (prefers-contrast: more) and (prefers-color-scheme: dark){ :root:not([data-theme="light"]){--ink-soft:#FBEFDD;--edge:#A08468} }
 @media (prefers-reduced-motion: reduce){ .spin,.logo svg,.gbtn.hint .disc svg,#winNext{animation:none} #tutorial .hand{animation:none} .star{animation:none;transform:none} .pop{animation:none} .dialog{animation:none} #toast{transition:none} .petals{display:none} }
-.calm .spin,.calm .logo svg,.calm .gbtn.hint .disc svg,.calm #winNext{animation:none} .calm #tutorial .hand{animation:none} .calm .star{animation:none;transform:none} .calm .pop{animation:none} .calm .dialog{animation:none} .calm #toast{transition:none} .calm .petals{display:none}
-.calm .brand span{animation:none}
 </style>
 </head>
 <body>
@@ -353,13 +342,12 @@ body.at-home #app{visibility:hidden}
     <circle cx="26" cy="11" r="10"/><circle cx="40.3" cy="21.4" r="10"/><circle cx="34.8" cy="38.2" r="10"/><circle cx="17.2" cy="38.2" r="10"/><circle cx="11.7" cy="21.4" r="10"/></g>
     <circle cx="26" cy="26" r="13" fill="#FFD866" stroke="#5B4436" stroke-width="2"/><circle cx="21.5" cy="24" r="2" fill="#5B4436"/><circle cx="30.5" cy="24" r="2" fill="#5B4436"/><path d="M21 29q5 4 10 0" stroke="#5B4436" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
   <h2 id="winTitle">Snug as a bug!</h2><p id="winText"></p><div id="winMedal"></div>
-  <div class="row win-extra"><button class="btn" id="winWatch">Watch replay</button><button class="btn" id="winShare" hidden>Share</button></div>
-  <div class="row"><button class="btn" id="winReplay">Play again</button><button class="btn primary" id="winNext">Next patch</button></div>
+  <button class="btn share" id="winShare" hidden>Share result</button>
+  <div class="row"><button class="btn" id="winReplay">Replay</button><button class="btn primary" id="winNext">Next patch</button></div>
 </div></div>
 
 <div class="ov" id="lvOv"><div role="dialog" aria-modal="true" aria-labelledby="lvTitle" class="dialog card">
   <h2 id="lvTitle">Garden patches</h2><div class="total" id="lvTotal"></div>
-  <div class="seg filter" id="lvFilter" role="radiogroup" aria-label="Show"><button role="radio" data-f="all"><b>All patches</b></button><button role="radio" data-f="stars"><b>Needs stars</b></button></div>
   <div class="list" id="lvGrid"></div>
   <div class="row"><button class="btn" id="lvClose">Back</button></div>
 </div></div>
@@ -383,7 +371,7 @@ body.at-home #app{visibility:hidden}
     <span class="mode-ico daily-ico" aria-hidden="true"><span class="cal" id="dailyDay">11</span></span>
     <span class="bt"><b>Daily patch</b><small id="dailySub">One patch for everyone today</small><span class="week" id="dailyWeek" aria-hidden="true"></span></span><span class="go" aria-hidden="true">&#8250;</span>
   </button>
-  <div class="home-tools"><button class="round" id="homeSound"></button><button class="round" id="badgeBtn" aria-label="Journal and badges" title="Journal and badges"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3l-2 7M16 3l2 7"/><circle cx="12" cy="15" r="6" fill="currentColor" fill-opacity=".25"/><path d="M12 12.3l.9 1.8 2 .3-1.45 1.4.35 2-1.8-.95-1.8.95.35-2-1.45-1.4 2-.3z" fill="currentColor"/></svg></button><button class="round" id="wardBtn" aria-label="Wardrobe" title="Wardrobe"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17c0-1.5 4-2.5 9-2.5s9 1 9 2.5-4 2.5-9 2.5-9-1-9-2.5z" fill="currentColor" fill-opacity=".25"/><path d="M7 15.2C7 9 8.5 5 12 5s5 4 5 10.2"/><path d="M7.3 12.5h9.4"/></svg></button><button class="round" id="settingsBtn" aria-label="Settings" title="Settings"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.8v2.4M12 18.8v2.4M2.8 12h2.4M18.8 12h2.4M5.5 5.5l1.7 1.7M16.8 16.8l1.7 1.7M5.5 18.5l1.7-1.7M16.8 7.2l1.7-1.7"/><circle cx="12" cy="12" r="6.6"/></svg></button><button class="round" id="installBtn" aria-label="Install Squirm as an app" hidden><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7 10l5 5 5-5"/><path d="M5 19h14"/></svg></button></div>
+  <div class="home-tools"><button class="round" id="homeSound"></button><button class="round" id="badgeBtn" aria-label="Badges" title="Badges"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3l-2 7M16 3l2 7"/><circle cx="12" cy="15" r="6" fill="currentColor" fill-opacity=".25"/><path d="M12 12.3l.9 1.8 2 .3-1.45 1.4.35 2-1.8-.95-1.8.95.35-2-1.45-1.4 2-.3z" fill="currentColor"/></svg></button><button class="round" id="wardBtn" aria-label="Wardrobe" title="Wardrobe"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17c0-1.5 4-2.5 9-2.5s9 1 9 2.5-4 2.5-9 2.5-9-1-9-2.5z" fill="currentColor" fill-opacity=".25"/><path d="M7 15.2C7 9 8.5 5 12 5s5 4 5 10.2"/><path d="M7.3 12.5h9.4"/></svg></button><button class="round" id="settingsBtn" aria-label="Settings" title="Settings"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.8v2.4M12 18.8v2.4M2.8 12h2.4M18.8 12h2.4M5.5 5.5l1.7 1.7M16.8 16.8l1.7 1.7M5.5 18.5l1.7-1.7M16.8 7.2l1.7-1.7"/><circle cx="12" cy="12" r="6.6"/></svg></button><button class="round" id="installBtn" aria-label="Install Squirm as an app" hidden><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7 10l5 5 5-5"/><path d="M5 19h14"/></svg></button></div>
 </div></div>
 <div class="ov" id="endlessOv"><div role="dialog" aria-modal="true" aria-labelledby="endlessTitle" class="dialog card sheet">
   <h2 id="endlessTitle">Endless meadow</h2>
@@ -400,7 +388,6 @@ body.at-home #app{visibility:hidden}
   <div class="set-row"><span>Music</span><button class="switch" id="setMusic" role="switch" aria-checked="true" aria-label="Music"><i></i></button></div>
   <div class="set-row vol"><span>Music volume</span><input type="range" id="setMusicVol" min="0" max="100" step="5" value="70" aria-label="Music volume"></div>
   <div class="set-row"><span>Sound</span><button class="switch" id="setSound" role="switch" aria-checked="true" aria-label="Sound"><i></i></button></div>
-  <div class="set-row"><span>Calm motion</span><button class="switch" id="setCalm" role="switch" aria-checked="false" aria-label="Calm motion"><i></i></button></div>
   <div class="set-row"><span>Vibration</span><button class="switch" id="setHaptic" role="switch" aria-checked="true" aria-label="Vibration"><i></i></button></div>
   <p class="label">Colours</p>
   <div class="seg" id="setTheme" role="radiogroup" aria-label="Colours">
@@ -423,9 +410,7 @@ body.at-home #app{visibility:hidden}
   <button class="btn primary" id="wardClose">Done</button>
 </div></div>
 <div class="ov" id="badgeOv"><div role="dialog" aria-modal="true" aria-labelledby="badgeTitle" class="dialog card sheet">
-  <h2 id="badgeTitle">Journal</h2>
-  <div class="journal" id="journal"></div>
-  <p class="label">Badges <span id="badgeCount"></span></p>
+  <h2 id="badgeTitle">Badges</h2><p class="total" id="badgeCount"></p>
   <div class="badge-grid list" id="badgeGrid"></div>
   <button class="btn primary" id="badgeClose">Done</button>
 </div></div>
