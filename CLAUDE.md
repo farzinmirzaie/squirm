@@ -131,7 +131,8 @@ level-list thumbnails, and `introAt` in `tools/verify-levels.js`.
   `generateEndless`. The daily patch uses a date seed with a fixed number of tries so it's
   deterministic.
 - **Performance:** `watchSpeed` lowers `quality` (pixel ratio, shadow map size) when most frames
-  take over 28 ms, and remembers it in `squirm-quality`. Behind menus the blurred garden is drawn
+  take over 40 ms (a 30 fps low-power cap doesn't count), raises it one step per session once frames
+  are quick again, and remembers it in `squirm-quality`. Ground textures use anisotropic filtering. Behind menus the blurred garden is drawn
   every third frame only.
 - **GPU memory:** `disposeTree` frees a patch's meshes when the next one is built. Anything
   cached or defined at module level (`GC`, `MC`, the shared textures and materials) is kept; add

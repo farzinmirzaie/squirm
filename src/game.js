@@ -20,7 +20,7 @@ let renderer;
 try{ renderer=new THREE.WebGLRenderer({canvas,antialias:true}); }catch(e){ document.getElementById('noGL').classList.add('show'); return; }
 // quality 2 = full, 1 = lighter shadows, 0 = also lower resolution; drops automatically on slow devices
 let quality=2; try{ const q=parseInt(localStorage.getItem('squirm-quality'),10); if(q>=0&&q<=2) quality=q; }catch(e){}
-const pixelRatio=()=>Math.min(window.devicePixelRatio||1,quality===2?1.75:quality===1?1.5:1);
+const pixelRatio=()=>Math.min(window.devicePixelRatio||1,quality===2?2.5:quality===1?1.75:1.25);
 renderer.setPixelRatio(pixelRatio());
 renderer.setClearColor(C.lawn);
 renderer.shadowMap.enabled=true; renderer.shadowMap.type=THREE.PCFSoftShadowMap;
@@ -160,8 +160,8 @@ function rrShape(w,d,r){ const s=new THREE.Shape(), x=-w/2, y=-d/2;
 function slab(w,d,r,h,b){ const g=new THREE.ExtrudeGeometry(rrShape(w-2*b,d-2*b,r),{depth:Math.max(.01,h-2*b),bevelEnabled:true,bevelThickness:b,bevelSize:b,bevelSegments:5,curveSegments:8});
   g.rotateX(-Math.PI/2); g.center(); g.computeVertexNormals(); return g; }
 const TURF=slab(.94,.94,.16,.3,.08);
-const turfTex=(()=>{ const cv=document.createElement('canvas'); cv.width=cv.height=128; const g=cv.getContext('2d'); g.fillStyle='#fff'; g.fillRect(0,0,128,128);
-  for(let i=0;i<260;i++){ const x=Math.random()*128,y=Math.random()*128; g.fillStyle=Math.random()<.5?'rgba(80,140,60,.16)':'rgba(255,255,255,.5)'; g.beginPath(); g.ellipse(x,y,1.2+Math.random()*1.6,3+Math.random()*3,Math.random()*3,0,Math.PI*2); g.fill(); }
+const turfTex=(()=>{ const cv=document.createElement('canvas'); cv.width=cv.height=256; const g=cv.getContext('2d'); g.fillStyle='#fff'; g.fillRect(0,0,256,256);
+  for(let i=0;i<1040;i++){ const x=Math.random()*256,y=Math.random()*256; g.fillStyle=Math.random()<.5?'rgba(80,140,60,.16)':'rgba(255,255,255,.5)'; g.beginPath(); g.ellipse(x,y,1.2+Math.random()*1.6,3+Math.random()*3,Math.random()*3,0,Math.PI*2); g.fill(); }
   const t=new THREE.CanvasTexture(cv); t.wrapS=t.wrapT=THREE.RepeatWrapping; t.repeat.set(1.6,1.6); return t; })();
 MC.turf1=toon(C.turf1,{map:turfTex}); MC.turf2=toon(C.turf2,{map:turfTex});
 const crackTex=(()=>{ const cv=document.createElement('canvas'); cv.width=cv.height=128; const g=cv.getContext('2d');
@@ -178,6 +178,8 @@ const lawnTex=(()=>{ const cv=document.createElement('canvas'); cv.width=64; cv.
 
 // ---------- garden scenery ----------
 const lawnMat=toon(0xffffff,{map:lawnTex});
+// the camera looks at the ground at a slant, where plain mipmapping smears textures; anisotropic filtering keeps them crisp
+{ const an=Math.min(8,renderer.capabilities.getMaxAnisotropy()); for(const t of [turfTex,crackTex,lawnTex]) t.anisotropy=an; }
 const PETAL=[0xF57FA4,0xFFB05E,0xB89CF5,0xFFD95A,0xFF8C8C];
 function tulip(r,col){ const g=new THREE.Group(); const h=.22+r()*.12;
   const st=new THREE.Mesh(new THREE.CylinderGeometry(.018,.022,h,8),m('leaf')); st.position.y=h/2; g.add(st);
@@ -262,7 +264,7 @@ const flowTex=(()=>{ const cv=document.createElement('canvas'); cv.width=cv.heig
   g.strokeStyle='rgba(255,255,255,1)'; g.fillStyle='rgba(120,190,220,.18)'; for(let i=0;i<3;i++){ g.fillRect(0,i*21+8,64,2); }
   g.strokeStyle='rgba(255,255,255,.95)'; g.lineWidth=2.5; g.lineCap='round'; for(let i=0;i<5;i++){ const y=Math.random()*64,x=Math.random()*64; g.beginPath(); g.moveTo(x,y); g.quadraticCurveTo(x+6,y-3,x+12,y); g.stroke(); }
   const t=new THREE.CanvasTexture(cv); t.wrapS=t.wrapT=THREE.RepeatWrapping; return t; })();
-const flowH=flowTex, flowV=flowTex.clone(); flowV.needsUpdate=true; flowV.center.set(.5,.5); flowV.rotation=Math.PI/2;
+flowTex.anisotropy=turfTex.anisotropy; const flowH=flowTex, flowV=flowTex.clone(); flowV.needsUpdate=true; flowV.center.set(.5,.5); flowV.rotation=Math.PI/2;
 const waterMatH=toon(C.riverWater,{map:flowH}), waterMatV=toon(C.riverWater,{map:flowV});
 const WATER=slab(1.02,1.02,.05,.1,.02);
 function riverAt(x,y){ const c=tileAt(state,x,y); return c==='~'||c==='='||c==='|'; }
@@ -1340,10 +1342,11 @@ $('resetYes').onclick=()=>{ try{ Object.keys(localStorage).filter(k=>k.startsWit
 // ---------- the worm on the home screen: just the head, full of personality ----------
 const homeCanvas=$('homeWorm'); let homeR=null, hScene, hCam, hHead, hExprT=0, hBlink=2, hReactT=0;
 function initHomeWorm(){ try{ homeR=new THREE.WebGLRenderer({canvas:homeCanvas,antialias:true,alpha:true}); }catch(e){ return; }
-  homeR.setPixelRatio(Math.min(window.devicePixelRatio||1,2)); homeR.setSize(220,150,false);
+  homeR.setPixelRatio(Math.min(window.devicePixelRatio||1,3)); homeR.setSize(220,200,false);
   hScene=new THREE.Scene(); hScene.add(new THREE.HemisphereLight(0xfffaf0,0xb7d79a,.32)); hScene.add(new THREE.AmbientLight(0xfff4e2,.2));
   const d=new THREE.DirectionalLight(0xfff1dc,.6); d.position.set(-2,4,3); hScene.add(d);
-  hCam=new THREE.PerspectiveCamera(24,220/150,.1,50); hCam.position.set(0,.4,3.5); hCam.lookAt(0,.4,0);
+  // framed with headroom above the worm so tall hats (top hat, umbrella) fit
+  hCam=new THREE.PerspectiveCamera(24,220/200,.1,50); hCam.position.set(0,.5,4.66); hCam.lookAt(0,.63,0);
   hHead=makeSeg(0,hScene); hHead.position.set(0,.34,0); hHead.scale.setScalar(1.45); applyExpr(hHead,'grin');
   // tap: a happy reaction. Hold for 3 seconds: the secret reset (the worm gets more and more worried)
   let holdT=null, holdStart=0, held=false;
@@ -1543,11 +1546,15 @@ $('hapticBtn').onclick=()=>{ hapticsOn=!hapticsOn; try{ localStorage.setItem('sq
 renderHaptic();
 
 // ---------- loop ----------
-let last=performance.now(), last0=last, frameN=0, slowT=0, sampleT=0;
-function watchSpeed(ms){ if(quality===0||ms>250) return; sampleT+=ms; if(ms>28) slowT+=ms;
-  if(sampleT<4000) return; const slow=slowT/sampleT>.5; sampleT=slowT=0; if(!slow) return;
-  quality--; try{ localStorage.setItem('squirm-quality',String(quality)); }catch(e){}
-  renderer.setPixelRatio(pixelRatio()); sun.shadow.mapSize.setScalar(1024); if(sun.shadow.map){ sun.shadow.map.dispose(); sun.shadow.map=null; } fitCamera(false); }
+let last=performance.now(), last0=last, frameN=0, slowT=0, fastT=0, sampleT=0, raisedOnce=false;
+// steps quality down when frames run under ~25 fps (a phone in low power mode capped at 30 fps is fine),
+// and back up once frames are quick again, so one rough patch doesn't leave the garden blurry for good
+function watchSpeed(ms){ if(ms>250) return; sampleT+=ms; if(ms>40) slowT+=ms; if(ms<20) fastT+=ms;
+  if(sampleT<4000) return; const slow=slowT/sampleT>.5, fast=fastT/sampleT>.9; sampleT=slowT=fastT=0;
+  if(slow&&quality>0) setQuality(quality-1);
+  else if(fast&&quality<2&&!raisedOnce){ raisedOnce=true; setQuality(quality+1); } }
+function setQuality(q){ quality=q; try{ localStorage.setItem('squirm-quality',String(quality)); }catch(e){}
+  renderer.setPixelRatio(pixelRatio()); sun.shadow.mapSize.setScalar(quality===2?2048:1024); if(sun.shadow.map){ sun.shadow.map.dispose(); sun.shadow.map=null; } fitCamera(false); }
 function frame(now){
   const dt=Math.min(50,now-last); last=now; idleT+=dt/1000;
   for(let i=tweens.length-1;i>=0;i--){ const t=tweens[i]; if(!t) continue; t.t+=dt; const k=Math.min(1,t.t/t.dur); t.fn(ease(k),k); if(k>=1){ const j=tweens.indexOf(t); if(j>=0) tweens.splice(j,1); t.done&&t.done(); } }
