@@ -1017,8 +1017,8 @@ $('toast').addEventListener('click',()=>$('toast').classList.remove('show'));
 function toast(msg,ms=2600){ const t=$('toast'); t.innerHTML=sticker(ICON.leaf)+'<span class="msg"></span>'; t.querySelector('.msg').textContent=msg; t.classList.add('show'); clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove('show'),ms); }
 function show(id){ $(id).classList.add('show'); if(id==='homeOv'){ document.body.classList.add('at-home'); return; } const b=$(id).querySelector('.primary')||$(id).querySelector('button'); b&&b.focus({preventScroll:true}); }
 function hide(id){ $(id).classList.remove('show'); if(id==='homeOv') document.body.classList.remove('at-home'); }
-function hideAll(){ ['winOv','lvOv','homeOv','endlessOv','setOv','wardOv','badgeOv'].forEach(hide); }
-function anyOverlay(){ return ['winOv','lvOv','homeOv','genOv','endlessOv','introOv','resetOv','setOv','wardOv','badgeOv'].some(id=>$(id).classList.contains('show')); }
+function hideAll(){ ['winOv','homeOv','setOv'].forEach(hide); }
+function anyOverlay(){ return ['winOv','homeOv','genOv','introOv','resetOv','setOv'].some(id=>$(id).classList.contains('show')); }
 function renderMute(){ if($('homeSound')){ const hb=$('homeSound'); hb.setAttribute('aria-label',muted?'Turn sound on':'Turn sound off'); setTimeout(()=>{ hb.innerHTML=$('muteBtn').innerHTML; },0); } const b=$('muteBtn'); b.setAttribute('aria-pressed',String(muted)); b.setAttribute('aria-label',muted?'Turn sound on':'Turn sound off');
   b.innerHTML = muted
    ? '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path d="M17 9l5 6M22 9l-5 6"/></svg>'
@@ -1148,26 +1148,36 @@ function popLayer(n){ const i=layers.lastIndexOf(n); if(i<0) return; const k=lay
 function enterGame(){ const top=layers[layers.length-1];
   if(top==='game') return;
   if(layers.includes('game')){ popLayer(layers[layers.indexOf('game')+1]); return; }
-  if(top==='list'||top==='endless'){ layers[layers.length-1]='game'; try{ window.history.replaceState({squirm:layers.length},''); }catch(e){} return; }
+  if(top==='tab'){ layers[layers.length-1]='game'; try{ window.history.replaceState({squirm:layers.length},''); }catch(e){} return; }
   pushLayer('game'); }
 window.addEventListener('popstate',()=>{ if(ignorePop>0){ ignorePop--; return; } const top=layers.pop();
   if(top==='intro') closeIntro(true);
   else if(top==='reset') hide('resetOv');
   else if(top==='settings') hide('setOv');
-  else if(top==='wardrobe') hide('wardOv');
-  else if(top==='badges') hide('badgeOv');
-  else if(top==='endless') hide('endlessOv');
-  else if(top==='list') hide('lvOv');
+  else if(top==='setpage') setPage('main');
+  else if(top==='tab') showTab('play',true);
   else if(top==='win'){ hide('winOv'); if(layers.includes('game')) popLayer('game'); showHome(); }
   else if(top==='game'){ hideAll(); showHome(); } });
 
 // ---------- home ----------
-function showHome(){ if(updateReady){ location.reload(); return; } document.title='Squirm'; renderHome(); show('homeOv'); }
+function showHome(){ if(updateReady){ location.reload(); return; } document.title='Squirm'; showTab('play',true); renderHome(); show('homeOv'); }
+// ---------- home tabs: Play, Garden (patch list), Meadow (endless), Me (wardrobe and badges) ----------
+let curTab='play';
+const TAB_RENDER={garden:()=>renderLevelList(),meadow:()=>renderEndless(),me:()=>{ renderWardrobe(); renderBadges(); }};
+function showTab(name,fromBack){ const prev=curTab; curTab=name;
+  for(const t of ['play','garden','meadow','me']){ const pg=$('tab'+t[0].toUpperCase()+t.slice(1)); pg.hidden=t!==name; }
+  document.querySelectorAll('.tabbar .tab').forEach(b=>{ const on=b.dataset.tab===name; b.classList.toggle('on',on); b.setAttribute('aria-current',on?'page':'false'); });
+  const pg=$('tab'+name[0].toUpperCase()+name.slice(1)); pg.scrollTop=0; if(prev!==name&&!reduceMotion){ pg.classList.remove('enter'); void pg.offsetWidth; pg.classList.add('enter'); }
+  // one worm, two homes: it sits on the Play tab and above the wardrobe on the Me tab
+  const slot=name==='me'?$('slotMe'):$('slotPlay'); if(homeCanvas.parentNode!==slot) slot.appendChild(homeCanvas);
+  if(TAB_RENDER[name]) TAB_RENDER[name]();
+  // the back button returns to Play from the other tabs
+  if(fromBack) return;
+  if(name==='play'){ if(layers[layers.length-1]==='tab') popLayer('tab'); }
+  else if(layers[layers.length-1]!=='tab') pushLayer('tab'); }
+document.querySelectorAll('.tabbar .tab').forEach(b=>b.onclick=()=>{ ensureAudio(); if(b.dataset.tab!==curTab){ sfx('tap'); buzz(6); showTab(b.dataset.tab); } });
 function renderHome(){
-  const cleared=LEVELS.filter((l,i)=>isCleared(i)).length, stars=LEVELS.reduce((a,l)=>a+(progress.stars[l.name]||0),0);
-  $('gSub').textContent=`${cleared} of ${LEVELS.length} patches, ${stars} of ${LEVELS.length*3} stars`;
-  const tot=['easy','medium','hard'].reduce((a,d)=>a+progress.endless[d].cleared,0);
-  $('eSub').textContent= tot ? `${tot} patches grown and cleared` : 'Fresh patches, forever';
+  $('homeStars').innerHTML=`${ICON.star}<span>${starTotal()}</span>`;
   const k=todayKey(), dr=progress.daily.results[k]; $('dailyDay').textContent=new Date().getDate();
   const mid=new Date(); mid.setHours(24,0,0,0); const left=Math.max(1,Math.ceil((mid-new Date())/60000)), wait=left>=60?`${Math.floor(left/60)}h ${left%60}m`:`${left}m`;
   $('dailyBtn').classList.toggle('done',!!dr); $('dailySub').textContent = dr ? `Done in ${dr.moves} moves. Next one in ${wait}.` : (progress.daily.streak?`Keep your ${progress.daily.streak} day streak going`:'One patch for everyone today');
@@ -1182,8 +1192,6 @@ function renderWardrobe(){ renderSwatches();
   $('hatGrid').querySelectorAll('button').forEach(b=>b.onclick=()=>{ const h=HATS.find(x=>x[0]===b.dataset.h);
     if(!hatUnlocked(h)){ sfx('bump'); toast(`Finish every patch in ${CHAPTERS[h[2]].name} to earn the ${h[1].toLowerCase()}.`,2800); return; }
     hatId=h[0]; try{ localStorage.setItem('squirm-hat',hatId); }catch(e){} dressHat(hHead); dressHat(segMeshes[0]); if(hHead) homeReact(hatId==='none'?'wow':'joy'); sfx('ready'); renderWardrobe(); }); }
-$('wardBtn').onclick=()=>{ ensureAudio(); renderWardrobe(); show('wardOv'); pushLayer('wardrobe'); };
-$('wardClose').onclick=()=>{ hide('wardOv'); popLayer('wardrobe'); };
 function renderSwatches(){ const have=coloursUnlocked();
   $('swatches').innerHTML=WORM_COLS.map((c,i)=>{ const locked=i>=have, hex='#'+c[1].toString(16).padStart(6,'0');
     return `<button data-i="${i}" class="${i===wormCol?'on':''} ${locked?'locked':''}" style="--sw:${hex}" aria-pressed="${i===wormCol}" aria-label="${c[0]} worm${locked?`, unlocks at ${c[3]} stars`:''}">${locked?'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#5B4436" stroke-width="3" stroke-linecap="round"><rect x="5" y="11" width="14" height="10" rx="2.5" fill="#FFF8EA"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>':''}</button>`; }).join('');
@@ -1203,15 +1211,11 @@ function renderEndless(){
 function nextGardenIndex(){ const i=currentGardenIndex(); if(!isCleared(i)) return i;
   for(let j=i+1;j<LEVELS.length;j++) if(!isCleared(j)&&isUnlocked(j)) return j; return i; }
 $('homePlay').onclick=()=>{ ensureAudio(); hideAll(); loadLevel(nextGardenIndex()); enterGame(); };
-$('homeGarden').onclick=()=>{ ensureAudio(); renderLevelList(); show('lvOv'); pushLayer('list'); };
-$('homeEndless').onclick=()=>{ ensureAudio(); renderEndless(); show('endlessOv'); pushLayer('endless'); };
-$('endlessClose').onclick=()=>{ hide('endlessOv'); popLayer('endless'); };
-$('endlessGo').onclick=()=>{ hide('endlessOv'); newEndless(); };
+$('endlessGo').onclick=()=>{ newEndless(); };
 $('surprise').onclick=()=>{ const ks=['fruit','keys','portals','dry','rain','rivers','snails','buttons','leaves']; ks.forEach(k=>endlessOpts[k]=false); endlessOpts.flags=Math.random()<.8;
   const n=2+Math.floor(Math.random()*2); for(let i=0;i<n;i++) endlessOpts[ks[Math.floor(Math.random()*ks.length)]]=true; sfx('ready'); renderEndless(); };
 $('dailyBtn').onclick=()=>{ ensureAudio(); const r=readResume('endless'); if(r&&r.def&&r.def.daily===todayKey()){ mode='endless'; hideAll(); startLevel(r.def,false); enterGame(); return; } startDaily(); };
-$('homeEndlessCont').onclick=()=>{ hide('endlessOv'); continueEndless(); };
-$('lvClose').onclick=()=>{ hide('lvOv'); popLayer('list'); };
+$('homeEndlessCont').onclick=()=>{ continueEndless(); };
 $('homeSound').onclick=()=>$('muteBtn').onclick();
 // colour theme: follow the system, or force light or dark
 const THEMES=['auto','light','dark'];
@@ -1224,7 +1228,12 @@ applyTheme();
 // ---------- settings: toggles, save backup, start over ----------
 function renderSettings(){ $('setMusic').setAttribute('aria-checked',String(musicOn)); $('setMusicVol').value=Math.round(musicVol*100); $('setMusicVol').disabled=!musicOn; $('setSound').setAttribute('aria-checked',String(!muted)); $('setHaptic').setAttribute('aria-checked',String(hapticsOn)); applyTheme();
   $('saveCode').hidden=true; $('saveCode').value=''; $('saveLoad').textContent='Restore'; }
-$('settingsBtn').onclick=()=>{ ensureAudio(); renderSettings(); show('setOv'); pushLayer('settings'); };
+function setPage(p){ document.querySelectorAll('#setOv .set-page').forEach(el=>el.hidden=el.dataset.p!==p);
+  const pg=document.querySelector(`#setOv .set-page[data-p="${p}"]`); $('setTitle').textContent=pg.dataset.title||'Settings'; $('setBack').hidden=p==='main';
+  if(p==='garden'){ $('saveCode').hidden=true; $('saveCode').value=''; $('saveLoad').textContent='Restore'; } }
+document.querySelectorAll('#setOv .set-link').forEach(b=>b.onclick=()=>{ setPage(b.dataset.go); pushLayer('setpage'); });
+$('setBack').onclick=()=>window.history.back();
+$('settingsBtn').onclick=()=>{ ensureAudio(); renderSettings(); setPage('main'); show('setOv'); pushLayer('settings'); };
 $('setClose').onclick=()=>{ hide('setOv'); popLayer('settings'); renderHome(); };
 $('setSound').onclick=()=>{ $('muteBtn').onclick(); renderSettings(); };
 $('setHaptic').onclick=()=>{ $('hapticBtn').onclick(); renderSettings(); };
@@ -1250,7 +1259,7 @@ $('saveLoad').onclick=()=>{ const t=$('saveCode');
 progress.badges=progress.badges||{}; progress.stats=Object.assign({slides:0,hedges:0,fruit:0},progress.stats||{}); progress.clean=progress.clean||{};
 const anyChapter=f=>CHAPTERS.some(ch=>{ for(let i=ch.from;i<=ch.to;i++) if(!f(i)) return false; return true; });
 const BADGES=[
-  ['first','&#127793;','First wiggle','Finish your first patch.',c=>c&&c.won],
+  ['first','&#127793;','First wiggle','Finish your first patch.',c=>(c&&c.won)||LEVELS.some((l,i)=>isCleared(i))],
   ['par','&#127919;','Right on par','Finish a patch in par moves or fewer.',c=>c&&c.won&&c.mv<=c.par],
   ['chapter','&#128215;','Chapter done','Finish every patch in a chapter.',()=>anyChapter(isCleared)],
   ['clean','&#128161;','All by myself','Finish a whole chapter without using a hint.',()=>anyChapter(i=>progress.clean[LEVELS[i].name])],
@@ -1276,8 +1285,6 @@ function renderBadges(){ const n=Object.keys(progress.badges).length;
   $('badgeCount').textContent=`${n} of ${BADGES.length} earned`;
   $('badgeGrid').innerHTML=BADGES.map(b=>{ const t=progress.badges[b[0]];
     return `<div class="badge-card ${t?'on':''}"><span class="medal" aria-hidden="true">${t?b[1]:'&#128274;'}</span><span><b>${b[2]}</b><small>${b[3]}${t?` <i>${new Date(t).toLocaleDateString(undefined,{month:'short',day:'numeric'})}</i>`:''}</small></span></div>`; }).join(''); }
-$('badgeBtn').onclick=()=>{ ensureAudio(); renderBadges(); show('badgeOv'); pushLayer('badges'); };
-$('badgeClose').onclick=()=>{ hide('badgeOv'); popLayer('badges'); };
 
 // ---------- secret reset ----------
 function askReset(){ sfx('stuck'); show('resetOv'); pushLayer('reset'); }
@@ -1353,7 +1360,7 @@ function startLevel(def,withHint=true){ nudged=false; playT=0; pulse(document.qu
   const resumed=tryResume(); if(!resumed) clearResume();
   introAnim();
   if(resumed) toast('Picking up where you left off.',2400);
-  else if(withHint){ const nm=newMechanics(); if(nm.length) setTimeout(()=>{ if(!$('homeOv').classList.contains('show')&&!$('lvOv').classList.contains('show')) showIntro(nm,()=>maybeTutorial()); },reduceMotion?0:900); else maybeTutorial(); }
+  else if(withHint){ const nm=newMechanics(); if(nm.length) setTimeout(()=>{ if(!$('homeOv').classList.contains('show')) showIntro(nm,()=>maybeTutorial()); },reduceMotion?0:900); else maybeTutorial(); }
   $('skipBtn').hidden = mode!=='endless' || !!L.daily;
 }
 function introAnim(){ if(reduceMotion) return;
@@ -1462,7 +1469,7 @@ const KEYMAP={ArrowUp:[0,-1],KeyW:[0,-1],ArrowDown:[0,1],KeyS:[0,1],ArrowLeft:[-
 window.addEventListener('keydown',e=>{ if(e.ctrlKey||e.metaKey||e.altKey||(e.target&&/^(TEXTAREA|INPUT)$/.test(e.target.tagName))) return; ensureAudio();
   if((e.code==='Enter'||e.code==='Space') && $('winOv').classList.contains('show')){ e.preventDefault(); $('winNext').click(); return; }
   if(e.code==='KeyR' && $('winOv').classList.contains('show')){ e.preventDefault(); $('winReplay').click(); return; }
-  if(e.code==='Enter' && calmMoment() && (document.activeElement===document.body||!document.activeElement)){ e.preventDefault(); $('homePlay').click(); return; }
+  if(e.code==='Enter' && calmMoment() && curTab==='play' && (document.activeElement===document.body||!document.activeElement)){ e.preventDefault(); $('homePlay').click(); return; }
   if((e.code==='Enter'||e.code==='Space') && $('introOv').classList.contains('show')){ e.preventDefault(); closeIntro(false); return; }
   if(KEYMAP[e.code] && !anyOverlay()){ e.preventDefault(); tryMove(dirFromScreen(...KEYMAP[e.code])); }
   else if((e.code==='KeyZ'||e.code==='Backspace'||e.code==='KeyU') && !anyOverlay()){ e.preventDefault(); undo(); }
@@ -1563,7 +1570,7 @@ window.addEventListener('unhandledrejection',()=>onGameError(null));
 // than relaunched, so check for one whenever the app comes back to the foreground, and reload into
 // the new version at a calm moment: right away on the home screen, otherwise on the way back home.
 let updateReady=false;
-const calmMoment=()=>$('homeOv').classList.contains('show') && !generating && !['winOv','lvOv','genOv','endlessOv','introOv','resetOv','setOv','wardOv','badgeOv'].some(id=>$(id).classList.contains('show'));
+const calmMoment=()=>$('homeOv').classList.contains('show') && !generating && !['winOv','genOv','introOv','resetOv','setOv'].some(id=>$(id).classList.contains('show'));
 if('serviceWorker' in navigator && /^https?:$/.test(location.protocol)){
   const hadWorker=!!navigator.serviceWorker.controller; let controlled=hadWorker, reg=null;
   const check=()=>{ if(reg&&navigator.onLine!==false) reg.update().catch(()=>{}); };

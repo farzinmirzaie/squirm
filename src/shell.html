@@ -173,9 +173,30 @@ button[hidden]{display:none!important}
 .big b{font:800 21px/1.1 "Grandstander",ui-rounded,system-ui,sans-serif}
 .big small{font-weight:700;color:var(--ink-soft);font-size:14px}
 .big .go{flex:none;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:var(--leaf);border:2.5px solid var(--leaf-dark);color:#fff;font:800 24px/1 "Grandstander",sans-serif;padding-bottom:3px;box-shadow:0 3px 0 var(--leaf-dark)}
-.home-tools{display:flex;justify-content:center;gap:10px;margin-top:4px}
-.ov.peek{place-items:end center;background:rgba(70,50,35,.12);backdrop-filter:none;-webkit-backdrop-filter:none}
-.ov.peek .dialog{max-height:62%}
+.home-top{flex:none;display:flex;justify-content:space-between;align-items:center;gap:8px;padding:0 14px;width:min(100%,560px);margin:0 auto}
+.home-top-tools{display:flex;gap:8px}
+.star-pill{display:inline-flex;align-items:center;gap:6px;height:40px;padding:0 14px 0 10px;border-radius:999px;background:var(--paper);border:3px solid var(--edge);box-shadow:0 3px 0 var(--edge);font:800 17px/1 "Grandstander",ui-rounded,system-ui,sans-serif}
+.tab-pages{flex:1;min-height:0;position:relative}
+.tab-page{position:absolute;inset:0;overflow:auto;overscroll-behavior:contain;touch-action:pan-y;padding:10px 14px 16px;display:flex;flex-direction:column;align-items:center}
+.tab-page[hidden]{display:none}
+.tab-page.enter{animation:tabIn .25s cubic-bezier(.2,1.2,.4,1)}
+@keyframes tabIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.panel{width:min(100%,440px);display:flex;flex-direction:column;gap:12px;padding:18px 16px;border-radius:28px;text-align:left}
+#tabGarden .panel{flex:1;min-height:0}
+#tabGarden .list{flex:1;min-height:0;max-height:none;margin:0}
+.panel-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.panel-head h2{margin:0;font:800 26px/1.1 "Grandstander",ui-rounded,system-ui,sans-serif;color:var(--title);text-shadow:0 3px 0 var(--edge)}
+.panel-head .total{margin:0}
+.badges-head{margin-top:8px}
+.sub-note{font-size:14px;font-weight:700;color:var(--ink-soft)}
+.worm-slot{display:flex;justify-content:center;flex:none}
+#slotMe{margin-bottom:-14px}
+.tabbar{flex:none;display:grid;grid-template-columns:repeat(4,1fr);gap:4px;width:100%;padding:8px 10px calc(8px + env(safe-area-inset-bottom,0px));background:var(--paper);border-top:3px solid var(--edge);box-shadow:0 -6px 20px var(--shadow)}
+.tab{display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 0 4px;border:0;border-radius:16px;background:none;color:var(--ink-soft);cursor:pointer;font:800 12.5px/1 "Grandstander",ui-rounded,system-ui,sans-serif}
+.tab.on{color:var(--ink);background:var(--paper-2)}
+.tab.on svg{color:var(--leaf-dark);transform:translateY(-1px) scale(1.08)}
+.tab:active svg{transform:scale(.9)}
+.tab svg{transition:transform .15s}
 .hat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
 .hat{display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 4px;border-radius:16px;border:2.5px solid var(--edge);background:var(--paper-2);color:var(--ink);cursor:pointer;font:inherit;box-shadow:0 3px 0 var(--edge)}
 .hat .hat-ico{font-size:24px;line-height:1.1}
@@ -184,8 +205,8 @@ button[hidden]{display:none!important}
 .hat.on{background:var(--done);border-color:var(--leaf);box-shadow:0 3px 0 var(--leaf)}
 .hat.locked{opacity:.6}
 .hat.locked .hat-ico{filter:grayscale(1)}
-#badgeOv .total{align-self:center;margin:-8px 0 0}
-.badge-grid{display:grid;gap:8px;max-height:52vh;margin:0}
+
+.badge-grid{display:grid;gap:8px;margin:0}
 .badge-card{display:flex;gap:12px;align-items:center;padding:8px 12px 8px 8px;border-radius:16px;border:2.5px solid var(--edge);background:var(--paper-2);opacity:.7}
 .badge-card.on{opacity:1;background:var(--paper);border-color:var(--honey);box-shadow:0 3px 0 var(--honey-dark)}
 .badge-card .medal{flex:none;width:46px;height:46px;border-radius:50%;display:grid;place-items:center;font-size:24px;background:var(--sticker);border:2.5px solid var(--sticker-edge)}
@@ -194,6 +215,21 @@ button[hidden]{display:none!important}
 .badge-card b{display:block;font:800 16px/1.2 "Grandstander",ui-rounded,system-ui,sans-serif}
 .badge-card small{font-weight:700;font-size:13px;color:var(--ink-soft);line-height:1.3}
 .badge-card i{font-style:normal;color:var(--leaf-dark);white-space:nowrap}
+.settings{gap:10px}
+.set-head{display:grid;grid-template-columns:40px 1fr 40px;align-items:center}
+.set-head h2{margin:0!important}
+.icon-btn{width:40px;height:40px;border-radius:50%;border:2.5px solid var(--edge);background:var(--paper-2);color:var(--ink);font:800 20px/1 "Nunito",sans-serif;cursor:pointer;display:grid;place-items:center;padding:0}
+.icon-btn[hidden]{visibility:hidden;display:grid!important}
+.set-page{display:flex;flex-direction:column;gap:12px}
+.set-page[hidden]{display:none}
+.set-link{display:flex;align-items:center;gap:12px;width:100%;padding:10px 12px;border-radius:18px;border:2.5px solid var(--edge);background:var(--paper-2);color:var(--ink);cursor:pointer;text-align:left;font:inherit;box-shadow:0 3px 0 var(--edge)}
+.set-link:active{transform:translateY(3px);box-shadow:none}
+.set-link .set-ico{flex:none;width:40px;height:40px;border-radius:12px;display:grid;place-items:center;font-size:20px;color:#5B4436;font-weight:800;background:var(--sticker);border:2px solid var(--sticker-edge)}
+.set-link > span:nth-child(2){flex:1;display:flex;flex-direction:column;gap:2px}
+.set-link b{font:800 17px/1.15 "Grandstander",ui-rounded,system-ui,sans-serif}
+.set-link small{font-weight:700;font-size:13px;color:var(--ink-soft)}
+.set-link .chev{font-size:26px;color:var(--ink-soft);line-height:1}
+.btn.danger-soft{flex:none;background:transparent;border-color:#E8A0AE;color:#D2566F;box-shadow:0 4px 0 #E8A0AE;min-height:48px;font-size:17px}
 .set-row{display:flex;justify-content:space-between;align-items:center;font:800 18px/1 "Grandstander",ui-rounded,system-ui,sans-serif;padding:2px 2px}
 .set-row.vol{margin-top:-4px;font-size:15px;color:var(--ink-soft)}
 #setMusicVol{width:150px;accent-color:var(--leaf);touch-action:pan-x}
@@ -231,8 +267,9 @@ button[hidden]{display:none!important}
 .newbest{display:inline-block;margin:-6px 0 10px;padding:4px 10px;border-radius:999px;background:var(--honey);color:#5B4436;font-weight:800;font-size:13px}
 
 body.at-home #app{visibility:hidden}
-.home{z-index:4;place-items:center;background:linear-gradient(180deg,rgba(255,248,234,.55),rgba(140,198,115,.25));overflow:auto;touch-action:pan-y;padding:calc(18px + env(safe-area-inset-top,0px)) 14px calc(24px + env(safe-area-inset-bottom,0px))}
-.home-inner{width:min(100%,420px);margin:auto 0;align-items:stretch;display:flex;flex-direction:column;gap:14px;animation:pop .4s cubic-bezier(.2,1.3,.4,1)}
+.home{z-index:4;background:linear-gradient(180deg,rgba(255,248,234,.55),rgba(140,198,115,.25));padding:calc(10px + env(safe-area-inset-top,0px)) 0 0;overflow:hidden}
+.home.show{display:flex;flex-direction:column;align-items:stretch;place-items:stretch}
+.home-inner{width:min(100%,420px);margin:auto;align-items:stretch;display:flex;flex-direction:column;gap:14px;animation:pop .4s cubic-bezier(.2,1.3,.4,1)}
 .logo{display:flex;flex-direction:column;align-items:center;text-align:center;margin:6px 0 2px}
 #homeWorm:focus-visible{outline:3px solid var(--honey);outline-offset:2px;border-radius:24px}
 #homeWorm{position:static;display:block;margin:0 auto -8px;width:220px;height:150px;cursor:pointer;-webkit-touch-callout:none;user-select:none;touch-action:none}
@@ -346,73 +383,95 @@ body.at-home #app{visibility:hidden}
   <div class="row"><button class="btn" id="winReplay">Replay</button><button class="btn primary" id="winNext">Next patch</button></div>
 </div></div>
 
-<div class="ov" id="lvOv"><div role="dialog" aria-modal="true" aria-labelledby="lvTitle" class="dialog card">
-  <h2 id="lvTitle">Garden patches</h2><div class="total" id="lvTotal"></div>
-  <div class="list" id="lvGrid"></div>
-  <div class="row"><button class="btn" id="lvClose">Back</button></div>
-</div></div>
 <div class="petals" id="petals"></div>
-<div class="home ov" id="homeOv"><div class="home-inner">
-  <div class="logo">
-    <canvas id="homeWorm" width="220" height="150" role="button" tabindex="0" aria-label="The worm. Tap to say hi"></canvas>
-    <h1 class="brand" aria-label="Squirm"><span>S</span><span>q</span><span>u</span><span>i</span><span>r</span><span>m</span></h1>
-    <p class="tagline">a cozy garden puzzle</p>
+<div class="home ov" id="homeOv">
+  <div class="home-top">
+    <span class="star-pill" id="homeStars" aria-label="Stars"></span>
+    <span class="home-top-tools"><button class="round" id="homeSound"></button><button class="round" id="installBtn" aria-label="Install Squirm as an app" hidden><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7 10l5 5 5-5"/><path d="M5 19h14"/></svg></button><button class="round" id="settingsBtn" aria-label="Settings" title="Settings"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.8v2.4M12 18.8v2.4M2.8 12h2.4M18.8 12h2.4M5.5 5.5l1.7 1.7M16.8 16.8l1.7 1.7M5.5 18.5l1.7-1.7M16.8 7.2l1.7-1.7"/><circle cx="12" cy="12" r="6.6"/></svg></button></span>
   </div>
-  <button class="play" id="homePlay"><span class="play-ico" aria-hidden="true"><svg width="30" height="30" viewBox="0 0 24 24"><path d="M8 5.5v13l10.5-6.5z" fill="#fff" stroke="#fff" stroke-width="2" stroke-linejoin="round"/></svg></span><span class="pt"><b id="playTitle">Play</b><small id="playSub">Patch 1</small></span></button>
-  <button class="big card" id="homeGarden">
-    <span class="mode-ico garden-ico" aria-hidden="true"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#5B4436" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21V11"/><path d="M12 14c-4 0-7-2-7-6 4 0 7 2 7 6zM12 11c0-4 3-6 7-6 0 4-3 6-7 6z" fill="#9FDA86"/></svg></span>
-    <span class="bt"><b>Garden patches</b><small id="gSub">0 of 32 patches</small></span><span class="go" aria-hidden="true">&#8250;</span>
-  </button>
-  <button class="big card" id="homeEndless">
-    <span class="mode-ico meadow-ico" aria-hidden="true"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#5B4436" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12c2-4 5-4 8 0s6 4 8 0"/><path d="M4 12c2 4 5 4 8 0s6-4 8 0" fill="#FFD866"/></svg></span>
-    <span class="bt"><b>Endless meadow</b><small id="eSub">Fresh patches, forever</small></span><span class="go" aria-hidden="true">&#8250;</span>
-  </button>
-  <button class="big card" id="dailyBtn">
+  <div class="tab-pages">
+    <section class="tab-page" id="tabPlay" aria-label="Play">
+      <div class="home-inner">
+        <div class="logo">
+          <div class="worm-slot" id="slotPlay"><canvas id="homeWorm" width="220" height="150" role="button" tabindex="0" aria-label="The worm. Tap to say hi"></canvas></div>
+          <h1 class="brand" aria-label="Squirm"><span>S</span><span>q</span><span>u</span><span>i</span><span>r</span><span>m</span></h1>
+          <p class="tagline">a cozy garden puzzle</p>
+        </div>
+        <button class="play" id="homePlay"><span class="play-ico" aria-hidden="true"><svg width="30" height="30" viewBox="0 0 24 24"><path d="M8 5.5v13l10.5-6.5z" fill="#fff" stroke="#fff" stroke-width="2" stroke-linejoin="round"/></svg></span><span class="pt"><b id="playTitle">Play</b><small id="playSub">Patch 1</small></span></button>
+        <button class="big card" id="dailyBtn">
     <span class="mode-ico daily-ico" aria-hidden="true"><span class="cal" id="dailyDay">11</span></span>
     <span class="bt"><b>Daily patch</b><small id="dailySub">One patch for everyone today</small><span class="week" id="dailyWeek" aria-hidden="true"></span></span><span class="go" aria-hidden="true">&#8250;</span>
   </button>
-  <div class="home-tools"><button class="round" id="homeSound"></button><button class="round" id="badgeBtn" aria-label="Badges" title="Badges"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3l-2 7M16 3l2 7"/><circle cx="12" cy="15" r="6" fill="currentColor" fill-opacity=".25"/><path d="M12 12.3l.9 1.8 2 .3-1.45 1.4.35 2-1.8-.95-1.8.95.35-2-1.45-1.4 2-.3z" fill="currentColor"/></svg></button><button class="round" id="wardBtn" aria-label="Wardrobe" title="Wardrobe"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17c0-1.5 4-2.5 9-2.5s9 1 9 2.5-4 2.5-9 2.5-9-1-9-2.5z" fill="currentColor" fill-opacity=".25"/><path d="M7 15.2C7 9 8.5 5 12 5s5 4 5 10.2"/><path d="M7.3 12.5h9.4"/></svg></button><button class="round" id="settingsBtn" aria-label="Settings" title="Settings"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.8v2.4M12 18.8v2.4M2.8 12h2.4M18.8 12h2.4M5.5 5.5l1.7 1.7M16.8 16.8l1.7 1.7M5.5 18.5l1.7-1.7M16.8 7.2l1.7-1.7"/><circle cx="12" cy="12" r="6.6"/></svg></button><button class="round" id="installBtn" aria-label="Install Squirm as an app" hidden><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7 10l5 5 5-5"/><path d="M5 19h14"/></svg></button></div>
-</div></div>
-<div class="ov" id="endlessOv"><div role="dialog" aria-modal="true" aria-labelledby="endlessTitle" class="dialog card sheet">
-  <h2 id="endlessTitle">Endless meadow</h2>
-  <p class="label">Difficulty</p>
-  <div class="seg" id="diffSeg" role="radiogroup" aria-label="Difficulty"></div>
-  <div class="label-row"><p class="label">Include</p><button class="link" id="surprise">Surprise me</button></div>
-  <div class="feat-grid" id="featGrid"></div>
-  <div class="stat-row" id="eStats"></div>
-  <div class="row"><button class="btn" id="homeEndlessCont" hidden>Resume</button><button class="btn primary" id="endlessGo">Grow a patch</button></div>
-  <button class="btn ghost" id="endlessClose">Back</button>
-</div></div>
-<div class="ov" id="setOv"><div role="dialog" aria-modal="true" aria-labelledby="setTitle" class="dialog card sheet">
-  <h2 id="setTitle">Settings</h2>
-  <div class="set-row"><span>Music</span><button class="switch" id="setMusic" role="switch" aria-checked="true" aria-label="Music"><i></i></button></div>
-  <div class="set-row vol"><span>Music volume</span><input type="range" id="setMusicVol" min="0" max="100" step="5" value="70" aria-label="Music volume"></div>
-  <div class="set-row"><span>Sound</span><button class="switch" id="setSound" role="switch" aria-checked="true" aria-label="Sound"><i></i></button></div>
-  <div class="set-row"><span>Vibration</span><button class="switch" id="setHaptic" role="switch" aria-checked="true" aria-label="Vibration"><i></i></button></div>
-  <p class="label">Colours</p>
-  <div class="seg" id="setTheme" role="radiogroup" aria-label="Colours">
-    <button role="radio" data-t="auto"><b>Auto</b><small>Like device</small></button><button role="radio" data-t="light"><b>Light</b><small>Sunny</small></button><button role="radio" data-t="dark"><b>Dark</b><small>Cozy</small></button>
+      </div>
+    </section>
+    <section class="tab-page" id="tabGarden" aria-labelledby="lvTitle" hidden>
+      <div class="panel card">
+        <div class="panel-head"><h2 id="lvTitle">Garden patches</h2><span class="total" id="lvTotal"></span></div>
+        <div class="list" id="lvGrid"></div>
+      </div>
+    </section>
+    <section class="tab-page" id="tabMeadow" aria-labelledby="endlessTitle" hidden>
+      <div class="panel card sheet">
+        <div class="panel-head"><h2 id="endlessTitle">Endless meadow</h2><span class="sub-note">Fresh patches, grown just for you</span></div>
+        <p class="label">Difficulty</p>
+        <div class="seg" id="diffSeg" role="radiogroup" aria-label="Difficulty"></div>
+        <div class="label-row"><p class="label">Include</p><button class="link" id="surprise">Surprise me</button></div>
+        <div class="feat-grid" id="featGrid"></div>
+        <div class="stat-row" id="eStats"></div>
+        <div class="row"><button class="btn" id="homeEndlessCont" hidden>Resume</button><button class="btn primary" id="endlessGo">Grow a patch</button></div>
+      </div>
+    </section>
+    <section class="tab-page" id="tabMe" aria-label="Me" hidden>
+      <div class="worm-slot" id="slotMe"></div>
+      <div class="panel card sheet">
+        <div class="panel-head"><h2>Wardrobe</h2></div>
+        <p class="label">Hats</p>
+        <div class="hat-grid" id="hatGrid"></div>
+        <p class="label">Colours</p>
+        <div class="swatches" id="swatches" role="group" aria-label="Worm colour"></div>
+        <div class="panel-head badges-head"><h2>Badges</h2><span class="total" id="badgeCount"></span></div>
+        <div class="badge-grid" id="badgeGrid"></div>
+      </div>
+    </section>
   </div>
-  <p class="label">Your garden</p>
-  <p class="set-note">Copy a save code to move your stars and streaks to another device.</p>
-  <textarea id="saveCode" rows="3" hidden spellcheck="false" autocomplete="off" aria-label="Save code" placeholder="Paste a save code here"></textarea>
-  <div class="row"><button class="btn" id="saveCopy">Copy code</button><button class="btn" id="saveLoad">Restore</button></div>
-  <button class="link danger" id="setReset">Start over</button>
-  <button class="btn primary" id="setClose">Done</button>
-  <p class="version">__BUILD__</p>
-</div></div>
-<div class="ov peek" id="wardOv"><div role="dialog" aria-modal="true" aria-labelledby="wardTitle" class="dialog card sheet">
-  <h2 id="wardTitle">Wardrobe</h2>
-  <p class="label">Hats</p>
-  <div class="hat-grid" id="hatGrid"></div>
-  <p class="label">Colours</p>
-  <div class="swatches" id="swatches" role="group" aria-label="Worm colour"></div>
-  <button class="btn primary" id="wardClose">Done</button>
-</div></div>
-<div class="ov" id="badgeOv"><div role="dialog" aria-modal="true" aria-labelledby="badgeTitle" class="dialog card sheet">
-  <h2 id="badgeTitle">Badges</h2><p class="total" id="badgeCount"></p>
-  <div class="badge-grid list" id="badgeGrid"></div>
-  <button class="btn primary" id="badgeClose">Done</button>
+  <nav class="tabbar" aria-label="Sections">
+    <button class="tab" data-tab="play"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 5.5v13l10.5-6.5z" fill="currentColor" fill-opacity=".25"/></svg><span>Play</span></button>
+    <button class="tab" data-tab="garden"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21V11"/><path d="M12 14c-4 0-7-2-7-6 4 0 7 2 7 6zM12 11c0-4 3-6 7-6 0 4-3 6-7 6z" fill="currentColor" fill-opacity=".25"/></svg><span>Garden</span></button>
+    <button class="tab" data-tab="meadow"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12c2-4 5-4 8 0s6 4 8 0"/><path d="M4 12c2 4 5 4 8 0s6-4 8 0"/></svg><span>Meadow</span></button>
+    <button class="tab" data-tab="me"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17c0-1.5 4-2.5 9-2.5s9 1 9 2.5-4 2.5-9 2.5-9-1-9-2.5z" fill="currentColor" fill-opacity=".25"/><path d="M7 15.2C7 9 8.5 5 12 5s5 4 5 10.2"/><path d="M7.3 12.5h9.4"/></svg><span>Me</span></button>
+  </nav>
+</div>
+<div class="ov" id="setOv"><div role="dialog" aria-modal="true" aria-labelledby="setTitle" class="dialog card sheet settings">
+  <div class="set-head"><button class="icon-btn" id="setBack" aria-label="Back" hidden>&#8249;</button><h2 id="setTitle">Settings</h2><button class="icon-btn" id="setClose" aria-label="Close">&#10005;</button></div>
+  <div class="set-page" data-p="main">
+    <button class="set-link" data-go="sound"><span class="set-ico" aria-hidden="true">&#128266;</span><span><b>Sound &amp; music</b><small>Music, sound effects, vibration</small></span><span class="chev" aria-hidden="true">&#8250;</span></button>
+    <button class="set-link" data-go="look"><span class="set-ico" aria-hidden="true">&#127912;</span><span><b>Look</b><small>Light, dark or like your device</small></span><span class="chev" aria-hidden="true">&#8250;</span></button>
+    <button class="set-link" data-go="garden"><span class="set-ico" aria-hidden="true">&#127793;</span><span><b>Your garden</b><small>Back up, restore or start over</small></span><span class="chev" aria-hidden="true">&#8250;</span></button>
+    <button class="set-link" data-go="about"><span class="set-ico" aria-hidden="true">&#8505;</span><span><b>About</b><small>Squirm, credits and version</small></span><span class="chev" aria-hidden="true">&#8250;</span></button>
+  </div>
+  <div class="set-page" data-p="sound" data-title="Sound &amp; music" hidden>
+    <div class="set-row"><span>Music</span><button class="switch" id="setMusic" role="switch" aria-checked="true" aria-label="Music"><i></i></button></div>
+    <div class="set-row vol"><span>Music volume</span><input type="range" id="setMusicVol" min="0" max="100" step="5" value="70" aria-label="Music volume"></div>
+    <div class="set-row"><span>Sound effects</span><button class="switch" id="setSound" role="switch" aria-checked="true" aria-label="Sound effects"><i></i></button></div>
+    <div class="set-row"><span>Vibration</span><button class="switch" id="setHaptic" role="switch" aria-checked="true" aria-label="Vibration"><i></i></button></div>
+  </div>
+  <div class="set-page" data-p="look" data-title="Look" hidden>
+    <p class="label">Colours</p>
+    <div class="seg" id="setTheme" role="radiogroup" aria-label="Colours">
+      <button role="radio" data-t="auto"><b>Auto</b><small>Like device</small></button><button role="radio" data-t="light"><b>Light</b><small>Sunny</small></button><button role="radio" data-t="dark"><b>Dark</b><small>Cozy</small></button>
+    </div>
+  </div>
+  <div class="set-page" data-p="garden" data-title="Your garden" hidden>
+    <p class="set-note">Copy a save code to move your stars, badges and streaks to another device.</p>
+    <textarea id="saveCode" rows="3" hidden spellcheck="false" autocomplete="off" aria-label="Save code" placeholder="Paste a save code here"></textarea>
+    <div class="row"><button class="btn" id="saveCopy">Copy code</button><button class="btn" id="saveLoad">Restore</button></div>
+    <button class="btn danger-soft" id="setReset">Start over&#8230;</button>
+  </div>
+  <div class="set-page" data-p="about" data-title="About" hidden>
+    <p class="set-note">Squirm is a cozy garden puzzle about a worm who just wants to get home. It plays offline and keeps your progress on this device.</p>
+    <p class="set-note">Made with three.js. Fonts: Grandstander and Nunito.</p>
+    <p class="version">__BUILD__</p>
+  </div>
 </div></div>
 <div class="ov" id="resetOv"><div role="dialog" aria-modal="true" aria-labelledby="resetTitle" class="dialog card">
   <h2 id="resetTitle">Start over?</h2><p>This clears every star, best score, streak and setting. Your worm will forget everything.</p>

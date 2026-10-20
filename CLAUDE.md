@@ -136,8 +136,13 @@ level-list thumbnails, and `introAt` in `tools/verify-levels.js`.
 - **GPU memory:** `disposeTree` frees a patch's meshes when the next one is built. Anything
   cached or defined at module level (`GC`, `MC`, the shared textures and materials) is kept; add
   new shared resources to its keep lists. `sph` rounds radii so its cache stays bounded.
-- **Settings and backups:** the gear on the home screen opens `setOv` (sound, vibration, theme,
-  save code, start over). A save code is `SQUIRM1:` + base64 JSON of every `squirm-` key except
+- **Home and navigation:** the home screen (`homeOv`) has four tabs, switched by `showTab`: Play
+  (worm, Continue, daily), Garden (patch list), Meadow (endless setup) and Me (wardrobe and badges).
+  The home worm's canvas moves between the Play and Me tabs. Leaving Play pushes a `tab` layer, so
+  the back button returns to Play; opening a patch from a tab replaces that layer with `game`.
+- **Settings and backups:** the gear on the home screen opens `setOv`, a short list whose rows open
+  sub-pages (`setPage`, each pushing a `setpage` layer): Sound & music, Look, Your garden (save
+  code, start over) and About. A save code is `SQUIRM1:` + base64 JSON of every `squirm-` key except
   the throwaway ones in `SAVE_SKIP`; restoring replaces those keys and reloads.
 - **Ambient motion:** river tiles register in `flowTiles` (drifting leaf, glints, ripple, a
   water-babble sound loop); snails leave a slime strip (`trail`) that grows from tile to tile.
