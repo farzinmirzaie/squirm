@@ -89,7 +89,8 @@ const SFX={
   snail:()=>{ tone(330,.14,{type:'sine',vol:.05,slide:.75}); tone(250,.12,{type:'sine',vol:.035,slide:.8,delay:.08}); },
 };
 // ---------- music: a slow generated tune that follows the time of day and the rain ----------
-let musicOn=true, musicVol=.7; try{ musicOn=localStorage.getItem('squirm-music')!=='0'; const v=parseFloat(localStorage.getItem('squirm-music-vol')); if(v>=0&&v<=1) musicVol=v; }catch(e){}
+// music starts off for first-time visitors; players from before that change keep it on unless they turned it off
+let musicOn=false, musicVol=.7; try{ const m=localStorage.getItem('squirm-music'); musicOn=m===null?localStorage.getItem('squirm-progress')!==null:m==='1'; const v=parseFloat(localStorage.getItem('squirm-music-vol')); if(v>=0&&v<=1) musicVol=v; }catch(e){}
 let mBus=null, mLp=null, mNext=0, mStep=0, mDeg=2;
 const SCALES={major:[0,2,4,7,9],minor:[0,3,5,7,10]};
 const PROG={major:[[0,4,7],[-3,0,4],[5,9,12],[7,11,14]],minor:[[0,3,7],[-4,0,3],[3,7,10],[-2,2,5]]};
@@ -1009,7 +1010,7 @@ const ICON={
   leaf:'<svg width="18" height="18" viewBox="0 0 24 24" fill="#78B65C" stroke="#5B4436" stroke-width="2" stroke-linejoin="round"><path d="M5 19C5 10 10 5 20 4c0 10-5 15-15 15z"/><path d="M5 19l8-8" fill="none"/></svg>'
 };
 const sticker=svg=>`<span class="ic" aria-hidden="true">${svg}</span>`;
-function hudSub(){ if(mode==='garden'){ const ch=CHAPTERS.find(c=>li>=c.from&&li<=c.to); return ch?ch.name:''; }
+function hudSub(){ if(mode==='garden'){ const ch=CHAPTERS.find(c=>li>=c.from&&li<=c.to); return ch?`${ch.name} · ${li-ch.from+1} of ${ch.to-ch.from+1}`:''; }
   if(L.daily) return 'Daily patch'; const k=progress.endless[endlessDiff].streak; return 'Endless · '+DIFF_NAME[endlessDiff]+(k?` · streak ${k}`:''); }
 function statTip(k){ const par=curPar(), len=state.segs.length, fruit=/[+-]/.test(state.grid.map(r=>r.join('')).join(''));
   if(k==='moves') return `Par is ${par}. Finish in ${par} moves for 3 stars, or within ${Math.ceil(par*1.3)} for 2.`;
@@ -1019,23 +1020,24 @@ function statTip(k){ const par=curPar(), len=state.segs.length, fruit=/[+-]/.tes
   if(k==='weather') return state.raining?'Raining: leaves are up and puddles are full. A cloud stone stops it.':'Sunny: seedlings are small and puddles are dry. A cloud stone brings rain.';
   if(len===state.exitLen) return 'You are just the right length for the burrow.';
   return `The burrow fits a worm of ${state.exitLen}. You are ${len}.`+(fruit?(len<state.exitLen?' A peach makes you longer.':' A mushroom makes you shorter.'):''); }
+document.querySelector('.hud-stats').addEventListener('keydown',e=>{ if((e.key==='Enter'||e.key===' ')&&e.target.closest('.stat')){ e.preventDefault(); e.target.click(); } });
 document.querySelector('.hud-stats').addEventListener('click',e=>{ const st=e.target.closest('.stat'); if(!st||!state) return; sfx('tap'); toast(statTip(st.dataset.tip||'moves'),3400); });
 function updateHUD(silent){
   $('lvlNum').style.fontSize=String(mode==='garden'?li+1:0).length>2?'16px':''; $('lvlNum').textContent= mode==='garden' ? li+1 : L.daily ? new Date().getDate() : (progress.endless[endlessDiff].cleared+1); $('lvlName').textContent=L.name;
   $('lvlSub').textContent=hudSub(); document.body.dataset.mode=mode;
   const tabTitle=(mode==='garden'?`${li+1} · `:'')+L.name+' · Squirm'; if(document.title!==tabTitle&&!$('homeOv').classList.contains('show')) document.title=tabTitle;
   const now=starsFor(state.moves,curPar(),hintsUsed>0), meter=[0,1,2].map(j=>`<i class="${j<now?'on':''}"></i>`).join('');
-  const mv=$('moves'), mvHtml=`${sticker(ICON.steps)}<b>${state.moves}</b><span class="par">par ${curPar()}</span><em class="mini" aria-hidden="true">${meter}</em>`;
+  const mv=$('moves'), mvHtml=`<span class="v">${sticker(ICON.steps)}<b>${state.moves}</b></span><span class="k mv"><em class="mini" aria-hidden="true">${meter}</em><span class="par">par ${curPar()}</span></span>`;
   if(mv.innerHTML!==mvHtml){ mv.innerHTML=mvHtml; if(!silent) pulse(mv); }
   mv.setAttribute('aria-label',`${state.moves} ${state.moves===1?'move':'moves'}, par ${curPar()}, on track for ${now} ${now===1?'star':'stars'}`); mv.classList.toggle('over',state.moves>curPar());
   const chips=[];
   const flagsTotal=L.map.join('').split('C').length-1;
-  if(flagsTotal){ const left=countChar(state,'C'); chips.push(`<span class="stat ${left===0?'done':''}" data-tip="flags" aria-label="Flags ${flagsTotal-left} of ${flagsTotal}">${sticker(ICON.flag)}<b>${flagsTotal-left}</b><small>/${flagsTotal}</small></span>`); }
-  if(L.map.join('').includes('K')) chips.push(`<span class="stat" data-tip="keys" aria-label="${state.keys} ${state.keys===1?'key':'keys'}">${sticker(ICON.key)}<b>${state.keys}</b></span>`);
-  if(L.map.join('').includes('H')){ const op=hedgesOpen(state); chips.push(`<span class="stat ${op?'done':''}" data-tip="hedges" aria-label="Hedges ${op?'open':'closed'}">${sticker(ICON.hedge)}<small>${op?'Open':'Shut'}</small></span>`); }
-  if(L.map.join('').includes('R')) chips.push(`<span class="stat wx" data-tip="weather" aria-label="${state.raining?'Raining':'Sunny'}">${sticker(state.raining?ICON.rain:ICON.sun)}<small>${state.raining?'Rain':'Sun'}</small></span>`);
+  if(flagsTotal){ const left=countChar(state,'C'); chips.push(`<span role="button" tabindex="0" class="stat ${left===0?'done':''}" data-tip="flags" aria-label="Flags ${flagsTotal-left} of ${flagsTotal}"><span class="v">${sticker(ICON.flag)}<b>${flagsTotal-left}</b><small>/${flagsTotal}</small></span><span class="k">${left?'Flags':'All flags'}</span></span>`); }
+  if(L.map.join('').includes('K')) chips.push(`<span class="stat" data-tip="keys" aria-label="${state.keys} ${state.keys===1?'key':'keys'}"><span class="v">${sticker(ICON.key)}<b>${state.keys}</b></span><span class="k">${state.keys===1?'Key':'Keys'}</span></span>`);
+  if(L.map.join('').includes('H')){ const op=hedgesOpen(state); chips.push(`<span role="button" tabindex="0" class="stat ${op?'done':''}" data-tip="hedges" aria-label="Hedges ${op?'open':'closed'}"><span class="v">${sticker(ICON.hedge)}<small>${op?'Open':'Shut'}</small></span><span class="k">Hedges</span></span>`); }
+  if(L.map.join('').includes('R')) chips.push(`<span role="button" tabindex="0" class="stat wx" data-tip="weather" aria-label="${state.raining?'Raining':'Sunny'}"><span class="v">${sticker(state.raining?ICON.rain:ICON.sun)}</span><span class="k">${state.raining?'Rainy':'Sunny'}</span></span>`);
   const ok=state.segs.length===state.exitLen;
-  chips.push(`<span class="stat ${ok?'done':''}" data-tip="length" aria-label="Length ${state.segs.length}, burrow fits ${state.exitLen}">${sticker(ICON.worm)}<b>${state.segs.length}</b><span class="to" aria-hidden="true">${ok?'=':'&rarr;'}</span>${sticker(ICON.burrow)}<b>${state.exitLen}</b></span>`);
+  chips.push(`<span role="button" tabindex="0" class="stat ${ok?'done':''}" data-tip="length" aria-label="Length ${state.segs.length}, burrow fits ${state.exitLen}"><span class="v">${sticker(ICON.worm)}<b>${state.segs.length}</b><span class="to" aria-hidden="true">${ok?'=':'&rarr;'}</span><b>${state.exitLen}</b></span><span class="k">${ok?'Fits!':'Length'}</span></span>`);
   const html=chips.join(''); if($('chips').innerHTML!==html){ const old=[...$('chips').children].map(c=>c.textContent); $('chips').innerHTML=html; if(!silent) [...$('chips').children].forEach((c,i)=>{ if(old[i]!==c.textContent) pulse(c); }); }
   $('undoBtn').disabled=!history.length; $('restartBtn').disabled=state.moves===0;
   const ready = countChar(state,'C')===0 && ok;
