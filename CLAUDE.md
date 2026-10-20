@@ -146,6 +146,11 @@ level-list thumbnails, and `introAt` in `tools/verify-levels.js`.
   by finishing a chapter and are built once (`buildHat`) and cloned into the head's `hatSlot`.
 - **Music:** `musicTick` schedules a generated tune (pad, bass, melody, echo) a little ahead on the
   Web Audio clock; its mood follows `todName` and rain. Toggle: `squirm-music`, volume: `squirm-music-vol` (0-1).
+- **Replay, seasons, calm motion:** `watchReplay` rebuilds the winning moves from the undo history
+  (`winningMoves`) and plays them with player input locked (`replaying`); nothing is counted twice.
+  `SEASON` (from the device's month) picks tree, bush and lawn colours. The in-app "Calm motion"
+  switch (`squirm-calm`) forces `reduceMotion` and adds a `.calm` class mirroring the
+  reduced-motion CSS.
 - **Saved data:** everything in `localStorage` under keys starting with `squirm-`. Don't rename
   the keys or players lose progress. Other projects can share the origin (`<user>.github.io`), so
   keep the prefix on every key and every cache name. The secret reset (hold the worm's head on
