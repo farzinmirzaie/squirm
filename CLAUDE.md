@@ -142,9 +142,15 @@ level-list thumbnails, and `introAt` in `tools/verify-levels.js`.
   The home worm's canvas moves between the Play and Me tabs. Leaving Play pushes a `tab` layer, so
   the back button returns to Play; opening a patch from a tab replaces that layer with `game`.
 - **Settings and backups:** the gear on the home screen opens `setOv`, a short list whose rows open
-  sub-pages (`setPage`, each pushing a `setpage` layer): Sound & music, Look, Your garden (save
+  sub-pages (`setPage`, each pushing a `setpage` layer): Sound & music, Reminders, Look, Your garden (save
   code backup and restore) and About. Starting over is only the secret hold on the home worm. A save code is `SQUIRM1:` + base64 JSON of every `squirm-` key except
   the throwaway ones in `SAVE_SKIP`; restoring replaces those keys and reloads.
+- **Daily reminder:** no server, so no push. Where `PeriodicSyncManager` exists (installed Chrome on
+  Android) the page registers periodic sync `squirm-daily`, and `sw.js` shows one notification a day if
+  today's daily patch isn't done and it's past the chosen hour (quiet while the game is on screen).
+  The worker reads `{on, hour, done, streak, told}` from the `squirm-state` cache, which the page
+  writes (`shareRemindState`) and the worker's cache cleanup skips. Where only `setAppBadge` exists,
+  the icon gets a badge instead. Setting: `squirm-remind` (device-specific, in `SAVE_SKIP`).
 - **Ambient motion:** river tiles register in `flowTiles` (drifting leaf, glints, ripple, a
   water-babble sound loop); snails leave a slime strip (`trail`) that grows from tile to tile.
 - **Rewards:** `BADGES` (id, icon, name, description, test) are checked after every win and after

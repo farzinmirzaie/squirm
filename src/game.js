@@ -919,7 +919,7 @@ function onWin(){ shareText=''; newBest=false; chapterDone=null; const coloursBe
       D.streak = D.last===yk ? D.streak+1 : 1; D.best=Math.max(D.best,D.streak); D.last=k; }
     if(!prev||mv<prev.moves) D.results[k]={moves:mv,stars:Math.max(st,prev?prev.stars:0)};
     const old=new Date(); old.setDate(old.getDate()-90); const ok=dateKey(old); for(const d in D.results) if(d<ok) delete D.results[d];
-    $('winTitle').textContent="Today's patch, done!"; $('winNext').textContent='Back home';
+    $('winTitle').textContent="Today's patch, done!"; $('winNext').textContent='Back home'; shareRemindState();
     extra=`<div class="stat-row"><span class="pill">Daily streak ${D.streak}</span><span class="pill">Best ${D.best}</span></div>`;
     shareText=shareLine(`daily patch ${k}`,mv,par,st);
   } else {
@@ -1229,13 +1229,17 @@ function renderSwatches(){ const have=coloursUnlocked();
   $('swatches').querySelectorAll('button').forEach(b=>b.onclick=()=>{ const i=+b.dataset.i, c=WORM_COLS[i];
     if(i>=coloursUnlocked()){ sfx('bump'); toast(`${c[0]} unlocks at ${c[3]} stars. You have ${starTotal()}.`,2600); return; }
     wormCol=i; try{ localStorage.setItem('squirm-colour',String(i)); }catch(e){} applyWormColour(); if(hHead) homeReact('joy'); renderWardrobe(); }); }
+const DIFF_ICON={easy:'&#127793;',medium:'&#127799;',hard:'&#127795;'};
+// short names for the mechanic tiles; the full name goes in the label
+const FEAT_SHORT={flags:'Flags',buttons:'Flowers',leaves:'Leaves',fruit:'Fruit',keys:'Keys',portals:'Tunnels',dry:'Dry',rain:'Rain',rivers:'Rivers',snails:'Snails'};
 function renderEndless(){
-  $('diffSeg').innerHTML=['easy','medium','hard'].map(d=>`<button role="radio" aria-checked="${d===endlessDiff}" data-d="${d}" class="${d===endlessDiff?'on':''}"><b>${DIFF_NAME[d]}</b><small>${progress.endless[d].cleared} cleared</small></button>`).join('');
+  $('diffSeg').innerHTML=['easy','medium','hard'].map((d,i)=>`<button role="radio" aria-checked="${d===endlessDiff}" data-d="${d}" class="diff ${d===endlessDiff?'on':''}"><span class="em" aria-hidden="true">${DIFF_ICON[d]}</span><b>${DIFF_NAME[d]}</b><span class="pips" aria-hidden="true">${[0,1,2].map(j=>`<i class="${j<=i?'f':''}"></i>`).join('')}</span><small>${progress.endless[d].cleared} cleared</small></button>`).join('');
   $('diffSeg').querySelectorAll('button').forEach(b=>b.onclick=()=>{ endlessDiff=b.dataset.d; buzz(8); renderEndless(); });
-  $('featGrid').innerHTML=FEATURES.map(([k,n])=>`<button role="checkbox" aria-checked="${!!endlessOpts[k]}" data-k="${k}" class="feat ${endlessOpts[k]?'on':''}"><span class="box">${endlessOpts[k]?'&#10003;':''}</span>${n}</button>`).join('');
+  $('featGrid').innerHTML=FEATURES.map(([k,n])=>`<button role="checkbox" aria-checked="${!!endlessOpts[k]}" aria-label="${n}" title="${n}" data-k="${k}" class="mech ${endlessOpts[k]?'on':''}"><span class="mi" aria-hidden="true">${MECH[k].i}</span>${FEAT_SHORT[k]}<span class="ok" aria-hidden="true">&#10003;</span></button>`).join('');
   $('featGrid').querySelectorAll('button').forEach(b=>b.onclick=()=>{ endlessOpts[b.dataset.k]=!endlessOpts[b.dataset.k]; buzz(8); renderEndless(); });
+  const on=FEATURES.filter(([k])=>endlessOpts[k]).length; $('mixCount').textContent=on?`${on} of ${FEATURES.length}`:'just the basics';
   const e=progress.endless[endlessDiff];
-  $('eStats').innerHTML=`<span class="pill">Streak ${e.streak}</span><span class="pill">Best streak ${e.best}</span><span class="pill">${ICON.star} ${e.stars}</span>`;
+  $('eStats').innerHTML=`<div class="m-stat"><span class="ic" aria-hidden="true">&#128293;</span><b>${e.streak}</b><small>Streak</small></div><div class="m-stat"><span class="ic" aria-hidden="true">&#127942;</span><b>${e.best}</b><small>Best</small></div><div class="m-stat"><span class="ic" aria-hidden="true">${ICON.star}</span><b>${e.stars}</b><small>Stars</small></div>`;
   const r=readResume('endless'); $('homeEndlessCont').hidden=!(r&&r.def&&!r.def.daily&&r.diff===endlessDiff);
 }
 // the patch to continue with: the current one, or the next if the current one is already cleared
@@ -1258,7 +1262,7 @@ applyTheme();
 
 // ---------- settings: toggles, save backup, start over ----------
 function renderSettings(){ $('setMusic').setAttribute('aria-checked',String(musicOn)); $('setMusicVol').value=Math.round(musicVol*100); $('setMusicVol').disabled=!musicOn; $('setSound').setAttribute('aria-checked',String(!muted)); $('setHaptic').setAttribute('aria-checked',String(hapticsOn)); applyTheme();
-  $('saveCode').hidden=true; $('saveCode').value=''; $('saveLoad').textContent='Restore'; }
+  $('saveCode').hidden=true; $('saveCode').value=''; $('saveLoad').textContent='Restore'; renderRemind(); }
 function setPage(p,dir){ document.querySelectorAll('#setOv .set-page').forEach(el=>{ el.hidden=el.dataset.p!==p; el.classList.remove('fwd','back'); if(!el.hidden&&dir){ void el.offsetWidth; el.classList.add(dir); } });
   const pg=document.querySelector(`#setOv .set-page[data-p="${p}"]`); $('setTitle').textContent=pg.dataset.title||'Settings'; $('setBack').hidden=p==='main';
   if(p==='garden'){ $('saveCode').hidden=true; $('saveCode').value=''; $('saveLoad').textContent='Restore'; } }
@@ -1271,7 +1275,7 @@ $('setHaptic').onclick=()=>{ $('hapticBtn').onclick(); renderSettings(); };
 $('setMusicVol').oninput=e=>{ musicVol=e.target.value/100; try{ localStorage.setItem('squirm-music-vol',String(musicVol)); }catch(err){} ensureAudio(); musicTick(); };
 $('setMusic').onclick=()=>{ musicOn=!musicOn; try{ localStorage.setItem('squirm-music',musicOn?'1':'0'); }catch(e){} ensureAudio(); renderSettings(); if(musicOn&&muted) toast('Turn sound on to hear the music.',2400); };
 // a save code is every squirm- key (except throwaway ones) as base64 JSON with a version prefix
-const SAVE_PREFIX='SQUIRM1:', SAVE_SKIP=['squirm-quality','squirm-offline-told','squirm-daily-patch'];
+const SAVE_PREFIX='SQUIRM1:', SAVE_SKIP=['squirm-quality','squirm-offline-told','squirm-daily-patch','squirm-remind'];
 function saveCode(){ const d={}; try{ for(const k of Object.keys(localStorage)) if(k.startsWith('squirm-')&&!SAVE_SKIP.includes(k)) d[k]=localStorage.getItem(k); }catch(e){}
   return SAVE_PREFIX+btoa(unescape(encodeURIComponent(JSON.stringify(d)))); }
 function readSaveCode(code){ code=String(code||'').trim(); if(!code.startsWith(SAVE_PREFIX)) return null;
@@ -1635,6 +1639,44 @@ if('serviceWorker' in navigator && /^https?:$/.test(location.protocol)){
   window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>{ reg=r; }).catch(()=>{}));
   document.addEventListener('visibilitychange',()=>{ if(!document.hidden) check(); });
   setInterval(check,30*60*1000); }
+// ---------- daily reminder ----------
+// No server, so no push. Where the browser supports it (Chrome on Android, installed), the service
+// worker is woken now and then by periodic background sync and shows a notification if today's
+// daily patch is still waiting. Elsewhere, if the app can badge its icon, it does that instead.
+let remind={on:false,hour:9}; try{ Object.assign(remind,JSON.parse(localStorage.getItem('squirm-remind')||'{}')); }catch(e){}
+const remindKind=()=>{ if(!('Notification' in window)||!('serviceWorker' in navigator)||!/^https?:$/.test(location.protocol)) return 'none';
+  if('PeriodicSyncManager' in window) return 'full'; return navigator.setAppBadge?'badge':'none'; };
+function updateAppBadge(){ if(!navigator.setAppBadge) return;
+  try{ (remind.on&&!progress.daily.results[todayKey()]?navigator.setAppBadge(1):navigator.clearAppBadge()).catch(()=>{}); }catch(e){} }
+// the service worker can't read localStorage, so the page hands it what it needs through a cache
+async function shareRemindState(){ updateAppBadge(); if(!('caches' in window)) return;
+  try{ const c=await caches.open('squirm-state'), old=await c.match('reminder'), prev=old?await old.json():{};
+    await c.put('reminder',new Response(JSON.stringify({...prev,on:remind.on,hour:remind.hour,done:progress.daily.last,streak:progress.daily.streak}),{headers:{'content-type':'application/json'}})); }catch(e){} }
+function saveRemind(){ try{ localStorage.setItem('squirm-remind',JSON.stringify(remind)); }catch(e){} shareRemindState(); renderRemind(); }
+function renderRemind(){ const k=remindKind(), on=remind.on&&k!=='none';
+  $('setRemind').setAttribute('aria-checked',String(on)); $('setRemind').disabled=k==='none';
+  $('remindWhen').hidden=k!=='full'||!on;
+  $('setRemindAt').querySelectorAll('button').forEach(b=>{ const s=+b.dataset.h===remind.hour; b.classList.toggle('on',s); b.setAttribute('aria-checked',String(s)); });
+  $('remindNote').textContent = k==='none' ? "This browser can't send reminders from Squirm. Install Squirm with Chrome on Android and they'll work."
+    : k==='badge' ? "This device can't send Squirm reminders on its own. Instead, Squirm puts a dot on its icon when you leave with today's patch still waiting."
+    : on ? "Once a day, after the time you pick, Squirm sends a gentle nudge if today's patch is still waiting. Your phone picks the exact moment, so it may come a little later."
+    : "Get a gentle nudge when a fresh daily patch is waiting for you."; }
+$('setRemind').onclick=async()=>{ const k=remindKind(); if(k==='none') return;
+  if(remind.on){ remind.on=false; saveRemind(); try{ const reg=await navigator.serviceWorker.ready; if(reg.periodicSync) await reg.periodicSync.unregister('squirm-daily'); }catch(e){} return; }
+  let perm=Notification.permission; if(perm==='default'){ try{ perm=await Notification.requestPermission(); }catch(e){} }
+  if(perm!=='granted'){ toast('Notifications are turned off for Squirm. You can allow them in your browser settings.',3600); renderRemind(); return; }
+  if(k==='full'){ try{ const reg=await navigator.serviceWorker.ready;
+      const st=await navigator.permissions.query({name:'periodic-background-sync'}).catch(()=>null);
+      if(st&&st.state!=='granted') throw new Error('not installed');
+      await reg.periodicSync.register('squirm-daily',{minInterval:4*3600*1000}); }
+    catch(e){ toast('Add Squirm to your home screen first, then turn reminders on there.',3600); renderRemind(); return; } }
+  remind.on=true; saveRemind(); buzz(10); sfx('ready'); };
+$('setRemindAt').querySelectorAll('button').forEach(b=>b.onclick=()=>{ remind.hour=+b.dataset.h; buzz(8); saveRemind(); });
+if('serviceWorker' in navigator) navigator.serviceWorker.addEventListener('message',e=>{ if(e.data==='squirm-daily'&&calmMoment()) $('dailyBtn').onclick(); });
+document.addEventListener('visibilitychange',()=>{ if(document.hidden) updateAppBadge(); });
+// keep the worker's copy in step (it also hears about a secret reset this way)
+if(remindKind()!=='none'){ shareRemindState(); if(!remind.on) navigator.serviceWorker.ready.then(r=>r.periodicSync&&r.periodicSync.unregister('squirm-daily')).catch(()=>{}); }
+
 let installEvt=null;
 window.addEventListener('beforeinstallprompt',e=>{ e.preventDefault(); installEvt=e; $('installBtn').hidden=false; });
 window.addEventListener('appinstalled',()=>{ installEvt=null; $('installBtn').hidden=true; });

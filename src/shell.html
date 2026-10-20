@@ -289,11 +289,33 @@ body.at-home #app{visibility:hidden}
 .seg b{font:800 16px/1 "Grandstander",ui-rounded,system-ui,sans-serif}
 .seg small{font-weight:700;font-size:12px;color:var(--ink-soft)}
 .seg button.on{background:var(--paper);box-shadow:0 3px 0 var(--edge);outline:2px solid var(--berry)}
-.feat-grid{display:flex;flex-wrap:wrap;gap:8px}
-.feat{display:inline-flex;align-items:center;gap:8px;min-height:42px;padding:6px 14px 6px 8px;border-radius:999px;border:2px solid var(--edge);background:var(--paper-2);color:var(--ink);font:800 14px/1 "Nunito",ui-rounded,system-ui,sans-serif;cursor:pointer}
-.feat .box{width:22px;height:22px;border-radius:7px;border:2px solid var(--edge);background:var(--paper);display:grid;place-items:center;font-size:14px;color:#fff}
-.feat.on{background:var(--done);border-color:var(--leaf)}
-.feat.on .box{background:var(--leaf);border-color:var(--leaf-dark)}
+.m-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.m-stat{display:flex;flex-direction:column;align-items:center;gap:2px;padding:9px 4px 8px;border-radius:18px;background:var(--paper-2);border:2px solid var(--edge)}
+.m-stat .ic{font-size:20px;line-height:1;height:22px;display:grid;place-items:center}
+.m-stat .ic svg{width:22px;height:22px}
+.m-stat b{font:800 22px/1.1 "Grandstander",ui-rounded,system-ui,sans-serif}
+.m-stat small{font-size:11px;font-weight:800;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.04em}
+.diff-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.diff{--acc:var(--leaf);position:relative;display:flex;flex-direction:column;align-items:center;gap:3px;padding:10px 4px 9px;border-radius:18px;border:2.5px solid var(--edge);background:var(--paper-2);color:var(--ink);cursor:pointer;box-shadow:0 3px 0 var(--edge);transition:transform .15s,box-shadow .15s}
+.diff[data-d=medium]{--acc:var(--honey-dark)} .diff[data-d=hard]{--acc:var(--berry)}
+.diff .em{font-size:26px;line-height:1.1}
+.diff b{font:800 16px/1 "Grandstander",ui-rounded,system-ui,sans-serif}
+.diff small{font-weight:700;font-size:12px;color:var(--ink-soft)}
+.diff .pips{display:flex;gap:3px;margin-top:2px}
+.diff .pips i{width:7px;height:7px;border-radius:50%;background:var(--edge)}
+.diff .pips i.f{background:var(--acc)}
+.diff.on{background:var(--paper);border-color:var(--acc);box-shadow:0 3px 0 var(--acc);transform:translateY(-2px)}
+.mix-n{margin-left:4px;color:var(--ink-soft);text-transform:none;letter-spacing:0}
+.mech-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:7px}
+.mech{position:relative;display:flex;flex-direction:column;align-items:center;gap:4px;padding:7px 2px 6px;border-radius:16px;border:2px solid var(--edge);background:var(--paper-2);color:var(--ink-soft);cursor:pointer;font:800 11px/1.1 "Nunito",ui-rounded,system-ui,sans-serif;min-width:0}
+.mech .mi{width:38px;height:38px;border-radius:12px;background:var(--sticker);border:2px solid var(--sticker-edge);display:grid;place-items:center;opacity:.55;filter:grayscale(.7);transition:opacity .15s,filter .15s,transform .15s}
+.mech .mi svg{width:28px;height:28px}
+.mech .ok{position:absolute;top:-6px;right:-5px;width:20px;height:20px;border-radius:50%;background:var(--leaf);border:2px solid var(--paper);color:#fff;font-size:11px;display:none;place-items:center}
+.mech.on{background:var(--done);border-color:var(--leaf);color:var(--ink)}
+.mech.on .mi{opacity:1;filter:none;transform:scale(1.06)}
+.mech.on .ok{display:grid}
+.m-go .btn.primary{flex:2}
+@media (prefers-reduced-motion:reduce){ .diff,.mech .mi{transition:none} .diff.on{transform:none} }
 .stat-row{display:flex;flex-wrap:wrap;gap:6px;justify-content:center}
 .pill{display:inline-flex;align-items:center;gap:5px;padding:5px 11px;border-radius:999px;background:var(--paper-2);border:1.5px solid var(--edge);font-weight:800;font-size:13px}
 .dialog .stat-row{margin:-2px 0 14px}
@@ -417,14 +439,14 @@ body.at-home #app{visibility:hidden}
       </div>
     </section>
     <section class="tab-page" id="tabMeadow" aria-labelledby="endlessTitle" hidden>
-      <div class="panel card sheet">
+      <div class="panel card sheet meadow">
         <div class="panel-head"><h2 id="endlessTitle">Endless meadow</h2><span class="sub-note">Fresh patches, grown just for you</span></div>
-        <p class="label">Difficulty</p>
-        <div class="seg" id="diffSeg" role="radiogroup" aria-label="Difficulty"></div>
-        <div class="label-row"><p class="label">Include</p><button class="link" id="surprise">Surprise me</button></div>
-        <div class="feat-grid" id="featGrid"></div>
-        <div class="stat-row" id="eStats"></div>
-        <div class="row"><button class="btn" id="homeEndlessCont" hidden>Resume</button><button class="btn primary" id="endlessGo">Grow a patch</button></div>
+        <div class="m-stats" id="eStats"></div>
+        <p class="label">How tricky?</p>
+        <div class="diff-cards" id="diffSeg" role="radiogroup" aria-label="Difficulty"></div>
+        <div class="label-row"><p class="label">In the mix <span class="mix-n" id="mixCount"></span></p><button class="link" id="surprise">&#127922; Surprise me</button></div>
+        <div class="mech-grid" id="featGrid"></div>
+        <div class="row m-go"><button class="btn" id="homeEndlessCont" hidden>Resume</button><button class="btn primary" id="endlessGo">&#127793; Grow a patch</button></div>
       </div>
     </section>
     <section class="tab-page" id="tabMe" aria-label="Me" hidden>
@@ -457,6 +479,7 @@ body.at-home #app{visibility:hidden}
   <div class="set-page" data-p="main">
     <button class="set-link" data-go="sound"><span class="set-ico" aria-hidden="true">&#128266;</span><span><b>Sound &amp; music</b><small>Music, sound effects, vibration</small></span><span class="chev" aria-hidden="true">&#8250;</span></button>
     <button class="set-link" data-go="look"><span class="set-ico" aria-hidden="true">&#127912;</span><span><b>Look</b><small>Light, dark or like your device</small></span><span class="chev" aria-hidden="true">&#8250;</span></button>
+    <button class="set-link" data-go="remind"><span class="set-ico" aria-hidden="true">&#128276;</span><span><b>Reminders</b><small>A nudge when the daily patch is ready</small></span><span class="chev" aria-hidden="true">&#8250;</span></button>
     <button class="set-link" data-go="garden"><span class="set-ico" aria-hidden="true">&#127793;</span><span><b>Your garden</b><small>Back up or restore your progress</small></span><span class="chev" aria-hidden="true">&#8250;</span></button>
     <button class="set-link" data-go="about"><span class="set-ico" aria-hidden="true">&#8505;</span><span><b>About</b><small>Squirm, credits and version</small></span><span class="chev" aria-hidden="true">&#8250;</span></button>
   </div>
@@ -465,6 +488,16 @@ body.at-home #app{visibility:hidden}
     <div class="set-row vol"><span>Music volume</span><input type="range" id="setMusicVol" min="0" max="100" step="5" value="70" aria-label="Music volume"></div>
     <div class="set-row"><span>Sound effects</span><button class="switch" id="setSound" role="switch" aria-checked="true" aria-label="Sound effects"><i></i></button></div>
     <div class="set-row"><span>Vibration</span><button class="switch" id="setHaptic" role="switch" aria-checked="true" aria-label="Vibration"><i></i></button></div>
+  </div>
+  <div class="set-page" data-p="remind" data-title="Reminders" hidden>
+    <div class="set-row"><span>Daily patch reminder</span><button class="switch" id="setRemind" role="switch" aria-checked="false" aria-label="Daily patch reminder"><i></i></button></div>
+    <div id="remindWhen">
+      <p class="label">Not before</p>
+      <div class="seg" id="setRemindAt" role="radiogroup" aria-label="Remind me from">
+        <button role="radio" data-h="9"><b>Morning</b><small>9 am</small></button><button role="radio" data-h="14"><b>Afternoon</b><small>2 pm</small></button><button role="radio" data-h="18"><b>Evening</b><small>6 pm</small></button>
+      </div>
+    </div>
+    <p class="set-note" id="remindNote"></p>
   </div>
   <div class="set-page" data-p="look" data-title="Look" hidden>
     <p class="label">Colours</p>
