@@ -195,6 +195,9 @@ button[hidden]{display:none!important}
 .badge-card small{font-weight:700;font-size:13px;color:var(--ink-soft);line-height:1.3}
 .badge-card i{font-style:normal;color:var(--leaf-dark);white-space:nowrap}
 .set-row{display:flex;justify-content:space-between;align-items:center;font:800 18px/1 "Grandstander",ui-rounded,system-ui,sans-serif;padding:2px 2px}
+.set-row.vol{margin-top:-4px;font-size:15px;color:var(--ink-soft)}
+#setMusicVol{width:150px;accent-color:var(--leaf);touch-action:pan-x}
+#setMusicVol:disabled{opacity:.4}
 .switch{position:relative;width:58px;height:34px;flex:none;border-radius:999px;border:3px solid var(--edge);background:var(--paper-2);cursor:pointer;padding:0;transition:background .2s}
 .switch i{position:absolute;top:2px;left:2px;width:24px;height:24px;border-radius:50%;background:var(--paper);box-shadow:0 2px 0 var(--edge);transition:transform .2s cubic-bezier(.2,1.4,.4,1)}
 .switch[aria-checked="true"]{background:var(--leaf);border-color:var(--leaf-dark)}
@@ -383,6 +386,7 @@ body.at-home #app{visibility:hidden}
 <div class="ov" id="setOv"><div role="dialog" aria-modal="true" aria-labelledby="setTitle" class="dialog card sheet">
   <h2 id="setTitle">Settings</h2>
   <div class="set-row"><span>Music</span><button class="switch" id="setMusic" role="switch" aria-checked="true" aria-label="Music"><i></i></button></div>
+  <div class="set-row vol"><span>Music volume</span><input type="range" id="setMusicVol" min="0" max="100" step="5" value="70" aria-label="Music volume"></div>
   <div class="set-row"><span>Sound</span><button class="switch" id="setSound" role="switch" aria-checked="true" aria-label="Sound"><i></i></button></div>
   <div class="set-row"><span>Vibration</span><button class="switch" id="setHaptic" role="switch" aria-checked="true" aria-label="Vibration"><i></i></button></div>
   <p class="label">Colours</p>

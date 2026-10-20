@@ -88,7 +88,7 @@ const SFX={
   snail:()=>{ tone(330,.14,{type:'sine',vol:.05,slide:.75}); tone(250,.12,{type:'sine',vol:.035,slide:.8,delay:.08}); },
 };
 // ---------- music: a slow generated tune that follows the time of day and the rain ----------
-let musicOn=true; try{ musicOn=localStorage.getItem('squirm-music')!=='0'; }catch(e){}
+let musicOn=true, musicVol=.7; try{ musicOn=localStorage.getItem('squirm-music')!=='0'; const v=parseFloat(localStorage.getItem('squirm-music-vol')); if(v>=0&&v<=1) musicVol=v; }catch(e){}
 let mBus=null, mLp=null, mNext=0, mBeat=0, mDeg=2;
 const SCALES={major:[0,2,4,7,9],minor:[0,3,5,7,10]};
 const PROG={major:[[0,4,7],[-3,0,4],[5,9,12],[7,11,14]],minor:[[0,3,7],[-4,0,3],[3,7,10],[-2,2,5]]};
@@ -101,14 +101,14 @@ function musicSetup(){ if(!ac||mBus) return; mBus=ac.createGain(); mBus.gain.val
 function mNote(hz,t,dur,vol,wave,attack){ const o=ac.createOscillator(), g=ac.createGain(); o.type=wave; o.frequency.value=hz;
   g.gain.setValueAtTime(.0001,t); g.gain.exponentialRampToValueAtTime(vol,t+attack); g.gain.exponentialRampToValueAtTime(.0001,t+dur); o.connect(g); g.connect(mBus); o.start(t); o.stop(t+dur+.05); }
 function musicTick(){ if(!ac||!mBus) return; const want=musicOn&&!muted&&!document.hidden&&ac.state==='running';
-  mBus.gain.setTargetAtTime(want?.5:0,ac.currentTime,.8); if(!want){ mNext=0; return; }
+  mBus.gain.setTargetAtTime(want?1.4*musicVol:0,ac.currentTime,.3); if(!want){ mNext=0; return; }
   const md=MOODS[todName]||MOODS.day, rain=!!(state&&state.raining), spb=60/(md.bpm*(rain?.85:1)), sc=SCALES[md.scale];
   mLp.frequency.setTargetAtTime(rain?md.bright*.6:md.bright,ac.currentTime,1);
   if(mNext<ac.currentTime) mNext=ac.currentTime+.15;
   while(mNext<ac.currentTime+.6){ const t=mNext, beat=mBeat%4, chord=PROG[md.scale][Math.floor(mBeat/4)%4];
-    if(beat===0){ chord.forEach(s=>mNote(midiHz(md.root-12+s),t,spb*4.3,.03,'sine',.6)); mNote(midiHz(md.root-24+chord[0]),t,spb*3.2,.055,'triangle',.04); }
+    if(beat===0){ chord.forEach(s=>mNote(midiHz(md.root-12+s),t,spb*4.3,.06,'sine',.6)); mNote(midiHz(md.root-24+chord[0]),t,spb*3.2,.11,'triangle',.04); }
     if(Math.random()<md.prob*(rain?.6:1)){ mDeg=Math.max(0,Math.min(sc.length*2-1,mDeg+[-2,-1,-1,1,1,2][Math.floor(Math.random()*6)]));
-      const semi=sc[mDeg%sc.length]+12*Math.floor(mDeg/sc.length); mNote(midiHz(md.root+semi),t+(Math.random()<.25?spb/2:0),spb*1.7,.045,md.wave,.02); }
+      const semi=sc[mDeg%sc.length]+12*Math.floor(mDeg/sc.length); mNote(midiHz(md.root+semi),t+(Math.random()<.25?spb/2:0),spb*1.7,.1,md.wave,.02); }
     mBeat++; mNext+=spb; } }
 setInterval(musicTick,200);
 let hapticsOn=true; try{ hapticsOn=localStorage.getItem('squirm-haptics')!=='0'; }catch(e){}
@@ -1219,12 +1219,13 @@ $('setTheme').querySelectorAll('button').forEach(b=>b.onclick=()=>{ theme=b.data
 applyTheme();
 
 // ---------- settings: toggles, save backup, start over ----------
-function renderSettings(){ $('setMusic').setAttribute('aria-checked',String(musicOn)); $('setSound').setAttribute('aria-checked',String(!muted)); $('setHaptic').setAttribute('aria-checked',String(hapticsOn)); applyTheme();
+function renderSettings(){ $('setMusic').setAttribute('aria-checked',String(musicOn)); $('setMusicVol').value=Math.round(musicVol*100); $('setMusicVol').disabled=!musicOn; $('setSound').setAttribute('aria-checked',String(!muted)); $('setHaptic').setAttribute('aria-checked',String(hapticsOn)); applyTheme();
   $('saveCode').hidden=true; $('saveCode').value=''; $('saveLoad').textContent='Restore'; }
 $('settingsBtn').onclick=()=>{ ensureAudio(); renderSettings(); show('setOv'); pushLayer('settings'); };
 $('setClose').onclick=()=>{ hide('setOv'); popLayer('settings'); renderHome(); };
 $('setSound').onclick=()=>{ $('muteBtn').onclick(); renderSettings(); };
 $('setHaptic').onclick=()=>{ $('hapticBtn').onclick(); renderSettings(); };
+$('setMusicVol').oninput=e=>{ musicVol=e.target.value/100; try{ localStorage.setItem('squirm-music-vol',String(musicVol)); }catch(err){} ensureAudio(); musicTick(); };
 $('setMusic').onclick=()=>{ musicOn=!musicOn; try{ localStorage.setItem('squirm-music',musicOn?'1':'0'); }catch(e){} ensureAudio(); renderSettings(); if(musicOn&&muted) toast('Turn sound on to hear the music.',2400); };
 $('setReset').onclick=()=>{ hide('setOv'); popLayer('settings'); askReset(); };
 // a save code is every squirm- key (except throwaway ones) as base64 JSON with a version prefix
