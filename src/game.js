@@ -9,7 +9,6 @@ const C = {
   peach:0xFFA27C, leaf:0x6CC97A, cap:0xB79CF2, stem:0xFFF1DE, key:0xF7C64F, gateWood:0xC88A55,
   flag:0xF27DA2, flagDone:0x79C95F, pole:0xB98A62,
   straw:0xF3D18A, strawDark:0xD9B166, acornCap:0x8A5A36, acornNut:0xC98E52, partyA:0x9FD2F2, partyB:0xFFF1A8, crown:0xF5C14E, beret:0xB79CF2,
-  snow:0xF7FBFF,
   wetLeaf:0x8EE0B4, leafVein:0x5DBA8A, dew:0xEAF8FF, hedge:0x5FA64F, hedgeDark:0x4E8F40, petalB:0xF7A8C4,
   burrow:0x3A2A22, mound:0xB07B57, ready:0x8EDB72, line:0x5B4436,
   portal:{ '1':0x7FCFEA, '2':0xC69CF7, '3':0xFFB877, '4':0x9BE39B }
@@ -180,17 +179,12 @@ function daisy(r,col){ const g=new THREE.Group(); const h=.16+r()*.1;
   const head=new THREE.Group(); head.position.y=h; head.rotation.x=-.5; g.add(head);
   const pm=toon(col||0xFFFFFF); for(let i=0;i<7;i++){ const p=new THREE.Mesh(sph(.045,12,8),pm); const a=i/7*Math.PI*2; p.position.set(Math.cos(a)*.065,0,Math.sin(a)*.065); p.scale.set(1,.35,.6); p.rotation.y=-a; head.add(p); }
   const c=new THREE.Mesh(sph(.04,14,10),toon(0xFFC93C)); c.scale.y=.6; c.position.y=.01; head.add(c); return g; }
-// the scenery follows the calendar: blossoms in spring, warm leaves in autumn, snow caps in winter
-const SEASON=(m=>m>=2&&m<=4?'spring':m>=5&&m<=7?'summer':m>=8&&m<=10?'autumn':'winter')(new Date().getMonth());
-const SEASON_GREENS={spring:[0x7CC062,0x86C96B,0x8FD178,0x6FB45A],summer:[0x6FB45A,0x7CC062,0x86C96B,0x5FA64F],
-  autumn:[0xE9A23B,0xD9783A,0xC9A23E,0x9DB04A,0xE58D4B],winter:[0x5E9A6A,0x6AA474,0x568F62,0x72AD7B]}[SEASON];
 function tree(r,s=1){ const g=new THREE.Group(); const h=1.1+r()*.5;
   const trunk=new THREE.Mesh(new THREE.CylinderGeometry(.09,.15,h,12),toon(0x9B6B47)); trunk.position.y=h/2; trunk.castShadow=true; outline(trunk,.02); g.add(trunk);
-  const greens=SEASON_GREENS; const n=4+Math.floor(r()*3);
-  for(let i=0;i<n;i++){ const rad=.42+r()*.22; const c=new THREE.Mesh(sph(rad,16,12),toon(greens[Math.floor(r()*greens.length)])); const a=r()*Math.PI*2, d=i?.25+r()*.25:0;
-    c.position.set(Math.cos(a)*d,h+.15+r()*.35,Math.sin(a)*d); c.castShadow=true; outline(c,.026); g.add(c);
-    if(SEASON==='winter'){ const cap=new THREE.Mesh(sph(rad*.8,16,10),m('snow')); cap.scale.y=.45; cap.position.set(c.position.x,c.position.y+rad*.62,c.position.z); g.add(cap); } }
-  if(SEASON==='spring'||(SEASON==='summer'&&r()<.5)){ const fc=toon(r()<.5?0xFF9E9E:0xFFF0A8); for(let i=0;i<6;i++){ const f=new THREE.Mesh(sph(.05,10,8),fc); const a=r()*Math.PI*2; f.position.set(Math.cos(a)*.5,h+.2+r()*.5,Math.sin(a)*.5); g.add(f); } }
+  const greens=[0x6FB45A,0x7CC062,0x86C96B,0x5FA64F]; const n=4+Math.floor(r()*3);
+  for(let i=0;i<n;i++){ const c=new THREE.Mesh(sph(.42+r()*.22,16,12),toon(greens[Math.floor(r()*greens.length)])); const a=r()*Math.PI*2, d=i?.25+r()*.25:0;
+    c.position.set(Math.cos(a)*d,h+.15+r()*.35,Math.sin(a)*d); c.castShadow=true; outline(c,.026); g.add(c); }
+  if(r()<.5){ const fc=toon(r()<.5?0xFF9E9E:0xFFF0A8); for(let i=0;i<6;i++){ const f=new THREE.Mesh(sph(.05,10,8),fc); const a=r()*Math.PI*2; f.position.set(Math.cos(a)*.5,h+.2+r()*.5,Math.sin(a)*.5); g.add(f); } }
   g.scale.setScalar(s); return g; }
 const trees=new THREE.Group(); scene.add(trees);
 function placeTrees(){ disposeTree(trees); trees.clear(); if(!state) return; const r=rng((mode==='garden'?li*31+7:(L.seed|0))+99);
@@ -201,7 +195,7 @@ function placeTrees(){ disposeTree(trees); trees.clear(); if(!state) return; con
     const x=sx*side+fx*along, z=sz*side+fz*along;
     const big=r()<.55; const o= big? tree(r,.8+r()*.5) : bush(r,1.2+r()*.9); o.position.set(x,-.34,z); o.rotation.y=r()*6; trees.add(o); swayers.push({o,ph:r()*6,amp:big?.12:.025}); }
 }
-function bush(r,s=1){ const g=new THREE.Group(); const bm=toon(SEASON==='autumn'?(r()>.5?0xC98F3A:0x9DB04A):SEASON==='winter'?(r()>.5?0x5E9A6A:0x6AA474):(r()>.5?0x6FB45A:0x7CC062));
+function bush(r,s=1){ const g=new THREE.Group(); const bm=toon(r()>.5?0x6FB45A:0x7CC062);
   const n=3+Math.floor(r()*2); for(let i=0;i<n;i++){ const b=new THREE.Mesh(sph(.22+r()*.12,14,10),bm); b.position.set((r()-.5)*.4,.16+r()*.12,(r()-.5)*.35); b.castShadow=true; outline(b,.025); g.add(b); }
   if(r()>.5){ const bm2=toon(PETAL[Math.floor(r()*PETAL.length)]); for(let i=0;i<4;i++){ const f=new THREE.Mesh(sph(.04,10,8),bm2); f.position.set((r()-.5)*.5,.3+r()*.15,(r()-.5)*.4+.12); g.add(f); } }
   g.scale.setScalar(s); return g; }
@@ -516,7 +510,7 @@ function dustPuff(pos){ if(reduceMotion) return; const mt=toon(0xE6D2A8,{transpa
 // ---------- weather ----------
 let wet=0, rainLines=null, rainGain=null, riverGain=null;
 const hemi=scene.children.find(o=>o.isHemisphereLight), amb=scene.children.find(o=>o.isAmbientLight);
-const lawnDry=new THREE.Color({autumn:0x9CC56A,winter:0x9BC98A}[SEASON]||C.lawn), lawnWet=new THREE.Color(0x6E9E63);
+const lawnDry=new THREE.Color(C.lawn), lawnWet=new THREE.Color(0x6E9E63);
 function buildRain(){
   if(rainLines){ removeObj(rainLines); rainLines=null; }
   if(!L.map.join('').includes('R')) return;
