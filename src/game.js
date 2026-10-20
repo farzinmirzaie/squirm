@@ -8,6 +8,7 @@ const C = {
   head:0xFFB0C6, riverWater:0x8CCFEA, plank:0xD9A56E, plankDark:0xB98352, leafBig:0x7CC95F, water:0x9ED6EF, mud:0x8A5E43, cloud:0xFFFFFF, rainCloud:0xAEBBD2, eye:0xFFFFFF, pupil:0x3B2A22, cheek:0xFF6F96,
   peach:0xFFA27C, leaf:0x6CC97A, cap:0xB79CF2, stem:0xFFF1DE, key:0xF7C64F, gateWood:0xC88A55,
   flag:0xF27DA2, flagDone:0x79C95F, pole:0xB98A62,
+  mushRed:0xF07A6A, topHat:0x4E3F5C, rainHat:0xFFD04A, brolly:0x9FD2F2, bowDark:0xE36A8C,
   straw:0xF3D18A, strawDark:0xD9B166, acornCap:0x8A5A36, acornNut:0xC98E52, partyA:0x9FD2F2, partyB:0xFFF1A8, crown:0xF5C14E, beret:0xB79CF2,
   wetLeaf:0x8EE0B4, leafVein:0x5DBA8A, dew:0xEAF8FF, hedge:0x5FA64F, hedgeDark:0x4E8F40, petalB:0xF7A8C4,
   burrow:0x3A2A22, mound:0xB07B57, ready:0x8EDB72, line:0x5B4436,
@@ -623,8 +624,9 @@ const capMat=new THREE.MeshToonMaterial({color:0xffffff,gradientMap:gradTex});
 const COL_A=new THREE.Color(0xFFB3C8), tmpC=new THREE.Color();
 // worm colours, earned with garden stars: [name, body, head, stars needed]
 // hats, earned by finishing chapters: [id, name, chapter index that unlocks it]. Each is built once and cloned.
-const HATS=[['none','No hat',-1],['crown','Flower crown',0],['straw','Straw hat',2],['leaf','Leaf cap',4],['acorn','Acorn cap',6],['party','Party hat',8],['beret','Dewdrop beret',10],['gold','Garden crown',12]];
-const HAT_ICON={none:'&#10006;',crown:'&#127804;',straw:'&#128082;',leaf:'&#127811;',acorn:'&#127792;',party:'&#127881;',beret:'&#129698;',gold:'&#128081;'};
+const HATS=[['none','No hat',-1],['crown','Flower crown',0],['mush','Mushroom cap',1],['straw','Straw hat',2],['tophat','Top hat',3],['leaf','Leaf cap',4],['rainhat','Rain hat',5],
+  ['acorn','Acorn cap',6],['bee','Bee antennae',7],['party','Party hat',8],['brolly','Tiny umbrella',9],['beret','Dewdrop beret',10],['bow','Ribbon bow',11],['gold','Garden crown',12]];
+const HAT_ICON={none:'&#10006;',crown:'&#127804;',mush:'&#127812;',straw:'&#128082;',tophat:'&#127913;',leaf:'&#127811;',rainhat:'&#127783;',acorn:'&#127792;',bee:'&#128029;',party:'&#127881;',brolly:'&#9730;',beret:'&#129698;',bow:'&#127872;',gold:'&#128081;'};
 const hatProto={};
 function buildHat(id){ const h=new THREE.Group();
   if(id==='crown'){ const ring=new THREE.Mesh(new THREE.TorusGeometry(.21,.04,8,28),m('leaf')); ring.rotation.x=Math.PI/2; ring.position.y=.05; outline(ring,.01); h.add(ring);
@@ -647,6 +649,22 @@ function buildHat(id){ const h=new THREE.Group();
   else if(id==='beret'){ const b=new THREE.Mesh(sph(.24,22,14),m('beret')); b.scale.set(1,.32,1); b.position.set(.03,.03,0); b.rotation.z=-.2; outline(b,.012); h.add(b);
     const nub=new THREE.Mesh(sph(.035,10,8),m('beret')); nub.position.set(.05,.11,0); h.add(nub);
     const dew=new THREE.Mesh(sph(.04,10,8),m('dew')); dew.position.set(-.13,.07,.12); h.add(dew); }
+  else if(id==='mush'){ const cap=new THREE.Mesh(new THREE.SphereGeometry(.26,24,12,0,Math.PI*2,0,Math.PI/2),m('mushRed')); cap.scale.y=.75; outline(cap,.012); h.add(cap);
+    [[0,.17,.06],[.13,.1,.15],[-.12,.11,.14],[.02,.08,.22],[-.2,.06,.04],[.2,.06,.02]].forEach(p=>{ const d=new THREE.Mesh(sph(.035,8,6),m('stem')); d.position.set(...p); d.scale.y=.4; d.lookAt(p[0]*3,p[1]*3,p[2]*3); h.add(d); }); }
+  else if(id==='tophat'){ const brim=new THREE.Mesh(new THREE.CylinderGeometry(.27,.27,.03,26),m('topHat')); outline(brim,.012); h.add(brim);
+    const top=new THREE.Mesh(new THREE.CylinderGeometry(.17,.17,.3,24),m('topHat')); top.position.y=.16; outline(top,.012); h.add(top);
+    const band=new THREE.Mesh(new THREE.CylinderGeometry(.175,.175,.06,24),m('petalB')); band.position.y=.05; h.add(band); }
+  else if(id==='rainhat'){ const brim=new THREE.Mesh(new THREE.CylinderGeometry(.3,.36,.06,26),m('rainHat')); brim.position.y=-.01; brim.rotation.x=.12; outline(brim,.012); h.add(brim);
+    const top=new THREE.Mesh(new THREE.SphereGeometry(.2,22,12,0,Math.PI*2,0,Math.PI/2),m('rainHat')); top.scale.y=.85; outline(top,.012); h.add(top); }
+  else if(id==='bee'){ const band=new THREE.Mesh(new THREE.TorusGeometry(.22,.025,8,26,Math.PI),m('pupil')); band.rotation.y=Math.PI/2; h.add(band);
+    for(const sd of [-1,1]){ const st=new THREE.Mesh(new THREE.CylinderGeometry(.012,.012,.26,6),m('pupil')); st.position.set(sd*.08,.18,0); st.rotation.z=-sd*.35; h.add(st);
+      const ball=new THREE.Mesh(sph(.05,12,10),m('crown')); ball.position.set(sd*.13,.31,0); outline(ball,.01); h.add(ball); } }
+  else if(id==='brolly'){ const stick=new THREE.Mesh(new THREE.CylinderGeometry(.012,.012,.36,6),m('pole')); stick.position.y=.16; h.add(stick);
+    const can=new THREE.Mesh(new THREE.ConeGeometry(.3,.14,8),m('brolly')); can.position.y=.38; outline(can,.012); h.add(can);
+    const tip=new THREE.Mesh(sph(.02,8,6),m('pole')); tip.position.y=.46; h.add(tip); }
+  else if(id==='bow'){ const g=new THREE.Group(); g.position.set(.14,.05,0); g.rotation.z=-.4; h.add(g);
+    for(const sd of [-1,1]){ const loop=new THREE.Mesh(sph(.09,14,10),m('petalB')); loop.scale.set(1.2,.8,.5); loop.position.x=sd*.1; outline(loop,.01); g.add(loop); }
+    const knot=new THREE.Mesh(sph(.045,10,8),m('bowDark')); g.add(knot); }
   else if(id==='gold'){ const band=new THREE.Mesh(new THREE.CylinderGeometry(.19,.2,.09,24,1,true),m('crown')); band.position.y=.04; h.add(band);
     for(let i=0;i<6;i++){ const a=i/6*Math.PI*2; const sp=new THREE.Mesh(new THREE.ConeGeometry(.045,.11,8),m('crown')); sp.position.set(Math.cos(a)*.19,.13,Math.sin(a)*.19); h.add(sp);
       const gm=new THREE.Mesh(sph(.025,8,6),i%2?m('petalB'):m('partyA')); gm.position.set(Math.cos(a)*.2,.04,Math.sin(a)*.2); h.add(gm); } }
@@ -1154,7 +1172,7 @@ window.addEventListener('popstate',()=>{ if(ignorePop>0){ ignorePop--; return; }
   if(top==='intro') closeIntro(true);
   else if(top==='reset') hide('resetOv');
   else if(top==='settings') hide('setOv');
-  else if(top==='setpage') setPage('main');
+  else if(top==='setpage') setPage('main','back');
   else if(top==='tab') showTab('play',true);
   else if(top==='win'){ hide('winOv'); if(layers.includes('game')) popLayer('game'); showHome(); }
   else if(top==='game'){ hideAll(); showHome(); } });
@@ -1163,9 +1181,9 @@ window.addEventListener('popstate',()=>{ if(ignorePop>0){ ignorePop--; return; }
 function showHome(){ if(updateReady){ location.reload(); return; } document.title='Squirm'; showTab('play',true); renderHome(); show('homeOv'); }
 // ---------- home tabs: Play, Garden (patch list), Meadow (endless), Me (wardrobe and badges) ----------
 let curTab='play';
-const TAB_RENDER={garden:()=>renderLevelList(),meadow:()=>renderEndless(),me:()=>{ renderWardrobe(); renderBadges(); }};
+const TAB_RENDER={garden:()=>renderLevelList(),meadow:()=>renderEndless(),me:()=>renderWardrobe(),badges:()=>renderBadges()};
 function showTab(name,fromBack){ const prev=curTab; curTab=name;
-  for(const t of ['play','garden','meadow','me']){ const pg=$('tab'+t[0].toUpperCase()+t.slice(1)); pg.hidden=t!==name; }
+  for(const t of ['play','garden','meadow','me','badges']){ const pg=$('tab'+t[0].toUpperCase()+t.slice(1)); pg.hidden=t!==name; }
   document.querySelectorAll('.tabbar .tab').forEach(b=>{ const on=b.dataset.tab===name; b.classList.toggle('on',on); b.setAttribute('aria-current',on?'page':'false'); });
   const pg=$('tab'+name[0].toUpperCase()+name.slice(1)); pg.scrollTop=0; if(prev!==name&&!reduceMotion){ pg.classList.remove('enter'); void pg.offsetWidth; pg.classList.add('enter'); }
   // one worm, two homes: it sits on the Play tab and above the wardrobe on the Me tab
@@ -1228,10 +1246,10 @@ applyTheme();
 // ---------- settings: toggles, save backup, start over ----------
 function renderSettings(){ $('setMusic').setAttribute('aria-checked',String(musicOn)); $('setMusicVol').value=Math.round(musicVol*100); $('setMusicVol').disabled=!musicOn; $('setSound').setAttribute('aria-checked',String(!muted)); $('setHaptic').setAttribute('aria-checked',String(hapticsOn)); applyTheme();
   $('saveCode').hidden=true; $('saveCode').value=''; $('saveLoad').textContent='Restore'; }
-function setPage(p){ document.querySelectorAll('#setOv .set-page').forEach(el=>el.hidden=el.dataset.p!==p);
+function setPage(p,dir){ document.querySelectorAll('#setOv .set-page').forEach(el=>{ el.hidden=el.dataset.p!==p; el.classList.remove('fwd','back'); if(!el.hidden&&dir){ void el.offsetWidth; el.classList.add(dir); } });
   const pg=document.querySelector(`#setOv .set-page[data-p="${p}"]`); $('setTitle').textContent=pg.dataset.title||'Settings'; $('setBack').hidden=p==='main';
   if(p==='garden'){ $('saveCode').hidden=true; $('saveCode').value=''; $('saveLoad').textContent='Restore'; } }
-document.querySelectorAll('#setOv .set-link').forEach(b=>b.onclick=()=>{ setPage(b.dataset.go); pushLayer('setpage'); });
+document.querySelectorAll('#setOv .set-link').forEach(b=>b.onclick=()=>{ setPage(b.dataset.go,'fwd'); pushLayer('setpage'); });
 $('setBack').onclick=()=>window.history.back();
 $('settingsBtn').onclick=()=>{ ensureAudio(); renderSettings(); setPage('main'); show('setOv'); pushLayer('settings'); };
 $('setClose').onclick=()=>{ hide('setOv'); popLayer('settings'); renderHome(); };

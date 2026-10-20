@@ -136,8 +136,8 @@ level-list thumbnails, and `introAt` in `tools/verify-levels.js`.
 - **GPU memory:** `disposeTree` frees a patch's meshes when the next one is built. Anything
   cached or defined at module level (`GC`, `MC`, the shared textures and materials) is kept; add
   new shared resources to its keep lists. `sph` rounds radii so its cache stays bounded.
-- **Home and navigation:** the home screen (`homeOv`) has four tabs, switched by `showTab`: Play
-  (worm, Continue, daily), Garden (patch list), Meadow (endless setup) and Me (wardrobe and badges).
+- **Home and navigation:** the home screen (`homeOv`) has five tabs, switched by `showTab`: Play
+  (worm, Continue, daily), Garden (patch list), Meadow (endless setup), Me (wardrobe) and Badges.
   The home worm's canvas moves between the Play and Me tabs. Leaving Play pushes a `tab` layer, so
   the back button returns to Play; opening a patch from a tab replaces that layer with `game`.
 - **Settings and backups:** the gear on the home screen opens `setOv`, a short list whose rows open
@@ -147,8 +147,8 @@ level-list thumbnails, and `introAt` in `tools/verify-levels.js`.
 - **Ambient motion:** river tiles register in `flowTiles` (drifting leaf, glints, ripple, a
   water-babble sound loop); snails leave a slime strip (`trail`) that grows from tile to tile.
 - **Rewards:** `BADGES` (id, icon, name, description, test) are checked after every win and after
-  moves that bump a counter in `progress.stats`; earned ones live in `progress.badges`. `HATS` unlock
-  by finishing a chapter and are built once (`buildHat`) and cloned into the head's `hatSlot`.
+  moves that bump a counter in `progress.stats`; earned ones live in `progress.badges`. `HATS` (one per
+  chapter) unlock by finishing that chapter and are built once (`buildHat`) and cloned into the head's `hatSlot`.
 - **Music:** `musicTick` schedules a generated tune (pad, bass, melody, echo) a little ahead on the
   Web Audio clock; its mood follows `todName` (time of day, which also brings fireflies in the evening and at night; the lighting itself is always daytime) and rain. Toggle: `squirm-music`, volume: `squirm-music-vol` (0-1).
 - **Saved data:** everything in `localStorage` under keys starting with `squirm-`. Don't rename
