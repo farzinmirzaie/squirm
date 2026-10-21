@@ -987,9 +987,21 @@ function screenWord(d){ const v=screenVec(DIRS[d]); return Math.abs(v.x)>Math.ab
 function pulse(el){ el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop'); }
 function animOnce(el,cls){ el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls); const end=e=>{ if(e.target!==el) return; el.classList.remove(cls); el.removeEventListener('animationend',end); }; el.addEventListener('animationend',end); }
 // a new patch: the HUD pieces drop in one after another, the buttons rise from below
-function hudIntro(){ const top=[document.querySelector('.plaque'),$('muteBtn'),document.querySelector('.hud-stats'),...document.querySelectorAll('.hud-stats .stat')];
-  const low=[...document.querySelectorAll('nav .gbtn')].filter(b=>!b.hidden);
-  [[top,0,45],[low,120,55]].forEach(([els,d0,step])=>els.forEach((el,i)=>{ el.style.setProperty('--d',(d0+i*step)+'ms'); el.classList.remove('pop'); animOnce(el,'enter'); })); }
+// staggered entrance: 'enter' drops in from above, 'rise' comes up from below; long lists cap the delay
+function stagger(els,cls='rise',d0=0,step=45,max=12){ if(reduceMotion) return;
+  [...els].filter(el=>el&&!el.hidden).forEach((el,i)=>{ el.style.setProperty('--d',(d0+Math.min(i,max)*step)+'ms'); el.classList.remove('pop'); animOnce(el,cls); }); }
+function hudIntro(){ stagger([document.querySelector('.plaque'),$('muteBtn'),document.querySelector('.hud-stats'),...document.querySelectorAll('.hud-stats .stat')],'enter');
+  stagger(document.querySelectorAll('nav .gbtn'),'enter',120,55); }
+const qa=(root,sel)=>[...root.querySelectorAll(sel)];
+// what comes in, in order, when a home tab opens
+function tabIntro(name){ const pg=$('tab'+name[0].toUpperCase()+name.slice(1));
+  if(name==='play'){ stagger([$('slotPlay'),document.querySelector('.brand'),document.querySelector('.tagline'),$('homePlay'),$('dailyBtn')],'rise',0,60); return; }
+  if(name==='garden'){ const panel=pg.querySelector('.panel'); stagger([panel],'rise');
+    // the list scrolls to the current patch first, then the rows in view come in
+    setTimeout(()=>{ const box=$('lvGrid').getBoundingClientRect(); stagger(qa($('lvGrid'),'.lv,.chapter').filter(r=>{ const b=r.getBoundingClientRect(); return b.bottom>box.top&&b.top<box.bottom; }),'rise',0,35); },40); return; }
+  if(name==='meadow') { stagger([pg.querySelector('.panel'),...qa(pg,'.m-stat'),...qa(pg,'.diff')],'rise',0,40); stagger(qa(pg,'.mech'),'rise',260,22,10); stagger(qa(pg,'.m-go .btn'),'rise',420,60); return; }
+  if(name==='me'){ stagger([$('slotMe'),pg.querySelector('.panel')],'rise',0,60); stagger(qa(pg,'.hat-grid button'),'rise',140,22,14); stagger(qa(pg,'.swatches button'),'rise',360,40); return; }
+  if(name==='badges'){ stagger([pg.querySelector('.panel')],'rise'); stagger(qa(pg,'.badge-card'),'rise',90,35,8); } }
 
 // ---------- resume an unfinished patch after reload ----------
 function saveResume(){ try{ localStorage.setItem('squirm-resume-'+mode,JSON.stringify({li,name:mode==='garden'?LEVELS[li].name:null,diff:endlessDiff,def:mode==='endless'?L:null,hints:hintsUsed,states:history.concat([state]).slice(-120)})); }catch(e){} }
@@ -1201,17 +1213,19 @@ window.addEventListener('popstate',()=>{ if(ignorePop>0){ ignorePop--; return; }
   else if(top==='game'){ hideAll(); showHome(); } });
 
 // ---------- home ----------
-function showHome(){ if(updateReady){ location.reload(); return; } document.title='Squirm'; showTab('play',true); renderHome(); show('homeOv'); }
+function showHome(){ if(updateReady){ location.reload(); return; } document.title='Squirm'; const was=curTab; showTab('play',true); renderHome(); show('homeOv');
+  if(was==='play') tabIntro('play'); stagger(document.querySelectorAll('.home-top .star-pill,.home-top .round:not([hidden])'),'enter',0,50); stagger(document.querySelectorAll('.tabbar .tab'),'rise',150,40); }
 // ---------- home tabs: Play, Garden (patch list), Meadow (endless), Me (wardrobe and badges) ----------
 let curTab='play';
 const TAB_RENDER={garden:()=>renderLevelList(),meadow:()=>renderEndless(),me:()=>renderWardrobe(),badges:()=>renderBadges()};
 function showTab(name,fromBack){ const prev=curTab; curTab=name;
   for(const t of ['play','garden','meadow','me','badges']){ const pg=$('tab'+t[0].toUpperCase()+t.slice(1)); pg.hidden=t!==name; }
   document.querySelectorAll('.tabbar .tab').forEach(b=>{ const on=b.dataset.tab===name; b.classList.toggle('on',on); b.setAttribute('aria-current',on?'page':'false'); });
-  const pg=$('tab'+name[0].toUpperCase()+name.slice(1)); pg.scrollTop=0; if(prev!==name&&!reduceMotion){ pg.classList.remove('enter'); void pg.offsetWidth; pg.classList.add('enter'); }
+  const pg=$('tab'+name[0].toUpperCase()+name.slice(1)); pg.scrollTop=0;
   // one worm, two homes: it sits on the Play tab and above the wardrobe on the Me tab
   const slot=name==='me'?$('slotMe'):$('slotPlay'); if(homeCanvas.parentNode!==slot) slot.appendChild(homeCanvas);
   if(TAB_RENDER[name]) TAB_RENDER[name]();
+  if(prev!==name){ tabIntro(name); const tb=document.querySelector(`.tabbar .tab[data-tab="${name}"]`); if(tb) animOnce(tb,'pop'); }
   // the back button returns to Play from the other tabs
   if(fromBack) return;
   if(name==='play'){ if(layers[layers.length-1]==='tab') popLayer('tab'); }
@@ -1275,7 +1289,10 @@ function renderSettings(){ $('setMusic').setAttribute('aria-checked',String(musi
   $('saveCode').hidden=true; $('saveCode').value=''; $('saveLoad').textContent='Restore'; renderRemind(); }
 function setPage(p,dir){ document.querySelectorAll('#setOv .set-page').forEach(el=>{ el.hidden=el.dataset.p!==p; el.classList.remove('fwd','back'); if(!el.hidden&&dir){ void el.offsetWidth; el.classList.add(dir); } });
   const pg=document.querySelector(`#setOv .set-page[data-p="${p}"]`); $('setTitle').textContent=pg.dataset.title||'Settings'; $('setBack').hidden=p==='main';
-  if(p==='garden'){ $('saveCode').hidden=true; $('saveCode').value=''; $('saveLoad').textContent='Restore'; } }
+  if(p==='garden'){ $('saveCode').hidden=true; $('saveCode').value=''; $('saveLoad').textContent='Restore'; }
+  setPageIntro(p); }
+// settings: each page's rows slide in one after another
+const setPageIntro=p=>stagger(qa(document.querySelector(`#setOv .set-page[data-p="${p}"]`),':scope > *'),'rise',60,40);
 document.querySelectorAll('#setOv .set-link').forEach(b=>b.onclick=()=>{ setPage(b.dataset.go,'fwd'); pushLayer('setpage'); });
 $('setBack').onclick=()=>window.history.back();
 $('settingsBtn').onclick=()=>{ ensureAudio(); renderSettings(); setPage('main'); show('setOv'); pushLayer('settings'); };

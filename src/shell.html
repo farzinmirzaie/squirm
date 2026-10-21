@@ -144,7 +144,8 @@ button:focus-visible{outline:3px solid var(--honey);outline-offset:2px}
 .pop{animation:popin .35s cubic-bezier(.2,1.6,.4,1)}
 /* HUD motion: pieces drop in when a patch starts, tiles cheer when a goal is met */
 .enter{animation:hudIn .5s cubic-bezier(.2,1.5,.4,1) var(--d,0ms) both}
-nav .enter{animation-name:navIn}
+nav .enter,.rise{animation:navIn .5s cubic-bezier(.2,1.5,.4,1) var(--d,0ms) both}
+.tab.on.pop svg{animation:wiggle .35s ease-in-out}
 @keyframes hudIn{from{opacity:0;transform:translateY(-16px) scale(.92)}to{opacity:1;transform:none}}
 @keyframes navIn{from{opacity:0;transform:translateY(22px) scale(.9)}to{opacity:1;transform:none}}
 .stat.cheer{animation:cheer .6s cubic-bezier(.2,1.6,.4,1)}
@@ -198,7 +199,6 @@ button[hidden]{display:none!important}
 .tab-pages{flex:1;min-height:0;position:relative}
 .tab-page{position:absolute;inset:0;overflow:auto;overscroll-behavior:contain;touch-action:pan-y;padding:10px max(14px,env(safe-area-inset-right,0px)) 16px max(14px,env(safe-area-inset-left,0px));display:flex;flex-direction:column;align-items:center}
 .tab-page[hidden]{display:none}
-.tab-page.enter{animation:tabIn .25s cubic-bezier(.2,1.2,.4,1)}
 @keyframes tabIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
 .panel{width:min(100%,440px);display:flex;flex-direction:column;gap:12px;padding:18px 16px;border-radius:28px;text-align:left}
 #tabGarden .panel{flex:1;min-height:0}
@@ -293,7 +293,7 @@ button[hidden]{display:none!important}
 body.at-home #app{visibility:hidden}
 .home{z-index:4;background:linear-gradient(180deg,rgba(255,248,234,.55),rgba(140,198,115,.25));padding:calc(10px + env(safe-area-inset-top,0px)) 0 0;overflow:hidden}
 .home.show{display:flex;flex-direction:column;align-items:stretch;place-items:stretch}
-.home-inner{width:min(100%,420px);margin:auto;align-items:stretch;display:flex;flex-direction:column;gap:14px;animation:pop .4s cubic-bezier(.2,1.3,.4,1)}
+.home-inner{width:min(100%,420px);margin:auto;align-items:stretch;display:flex;flex-direction:column;gap:14px}
 .logo{display:flex;flex-direction:column;align-items:center;text-align:center;margin:6px 0 2px}
 #homeWorm:focus-visible{outline:3px solid var(--honey);outline-offset:2px;border-radius:24px}
 #homeWorm{position:static;display:block;margin:-30px auto -8px;width:220px;height:200px;cursor:pointer;-webkit-touch-callout:none;user-select:none;touch-action:none}
@@ -391,7 +391,7 @@ body.at-home #app{visibility:hidden}
   :root[data-theme="dark"]{--ink-soft:#FBEFDD;--edge:#A08468}
 }
 @media (prefers-contrast: more) and (prefers-color-scheme: dark){ :root:not([data-theme="light"]){--ink-soft:#FBEFDD;--edge:#A08468} }
-@media (prefers-reduced-motion: reduce){ .spin,.logo svg,.gbtn.hint .disc svg,#winNext,.set-page.fwd,.set-page.back,.tab-page.enter{animation:none} #tutorial .hand{animation:none} .enter,.stat.cheer,.stat.cheer .ic,.stat.lost .mini,.gbtn.pop .disc{animation:none} .star{animation:none;transform:none} .pop{animation:none} .dialog{animation:none} #toast{transition:none} .petals{display:none} }
+@media (prefers-reduced-motion: reduce){ .spin,.logo svg,.gbtn.hint .disc svg,#winNext,.set-page.fwd,.set-page.back,.tab-page.enter{animation:none} #tutorial .hand{animation:none} .enter,.rise,.tab.on.pop svg,.stat.cheer,.stat.cheer .ic,.stat.lost .mini,.gbtn.pop .disc{animation:none} .star{animation:none;transform:none} .pop{animation:none} .dialog{animation:none} #toast{transition:none} .petals{display:none} }
 </style>
 </head>
 <body>

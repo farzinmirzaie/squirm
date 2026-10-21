@@ -141,6 +141,9 @@ level-list thumbnails, and `introAt` in `tools/verify-levels.js`.
   (worm, Continue, daily), Garden (patch list), Meadow (endless setup), Me (wardrobe) and Badges.
   The home worm's canvas moves between the Play and Me tabs. Leaving Play pushes a `tab` layer, so
   the back button returns to Play; opening a patch from a tab replaces that layer with `game`.
+- **Motion:** `stagger(els, cls)` gives a list of elements a staggered entrance (`enter` drops in,
+  `rise` comes up). Used by `hudIntro` (new patch), `tabIntro` (each home tab), the home top bar and
+  tab bar in `showHome`, and `setPageIntro` (settings pages). `animOnce` replays a one-shot class.
 - **Settings and backups:** the gear on the home screen opens `setOv`, a short list whose rows open
   sub-pages (`setPage`, each pushing a `setpage` layer): Sound & music, Reminders, Look, Your garden (save
   code backup and restore) and About. Starting over is only the secret hold on the home worm. A save code is `SQUIRM1:` + base64 JSON of every `squirm-` key except
