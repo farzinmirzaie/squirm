@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<script id="theme">try{ var t=localStorage.getItem('squirm-theme'); if(t==='light'||t==='dark') document.documentElement.dataset.theme=t; }catch(e){}</script>
 <title>Squirm</title>
 <meta name="description" content="A cozy turn-based worm puzzle in a 2.5D garden. Crawl through 110 handmade patches, endless generated ones and a daily patch. Plays offline.">
 <meta name="theme-color" content="#8CC673">
@@ -36,10 +37,12 @@
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
+    --scene-mix:14%;
     --ink:#FBEFDD; --ink-soft:#D9C2A8; --paper:#4A372D; --paper-2:#5A4436; --edge:#6D5444; --shadow:rgba(0,0,0,.35); --done:#4F6B3F; --title:#FFB4C6; --gloss:rgba(255,255,255,.1); --sticker-edge:#C9AE8A;
   }
 }
 :root[data-theme="dark"]{
+  --scene-mix:14%;
   --ink:#FBEFDD; --ink-soft:#D9C2A8; --paper:#4A372D; --paper-2:#5A4436; --edge:#6D5444; --shadow:rgba(0,0,0,.35); --done:#4F6B3F; --title:#FFB4C6; --gloss:rgba(255,255,255,.1); --sticker-edge:#C9AE8A;
 }
 *,*::before,*::after{box-sizing:border-box}
@@ -49,6 +52,9 @@ body{height:100%;margin:0;overflow:hidden;overscroll-behavior:none;touch-action:
   -webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
 #stage{position:fixed;inset:0;z-index:0}
 canvas{position:absolute;inset:0;width:100%;height:100%;display:block;outline:none}
+/* the 3D garden and the home worm fade in once they've drawn their first frame */
+#c,#homeWorm{opacity:0;transition:opacity .6s ease}
+#c.ready,#homeWorm.ready{opacity:1}
 #app{position:relative;z-index:1;height:100%;display:flex;flex-direction:column;justify-content:space-between;
   max-width:560px;margin:0 auto;padding:10px 12px 12px;pointer-events:none}
 #app > *{pointer-events:auto}
@@ -363,6 +369,44 @@ body.at-home #app{visibility:hidden}
 .week i.on{background:var(--berry);border-color:#C95C73}
 .week i.today{outline:2px solid var(--honey);outline-offset:1px}
 /* ---- patch list: chapter headers stay put while scrolling ---- */
+.map{display:flex;flex-direction:column;gap:14px;padding:2px 2px 18px}
+/* ---- garden map: each chapter is a little scene, its patches stepping stones along a path ---- */
+.scene{--mixed:color-mix(in srgb,var(--scene) var(--scene-mix,55%),var(--paper));position:relative;border-radius:22px;background:var(--paper-2);background:var(--mixed);border:2px solid var(--edge)}
+.scene.later{filter:saturate(.55)}
+.ch-banner{position:sticky;top:-2px;z-index:3;display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:20px 20px 14px 14px;background:var(--paper-2);background:var(--mixed);box-shadow:0 6px 10px -8px var(--shadow)}
+.ch-banner .emb{flex:none;width:42px;height:42px;border-radius:14px;display:grid;place-items:center;font-size:24px;background:var(--sticker);border:2px solid var(--sticker-edge);box-shadow:0 3px 0 var(--sticker-edge)}
+.ch-banner .tt{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.ch-banner b{font:800 17px/1.1 "Grandstander",ui-rounded,system-ui,sans-serif;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ch-banner small{font:800 12px/1.2 "Nunito",ui-rounded,system-ui,sans-serif;color:var(--ink-soft)}
+.ch-banner .cnt{flex:none;display:flex;align-items:center;gap:4px;font:800 14px/1 "Grandstander",ui-rounded,system-ui,sans-serif;color:var(--ink)}
+.ch-banner .cnt svg{width:18px;height:18px}
+.ch-banner .done{color:var(--leaf-dark);font-size:16px}
+.trail{position:relative}
+.trail > svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none}
+.trail .road{fill:none;stroke:var(--edge);stroke-width:9;stroke-linecap:round;stroke-dasharray:1 15;vector-effect:non-scaling-stroke}
+.trail .walked{fill:none;stroke:var(--leaf);stroke-width:7;stroke-linecap:round;stroke-dasharray:1 14;vector-effect:non-scaling-stroke}
+.deco{position:absolute;font-size:22px;opacity:.7;pointer-events:none;transform:translate(-50%,-50%) rotate(var(--r,0deg))}
+.node{position:absolute;z-index:1;transform:translate(-50%,-50%);width:56px;height:56px;padding:0;border-radius:50%;border:3px solid var(--edge);background:var(--paper);color:var(--ink);
+  box-shadow:0 4px 0 var(--edge);display:grid;place-items:center;font:800 20px/1 "Grandstander",ui-rounded,system-ui,sans-serif;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.node:active{transform:translate(-50%,-46%);box-shadow:0 1px 0 var(--edge)}
+.node .mini{position:absolute;top:100%;left:50%;transform:translateX(-50%);margin-top:3px;display:flex;gap:1px}
+.node .mini i{width:11px;height:11px}
+.node.done{background:var(--done);border-color:var(--leaf);box-shadow:0 4px 0 var(--leaf-dark)}
+.node.gold{border-color:var(--honey-dark);box-shadow:0 4px 0 var(--honey-dark)}
+.node.locked{color:var(--ink-soft);background:var(--paper-2)}
+.node.locked svg{width:20px;height:20px}
+.node.cur{background:var(--berry);border-color:#C95C73;color:#fff;box-shadow:0 4px 0 #C95C73,0 0 0 7px rgba(240,133,159,.28)}
+.node.cur::before{content:"\1F41B";position:absolute;top:-30px;left:50%;font-size:24px;transform:translateX(-50%);animation:inch 1.4s ease-in-out infinite}
+@keyframes inch{0%,100%{transform:translateX(-50%) translateY(0) scaleX(1)}50%{transform:translateX(-50%) translateY(-4px) scaleX(.86)}}
+.node.nope{animation:nodeNope .35s}
+@keyframes nodeNope{20%,60%{margin-left:-6px}40%,80%{margin-left:6px}}
+.node-label{position:absolute;z-index:1;transform:translateY(-50%);display:flex;align-items:center;gap:7px;pointer-events:none}
+.node-label > span{display:flex;flex-direction:column;gap:2px;min-width:0}
+.node-label canvas.thumb{flex:none;position:static;width:34px;height:34px;border-radius:9px;background:#9A6A4C;box-shadow:0 2px 0 var(--edge)}
+.node-label b{font:800 14px/1.15 "Nunito",ui-rounded,system-ui,sans-serif;color:var(--ink)}
+.node-label small{font:800 11.5px/1.1 "Nunito",ui-rounded,system-ui,sans-serif;color:var(--ink-soft)}
+.node-label.r{text-align:right;flex-direction:row-reverse}
+.node-label.r > span{align-items:flex-end}
 .list .chapter{position:sticky;top:-2px;z-index:1;margin:6px 0 0;padding:6px 4px;background:var(--paper)}
 .chapter .new{margin-left:6px;padding:3px 7px;border-radius:999px;background:var(--berry);color:#fff;font:800 11px/1 "Nunito",sans-serif;text-transform:uppercase;letter-spacing:.06em;vertical-align:2px}
 .stat .mini{display:inline-flex;gap:1px}
@@ -391,10 +435,10 @@ body.at-home #app{visibility:hidden}
   :root[data-theme="dark"]{--ink-soft:#FBEFDD;--edge:#A08468}
 }
 @media (prefers-contrast: more) and (prefers-color-scheme: dark){ :root:not([data-theme="light"]){--ink-soft:#FBEFDD;--edge:#A08468} }
-@media (prefers-reduced-motion: reduce){ .spin,.logo svg,.gbtn.hint .disc svg,#winNext,.set-page.fwd,.set-page.back,.tab-page.enter{animation:none} #tutorial .hand{animation:none} .enter,.rise,.tab.on.pop svg,.stat.cheer,.stat.cheer .ic,.stat.lost .mini,.gbtn.pop .disc{animation:none} .star{animation:none;transform:none} .pop{animation:none} .dialog{animation:none} #toast{transition:none} .petals{display:none} }
+@media (prefers-reduced-motion: reduce){ .node.cur::before,.node.nope{animation:none} .spin,.logo svg,.gbtn.hint .disc svg,#winNext,.set-page.fwd,.set-page.back,.tab-page.enter{animation:none} #tutorial .hand{animation:none} .enter,.rise,.tab.on.pop svg,.stat.cheer,.stat.cheer .ic,.stat.lost .mini,.gbtn.pop .disc{animation:none} .star{animation:none;transform:none} .pop{animation:none} .dialog{animation:none} #toast{transition:none} .petals{display:none} }
 </style>
 </head>
-<body>
+<body class="at-home">
 <div id="stage" aria-label="Garden board. Swipe anywhere, tap a patch next to the worm, or use arrow keys to move."><canvas id="c" tabindex="0"></canvas></div>
 <div id="app">
   <header class="hud">
@@ -434,7 +478,7 @@ body.at-home #app{visibility:hidden}
 </div></div>
 
 <div class="petals" id="petals"></div>
-<div class="home ov" id="homeOv">
+<div class="home ov show" id="homeOv">
   <div class="home-top">
     <span class="star-pill" id="homeStars" aria-label="Stars"></span>
     <span class="home-top-tools"><button class="round" id="homeSound"></button><button class="round" id="installBtn" aria-label="Install Squirm as an app" hidden><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7 10l5 5 5-5"/><path d="M5 19h14"/></svg></button><button class="round" id="settingsBtn" aria-label="Settings" title="Settings"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.8v2.4M12 18.8v2.4M2.8 12h2.4M18.8 12h2.4M5.5 5.5l1.7 1.7M16.8 16.8l1.7 1.7M5.5 18.5l1.7-1.7M16.8 7.2l1.7-1.7"/><circle cx="12" cy="12" r="6.6"/></svg></button></span>
@@ -457,7 +501,7 @@ body.at-home #app{visibility:hidden}
     <section class="tab-page" id="tabGarden" aria-labelledby="lvTitle" hidden>
       <div class="panel card">
         <div class="panel-head"><h2 id="lvTitle">Garden patches</h2><span class="total" id="lvTotal"></span></div>
-        <div class="list" id="lvGrid"></div>
+        <div class="list map" id="lvGrid"></div>
       </div>
     </section>
     <section class="tab-page" id="tabMeadow" aria-labelledby="endlessTitle" hidden>
@@ -557,6 +601,13 @@ body.at-home #app{visibility:hidden}
 </div></div>
 <noscript><div class="ov show"><div class="dialog card"><h2>Squirm needs JavaScript</h2><p>Turn on JavaScript to play.</p></div></div></noscript>
 
+<script id="boot">
+// The home screen is in the page from the start, so it shows before three.js and the garden are ready.
+// Fill in the numbers the game left last time; the game redraws them properly a moment later.
+try{ var b=JSON.parse(localStorage.getItem('squirm-boot')||'null'), $b=function(i){ return document.getElementById(i); };
+  $b('dailyDay').textContent=new Date().getDate();
+  if(b){ $b('homeStars').innerHTML=b.stars||''; $b('playTitle').textContent=b.title; $b('playSub').textContent=b.sub; if(b.day===new Date().toDateString()){ $b('dailySub').textContent=b.daily; $b('dailyBtn').classList.toggle('done',!!b.done); } } }catch(e){}
+</script>
 <script src="vendor/three.min.js"></script>
 <script>
 /*__LOGIC__*/

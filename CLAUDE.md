@@ -112,7 +112,7 @@ Touch these places in order: rules in `src/logic.js` (`step`, and `cloneState` i
 state), the solver keys (`tools/analyze.js`, plus `solveFrom` and `analyzeCapped` in
 `game.js`), rendering (`makeTile` / `makeItem` / a sync function in `game.js`), the intro
 dialog entry in `MECH`, `FEATURES` and `genCandidate` for endless mode, `THUMB_COL` for
-level-list thumbnails, and `introAt` in `tools/verify-levels.js`.
+map thumbnails, and `introAt` in `tools/verify-levels.js`.
 
 ## Key systems in game.js
 
@@ -123,7 +123,8 @@ level-list thumbnails, and `introAt` in `tools/verify-levels.js`.
   tapered radius, segment rings and a crawl bulge. Tunnels split the body into chains
   that dive into the ground.
 - **Head:** expressions (`applyExpr`), blinking, an idle look-at-camera cycle, reactions,
-  and falling asleep after 25 s.
+  and falling asleep after 25 s. Idle acts (`startAct`: watch a butterfly, stretch, wiggle) play
+  between looks, and a yawn comes a few seconds before it dozes off.
 - **Overlays and back button:** a small layer stack mirrored to `window.history`
   (`pushLayer` / `popLayer`). Note: inside the IIFE, `history` is the **undo stack**, not
   the browser history. Always use `window.history`.
@@ -134,11 +135,26 @@ level-list thumbnails, and `introAt` in `tools/verify-levels.js`.
   take over 40 ms (a 30 fps low-power cap doesn't count), raises it one step per session once frames
   are quick again, and remembers it in `squirm-quality`. Ground textures use anisotropic filtering. Behind menus the blurred garden is drawn
   every third frame only.
+- **Scenery batching:** the plants, bushes and trees around the bed are built into a temporary group
+  and merged by `batchScenery` into a few chunked meshes (vertex colours, one for outlines). Their
+  sway runs in the vertex shader (`windify`, uniforms `windU` and `gustU`, per-vertex `sway`
+  attribute), so the lawn costs a handful of draw calls. Critters use the same merge (`merged`).
+- **Garden visitors:** `buildCritters` adds a ladybug that walks the wooden border and, above the
+  lowest quality, a bird that hops on the lawn in front of the bed (placed once the camera is fitted)
+  and bobs when the ambient birdsong plays. Animated in `updateCritters`.
+- **Fast first paint:** the home overlay is visible in the markup, and the `boot` script in
+  `shell.html` fills in stars and the Continue text from `squirm-boot` (written by `renderHome`)
+  before three.js loads. `start` shows home first and builds the garden a frame later; the 3D
+  canvases fade in (`.ready`) once they've drawn. The `theme` script in `<head>` applies a forced
+  theme before first paint. `tools/build.js` syntax-checks the first bare `<script>`, so give
+  other inline scripts an attribute.
 - **GPU memory:** `disposeTree` frees a patch's meshes when the next one is built. Anything
   cached or defined at module level (`GC`, `MC`, the shared textures and materials) is kept; add
   new shared resources to its keep lists. `sph` rounds radii so its cache stays bounded.
 - **Home and navigation:** the home screen (`homeOv`) has five tabs, switched by `showTab`: Play
-  (worm, Continue, daily), Garden (patch list), Meadow (endless setup), Me (wardrobe) and Badges.
+  (worm, Continue, daily), Garden (the map: `renderLevelList` draws one scene per chapter with its
+  patches as stepping stones on a winding SVG path, labelled with `drawThumb` previews), Meadow
+  (endless setup), Me (wardrobe) and Badges.
   The home worm's canvas moves between the Play and Me tabs. Leaving Play pushes a `tab` layer, so
   the back button returns to Play; opening a patch from a tab replaces that layer with `game`.
 - **Motion:** `stagger(els, cls)` gives a list of elements a staggered entrance (`enter` drops in,
