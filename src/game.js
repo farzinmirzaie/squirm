@@ -81,6 +81,9 @@ const SFX={
   badge:()=>{ [659,784,988,1318].forEach((f,i)=>tone(f,.22,{type:'triangle',vol:.09,delay:i*.08})); tone(1568,.5,{vol:.06,delay:.34}); },
   undo:()=>{ tone(520,.09,{type:'triangle',vol:.1,slide:.7}); },
   tap:()=>{ tone(880,.05,{type:'triangle',vol:.07,slide:1.2}); },
+  // toggles: a little rise for on, a little fall for off
+  on:()=>{ tone(700,.06,{type:'triangle',vol:.07,slide:1.3}); tone(1050,.09,{vol:.05,delay:.05}); },
+  off:()=>{ tone(760,.06,{type:'triangle',vol:.06,slide:.75}); tone(520,.09,{vol:.04,delay:.05}); },
   win:()=>{ [523,659,784,1046].forEach((f,i)=>tone(f,.28,{type:'triangle',vol:.14,delay:i*.11})); tone(1318,.6,{vol:.1,delay:.46}); tone(1568,.7,{vol:.08,delay:.5}); },
   ready:()=>{ tone(880,.15,{vol:.08}); tone(1320,.25,{vol:.07,delay:.08}); },
   slide:()=>{ noise(.16,{freq:2600,slide:.5,vol:.05,q:1.5}); tone(620,.14,{type:'sine',vol:.05,slide:1.4}); },
@@ -125,10 +128,12 @@ function musicTick(){ if(!ac||!mBus) return; const want=musicOn&&!muted&&!docume
 setInterval(musicTick,200);
 let hapticsOn=true; try{ hapticsOn=localStorage.getItem('squirm-haptics')!=='0'; }catch(e){}
 const HAPTIC={move:8,grow:[10,30,14],shrink:[14,30,10],key:[8,25,8,25,12],gate:22,flag:[12,40,16],portal:[10,30,24],crumble:28,bump:[14,30,14],stuck:[40,70,40],undo:6,
-  tap:5,badge:[15,40,15,40,30],win:[30,60,30,60,90],ready:[10,40,10],slide:6,hedgeOpen:[12,30,12],hedgeClose:14,rainOn:[30,50,15],creak:[20,40,20,40,20],rainOff:[15,50,30]};
+  tap:6,on:8,off:8,badge:[15,40,15,40,30],win:[30,60,30,60,90],ready:[10,40,10],slide:6,hedgeOpen:[12,30,12],hedgeClose:14,rainOn:[30,50,15],creak:[20,40,20,40,20],rainOff:[15,50,30]};
 const iosHaptic=(()=>{ try{ const l=document.createElement('label'); l.setAttribute('aria-hidden','true'); l.style.cssText='position:fixed;left:-200px;top:0;width:1px;height:1px;opacity:0;pointer-events:none';
   const i=document.createElement('input'); i.type='checkbox'; i.setAttribute('switch',''); i.tabIndex=-1; l.appendChild(i); document.body.appendChild(l); return l; }catch(e){ return null; } })();
-function buzz(p){ if(!hapticsOn||p==null) return;
+// what the current press has already done (see the press handler under input), so it never doubles up
+const fbNow={s:false,b:false};
+function buzz(p){ if(p!=null) fbNow.b=true; if(!hapticsOn||p==null) return;
   try{ if(navigator.vibrate){ navigator.vibrate(p); return; }
     if(iosHaptic){ const n=Array.isArray(p)?Math.ceil(p.length/2):1; for(let i=0;i<n;i++) setTimeout(()=>iosHaptic.click(),i*110); } }catch(e){} }
 let birdT=8;
@@ -137,7 +142,7 @@ function ambient(dt){ birdT-=dt/1000; if(birdT>0) return; birdT=7+Math.random()*
   const base=2200+Math.random()*900, n=2+Math.floor(Math.random()*3);
   for(let i=0;i<n;i++){ tone(base*(1+(i%2)*.12),.09,{vol:.025,slide:1.25,delay:i*.12}); }
   if(Math.random()<.4) for(let i=0;i<2;i++) tone(base*.8,.12,{vol:.02,slide:.85,delay:.6+i*.15}); }
-const sfx=(k,...a)=>{ try{ SFX[k](...a); }catch(e){} buzz(HAPTIC[k]); };
+const sfx=(k,...a)=>{ fbNow.s=true; try{ SFX[k](...a); }catch(e){} buzz(HAPTIC[k]); };
 
 // ---------- state ----------
 let mode='garden', endlessDiff='medium', li=0, L=null, state=null, history=[], cells=[], segMeshes=[];
@@ -1101,7 +1106,7 @@ function showHint(){
   toast('Thinking about it...',1500);
   setTimeout(()=>{ const d=solveFrom(state); hintBusy=false; $('hintBtn').classList.remove('busy');
     if(d===null){ sfx('stuck'); toast('No way to win from here. Undo a few moves and try again.',3600); pulse($('undoBtn')); return; }
-    if(d===undefined){ toast('This one is too tangled to work out from here. Try restarting.',3200); return; }
+    if(d===undefined){ sfx('stuck'); toast('This one is too tangled to work out from here. Try restarting.',3200); return; }
     hintsUsed++; saveResume(); clearHint(); const h=state.segs[0], dd=DIRS[d], tx=h[0]+dd[0], ty=h[1]+dd[1];
     hintMesh=new THREE.Group(); const am=m('key');
     const cone=new THREE.Mesh(new THREE.ConeGeometry(.13,.26,20),am); cone.rotation.x=Math.PI; outline(cone,.02); hintMesh.add(cone);
@@ -1113,6 +1118,10 @@ function showHint(){
 function screenWord(d){ const v=screenVec(DIRS[d]); return Math.abs(v.x)>Math.abs(v.y) ? (v.x>0?'E':'W') : (v.y>0?'S':'N'); }
 function pulse(el){ el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop'); }
 function animOnce(el,cls){ el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls); const end=e=>{ if(e.target!==el) return; el.classList.remove(cls); el.removeEventListener('animationend',end); }; el.addEventListener('animationend',end); }
+// selection (seg buttons, difficulty, hats, colours, map stones): the newly chosen one pops into place; the press itself plays 'tap'
+const settle=el=>{ if(el) animOnce(el,'pop'); };
+// a blocked action (locked stone, hat or colour, a code that won't load, reminders that can't be set): one shake, one bump, one toast
+function nope(el,msg,ms=2600){ if(el) animOnce(el,'nope'); sfx('bump'); if(msg) toast(msg,ms); }
 // a new patch: the HUD pieces drop in one after another, the buttons rise from below
 // staggered entrance: 'enter' drops in from above, 'rise' comes up from below; long lists cap the delay
 function stagger(els,cls='rise',d0=0,step=45,max=12){ if(reduceMotion) return;
@@ -1165,7 +1174,7 @@ function statTip(k){ const par=curPar(), len=state.segs.length, fruit=/[+-]/.tes
   if(len===state.exitLen) return 'You are just the right length for the burrow.';
   return `The burrow fits a worm of ${state.exitLen}. You are ${len}.`+(fruit?(len<state.exitLen?' A peach makes you longer.':' A mushroom makes you shorter.'):''); }
 document.querySelector('.hud-stats').addEventListener('keydown',e=>{ if((e.key==='Enter'||e.key===' ')&&e.target.closest('.stat')){ e.preventDefault(); e.target.click(); } });
-document.querySelector('.hud-stats').addEventListener('click',e=>{ const st=e.target.closest('.stat'); if(!st||!state) return; sfx('tap'); toast(statTip(st.dataset.tip||'moves'),3400); });
+document.querySelector('.hud-stats').addEventListener('click',e=>{ const st=e.target.closest('.stat'); if(!st||!state) return; toast(statTip(st.dataset.tip||'moves'),3400); });
 let shownStars=3;
 function updateHUD(silent){
   $('lvlNum').style.fontSize=String(mode==='garden'?li+1:0).length>2?'16px':''; $('lvlNum').textContent= mode==='garden' ? li+1 : L.daily ? new Date().getDate() : (progress.endless[endlessDiff].cleared+1); $('lvlName').textContent=L.name;
@@ -1194,11 +1203,17 @@ function updateHUD(silent){
 }
 let toastTimer=0;
 $('toast').addEventListener('click',()=>$('toast').classList.remove('show'));
-function toast(msg,ms=2600){ const t=$('toast'); t.innerHTML=sticker(ICON.leaf)+'<span class="msg"></span>'; t.querySelector('.msg').textContent=msg; t.classList.add('show'); clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove('show'),ms); }
-function show(id){ $(id).classList.add('show'); if(id==='homeOv'){ document.body.classList.add('at-home'); return; } const b=$(id).querySelector('.primary')||$(id).querySelector('button'); b&&b.focus({preventScroll:true}); }
-function hide(id){ $(id).classList.remove('show'); if(id==='homeOv') document.body.classList.remove('at-home'); }
+function toast(msg,ms=2600){ const t=$('toast'), bar=document.body.classList.contains('at-home')?document.querySelector('.tabbar'):document.querySelector('#app nav');
+  if(bar){ const top=bar.getBoundingClientRect().top; if(top>0) t.style.setProperty('--toast-y',Math.max(16,window.innerHeight-top+12)+'px'); } t.innerHTML=sticker(ICON.leaf)+'<span class="msg"></span>'; t.querySelector('.msg').textContent=msg; t.classList.add('show'); clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove('show'),ms); }
+function show(id){ const o=$(id); clearTimeout(o._out); o.classList.remove('out'); o.classList.add('show'); if(id==='homeOv'){ document.body.classList.add('at-home'); return; } const b=$(id).querySelector('.primary')||$(id).querySelector('button'); b&&b.focus({preventScroll:true}); }
+function hide(id){ const o=$(id); if(id==='homeOv'){ o.classList.remove('show'); document.body.classList.remove('at-home'); return; }
+  if(!o.classList.contains('show')||o.classList.contains('out')) return;
+  const ms=reduceMotion?0:parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--dur-fast'))*1000||0;
+  if(!ms){ o.classList.remove('show'); return; } o.classList.add('out'); o._out=setTimeout(()=>o.classList.remove('show','out'),ms); }
+// open and not on its way out
+const isOpen=id=>{ const c=$(id).classList; return c.contains('show')&&!c.contains('out'); };
 function hideAll(){ ['winOv','homeOv','setOv'].forEach(hide); }
-function anyOverlay(){ return ['winOv','homeOv','genOv','introOv','resetOv','setOv'].some(id=>$(id).classList.contains('show')); }
+function anyOverlay(){ return ['winOv','homeOv','genOv','introOv','resetOv','setOv'].some(isOpen); }
 function renderMute(){ if($('homeSound')){ const hb=$('homeSound'); hb.setAttribute('aria-label',muted?'Turn sound on':'Turn sound off'); setTimeout(()=>{ hb.innerHTML=$('muteBtn').innerHTML; },0); } const b=$('muteBtn'); b.setAttribute('aria-pressed',String(muted)); b.setAttribute('aria-label',muted?'Turn sound on':'Turn sound off');
   b.innerHTML = muted
    ? '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path d="M17 9l5 6M22 9l-5 6"/></svg>'
@@ -1357,7 +1372,7 @@ function showTab(name,fromBack){ const prev=curTab; curTab=name;
   if(fromBack) return;
   if(name==='play'){ if(layers[layers.length-1]==='tab') popLayer('tab'); }
   else if(layers[layers.length-1]!=='tab') pushLayer('tab'); }
-document.querySelectorAll('.tabbar .tab').forEach(b=>b.onclick=()=>{ ensureAudio(); if(b.dataset.tab!==curTab){ sfx('tap'); buzz(6); showTab(b.dataset.tab); } });
+document.querySelectorAll('.tabbar .tab').forEach(b=>b.onclick=()=>{ ensureAudio(); if(b.dataset.tab!==curTab) showTab(b.dataset.tab); });
 function renderHome(){
   $('homeStars').innerHTML=`${ICON.star}<span>${starTotal()}</span>`;
   const k=todayKey(), dr=progress.daily.results[k]; $('dailyDay').textContent=new Date().getDate();
@@ -1374,22 +1389,22 @@ function renderWardrobe(){ renderSwatches();
   $('hatGrid').innerHTML=HATS.map(h=>{ const ok=hatUnlocked(h), ch=CHAPTERS[h[2]];
     return `<button data-h="${h[0]}" class="hat ${h[0]===hatId?'on':''} ${ok?'':'locked'}" aria-pressed="${h[0]===hatId}"><span class="hat-ico" aria-hidden="true">${ok?HAT_ICON[h[0]]:'&#128274;'}</span><b>${h[1]}</b><small>${ok?(h[0]===hatId?'Wearing':'Tap to wear'):`Finish ${ch?ch.name:'a chapter'}`}</small></button>`; }).join('');
   $('hatGrid').querySelectorAll('button').forEach(b=>b.onclick=()=>{ const h=HATS.find(x=>x[0]===b.dataset.h);
-    if(!hatUnlocked(h)){ sfx('bump'); toast(`Finish every patch in ${CHAPTERS[h[2]].name} to earn the ${h[1].toLowerCase()}.`,2800); return; }
-    hatId=h[0]; try{ localStorage.setItem('squirm-hat',hatId); }catch(e){} dressHat(hHead); dressHat(segMeshes[0]); if(hHead) homeReact(hatId==='none'?'wow':'joy'); sfx('ready'); renderWardrobe(); }); }
+    if(!hatUnlocked(h)){ nope(b,`Finish every patch in ${CHAPTERS[h[2]].name} to earn the ${h[1].toLowerCase()}.`,2800); return; }
+    hatId=h[0]; try{ localStorage.setItem('squirm-hat',hatId); }catch(e){} dressHat(hHead); dressHat(segMeshes[0]); if(hHead) homeReact(hatId==='none'?'wow':'joy'); renderWardrobe(); settle($('hatGrid').querySelector('.hat.on')); }); }
 function renderSwatches(){ const have=coloursUnlocked();
   $('swatches').innerHTML=WORM_COLS.map((c,i)=>{ const locked=i>=have, hex='#'+c[1].toString(16).padStart(6,'0');
     return `<button data-i="${i}" class="${i===wormCol?'on':''} ${locked?'locked':''}" style="--sw:${hex}" aria-pressed="${i===wormCol}" aria-label="${c[0]} worm${locked?`, unlocks at ${c[3]} stars`:''}">${locked?'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#5B4436" stroke-width="3" stroke-linecap="round"><rect x="5" y="11" width="14" height="10" rx="2.5" fill="#FFF8EA"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>':''}</button>`; }).join('');
   $('swatches').querySelectorAll('button').forEach(b=>b.onclick=()=>{ const i=+b.dataset.i, c=WORM_COLS[i];
-    if(i>=coloursUnlocked()){ sfx('bump'); toast(`${c[0]} unlocks at ${c[3]} stars. You have ${starTotal()}.`,2600); return; }
-    wormCol=i; try{ localStorage.setItem('squirm-colour',String(i)); }catch(e){} applyWormColour(); if(hHead) homeReact('joy'); renderWardrobe(); }); }
+    if(i>=coloursUnlocked()){ nope(b,`${c[0]} unlocks at ${c[3]} stars. You have ${starTotal()}.`,2600); return; }
+    wormCol=i; try{ localStorage.setItem('squirm-colour',String(i)); }catch(e){} applyWormColour(); if(hHead) homeReact('joy'); renderWardrobe(); settle($('swatches').querySelector('button.on')); }); }
 const DIFF_ICON={easy:'&#127793;',medium:'&#127799;',hard:'&#127795;'};
 // short names for the mechanic tiles; the full name goes in the label
 const FEAT_SHORT={flags:'Flags',buttons:'Flowers',leaves:'Leaves',fruit:'Fruit',keys:'Keys',portals:'Tunnels',dry:'Dry',rain:'Rain',rivers:'Rivers',snails:'Snails'};
 function renderEndless(){
   $('diffSeg').innerHTML=['easy','medium','hard'].map((d,i)=>`<button role="radio" aria-checked="${d===endlessDiff}" data-d="${d}" class="diff ${d===endlessDiff?'on':''}"><span class="em" aria-hidden="true">${DIFF_ICON[d]}</span><b>${DIFF_NAME[d]}</b><span class="pips" aria-hidden="true">${[0,1,2].map(j=>`<i class="${j<=i?'f':''}"></i>`).join('')}</span><small>${progress.endless[d].cleared} cleared</small></button>`).join('');
-  $('diffSeg').querySelectorAll('button').forEach(b=>b.onclick=()=>{ endlessDiff=b.dataset.d; buzz(8); renderEndless(); });
+  $('diffSeg').querySelectorAll('button').forEach(b=>b.onclick=()=>{ endlessDiff=b.dataset.d; renderEndless(); settle($('diffSeg').querySelector('.diff.on')); });
   $('featGrid').innerHTML=FEATURES.map(([k,n])=>`<button role="checkbox" aria-checked="${!!endlessOpts[k]}" aria-label="${n}" title="${n}" data-k="${k}" class="mech ${endlessOpts[k]?'on':''}"><span class="mi" aria-hidden="true">${MECH[k].i}</span>${FEAT_SHORT[k]}<span class="ok" aria-hidden="true">&#10003;</span></button>`).join('');
-  $('featGrid').querySelectorAll('button').forEach(b=>b.onclick=()=>{ endlessOpts[b.dataset.k]=!endlessOpts[b.dataset.k]; buzz(8); renderEndless(); });
+  $('featGrid').querySelectorAll('button').forEach(b=>b.onclick=()=>{ const k=b.dataset.k; endlessOpts[k]=!endlessOpts[k]; sfx(endlessOpts[k]?'on':'off'); renderEndless(); settle($('featGrid').querySelector(`[data-k="${k}"]`)); });
   const on=FEATURES.filter(([k])=>endlessOpts[k]).length; $('mixCount').textContent=on?`${on} of ${FEATURES.length}`:'just the basics';
   const e=progress.endless[endlessDiff];
   $('eStats').innerHTML=`<div class="m-stat"><span class="ic" aria-hidden="true">&#128293;</span><b>${e.streak}</b><small>Streak</small></div><div class="m-stat"><span class="ic" aria-hidden="true">&#127942;</span><b>${e.best}</b><small>Best</small></div><div class="m-stat"><span class="ic" aria-hidden="true">${ICON.star}</span><b>${e.stars}</b><small>Stars</small></div>`;
@@ -1401,16 +1416,16 @@ function nextGardenIndex(){ const i=currentGardenIndex(); if(!isCleared(i)) retu
 $('homePlay').onclick=()=>{ ensureAudio(); hideAll(); loadLevel(nextGardenIndex()); enterGame(); };
 $('endlessGo').onclick=()=>{ newEndless(); };
 $('surprise').onclick=()=>{ const ks=['fruit','keys','portals','dry','rain','rivers','snails','buttons','leaves']; ks.forEach(k=>endlessOpts[k]=false); endlessOpts.flags=Math.random()<.8;
-  const n=2+Math.floor(Math.random()*2); for(let i=0;i<n;i++) endlessOpts[ks[Math.floor(Math.random()*ks.length)]]=true; sfx('ready'); renderEndless(); };
+  const n=2+Math.floor(Math.random()*2); for(let i=0;i<n;i++) endlessOpts[ks[Math.floor(Math.random()*ks.length)]]=true; renderEndless(); qa($('featGrid'),'.mech.on').forEach(settle); };
 $('dailyBtn').onclick=()=>{ ensureAudio(); const r=readResume('endless'); if(r&&r.def&&r.def.daily===todayKey()){ mode='endless'; hideAll(); startLevel(r.def,false); enterGame(); return; } startDaily(); };
 $('homeEndlessCont').onclick=()=>{ continueEndless(); };
-$('homeSound').onclick=()=>$('muteBtn').onclick();
+$('homeSound').onclick=()=>toggleMute($('homeSound'));
 // colour theme: follow the system, or force light or dark
 const THEMES=['auto','light','dark'];
 let theme='auto'; try{ theme=localStorage.getItem('squirm-theme')||'auto'; }catch(e){} if(!THEMES.includes(theme)) theme='auto';
 function applyTheme(){ if(theme==='auto') delete document.documentElement.dataset.theme; else document.documentElement.dataset.theme=theme;
   $('setTheme').querySelectorAll('button').forEach(b=>{ const on=b.dataset.t===theme; b.classList.toggle('on',on); b.setAttribute('aria-checked',String(on)); }); }
-$('setTheme').querySelectorAll('button').forEach(b=>b.onclick=()=>{ theme=b.dataset.t; try{ localStorage.setItem('squirm-theme',theme); }catch(e){} applyTheme(); });
+$('setTheme').querySelectorAll('button').forEach(b=>b.onclick=()=>{ theme=b.dataset.t; try{ localStorage.setItem('squirm-theme',theme); }catch(e){} applyTheme(); settle(b); });
 applyTheme();
 
 // ---------- settings: toggles, save backup, start over ----------
@@ -1426,10 +1441,10 @@ document.querySelectorAll('#setOv .set-link').forEach(b=>b.onclick=()=>{ setPage
 $('setBack').onclick=()=>window.history.back();
 $('settingsBtn').onclick=()=>{ ensureAudio(); renderSettings(); setPage('main'); show('setOv'); pushLayer('settings'); };
 $('setClose').onclick=()=>{ hide('setOv'); popLayer('settings'); renderHome(); };
-$('setSound').onclick=()=>{ $('muteBtn').onclick(); renderSettings(); };
+$('setSound').onclick=()=>{ toggleMute(); renderSettings(); };
 $('setHaptic').onclick=()=>{ $('hapticBtn').onclick(); renderSettings(); };
 $('setMusicVol').oninput=e=>{ musicVol=e.target.value/100; try{ localStorage.setItem('squirm-music-vol',String(musicVol)); }catch(err){} ensureAudio(); musicTick(); };
-$('setMusic').onclick=()=>{ musicOn=!musicOn; try{ localStorage.setItem('squirm-music',musicOn?'1':'0'); }catch(e){} ensureAudio(); renderSettings(); if(musicOn&&muted) toast('Turn sound on to hear the music.',2400); };
+$('setMusic').onclick=()=>{ musicOn=!musicOn; try{ localStorage.setItem('squirm-music',musicOn?'1':'0'); }catch(e){} ensureAudio(); sfx(musicOn?'on':'off'); renderSettings(); if(musicOn&&muted) toast('Turn sound on to hear the music.',2400); };
 // a save code is every squirm- key (except throwaway ones) as base64 JSON with a version prefix
 const SAVE_PREFIX='SQUIRM1:', SAVE_SKIP=['squirm-quality','squirm-offline-told','squirm-daily-patch','squirm-remind','squirm-boot'];
 function saveCode(){ const d={}; try{ for(const k of Object.keys(localStorage)) if(k.startsWith('squirm-')&&!SAVE_SKIP.includes(k)) d[k]=localStorage.getItem(k); }catch(e){}
@@ -1441,7 +1456,7 @@ $('saveCopy').onclick=async()=>{ const c=saveCode(); try{ await navigator.clipbo
   catch(e){ const t=$('saveCode'); t.hidden=false; t.value=c; t.focus(); t.select(); toast('Copy the code from the box.',2600); } };
 $('saveLoad').onclick=()=>{ const t=$('saveCode');
   if(t.hidden||!t.value.trim()){ t.hidden=false; t.value=''; t.focus(); $('saveLoad').textContent='Load it'; return; }
-  const d=readSaveCode(t.value); if(!d){ sfx('bump'); toast("That code doesn't look right. Check it was copied in full.",3000); return; }
+  const d=readSaveCode(t.value); if(!d){ nope(t,"That code doesn't look right. Check it was copied in full.",3000); return; }
   try{ Object.keys(localStorage).filter(k=>k.startsWith('squirm-')&&!SAVE_SKIP.includes(k)).forEach(k=>localStorage.removeItem(k)); for(const k in d) localStorage.setItem(k,d[k]); }catch(e){ toast("Couldn't save on this device.",2600); return; }
   buzz([20,40,20]); location.reload(); };
 
@@ -1622,7 +1637,7 @@ function renderLevelList(){
       b.style.setProperty('--shape',STONES[(i*7+3)%STONES.length]);
       b.innerHTML=(locked?LOCK_SVG:`${i+1}`)+(locked?'':`<em class="mini" aria-hidden="true">${[0,1,2].map(q=>`<i class="${q<st?'on':''}"></i>`).join('')}</em>`);
       // first tap picks the stone and shows its card; tapping it again (or Play) opens it
-      b.onclick=()=>{ if(locked){ animOnce(b,'nope'); sfx('bump'); toast(`Finish patch ${i} first, then this one opens.`,2200); return; }
+      b.onclick=()=>{ if(locked){ nope(b,`Finish patch ${i} first, then this one opens.`,2200); return; }
         if(picked===i){ playPicked(); return; } pickPatch(i,true); };
       tr.appendChild(b); } });
   pickPatch(isUnlocked(li)?li:0,false);
@@ -1632,7 +1647,7 @@ function pickPatch(i,anim){ picked=i; const lv=LEVELS[i], st=progress.stars[lv.n
   document.querySelectorAll('#lvGrid .node').forEach(n=>n.classList.toggle('sel',+n.dataset.i===i));
   const p=$('lvPick'); p.innerHTML=`<canvas class="thumb" width="88" height="88" aria-hidden="true"></canvas><span class="pt"><b>${i+1}. ${lv.name}</b><small><em class="mini" aria-hidden="true">${[0,1,2].map(q=>`<i class="${q<st?'on':''}"></i>`).join('')}</em>${best?`best ${best} · par ${lv.par}`:`par ${lv.par}`}</small><small>${ch?ch.name:''}</small></span><button class="go" aria-label="Play patch ${i+1}"><svg width="26" height="26" viewBox="0 0 24 24"><path d="M8 5.5v13l10.5-6.5z" fill="#fff" stroke="#fff" stroke-width="2" stroke-linejoin="round"/></svg></button>`;
   drawThumb(p.querySelector('canvas'),lv); p.querySelector('.go').onclick=playPicked;
-  if(anim){ sfx('tap'); buzz(6); animOnce(p,'swap'); } }
+  if(anim){ settle(document.querySelector('#lvGrid .node.sel')); animOnce(p,'swap'); } }
 function playPicked(){ if(picked<0) return; hideAll(); loadLevel(picked); enterGame(); }
 
 // ---------- camera: tilted 3/4 view; the board sits between the header and the buttons ----------
@@ -1677,7 +1692,14 @@ function dirFromScreen(dx,dy){
   const s=new THREE.Vector2(dx,dy).normalize(); let best=null,bd=-2;
   for(const k of ['N','S','W','E']){ const dd=screenVec(DIRS[k]).dot(s); if(dd>bd){bd=dd;best=k;} } return best;
 }
-document.addEventListener('click',e=>{ const b=e.target.closest&&e.target.closest('.ov button,.home button,.lv,.node'); if(b&&!b.closest('#homeWorm')) sfx('tap'); });
+// every press of a button or HUD tile plays one 'tap' with one light haptic, or the sfx named in its data-sfx
+// ('none' when its handler picks the sound itself, maybe later). If the handler already played a sound or
+// buzzed during this click, the press adds nothing, so no action ever sounds twice. The element is found in the
+// capture phase, because some handlers re-render the very button that was pressed.
+let pressEl=null;
+document.addEventListener('click',e=>{ pressEl=e.target.closest?e.target.closest('button,[role=button]:not(canvas)'):null; fbNow.s=fbNow.b=false; },true);
+document.addEventListener('click',()=>{ const el=pressEl; pressEl=null; if(!el||el.disabled) return; const k=el.dataset.sfx||'tap';
+  if(k==='none'||fbNow.s||!SFX[k]) return; try{ SFX[k](); }catch(e){} if(!fbNow.b) buzz(HAPTIC[k]); });
 const SWIPE=22, TAP=10; let gest=null;
 const ignoreTarget=t=>t.closest && t.closest('button,.ov,.home,.dialog');
 document.addEventListener('pointerdown',e=>{ ensureAudio(); if(e.button>0||ignoreTarget(e.target)) return;
@@ -1708,15 +1730,15 @@ function tapMove(e){
 }
 const KEYMAP={ArrowUp:[0,-1],KeyW:[0,-1],ArrowDown:[0,1],KeyS:[0,1],ArrowLeft:[-1,0],KeyA:[-1,0],ArrowRight:[1,0],KeyD:[1,0]};
 window.addEventListener('keydown',e=>{ if(e.ctrlKey||e.metaKey||e.altKey||(e.target&&/^(TEXTAREA|INPUT)$/.test(e.target.tagName))) return; ensureAudio();
-  if((e.code==='Enter'||e.code==='Space') && $('winOv').classList.contains('show')){ e.preventDefault(); $('winNext').click(); return; }
-  if(e.code==='KeyR' && $('winOv').classList.contains('show')){ e.preventDefault(); $('winReplay').click(); return; }
+  if((e.code==='Enter'||e.code==='Space') && isOpen('winOv')){ e.preventDefault(); $('winNext').click(); return; }
+  if(e.code==='KeyR' && isOpen('winOv')){ e.preventDefault(); $('winReplay').click(); return; }
   if(e.code==='Enter' && calmMoment() && curTab==='play' && (document.activeElement===document.body||!document.activeElement)){ e.preventDefault(); $('homePlay').click(); return; }
-  if((e.code==='Enter'||e.code==='Space') && $('introOv').classList.contains('show')){ e.preventDefault(); closeIntro(false); return; }
+  if((e.code==='Enter'||e.code==='Space') && isOpen('introOv')){ e.preventDefault(); closeIntro(false); return; }
   if(KEYMAP[e.code] && !anyOverlay()){ e.preventDefault(); tryMove(dirFromScreen(...KEYMAP[e.code])); }
   else if((e.code==='KeyZ'||e.code==='Backspace'||e.code==='KeyU') && !anyOverlay()){ e.preventDefault(); undo(); }
   else if(e.code==='KeyR' && !anyOverlay()) restart();
   else if(e.code==='KeyH' && !anyOverlay()) showHint();
-  else if(e.code==='KeyM') $('muteBtn').onclick();
+  else if(e.code==='KeyM') toggleMute(anyOverlay()?null:$('muteBtn'));
   else if(e.code==='Escape'){ if(layers.length&&!generating) window.history.back(); }
 });
 
@@ -1731,11 +1753,12 @@ $('winShare').onclick=async()=>{ try{ if(navigator.share){ await navigator.share
   try{ await navigator.clipboard.writeText(shareText); toast('Result copied. Paste it anywhere.',2200); }catch(e){ toast(shareText,5000); } };
 $('winReplay').onclick=()=>{ hideAll(); popLayer('win'); if(mode==='garden') loadLevel(li,false); else startLevel(L,false); };
 $('winNext').onclick=()=>{ hideAll(); if(L.daily){ popLayer('game'); showHome(); return; } popLayer('win'); if(mode==='garden') loadLevel(li===LEVELS.length-1?0:li+1); else newEndless(); };
-$('muteBtn').onclick=()=>{ ensureAudio(); muted=!muted; pulse($('muteBtn')); try{ localStorage.setItem('squirm-muted',muted?'1':'0'); }catch(e){} renderMute(); if(state) syncWeather(false); if(!muted) sfx('ready'); };
+function toggleMute(el){ ensureAudio(); muted=!muted; if(el) settle(el); try{ localStorage.setItem('squirm-muted',muted?'1':'0'); }catch(e){} renderMute(); if(state) syncWeather(false); sfx(muted?'off':'on'); }
+$('muteBtn').onclick=()=>toggleMute($('muteBtn'));
 renderMute();
 function renderHaptic(){ const b=$('hapticBtn'); b.setAttribute('aria-pressed',String(hapticsOn)); b.setAttribute('aria-label',hapticsOn?'Turn vibration off':'Turn vibration on');
   b.innerHTML='<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="7.5" y="4" width="9" height="16" rx="2.5"/>'+(hapticsOn?'<path d="M4 9v6M20 9v6M1.5 10.5v3M22.5 10.5v3"/>':'<path d="M3 3l18 18"/>')+'</svg>'; }
-$('hapticBtn').onclick=()=>{ hapticsOn=!hapticsOn; try{ localStorage.setItem('squirm-haptics',hapticsOn?'1':'0'); }catch(e){} renderHaptic(); buzz([15,40,15]); };
+$('hapticBtn').onclick=()=>{ hapticsOn=!hapticsOn; try{ localStorage.setItem('squirm-haptics',hapticsOn?'1':'0'); }catch(e){} renderHaptic(); sfx(hapticsOn?'on':'off'); };
 renderHaptic();
 
 // ---------- loop ----------
@@ -1798,7 +1821,7 @@ function frame(now){
   updateWorm();
   // behind menus the garden is blurred, so a third of the frames is plenty
   const behind=anyOverlay(); frameN++;
-  if(!$('genOv').classList.contains('show') && (!behind || frameN%3===0)){ renderer.render(scene,camera); if(!drawn){ drawn=true; canvas.classList.add('ready'); } }
+  if(!isOpen('genOv') && (!behind || frameN%3===0)){ renderer.render(scene,camera); if(!drawn){ drawn=true; canvas.classList.add('ready'); } }
   if(!behind && !document.hidden) watchSpeed(now-last0);
   last0=now;
   if(!document.hidden) requestAnimationFrame(frame); else paused=true;
@@ -1817,7 +1840,7 @@ window.addEventListener('unhandledrejection',()=>onGameError(null));
 // than relaunched, so check for one whenever the app comes back to the foreground, and reload into
 // the new version at a calm moment: right away on the home screen, otherwise on the way back home.
 let updateReady=false;
-const calmMoment=()=>$('homeOv').classList.contains('show') && !generating && !['winOv','genOv','introOv','resetOv','setOv'].some(id=>$(id).classList.contains('show'));
+const calmMoment=()=>$('homeOv').classList.contains('show') && !generating && !['winOv','genOv','introOv','resetOv','setOv'].some(isOpen);
 if('serviceWorker' in navigator && /^https?:$/.test(location.protocol)){
   const hadWorker=!!navigator.serviceWorker.controller; let controlled=hadWorker, reg=null;
   const check=()=>{ if(reg&&navigator.onLine!==false) reg.update().catch(()=>{}); };
@@ -1853,16 +1876,16 @@ function renderRemind(){ const k=remindKind(), on=remind.on&&k!=='none';
     : on ? "Once a day, after the time you pick, Squirm sends a gentle nudge if today's patch is still waiting. Your phone picks the exact moment, so it may come a little later."
     : "Get a gentle nudge when a fresh daily patch is waiting for you."; }
 $('setRemind').onclick=async()=>{ const k=remindKind(); if(k==='none') return;
-  if(remind.on){ remind.on=false; saveRemind(); try{ const reg=await navigator.serviceWorker.ready; if(reg.periodicSync) await reg.periodicSync.unregister('squirm-daily'); }catch(e){} return; }
+  if(remind.on){ remind.on=false; saveRemind(); sfx('off'); try{ const reg=await navigator.serviceWorker.ready; if(reg.periodicSync) await reg.periodicSync.unregister('squirm-daily'); }catch(e){} return; }
   let perm=Notification.permission; if(perm==='default'){ try{ perm=await Notification.requestPermission(); }catch(e){} }
-  if(perm!=='granted'){ toast('Notifications are turned off for Squirm. You can allow them in your browser settings.',3600); renderRemind(); return; }
+  if(perm!=='granted'){ nope($('setRemind'),'Notifications are turned off for Squirm. You can allow them in your browser settings.',3600); renderRemind(); return; }
   if(k==='full'){ try{ const reg=await navigator.serviceWorker.ready;
       const st=await navigator.permissions.query({name:'periodic-background-sync'}).catch(()=>null);
       if(st&&st.state!=='granted') throw new Error('not installed');
       await reg.periodicSync.register('squirm-daily',{minInterval:4*3600*1000}); }
-    catch(e){ toast('Add Squirm to your home screen first, then turn reminders on there.',3600); renderRemind(); return; } }
-  remind.on=true; saveRemind(); buzz(10); sfx('ready'); };
-$('setRemindAt').querySelectorAll('button').forEach(b=>b.onclick=()=>{ remind.hour=+b.dataset.h; buzz(8); saveRemind(); });
+    catch(e){ nope($('setRemind'),'Add Squirm to your home screen first, then turn reminders on there.',3600); renderRemind(); return; } }
+  remind.on=true; saveRemind(); sfx('on'); };
+$('setRemindAt').querySelectorAll('button').forEach(b=>b.onclick=()=>{ remind.hour=+b.dataset.h; saveRemind(); settle(b); });
 if('serviceWorker' in navigator) navigator.serviceWorker.addEventListener('message',e=>{ if(e.data==='squirm-daily'&&calmMoment()) $('dailyBtn').onclick(); });
 document.addEventListener('visibilitychange',()=>{ if(document.hidden) updateAppBadge(); });
 // keep the worker's copy in step (it also hears about a secret reset this way)

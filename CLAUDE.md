@@ -165,6 +165,28 @@ map thumbnails, and `introAt` in `tools/verify-levels.js`.
 - **Motion:** `stagger(els, cls)` gives a list of elements a staggered entrance (`enter` drops in,
   `rise` comes up). Used by `hudIntro` (new patch), `tabIntro` (each home tab), the home top bar and
   tab bar in `showHome`, and `setPageIntro` (settings pages). `animOnce` replays a one-shot class.
+- **UI feedback:** one system for every control, so the app feels like one thing.
+  - Motion tokens on `:root`: `--dur-fast` (.14s: press, closing), `--dur` (.3s: dialog open, selection pop, page
+    slide, shake), `--dur-slow` (.48s: staggered entrances), plus `--ease-pop` (overshoot), `--ease-out` and
+    `--ease-in` (exits). Use them instead of ad-hoc durations.
+  - Press: controls on a ledge (`.btn`, `.round`, `.disc`, `.play`, `.big`, `.set-link`, hats, difficulty cards, map
+    stones) sink onto it; flat ones (seg buttons, mechanic tiles, swatches, HUD tiles, icon buttons, links, switches)
+    squish to `scale:.94`; tab icons to `.9`. The shared rules live in the "UI feedback" block of `shell.html`.
+  - Sound and haptics: a document-level press handler gives every `button` and `[role=button]` one `tap` and one light
+    haptic. Don't call `sfx('tap')` or `buzz()` in a click handler. An element can name a different sound with
+    `data-sfx="name"`, or use `data-sfx="none"` when its handler plays its own sound later (undo, hint, reminder
+    switch). If a handler plays any `sfx` or `buzz` during the click, the press adds nothing, so an action never
+    sounds twice.
+  - Selection (seg, difficulty, hats, colours, map stones): `tap` + `settle(el)` (the `popin` pop) on the newly chosen
+    element. Toggles (switches, mechanic tiles, sound and vibration buttons): `sfx('on')` / `sfx('off')`. Blocked
+    actions (locked stone, hat or colour, a bad save code, reminders that can't be set): `nope(el,msg)`, which shakes,
+    plays `bump` and shows a toast.
+  - Dialogs: every `.ov` scrim fades in while its `.dialog` pops. `hide()` adds `.out` for a short fade and shrink,
+    then removes `.show`, so use `isOpen(id)` (not `.show`) to ask whether a dialog is up. The home screen just swaps.
+  - Animations that must stack on an element's own transform (map stones are centred with one) use the individual
+    `scale` / `translate` properties in their keyframes (`popin`, `nope`, `hudIn`, `navIn`). Every new animation also
+    goes in the `prefers-reduced-motion` block.
+  - `#toast` sits outside `#app`, fixed above everything; `toast()` anchors it above the game buttons or the home tab bar.
 - **Settings and backups:** the gear on the home screen opens `setOv`, a short list whose rows open
   sub-pages (`setPage`, each pushing a `setpage` layer): Sound & music, Reminders, Look, Your garden (save
   code backup and restore) and About. Starting over is only the secret hold on the home worm. A save code is `SQUIRM1:` + base64 JSON of every `squirm-` key except
