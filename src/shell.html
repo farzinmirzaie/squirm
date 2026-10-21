@@ -385,7 +385,7 @@ body.at-home #app{visibility:hidden}
 .trail > svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none}
 .trail .road{fill:none;stroke:var(--edge);stroke-width:9;stroke-linecap:round;stroke-dasharray:1 15;vector-effect:non-scaling-stroke}
 .trail .walked{fill:none;stroke:var(--leaf);stroke-width:7;stroke-linecap:round;stroke-dasharray:1 14;vector-effect:non-scaling-stroke}
-.deco{position:absolute;font-size:22px;opacity:.7;pointer-events:none;transform:translate(-50%,-50%) rotate(var(--r,0deg))}
+.deco{position:absolute;font-size:20px;opacity:.5;pointer-events:none;transform:translate(-50%,-50%) rotate(var(--r,0deg))}
 .node{position:absolute;z-index:1;transform:translate(-50%,-50%);width:56px;height:56px;padding:0;border-radius:50%;border:3px solid var(--edge);background:var(--paper);color:var(--ink);
   box-shadow:0 4px 0 var(--edge);display:grid;place-items:center;font:800 20px/1 "Grandstander",ui-rounded,system-ui,sans-serif;cursor:pointer;-webkit-tap-highlight-color:transparent}
 .node:active{transform:translate(-50%,-46%);box-shadow:0 1px 0 var(--edge)}
@@ -400,13 +400,22 @@ body.at-home #app{visibility:hidden}
 @keyframes inch{0%,100%{transform:translateX(-50%) translateY(0) scaleX(1)}50%{transform:translateX(-50%) translateY(-4px) scaleX(.86)}}
 .node.nope{animation:nodeNope .35s}
 @keyframes nodeNope{20%,60%{margin-left:-6px}40%,80%{margin-left:6px}}
-.node-label{position:absolute;z-index:1;transform:translateY(-50%);display:flex;align-items:center;gap:7px;pointer-events:none}
-.node-label > span{display:flex;flex-direction:column;gap:2px;min-width:0}
-.node-label canvas.thumb{flex:none;position:static;width:34px;height:34px;border-radius:9px;background:#9A6A4C;box-shadow:0 2px 0 var(--edge)}
-.node-label b{font:800 14px/1.15 "Nunito",ui-rounded,system-ui,sans-serif;color:var(--ink)}
-.node-label small{font:800 11.5px/1.1 "Nunito",ui-rounded,system-ui,sans-serif;color:var(--ink-soft)}
-.node-label.r{text-align:right;flex-direction:row-reverse}
-.node-label.r > span{align-items:flex-end}
+.node.sel{outline:4px solid var(--honey);outline-offset:3px}
+/* the card under the map for the stone you picked */
+.pick{flex:none;display:flex;align-items:center;gap:12px;margin-top:10px;padding:10px 10px 10px 10px;border-radius:20px;background:var(--paper-2);border:2.5px solid var(--edge);box-shadow:0 4px 0 var(--edge)}
+.pick canvas.thumb{flex:none;position:static;width:58px;height:58px;border-radius:14px;background:#9A6A4C;box-shadow:0 3px 0 var(--edge)}
+.pick .pt{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
+.pick b{font:800 17px/1.15 "Grandstander",ui-rounded,system-ui,sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pick small{font:800 12.5px/1.2 "Nunito",ui-rounded,system-ui,sans-serif;color:var(--ink-soft);display:flex;align-items:center;gap:6px}
+.pick .mini i{width:13px;height:13px}
+.pick .go{flex:none;width:58px;height:58px;border-radius:50%;border:3px solid var(--leaf-dark);background:var(--leaf) linear-gradient(180deg,rgba(255,255,255,.35),transparent 60%);box-shadow:0 4px 0 var(--leaf-dark);display:grid;place-items:center;cursor:pointer;padding:0}
+.pick .go:active{transform:translateY(4px);box-shadow:0 0 0 var(--leaf-dark)}
+.pick.swap{animation:popin .3s cubic-bezier(.2,1.6,.4,1)}
+/* chapters you can't reach yet fold up into a small card */
+.scene.later .ch-banner{position:static;box-shadow:none}
+.scene.later .emb{filter:grayscale(.8);opacity:.7}
+.peek{display:flex;justify-content:center;gap:6px;padding:0 12px 12px}
+.peek i{width:10px;height:10px;border-radius:50%;background:var(--edge)}
 .list .chapter{position:sticky;top:-2px;z-index:1;margin:6px 0 0;padding:6px 4px;background:var(--paper)}
 .chapter .new{margin-left:6px;padding:3px 7px;border-radius:999px;background:var(--berry);color:#fff;font:800 11px/1 "Nunito",sans-serif;text-transform:uppercase;letter-spacing:.06em;vertical-align:2px}
 .stat .mini{display:inline-flex;gap:1px}
@@ -435,7 +444,7 @@ body.at-home #app{visibility:hidden}
   :root[data-theme="dark"]{--ink-soft:#FBEFDD;--edge:#A08468}
 }
 @media (prefers-contrast: more) and (prefers-color-scheme: dark){ :root:not([data-theme="light"]){--ink-soft:#FBEFDD;--edge:#A08468} }
-@media (prefers-reduced-motion: reduce){ .node.cur::before,.node.nope{animation:none} .spin,.logo svg,.gbtn.hint .disc svg,#winNext,.set-page.fwd,.set-page.back,.tab-page.enter{animation:none} #tutorial .hand{animation:none} .enter,.rise,.tab.on.pop svg,.stat.cheer,.stat.cheer .ic,.stat.lost .mini,.gbtn.pop .disc{animation:none} .star{animation:none;transform:none} .pop{animation:none} .dialog{animation:none} #toast{transition:none} .petals{display:none} }
+@media (prefers-reduced-motion: reduce){ .node.cur::before,.node.nope,.pick.swap{animation:none} .spin,.logo svg,.gbtn.hint .disc svg,#winNext,.set-page.fwd,.set-page.back,.tab-page.enter{animation:none} #tutorial .hand{animation:none} .enter,.rise,.tab.on.pop svg,.stat.cheer,.stat.cheer .ic,.stat.lost .mini,.gbtn.pop .disc{animation:none} .star{animation:none;transform:none} .pop{animation:none} .dialog{animation:none} #toast{transition:none} .petals{display:none} }
 </style>
 </head>
 <body class="at-home">
@@ -502,6 +511,7 @@ body.at-home #app{visibility:hidden}
       <div class="panel card">
         <div class="panel-head"><h2 id="lvTitle">Garden patches</h2><span class="total" id="lvTotal"></span></div>
         <div class="list map" id="lvGrid"></div>
+        <div class="pick" id="lvPick" aria-live="polite"></div>
       </div>
     </section>
     <section class="tab-page" id="tabMeadow" aria-labelledby="endlessTitle" hidden>

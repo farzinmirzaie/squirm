@@ -1109,9 +1109,9 @@ const qa=(root,sel)=>[...root.querySelectorAll(sel)];
 // what comes in, in order, when a home tab opens
 function tabIntro(name){ const pg=$('tab'+name[0].toUpperCase()+name.slice(1));
   if(name==='play'){ stagger([$('slotPlay'),document.querySelector('.brand'),document.querySelector('.tagline'),$('homePlay'),$('dailyBtn')],'rise',0,60); return; }
-  if(name==='garden'){ const panel=pg.querySelector('.panel'); stagger([panel],'rise');
+  if(name==='garden'){ const panel=pg.querySelector('.panel'); stagger([panel],'rise'); stagger([$('lvPick')],'rise',220);
     // the list scrolls to the current patch first, then the rows in view come in
-    setTimeout(()=>{ const box=$('lvGrid').getBoundingClientRect(); stagger(qa($('lvGrid'),'.ch-banner,.node,.node-label').filter(r=>{ const b=r.getBoundingClientRect(); return b.bottom>box.top&&b.top<box.bottom; }),'rise',0,35); },40); return; }
+    setTimeout(()=>{ const box=$('lvGrid').getBoundingClientRect(); stagger(qa($('lvGrid'),'.ch-banner,.node,.peek').filter(r=>{ const b=r.getBoundingClientRect(); return b.bottom>box.top&&b.top<box.bottom; }),'rise',0,35); },40); return; }
   if(name==='meadow') { stagger([pg.querySelector('.panel'),...qa(pg,'.m-stat'),...qa(pg,'.diff')],'rise',0,40); stagger(qa(pg,'.mech'),'rise',260,22,10); stagger(qa(pg,'.m-go .btn'),'rise',420,60); return; }
   if(name==='me'){ stagger([$('slotMe'),pg.querySelector('.panel')],'rise',0,60); stagger(qa(pg,'.hat-grid button'),'rise',140,22,14); stagger(qa(pg,'.swatches button'),'rise',360,40); return; }
   if(name==='badges'){ stagger([pg.querySelector('.panel')],'rise'); stagger(qa(pg,'.badge-card'),'rise',90,35,8); } }
@@ -1578,37 +1578,45 @@ const SCENE_COL=['#CFEFB8','#FFD9C2','#E2D6FA','#FFE9A8','#CBE7F7','#FBD3E0','#D
 const SCENE_DECO=[['\u{1F331}','\u{1F6A9}'],['\u{1F351}','\u{1F344}'],['\u{1F342}','\u{1F33E}'],['\u{1F511}','\u{1F33B}'],['\u{1F33F}','\u{1FAB1}'],['\u{1F4A7}','\u{2601}\u{FE0F}'],['\u{1F30A}','\u{1FAB5}'],
   ['\u{1F338}','\u{1F98B}'],['\u{1F333}','\u{1F41D}'],['\u{1F33C}','\u{1F343}'],['\u{1F40C}','\u{1F340}'],['\u{1F33A}','\u{1F33F}'],['\u{1F343}','\u{1F4A7}']];
 const LOCK_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><rect x="5" y="11" width="14" height="10" rx="2.5"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>';
+let picked=-1;
 function renderLevelList(){
   const g=$('lvGrid'); g.innerHTML=''; const stars=i=>progress.stars[LEVELS[i].name]||0;
   let total=0; LEVELS.forEach((l,i)=>total+=stars(i)); $('lvTotal').innerHTML=`${STAR(true,0).replace('width="44" height="44"','width="20" height="20"')} ${total} of ${LEVELS.length*3} stars`;
-  const RH=88, TOP=52;
-  CHAPTERS.forEach((ch,k)=>{ const n=ch.to-ch.from+1; let cs=0, allDone=true, fresh=ch.from>0&&isUnlocked(ch.from);
+  const RH=96, TOP=56; let shownLocked=false;
+  CHAPTERS.forEach((ch,k)=>{ const n=ch.to-ch.from+1, open=isUnlocked(ch.from); let cs=0, allDone=true, fresh=ch.from>0&&open;
     for(let i=ch.from;i<=ch.to;i++){ cs+=stars(i); if(!isCleared(i)) allDone=false; else fresh=false; }
-    const hat=HATS.find(h=>h[2]===k), sc=document.createElement('section'); sc.className='scene'+(isUnlocked(ch.from)?'':' later'); sc.style.setProperty('--scene',SCENE_COL[k%SCENE_COL.length]);
-    sc.innerHTML=`<div class="ch-banner"><span class="emb" aria-hidden="true">${hat?HAT_ICON[hat[0]]:'&#127793;'}</span><span class="tt"><b>${ch.name}${fresh?' <small class="new">New</small>':''}</b><small>Chapter ${k+1} · ${allDone?(hat?`${hat[1]} earned`:'All done'):(hat?`Finish it for the ${hat[1].toLowerCase()}`:`${n} patches`)}</small></span><span class="cnt">${allDone?'<span class="done" aria-label="Finished">&#10003;</span>':''}${STAR(true,0).replace('width="44" height="44"','width="18" height="18"')}${cs}/${n*3}</span></div>`;
-    const tr=document.createElement('div'); tr.className='trail'; tr.style.height=(TOP+(n-1)*RH+50)+'px'; sc.appendChild(tr);
-    const pts=[]; for(let j=0;j<n;j++) pts.push([50+27*Math.sin(j*1.1+k*1.7),TOP+j*RH]);
+    const hat=HATS.find(h=>h[2]===k), sc=document.createElement('section'); sc.className='scene'+(open?'':' later'); sc.style.setProperty('--scene',SCENE_COL[k%SCENE_COL.length]);
+    const sub=!open?(shownLocked?'Locked':`Finish ${CHAPTERS[k-1].name} to open`):allDone?(hat?`${hat[1]} earned`:'All done'):(hat?`Reward: ${hat[1].toLowerCase()}`:`${n} patches`);
+    sc.innerHTML=`<div class="ch-banner"><span class="emb" aria-hidden="true">${!open?'&#128274;':hat?HAT_ICON[hat[0]]:'&#127793;'}</span><span class="tt"><b>${ch.name}${fresh?' <small class="new">New</small>':''}</b><small>${sub}</small></span><span class="cnt">${allDone?'<span class="done" aria-label="Finished">&#10003;</span>':''}${open?STAR(true,0).replace('width="44" height="44"','width="18" height="18"')+`${cs}/${n*3}`:''}</span></div>`;
+    g.appendChild(sc);
+    // a chapter you can't reach yet is just its banner and a row of dots
+    if(!open){ shownLocked=true; sc.insertAdjacentHTML('beforeend',`<div class="peek" aria-hidden="true">${'<i></i>'.repeat(n)}</div>`); return; }
+    const tr=document.createElement('div'); tr.className='trail'; const H=TOP+(n-1)*RH+56; tr.style.height=H+'px'; sc.appendChild(tr);
+    const pts=[]; for(let j=0;j<n;j++) pts.push([50+28*Math.sin(j*1.05+k*1.7),TOP+j*RH]);
     const pathTo=last=>pts.slice(0,last+1).map((p,j)=>j?`C${pts[j-1][0]},${pts[j-1][1]+RH/2} ${p[0]},${p[1]-RH/2} ${p[0]},${p[1]}`:`M${p[0]},${p[1]}`).join(' ');
     let walked=-1; for(let j=0;j<n;j++) if(isUnlocked(ch.from+j)) walked=j;
-    const H=TOP+(n-1)*RH+50;
     tr.innerHTML=`<svg viewBox="0 0 100 ${H}" preserveAspectRatio="none" aria-hidden="true"><path class="road" d="${pathTo(n-1)}"/>${walked>0?`<path class="walked" d="${pathTo(walked)}"/>`:''}</svg>`;
-    // a few garden bits on the far side of the stones
-    const deco=SCENE_DECO[k%SCENE_DECO.length]; for(let j=0;j<n;j+=2){ const x=pts[j][0]; const d=document.createElement('span'); d.className='deco'; d.textContent=deco[(j/2)%2];
-      d.style.left=(x<50?Math.max(6,x-24):Math.min(94,x+24))+'%'; d.style.top=(pts[j][1]+(j%4?14:-12))+'px'; d.style.setProperty('--r',((j*37+k*11)%40-20)+'deg'); tr.appendChild(d); }
+    // a few garden bits near the edges, away from the path
+    const deco=SCENE_DECO[k%SCENE_DECO.length]; [1,4,7].forEach((j,q)=>{ const x=pts[j][0]; const d=document.createElement('span'); d.className='deco'; d.textContent=deco[q%2];
+      d.style.left=(x<50?88:12)+'%'; d.style.top=(pts[j][1]+RH/2)+'px'; d.style.setProperty('--r',((j*37+k*11)%40-20)+'deg'); tr.appendChild(d); });
     for(let j=0;j<n;j++){ const i=ch.from+j, lv=LEVELS[i], st=stars(i), best=progress.best[lv.name], locked=!isUnlocked(i), [x,y]=pts[j];
-      const b=document.createElement('button'); b.className='node'+(i===li?' cur':'')+(locked?' locked':isCleared(i)?' done':'')+(st===3?' gold':'');
+      const b=document.createElement('button'); b.className='node'+(i===li?' cur':'')+(locked?' locked':isCleared(i)?' done':'')+(st===3?' gold':''); b.dataset.i=i;
       b.style.left=x+'%'; b.style.top=y+'px';
       b.setAttribute('aria-label',`Patch ${i+1}, ${lv.name}`+(locked?', locked':`, ${st} ${st===1?'star':'stars'}${best?`, best ${best}`:''}, par ${lv.par}`));
       b.innerHTML=(locked?LOCK_SVG:`${i+1}`)+(locked?'':`<em class="mini" aria-hidden="true">${[0,1,2].map(q=>`<i class="${q<st?'on':''}"></i>`).join('')}</em>`);
-      b.onclick=()=>{ if(locked){ animOnce(b,'nope'); sfx('bump'); toast(`Finish patch ${i} first, then this one opens.`,2200); return; } hideAll(); loadLevel(i); enterGame(); };
-      tr.appendChild(b);
-      const lb=document.createElement('span'); lb.className='node-label'+(x>=50?' r':''); lb.setAttribute('aria-hidden','true');
-      if(x>=50){ lb.style.right=`calc(${100-x}% + 38px)`; lb.style.maxWidth=`calc(${x}% - 46px)`; } else { lb.style.left=`calc(${x}% + 38px)`; lb.style.maxWidth=`calc(${100-x}% - 46px)`; } lb.style.top=y+'px';
-      lb.innerHTML=`${locked?'':'<canvas class="thumb" width="88" height="88"></canvas>'}<span><b>${i+1}. ${lv.name}</b><small>${locked?'Locked':best?`best ${best} · par ${lv.par}`:`par ${lv.par}`}</small></span>`; tr.appendChild(lb);
-      if(!locked) drawThumb(lb.querySelector('canvas'),lv); }
-    g.appendChild(sc); });
-  setTimeout(()=>{ const c=g.querySelector('.node.cur'); if(c) c.scrollIntoView({block:'center'}); },30);
+      // first tap picks the stone and shows its card; tapping it again (or Play) opens it
+      b.onclick=()=>{ if(locked){ animOnce(b,'nope'); sfx('bump'); toast(`Finish patch ${i} first, then this one opens.`,2200); return; }
+        if(picked===i){ playPicked(); return; } pickPatch(i,true); };
+      tr.appendChild(b); } });
+  pickPatch(isUnlocked(li)?li:0,false);
+  setTimeout(()=>{ const c=g.querySelector('.node.sel'); if(c) c.scrollIntoView({block:'center'}); },30);
 }
+function pickPatch(i,anim){ picked=i; const lv=LEVELS[i], st=progress.stars[lv.name]||0, best=progress.best[lv.name], ch=CHAPTERS.find(c=>i>=c.from&&i<=c.to);
+  document.querySelectorAll('#lvGrid .node').forEach(n=>n.classList.toggle('sel',+n.dataset.i===i));
+  const p=$('lvPick'); p.innerHTML=`<canvas class="thumb" width="88" height="88" aria-hidden="true"></canvas><span class="pt"><b>${i+1}. ${lv.name}</b><small><em class="mini" aria-hidden="true">${[0,1,2].map(q=>`<i class="${q<st?'on':''}"></i>`).join('')}</em>${best?`best ${best} · par ${lv.par}`:`par ${lv.par}`}</small><small>${ch?ch.name:''}</small></span><button class="go" aria-label="Play patch ${i+1}"><svg width="26" height="26" viewBox="0 0 24 24"><path d="M8 5.5v13l10.5-6.5z" fill="#fff" stroke="#fff" stroke-width="2" stroke-linejoin="round"/></svg></button>`;
+  drawThumb(p.querySelector('canvas'),lv); p.querySelector('.go').onclick=playPicked;
+  if(anim){ sfx('tap'); buzz(6); animOnce(p,'swap'); } }
+function playPicked(){ if(picked<0) return; hideAll(); loadLevel(picked); enterGame(); }
 
 // ---------- camera: tilted 3/4 view; the board sits between the header and the buttons ----------
 const PITCH=56*Math.PI/180, TILT=0;

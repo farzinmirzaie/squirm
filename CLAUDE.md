@@ -153,7 +153,9 @@ map thumbnails, and `introAt` in `tools/verify-levels.js`.
   new shared resources to its keep lists. `sph` rounds radii so its cache stays bounded.
 - **Home and navigation:** the home screen (`homeOv`) has five tabs, switched by `showTab`: Play
   (worm, Continue, daily), Garden (the map: `renderLevelList` draws one scene per chapter with its
-  patches as stepping stones on a winding SVG path, labelled with `drawThumb` previews), Meadow
+  patches as stepping stones on a winding SVG path; chapters not yet open fold into a small card.
+  Tapping a stone picks it (`pickPatch`) and shows its card with a `drawThumb` preview and Play
+  under the map; tapping it again plays), Meadow
   (endless setup), Me (wardrobe) and Badges.
   The home worm's canvas moves between the Play and Me tabs. Leaving Play pushes a `tab` layer, so
   the back button returns to Play; opening a patch from a tab replaces that layer with `game`.
