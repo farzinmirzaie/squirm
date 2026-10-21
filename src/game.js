@@ -1014,12 +1014,12 @@ function winSeq(){
     s.scale.setScalar(a>=path.length-2?Math.max(.02,1-t*.98):1); }); },
     ()=>{ animating--; wormG.visible=false; onWin(); });
 }
-function petals(){ if(reduceMotion) return; const box=$('petals'); box.innerHTML=''; const cols=['#F7B3C5','#FFD866','#C9B4F7','#FFC09A','#BDE5A3'];
+function petals(){ if(reduceMotion) return; const box=$('petals'); box.innerHTML=''; const cols=['var(--petal)','var(--honey)','var(--lilac)','var(--berry)','var(--leaf)'];
   for(let i=0;i<36;i++){ const p=document.createElement('i'); p.style.left=Math.random()*100+'%'; p.style.background=cols[i%cols.length];
     p.style.animationDelay=(Math.random()*.9)+'s'; p.style.animationDuration=(2+Math.random()*1.5)+'s'; box.appendChild(p); }
   setTimeout(()=>box.innerHTML='',4200); }
 function starsFor(mv,par,hinted){ let s = mv<=par?3 : mv<=Math.ceil(par*1.3)?2 : 1; if(hinted) s=Math.min(s,2); return s; }
-const STAR=(on,i)=>`<svg class="star ${on?'on':''}" style="animation-delay:${.15+i*.18}s" width="44" height="44" viewBox="0 0 24 24"><path d="M12 2.8l2.8 5.8 6.3.9-4.6 4.4 1.1 6.3L12 17.2l-5.6 3 1.1-6.3L2.9 9.5l6.3-.9z" fill="${on?'#FFD866':'#EADCC4'}" stroke="#5B4436" stroke-width="1.6" stroke-linejoin="round"/></svg>`;
+const STAR=(on,i)=>`<svg class="star ${on?'on':''}" style="animation-delay:${.15+i*.18}s" width="44" height="44" viewBox="0 0 24 24"><path d="M12 2.8l2.8 5.8 6.3.9-4.6 4.4 1.1 6.3L12 17.2l-5.6 3 1.1-6.3L2.9 9.5l6.3-.9z" style="fill:${on?'var(--honey)':'var(--edge)'}" stroke="#5B4436" stroke-width="1.6" stroke-linejoin="round"/></svg>`;
 let shareText='', newBest=false, chapterDone=null;
 const shareLine=(what,mv,par,st)=>`Squirm, ${what}: ${mv} moves (par ${par}) ${'★'.repeat(st)}${'☆'.repeat(3-st)}`+(GAME_URL?'\n'+GAME_URL:'');
 let winHats=[];
@@ -1142,8 +1142,8 @@ function tryResume(){ try{ const r=readResume(mode); if(!r||!r.states||!r.states
 // ---------- HUD ----------
 const $=id=>document.getElementById(id);
 const ICON={
-  star:'<svg width="18" height="18" viewBox="0 0 24 24"><path d="M12 2.8l2.8 5.8 6.3.9-4.6 4.4 1.1 6.3L12 17.2l-5.6 3 1.1-6.3L2.9 9.5l6.3-.9z" fill="#FFD866" stroke="#5B4436" stroke-width="1.8" stroke-linejoin="round"/></svg>',
-  sun:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5B4436" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4.5" fill="#FFD866"/><path d="M12 2.5v2.5M12 19v2.5M2.5 12H5M19 12h2.5M5.3 5.3l1.8 1.8M16.9 16.9l1.8 1.8M5.3 18.7l1.8-1.8M16.9 7.1l1.8-1.8"/></svg>',
+  star:'<svg width="18" height="18" viewBox="0 0 24 24"><path d="M12 2.8l2.8 5.8 6.3.9-4.6 4.4 1.1 6.3L12 17.2l-5.6 3 1.1-6.3L2.9 9.5l6.3-.9z" style="fill:var(--honey)" stroke="#5B4436" stroke-width="1.8" stroke-linejoin="round"/></svg>',
+  sun:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5B4436" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4.5" style="fill:var(--honey)"/><path d="M12 2.5v2.5M12 19v2.5M2.5 12H5M19 12h2.5M5.3 5.3l1.8 1.8M16.9 16.9l1.8 1.8M5.3 18.7l1.8-1.8M16.9 7.1l1.8-1.8"/></svg>',
   rain:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5B4436" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 15a4 4 0 0 1-.5-8A5.5 5.5 0 0 1 17 6.5 4 4 0 0 1 17.5 15z" fill="#C9D6EA"/><path d="M8 18l-1 2.5M12 18l-1 2.5M16 18l-1 2.5" stroke="#6FA9D6"/></svg>',
   flag:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5B4436" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V4"/><path d="M5 4h12l-3 4 3 4H5" fill="#F27DA2"/></svg>',
   key:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5B4436" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="4.5" fill="#F7C64F"/><path d="M11 11l8 8M16 16l2-2M18.5 18.5l2-2"/></svg>',

@@ -195,6 +195,15 @@ map thumbnails, and `introAt` in `tools/verify-levels.js`.
 ## Conventions
 
 - Cozy, friendly UI copy, no jargon. Patches, not levels, in player-facing text.
+- UI styling uses the tokens at the top of `shell.html` (not the 3D scene, which has its own `C`
+  palette): colours (`--ink`, `--paper`, `--edge`, `--leaf`, `--berry`, `--honey`, their `-dark` and
+  `--tint-` variants, `--soil`, `--deep`, `--on-accent`, `--scrim`, `--shine`, ...), and the fonts
+  `--fd` (Grandstander, display) and `--fb` (Nunito, body). Don't write colours inline; add a token
+  if something new is needed, with a dark-mode value if it should change. Inline SVG uses
+  `style="fill:var(--x)"`. Stars are `--honey` everywhere.
+- Scales: display text 12/14/16/18/21/26/30/52px, body text 11/12/13/14/15/16px, icon glyphs
+  16/20/24px; corner radius 10/14/18/22/26px, `999px` for pills, `50%` for circles; borders 2px
+  (small inner pieces) or 3px (cards, buttons, tiles); gaps 2/4/6/8/10/12/14/16px.
 - Respect `prefers-reduced-motion`.
 - Wrap `localStorage` access in try/catch.
 - Keep the mobile performance budget in mind. Scenery is the first thing to trim.
