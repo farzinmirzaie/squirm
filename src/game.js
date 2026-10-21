@@ -202,13 +202,13 @@ function tree(r,s=1){ const g=new THREE.Group(); const h=1.1+r()*.5;
   if(r()<.5){ const fc=toon(r()<.5?0xFF9E9E:0xFFF0A8); for(let i=0;i<6;i++){ const f=new THREE.Mesh(sph(.05,10,8),fc); const a=r()*Math.PI*2; f.position.set(Math.cos(a)*.5,h+.2+r()*.5,Math.sin(a)*.5); g.add(f); } }
   g.scale.setScalar(s); return g; }
 const trees=new THREE.Group(); scene.add(trees);
-function placeTrees(){ disposeTree(trees); trees.clear(); swayers=swayers.filter(w=>w.o.parent); if(!state) return; const scen=new THREE.Group(); const r=rng((mode==='garden'?li*31+7:(L.seed|0))+99);
+function placeTrees(){ disposeTree(trees); trees.clear(); treeObstacles=[]; swayers=swayers.filter(w=>w.o.parent); if(!state) return; const scen=new THREE.Group(); const r=rng((mode==='garden'?li*31+7:(L.seed|0))+99);
   const yaw=camYaw*Math.PI/180, fx=Math.sin(yaw), fz=Math.cos(yaw), sx=Math.cos(yaw), sz=-Math.sin(yaw);
   const hw=(camYaw%180===0?state.w:state.h)/2+1.4, hd=(camYaw%180===0?state.h:state.w)/2+1.4;
   for(let t=0;t<(quality===0?9:16);t++){ let side,along;
     if(r()<.55){ side=(r()-.5)*2*(hw+4); along=-(hd+1.3+r()*4); } else { side=(r()<.5?-1:1)*(hw+1.3+r()*3); along=-hd-3+r()*(hd*1.4+3); }
     const x=sx*side+fx*along, z=sz*side+fz*along;
-    const big=r()<.55; const o= big? tree(r,.8+r()*.5) : bush(r,1.2+r()*.9); o.position.set(x,-.34,z); o.rotation.y=r()*6; scen.add(o); swayers.push({o,ph:r()*6,amp:big?.12:.025}); }
+    const big=r()<.55; const o= big? tree(r,.8+r()*.5) : bush(r,1.2+r()*.9); o.position.set(x,-.34,z); treeObstacles.push({x,z,r:(big?.95:.5)*o.scale.x}); o.rotation.y=r()*6; scen.add(o); swayers.push({o,ph:r()*6,amp:big?.12:.025}); }
   batchScenery(scen,trees);
 }
 function bush(r,s=1){ const g=new THREE.Group(); const bm=toon(r()>.5?0x6FB45A:0x7CC062);
@@ -257,7 +257,9 @@ const isUnder=(o,root)=>{ for(let a=o;a;a=a.parent) if(a===root) return true; re
 const blobTex=(()=>{ const cv=document.createElement('canvas'); cv.width=cv.height=64; const c=cv.getContext('2d'); const gr=c.createRadialGradient(32,32,2,32,32,30);
   gr.addColorStop(0,'rgba(40,30,25,.32)'); gr.addColorStop(1,'rgba(40,30,25,0)'); c.fillStyle=gr; c.fillRect(0,0,64,64); return new THREE.CanvasTexture(cv); })();
 let flyShadows=[], bedBox={cx:0,cz:0,hw:1,hd:1};
-function buildGarden(){ swayers=[];
+// things standing on the lawn, so the bird hops around them instead of through them
+let lawnObstacles=[], treeObstacles=[];
+function buildGarden(){ swayers=[]; lawnObstacles=[];
   disposeTree(garden); garden.clear(); const r=rng(mode==='garden'?li*97+13:(L.seed|0));
   const lawn=new THREE.Mesh(new THREE.PlaneGeometry(240,240),lawnMat); lawn.rotation.x=-Math.PI/2; lawn.rotation.z=.12; lawn.position.y=-.34; lawn.receiveShadow=true; garden.add(lawn);
   let x0=1e9,x1=-1e9,y0=1e9,y1=-1e9;
@@ -279,13 +281,13 @@ function buildGarden(){ swayers=[];
   const lite=quality===0;
   for(let i=0;i<(lite?8:14);i++){ const t=r(); const side=Math.floor(r()*4); const hx=bw/2+.75, hz=bd/2+.75; let x,z;
     if(side<2){ x=cx+(t-.5)*bw; z=cz+(side?hz:-hz); } else { z=cz+(t-.5)*bd; x=cx+(side===2?hx:-hx); }
-    const b=bush(r,.8+r()*.5); b.position.set(x,-.34,z); shade(b); swayers.push({o:b,ph:r()*6,amp:.02}); scen.add(b); }
+    const b=bush(r,.8+r()*.5); b.position.set(x,-.34,z); shade(b); lawnObstacles.push({x,z,r:.5*b.scale.x}); swayers.push({o:b,ph:r()*6,amp:.02}); scen.add(b); }
   // lawn scenery around the bed
   const R=Math.max(bw,bd)/2;
   for(let i=0;i<(lite?24:54);i++){ const a=r()*Math.PI*2, d=R+1+r()*6; const x=cx+Math.cos(a)*d*(bw/Math.max(bw,bd)+.2), z=cz+Math.sin(a)*d*(bd/Math.max(bw,bd)+.2);
     if(Math.abs(x-cx)<bw/2+.6 && Math.abs(z-cz)<bd/2+.6) continue;
     const k=r(); const o = k<.35? bush(r,1+r()*.8) : k<.75? (r()>.5?tulip(r,PETAL[Math.floor(r()*PETAL.length)]):daisy(r,r()>.6?0xFFE27A:0xFFFFFF)) : pebbles(r);
-    o.position.set(x,-.34,z); o.rotation.y=r()*6; shade(o); if(k<.75) swayers.push({o,ph:r()*6,amp:k<.35?.025:1}); if(k>=.35&&k<.75) o.scale.setScalar(2.1); else if(k>=.75) o.scale.setScalar(1.6); scen.add(o); }
+    o.position.set(x,-.34,z); o.rotation.y=r()*6; shade(o); lawnObstacles.push({x,z,r:k<.35?.5*o.scale.x:.24}); if(k<.75) swayers.push({o,ph:r()*6,amp:k<.35?.025:1}); if(k>=.35&&k<.75) o.scale.setScalar(2.1); else if(k>=.75) o.scale.setScalar(1.6); scen.add(o); }
   batchScenery(scen,garden);
   const s=Math.max(bw,bd)*.75+2;
   Object.assign(sun.shadow.camera,{left:-s,right:s,top:s,bottom:-s,near:.5,far:40}); sun.shadow.camera.updateProjectionMatrix();
@@ -323,12 +325,18 @@ function buildCritters(r,cx,cz,bw,bd){ critters=[];
   const bug=ladybug(); garden.add(bug); critters.push({kind:'bug',o:bug,s:r()*4,rest:0,dir:r()<.5?1:-1,hw:bw/2+.12,hd:bd/2+.12,cx,cz});
   if(quality===0) return;
   // a bird visits the lawn in front of the bed and hops about
-  const bird=birdie(); garden.add(bird); const c={kind:'bird',o:bird,cx,cz,hw:bw/2,hd:bd/2,t:0,wait:1,from:null,to:null,peck:0};
+  const bird=birdie(); garden.add(bird); const c={kind:'bird',o:bird,cx,cz,hw:bw/2,hd:bd/2,mode:'eat',t:0,wait:0,to:null,peck:0,look:0,lookTo:0};
   critters.push(c); bird.visible=false; }
-function birdSpot(c){ // a spot on the lawn between the bed and the camera, a little off to one side
-  const fx=camera.position.x-c.cx, fz=camera.position.z-c.cz, l=Math.hypot(fx,fz)||1, ux=fx/l, uz=fz/l;
-  const ext=Math.abs(ux)*c.hw+Math.abs(uz)*c.hd, side=(Math.random()-.5)*2*(Math.abs(uz)*c.hw+Math.abs(ux)*c.hd);
-  const d=ext+.75+Math.random()*.7; c.from=c.to?c.to.clone():null; c.to=new THREE.Vector3(c.cx+ux*d-uz*side,-.34,c.cz+uz*d+ux*side); }
+const BIRD_R=.28;
+const clearAt=(x,z)=>![...lawnObstacles,...treeObstacles].some(o=>Math.hypot(x-o.x,z-o.z)<o.r+BIRD_R);
+function clearPath(a,b){ const n=Math.ceil(a.distanceTo(b)/.12); for(let i=1;i<=n;i++){ const t=i/n; if(!clearAt(a.x+(b.x-a.x)*t,a.z+(b.z-a.z)*t)) return false; } return true; }
+// a free spot on the lawn between the bed and the camera that the bird can reach without going through anything
+function birdSpot(c,from){ const fx=camera.position.x-c.cx, fz=camera.position.z-c.cz, l=Math.hypot(fx,fz)||1, ux=fx/l, uz=fz/l;
+  const ext=Math.abs(ux)*c.hw+Math.abs(uz)*c.hd, span=Math.abs(uz)*c.hw+Math.abs(ux)*c.hd;
+  for(let k=0;k<80;k++){ const wide=1+Math.floor(k/20)*.5; // look a little further out if the near lawn is crowded
+    const side=(Math.random()-.5)*2*span*wide, d=ext+.7+Math.random()*.8*wide, p=new THREE.Vector3(c.cx+ux*d-uz*side,-.34,c.cz+uz*d+ux*side);
+    if(!clearAt(p.x,p.z)) continue; if(from&&(from.distanceTo(p)<.9||!clearPath(from,p))) continue; return p; }
+  return null; }
 function perimeter(c,s){ // a point on the border's centre line, s in 0..4 going round the bed
   const k=((s%4)+4)%4, f=k%1; const P=[[-1,-1],[1,-1],[1,1],[-1,1]][Math.floor(k)], Q=[[1,-1],[1,1],[-1,1],[-1,-1]][Math.floor(k)];
   return [c.cx+(P[0]+(Q[0]-P[0])*f)*c.hw, c.cz+(P[1]+(Q[1]-P[1])*f)*c.hd]; }
@@ -338,19 +346,25 @@ function updateCritters(dt){ const sec=dt/1000;
       if(c.rest>0){ c.rest-=sec; continue; }
       const sp=.035/Math.max(c.hw,c.hd); c.s+=c.dir*sp*sec*4; if(Math.random()<sec*.12){ c.rest=1.5+Math.random()*3; if(Math.random()<.3) c.dir*=-1; }
       const [x,z]=perimeter(c,c.s), [nx,nz]=perimeter(c,c.s+c.dir*.01); o.position.set(x,-.08+Math.abs(Math.sin(idleT*30))*.004,z); o.rotation.y=Math.atan2(nx-x,nz-z); continue; }
-    // bird: hop from spot to spot, peck at the grass in between, bob along when the birds sing
-    if(!o.visible){ birdSpot(c); o.position.copy(c.to); o.visible=true; } // placed once the camera has settled
-    const head=o.userData.head; head.rotation.x=0;
-    if(birdSong>0){ head.rotation.z=Math.sin(birdSong*30)*.2; } else head.rotation.z=0;
-    if(reduceMotion) continue;
+    // bird: settles on a spot and eats there for a while (pecks, looks around), then hops a few times to another spot
+    if(!o.visible){ const p=birdSpot(c); if(!p) continue; o.position.copy(p); o.rotation.y=Math.random()*6; o.visible=true; c.mode='eat'; c.t=3+Math.random()*4; } // placed once the camera has settled
+    const head=o.userData.head; head.rotation.z=birdSong>0?Math.sin(birdSong*30)*.2:0;
+    if(reduceMotion){ head.rotation.x=0; continue; }
+    if(c.mode==='eat'){ c.t-=sec;
+      if(c.peck>0){ c.peck-=sec; head.rotation.x=Math.sin((1-c.peck/.45)*Math.PI)*.95; }
+      else { head.rotation.x*=.85; if(Math.random()<sec*1.1) c.peck=.45; }
+      if(c.look>0){ c.look-=sec; head.rotation.y+=(c.lookTo-head.rotation.y)*Math.min(1,sec*8); } else { head.rotation.y*=.9; if(Math.random()<sec*.25){ c.look=.9; c.lookTo=(Math.random()-.5)*1.4; } }
+      if(c.t<=0){ const p=birdSpot(c,o.position); if(p){ c.mode='go'; c.to=p; c.wait=0; } else c.t=2; }
+      continue; }
+    // travelling: short hops with small pauses, facing where it's going
+    head.rotation.x*=.8; head.rotation.y*=.8;
     if(c.hop){ c.hop.t+=sec/c.hop.dur; const k=Math.min(1,c.hop.t); o.position.lerpVectors(c.hop.a,c.hop.b,k); o.position.y=-.34+Math.sin(k*Math.PI)*c.hop.h;
-      if(k>=1){ c.hop=null; c.wait=.4+Math.random()*1.2; } continue; }
-    c.wait-=sec; if(c.peck>0){ c.peck-=sec; head.rotation.x=Math.sin((1-c.peck/.5)*Math.PI)*.9; }
-    else if(Math.random()<sec*.6) c.peck=.5;
-    if(c.wait<=0){ // hop a short way toward the next spot, turning to face it
-      if(!c.to||o.position.distanceTo(c.to)<.15) birdSpot(c);
-      const a=o.position.clone(), dir=c.to.clone().sub(a); dir.y=0; const len=Math.min(dir.length(),.35+Math.random()*.2); dir.setLength(len);
-      o.rotation.y=Math.atan2(dir.x,dir.z); c.hop={a,b:a.clone().add(dir),t:0,dur:.22,h:.12}; } }
+      if(k>=1){ c.hop=null; c.wait=.18+Math.random()*.25; } continue; }
+    c.wait-=sec; if(c.wait>0) continue;
+    const a=o.position.clone(); a.y=-.34; const dir=c.to.clone().sub(a); dir.y=0;
+    if(dir.length()<.05){ c.mode='eat'; c.t=5+Math.random()*6; continue; }
+    if(dir.length()>.32) dir.setLength(.26+Math.random()*.06);
+    o.rotation.y=Math.atan2(dir.x,dir.z); c.hop={a,b:a.clone().add(dir),t:0,dur:.24,h:.1}; }
   birdSong=Math.max(0,birdSong-sec); }
 
 // ---------- tiles and items ----------
@@ -1606,8 +1620,7 @@ function renderLevelList(){
       b.style.left=x+'%'; b.style.top=y+'px';
       b.setAttribute('aria-label',`Patch ${i+1}, ${lv.name}`+(locked?', locked':`, ${st} ${st===1?'star':'stars'}${best?`, best ${best}`:''}, par ${lv.par}`));
       b.style.setProperty('--shape',STONES[(i*7+3)%STONES.length]);
-      b.innerHTML=(locked?LOCK_SVG:`${i+1}`)+(locked?'':`<em class="mini" aria-hidden="true">${[0,1,2].map(q=>`<i class="${q<st?'on':''}"></i>`).join('')}</em>`)
-        +(st===3?'<span class="bdg" aria-hidden="true">&#9733;</span>':isCleared(i)?'<span class="bdg" aria-hidden="true">&#10003;</span>':'');
+      b.innerHTML=(locked?LOCK_SVG:`${i+1}`)+(locked?'':`<em class="mini" aria-hidden="true">${[0,1,2].map(q=>`<i class="${q<st?'on':''}"></i>`).join('')}</em>`);
       // first tap picks the stone and shows its card; tapping it again (or Play) opens it
       b.onclick=()=>{ if(locked){ animOnce(b,'nope'); sfx('bump'); toast(`Finish patch ${i} first, then this one opens.`,2200); return; }
         if(picked===i){ playPicked(); return; } pickPatch(i,true); };

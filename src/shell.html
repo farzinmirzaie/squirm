@@ -37,12 +37,12 @@
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
-    --scene-mix:14%;
+    --scene-mix:24%;
     --ink:#FBEFDD; --ink-soft:#D9C2A8; --paper:#4A372D; --paper-2:#5A4436; --edge:#6D5444; --shadow:rgba(0,0,0,.35); --done:#4F6B3F; --title:#FFB4C6; --gloss:rgba(255,255,255,.1); --sticker-edge:#C9AE8A;
   }
 }
 :root[data-theme="dark"]{
-  --scene-mix:14%;
+  --scene-mix:24%;
   --ink:#FBEFDD; --ink-soft:#D9C2A8; --paper:#4A372D; --paper-2:#5A4436; --edge:#6D5444; --shadow:rgba(0,0,0,.35); --done:#4F6B3F; --title:#FFB4C6; --gloss:rgba(255,255,255,.1); --sticker-edge:#C9AE8A;
 }
 *,*::before,*::after{box-sizing:border-box}
@@ -397,24 +397,37 @@ body.at-home #app{visibility:hidden}
 /* stars sit on a little pill under the stone */
 .node .mini{position:absolute;top:calc(100% + 6px);left:50%;transform:translateX(-50%);display:flex;gap:1px;padding:2px 5px;border-radius:999px;background:var(--paper);border:1.5px solid var(--edge)}
 .node .mini i{width:10px;height:10px}
-/* badge in the corner: a leaf when finished, a gold star with all three stars */
-.node .bdg{position:absolute;top:-7px;right:-7px;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-size:12px;line-height:1;color:#fff;text-shadow:none;border:2px solid var(--paper);box-shadow:0 2px 0 rgba(0,0,0,.12)}
-.node.done .bdg{background:var(--leaf)}
-.node.gold .bdg{background:var(--honey)}
 .node.done{--stone-a:#EEF3E2;--stone-b:#CFE0BC;--stone-e:#8DB572}
 .node.gold{--stone-a:#FFF5DA;--stone-b:#F3DFA8;--stone-e:#D5A94A}
 .node.locked{--stone-a:#DCD8D2;--stone-b:#C4BEB6;--stone-e:#A39A8E;color:#857A6E;cursor:default;opacity:.8;width:52px;height:46px;box-shadow:0 2px 0 var(--stone-e),inset 0 -3px 0 rgba(0,0,0,.05)}
 .node.locked svg{width:20px;height:20px;opacity:.8}
 .node.cur{--stone-a:#FFE4EC;--stone-b:#F7B6CA;--stone-e:#D9718F;color:#8E3552}
-.node.cur::after{content:"";position:absolute;inset:-9px;border-radius:inherit;border:3px solid rgba(240,133,159,.45);animation:halo 1.8s ease-out infinite;pointer-events:none}
-@keyframes halo{0%{transform:scale(.9);opacity:1}100%{transform:scale(1.25);opacity:0}}
-:root[data-theme="dark"] .node{filter:brightness(.92) saturate(.95)}
-@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .node{filter:brightness(.92) saturate(.95)} }
-.node.cur::before{content:"\1F41B";position:absolute;top:-32px;filter:drop-shadow(0 2px 1px rgba(0,0,0,.15));left:50%;font-size:24px;transform:translateX(-50%);animation:inch 1.4s ease-in-out infinite}
-@keyframes inch{0%,100%{transform:translateX(-50%) translateY(0) scaleX(1)}50%{transform:translateX(-50%) translateY(-4px) scaleX(.86)}}
+.node.cur::after{content:"";position:absolute;inset:-9px -9px -14px;border-radius:inherit;border:3px solid rgba(240,133,159,.5);animation:halo 1.8s ease-out infinite;pointer-events:none}
+@keyframes halo{0%{transform:scale(.92);opacity:1}100%{transform:scale(1.22);opacity:0}}
+/* dark mode: dusk-coloured stones and a lighter trail so they sit in the scene instead of glaring */
+:root[data-theme="dark"] .node{--stone-a:#CDB99C;--stone-b:#A88E6E;--stone-e:#76604A;color:#3E2E24;text-shadow:0 1px 0 rgba(255,255,255,.35)}
+:root[data-theme="dark"] .node.done{--stone-a:#B5CC9E;--stone-b:#8AAA72;--stone-e:#5C7A49}
+:root[data-theme="dark"] .node.gold{--stone-a:#EACF86;--stone-b:#C9A24F;--stone-e:#8E6E2C}
+:root[data-theme="dark"] .node.cur{--stone-a:#EBAABD;--stone-b:#C9768F;--stone-e:#8C4459;color:#4A1E2C}
+:root[data-theme="dark"] .node.locked{--stone-a:#857C72;--stone-b:#6E665D;--stone-e:#544E47;color:#C9BFB3}
+:root[data-theme="dark"] .trail .road{stroke:rgba(255,226,190,.1)}
+:root[data-theme="dark"] .trail .edge{stroke:rgba(255,226,190,.22)}
+:root[data-theme="dark"] .trail .walked{stroke:rgba(140,205,110,.42)}
+:root[data-theme="dark"] .peek i{background:linear-gradient(170deg,#857C72,#6E665D);box-shadow:0 2px 0 #544E47}
+@media (prefers-color-scheme: dark){
+:root:not([data-theme="light"]) .node{--stone-a:#CDB99C;--stone-b:#A88E6E;--stone-e:#76604A;color:#3E2E24;text-shadow:0 1px 0 rgba(255,255,255,.35)}
+:root:not([data-theme="light"]) .node.done{--stone-a:#B5CC9E;--stone-b:#8AAA72;--stone-e:#5C7A49}
+:root:not([data-theme="light"]) .node.gold{--stone-a:#EACF86;--stone-b:#C9A24F;--stone-e:#8E6E2C}
+:root:not([data-theme="light"]) .node.cur{--stone-a:#EBAABD;--stone-b:#C9768F;--stone-e:#8C4459;color:#4A1E2C}
+:root:not([data-theme="light"]) .node.locked{--stone-a:#857C72;--stone-b:#6E665D;--stone-e:#544E47;color:#C9BFB3}
+:root:not([data-theme="light"]) .trail .road{stroke:rgba(255,226,190,.1)}
+:root:not([data-theme="light"]) .trail .edge{stroke:rgba(255,226,190,.22)}
+:root:not([data-theme="light"]) .trail .walked{stroke:rgba(140,205,110,.42)}
+:root:not([data-theme="light"]) .peek i{background:linear-gradient(170deg,#857C72,#6E665D);box-shadow:0 2px 0 #544E47}
+}
 .node.nope{animation:nodeNope .35s}
 @keyframes nodeNope{20%,60%{margin-left:-6px}40%,80%{margin-left:6px}}
-.node.sel{outline:3.5px solid var(--honey);outline-offset:4px}
+.node.sel::before{content:"";position:absolute;inset:-8px -8px -13px;border-radius:inherit;border:3.5px solid var(--honey);pointer-events:none}
 /* the card under the map for the stone you picked */
 .pick{flex:none;display:flex;align-items:center;gap:12px;margin-top:10px;padding:10px 10px 10px 10px;border-radius:20px;background:var(--paper-2);border:2.5px solid var(--edge);box-shadow:0 4px 0 var(--edge)}
 .pick canvas.thumb{flex:none;position:static;width:58px;height:58px;border-radius:14px;background:#9A6A4C;box-shadow:0 3px 0 var(--edge)}
@@ -459,7 +472,7 @@ body.at-home #app{visibility:hidden}
   :root[data-theme="dark"]{--ink-soft:#FBEFDD;--edge:#A08468}
 }
 @media (prefers-contrast: more) and (prefers-color-scheme: dark){ :root:not([data-theme="light"]){--ink-soft:#FBEFDD;--edge:#A08468} }
-@media (prefers-reduced-motion: reduce){ .node.cur::before,.node.cur::after,.node.nope,.pick.swap{animation:none} .spin,.logo svg,.gbtn.hint .disc svg,#winNext,.set-page.fwd,.set-page.back,.tab-page.enter{animation:none} #tutorial .hand{animation:none} .enter,.rise,.tab.on.pop svg,.stat.cheer,.stat.cheer .ic,.stat.lost .mini,.gbtn.pop .disc{animation:none} .star{animation:none;transform:none} .pop{animation:none} .dialog{animation:none} #toast{transition:none} .petals{display:none} }
+@media (prefers-reduced-motion: reduce){ .node.cur::after,.node.nope,.pick.swap{animation:none} .spin,.logo svg,.gbtn.hint .disc svg,#winNext,.set-page.fwd,.set-page.back,.tab-page.enter{animation:none} #tutorial .hand{animation:none} .enter,.rise,.tab.on.pop svg,.stat.cheer,.stat.cheer .ic,.stat.lost .mini,.gbtn.pop .disc{animation:none} .star{animation:none;transform:none} .pop{animation:none} .dialog{animation:none} #toast{transition:none} .petals{display:none} }
 </style>
 </head>
 <body class="at-home">

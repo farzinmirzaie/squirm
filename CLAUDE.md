@@ -140,8 +140,11 @@ map thumbnails, and `introAt` in `tools/verify-levels.js`.
   sway runs in the vertex shader (`windify`, uniforms `windU` and `gustU`, per-vertex `sway`
   attribute), so the lawn costs a handful of draw calls. Critters use the same merge (`merged`).
 - **Garden visitors:** `buildCritters` adds a ladybug that walks the wooden border and, above the
-  lowest quality, a bird that hops on the lawn in front of the bed (placed once the camera is fitted)
-  and bobs when the ambient birdsong plays. Animated in `updateCritters`.
+  lowest quality, a bird on the lawn in front of the bed (placed once the camera is fitted). It eats
+  in one spot for a while, then hops to another one; `birdSpot` only picks spots that are clear of
+  `lawnObstacles` / `treeObstacles` (recorded while the scenery is built) and reachable in a straight
+  line, so it never walks through a bush or tree. It bobs when the ambient birdsong plays.
+  Animated in `updateCritters`.
 - **Fast first paint:** the home overlay is visible in the markup, and the `boot` script in
   `shell.html` fills in stars and the Continue text from `squirm-boot` (written by `renderHome`)
   before three.js loads. `start` shows home first and builds the garden a frame later; the 3D
