@@ -346,17 +346,19 @@ const clearAt=(x,z)=>![...lawnObstacles,...treeObstacles].some(o=>Math.hypot(x-o
 function clearPath(a,b){ const n=Math.ceil(a.distanceTo(b)/.12); for(let i=1;i<=n;i++){ const t=i/n; if(!clearAt(a.x+(b.x-a.x)*t,a.z+(b.z-a.z)*t)) return false; } return true; }
 // a free spot on the lawn between the bed and the camera that the bird can reach without going through anything
 function birdSpot(c,from){ const fx=camera.position.x-c.cx, fz=camera.position.z-c.cz, l=Math.hypot(fx,fz)||1, ux=fx/l, uz=fz/l;
-  const ext=Math.abs(ux)*c.hw+Math.abs(uz)*c.hd, span=Math.abs(uz)*c.hw+Math.abs(ux)*c.hd;
+  const ext=Math.abs(ux)*c.hw+Math.abs(uz)*c.hd, span=Math.abs(uz)*c.hw+Math.abs(ux)*c.hd, box=viewBox();
   for(let k=0;k<120;k++){ const wide=1+Math.floor(k%80/20)*.5; // look a little further out if the near lawn is crowded
     let side=(Math.random()-.5)*2*span*wide, d=ext+.7+Math.random()*.8*wide;
     // when the lawn in front is hidden (under the buttons on a phone), try the lawn beside the bed
     if(k>=80){ side=(Math.random()<.5?-1:1)*(span+.8+Math.random()*.9); d=(Math.random()-.3)*ext*1.4; }
     const p=new THREE.Vector3(c.cx+ux*d-uz*side,-.34,c.cz+uz*d+ux*side);
-    if(!clearAt(p.x,p.z)||!inView(p)) continue; if(from&&(from.distanceTo(p)<.9||!clearPath(from,p))) continue; return p; }
+    if(!clearAt(p.x,p.z)||!inView(p,box)) continue; if(from&&(from.distanceTo(p)<.9||!clearPath(from,p))) continue; return p; }
   return null; }
-function inView(p){ const v=p.clone(); v.y+=.25; v.project(camera); if(v.z>1) return false; const W=window.innerWidth, H=window.innerHeight, px=(v.x+1)/2*W, py=(1-v.y)/2*H;
-  const hd=document.querySelector('header'), nv=document.querySelector('nav'), hr=hd&&hd.getBoundingClientRect(), nr=nv&&nv.getBoundingClientRect(), t=hr&&hr.height?hr.bottom:0, b=nr&&nr.height?nr.top:H;
-  return px>24 && px<W-24 && py>t+10 && py<b-14; }
+// the open part of the screen between the HUD and the buttons, measured once per search
+function viewBox(){ const W=window.innerWidth, H=window.innerHeight, hd=document.querySelector('header'), nv=document.querySelector('nav'), hr=hd&&hd.getBoundingClientRect(), nr=nv&&nv.getBoundingClientRect();
+  return {W,H,t:hr&&hr.height?hr.bottom:0,b:nr&&nr.height?nr.top:H}; }
+function inView(p,box){ const v=p.clone(); v.y+=.25; v.project(camera); if(v.z>1) return false; const px=(v.x+1)/2*box.W, py=(1-v.y)/2*box.H;
+  return px>24 && px<box.W-24 && py>box.t+10 && py<box.b-14; }
 function perimeter(c,s){ // a point on the border's centre line, s in 0..4 going round the bed
   const k=((s%4)+4)%4, f=k%1; const P=[[-1,-1],[1,-1],[1,1],[-1,1]][Math.floor(k)], Q=[[1,-1],[1,1],[-1,1],[-1,-1]][Math.floor(k)];
   return [c.cx+(P[0]+(Q[0]-P[0])*f)*c.hw, c.cz+(P[1]+(Q[1]-P[1])*f)*c.hd]; }
