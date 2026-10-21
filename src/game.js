@@ -1577,6 +1577,8 @@ function drawThumb(cv,lv){ const g=cv.getContext('2d'); const h=lv.map.length, w
 const SCENE_COL=['#CFEFB8','#FFD9C2','#E2D6FA','#FFE9A8','#CBE7F7','#FBD3E0','#D3EFD0','#F3DCC4','#CFE1F8','#F8D8EA','#D9F2C9','#FFD6DE','#C9EEDF'];
 const SCENE_DECO=[['\u{1F331}','\u{1F6A9}'],['\u{1F351}','\u{1F344}'],['\u{1F342}','\u{1F33E}'],['\u{1F511}','\u{1F33B}'],['\u{1F33F}','\u{1FAB1}'],['\u{1F4A7}','\u{2601}\u{FE0F}'],['\u{1F30A}','\u{1FAB5}'],
   ['\u{1F338}','\u{1F98B}'],['\u{1F333}','\u{1F41D}'],['\u{1F33C}','\u{1F343}'],['\u{1F40C}','\u{1F340}'],['\u{1F33A}','\u{1F33F}'],['\u{1F343}','\u{1F4A7}']];
+// a few pebble outlines so the stepping stones don't all look stamped from one mould
+const STONES=['48% 52% 46% 54% / 56% 50% 50% 44%','54% 46% 52% 48% / 48% 56% 44% 52%','46% 54% 50% 50% / 52% 46% 54% 48%','52% 48% 56% 44% / 50% 54% 46% 50%','50% 50% 44% 56% / 46% 52% 48% 54%'];
 const LOCK_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><rect x="5" y="11" width="14" height="10" rx="2.5"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>';
 let picked=-1;
 function renderLevelList(){
@@ -1595,7 +1597,7 @@ function renderLevelList(){
     const pts=[]; for(let j=0;j<n;j++) pts.push([50+28*Math.sin(j*1.05+k*1.7),TOP+j*RH]);
     const pathTo=last=>pts.slice(0,last+1).map((p,j)=>j?`C${pts[j-1][0]},${pts[j-1][1]+RH/2} ${p[0]},${p[1]-RH/2} ${p[0]},${p[1]}`:`M${p[0]},${p[1]}`).join(' ');
     let walked=-1; for(let j=0;j<n;j++) if(isUnlocked(ch.from+j)) walked=j;
-    tr.innerHTML=`<svg viewBox="0 0 100 ${H}" preserveAspectRatio="none" aria-hidden="true"><path class="road" d="${pathTo(n-1)}"/>${walked>0?`<path class="walked" d="${pathTo(walked)}"/>`:''}</svg>`;
+    tr.innerHTML=`<svg viewBox="0 0 100 ${H}" preserveAspectRatio="none" aria-hidden="true"><path class="road" d="${pathTo(n-1)}"/><path class="edge" d="${pathTo(n-1)}"/>${walked>0?`<path class="walked" d="${pathTo(walked)}"/>`:''}</svg>`;
     // a few garden bits near the edges, away from the path
     const deco=SCENE_DECO[k%SCENE_DECO.length]; [1,4,7].forEach((j,q)=>{ const x=pts[j][0]; const d=document.createElement('span'); d.className='deco'; d.textContent=deco[q%2];
       d.style.left=(x<50?88:12)+'%'; d.style.top=(pts[j][1]+RH/2)+'px'; d.style.setProperty('--r',((j*37+k*11)%40-20)+'deg'); tr.appendChild(d); });
@@ -1603,7 +1605,9 @@ function renderLevelList(){
       const b=document.createElement('button'); b.className='node'+(i===li?' cur':'')+(locked?' locked':isCleared(i)?' done':'')+(st===3?' gold':''); b.dataset.i=i;
       b.style.left=x+'%'; b.style.top=y+'px';
       b.setAttribute('aria-label',`Patch ${i+1}, ${lv.name}`+(locked?', locked':`, ${st} ${st===1?'star':'stars'}${best?`, best ${best}`:''}, par ${lv.par}`));
-      b.innerHTML=(locked?LOCK_SVG:`${i+1}`)+(locked?'':`<em class="mini" aria-hidden="true">${[0,1,2].map(q=>`<i class="${q<st?'on':''}"></i>`).join('')}</em>`);
+      b.style.setProperty('--shape',STONES[(i*7+3)%STONES.length]);
+      b.innerHTML=(locked?LOCK_SVG:`${i+1}`)+(locked?'':`<em class="mini" aria-hidden="true">${[0,1,2].map(q=>`<i class="${q<st?'on':''}"></i>`).join('')}</em>`)
+        +(st===3?'<span class="bdg" aria-hidden="true">&#9733;</span>':isCleared(i)?'<span class="bdg" aria-hidden="true">&#10003;</span>':'');
       // first tap picks the stone and shows its card; tapping it again (or Play) opens it
       b.onclick=()=>{ if(locked){ animOnce(b,'nope'); sfx('bump'); toast(`Finish patch ${i} first, then this one opens.`,2200); return; }
         if(picked===i){ playPicked(); return; } pickPatch(i,true); };
