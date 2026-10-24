@@ -3,13 +3,16 @@ const DIRS = { N:[0,-1], S:[0,1], W:[-1,0], E:[1,0] };
 
 function parseLevel(L){
   const h = L.map.length, w = Math.max(...L.map.map(r=>r.length));
-  const grid = [], snails=[]; const SD={'>':[1,0],'<':[-1,0],'^':[0,-1],'v':[0,1]};
-  for(let y=0;y<h;y++){ const row=[]; for(let x=0;x<w;x++){ let c=L.map[y][x]||' '; if(SD[c]){ snails.push({x,y,dx:SD[c][0],dy:SD[c][1]}); c='.'; } row.push(c); } grid.push(row); }
-  return { w, h, grid, snails };
+  const grid = [], snails=[], beetles=[]; const SD={'>':[1,0],'<':[-1,0],'^':[0,-1],'v':[0,1]};
+  for(let y=0;y<h;y++){ const row=[]; for(let x=0;x<w;x++){ let c=L.map[y][x]||' ';
+    if(SD[c]){ snails.push({x,y,dx:SD[c][0],dy:SD[c][1]}); c='.'; }
+    if(c==='O'){ beetles.push({x,y}); c='.'; }
+    row.push(c); } grid.push(row); }
+  return { w, h, grid, snails, beetles };
 }
 function initState(L){
-  const {w,h,grid,snails} = parseLevel(L);
-  return { w, h, grid, snails, segs: L.worm.map(p=>[p[0],p[1]]), keys:0, status:'play', moves:0, exitLen:L.exitLen, raining:!!L.rain };
+  const {w,h,grid,snails,beetles} = parseLevel(L);
+  return { w, h, grid, snails, beetles, segs: L.worm.map(p=>[p[0],p[1]]), keys:0, status:'play', moves:0, exitLen:L.exitLen, raining:!!L.rain };
 }
 function tileAt(s,x,y){ if(x<0||y<0||x>=s.w||y>=s.h) return ' '; return s.grid[y][x]; }
 function partner(s,x,y){
@@ -17,13 +20,17 @@ function partner(s,x,y){
   for(let yy=0;yy<s.h;yy++) for(let xx=0;xx<s.w;xx++) if(s.grid[yy][xx]===c && (xx!==x||yy!==y)) return [xx,yy];
   return null;
 }
-function cloneState(s){ return { ...s, grid: s.grid.map(r=>r.slice()), segs: s.segs.map(p=>p.slice()), snails:(s.snails||[]).map(n=>({...n})) }; }
+function cloneState(s){ return { ...s, grid: s.grid.map(r=>r.slice()), segs: s.segs.map(p=>p.slice()), snails:(s.snails||[]).map(n=>({...n})), beetles:(s.beetles||[]).map(b=>({...b})) }; }
 function snailAt(s,x,y){ return (s.snails||[]).some(n=>n.x===x&&n.y===y); }
+function beetleAt(s,x,y){ return (s.beetles||[]).findIndex(b=>b.x===x&&b.y===y); }
+// beetles can be pushed onto grass, flower buttons, dry patches and wet leaves (where they slide)
+const BEETLE_OK = { '.':1, 'B':1, 'x':1, 'i':1 };
 function countChar(s,c){ let n=0; for(const r of s.grid) for(const t of r) if(t===c) n++; return n; }
 
-// flower buttons: every hedge is open while any part of the worm rests on a flower
+// flower buttons: every hedge is open while any part of the worm, or a beetle, rests on a flower
 function onFlower(s,segs){ return segs.some(p=>tileAt(s,p[0],p[1])==='B'); }
-function hedgesOpen(s){ return onFlower(s,s.segs); }
+function beetleOnFlower(s,beetles){ return (beetles||[]).some(b=>tileAt(s,b.x,b.y)==='B'); }
+function hedgesOpen(s){ return onFlower(s,s.segs)||beetleOnFlower(s,s.beetles); }
 
 // One crawl of the head by one tile, with everything it touches. No snails, no win check:
 // step() runs this once, or several times while the worm slides over wet leaves.
@@ -50,9 +57,22 @@ function advance(s, dirKey){
   if(t==='-') newLen = Math.max(1,len-1);
   const newSegs = [dest, ...s.segs].slice(0,newLen);
   for(let i=1;i<newSegs.length;i++) if(newSegs[i][0]===dest[0]&&newSegs[i][1]===dest[1]) return { blocked:'body' };
-  // a hedge lets the head in only if the worm is still holding a flower after this move
-  if(t==='H' && !onFlower(s,newSegs)) return { blocked:'hedge' };
+  // a beetle in the way gets pushed one tile on (sliding further over wet leaves), if there's room for it
+  let beetles = s.beetles||[];
+  const bi = beetleAt(s,dest[0],dest[1]);
+  if(bi>=0){
+    const free = (x,y) => BEETLE_OK[tileAt(s,x,y)] && !newSegs.some(q=>q[0]===x&&q[1]===y) && !snailAt(s,x,y) && beetleAt(s,x,y)<0;
+    let bx = dest[0]+d[0], by = dest[1]+d[1];
+    if(!free(bx,by)) return { blocked:'beetle' };
+    const path = [[bx,by]];
+    while(tileAt(s,bx,by)==='i' && free(bx+d[0],by+d[1])){ bx+=d[0]; by+=d[1]; path.push([bx,by]); }
+    beetles = beetles.map((b,i)=>i===bi?{x:bx,y:by}:{...b});
+    ev.pushed = { i:bi, from:[dest[0],dest[1]], path };
+  }
+  // a hedge lets the head in only if the worm (or a beetle) is still holding a flower after this move
+  if(t==='H' && !onFlower(s,newSegs) && !beetleOnFlower(s,beetles)) return { blocked:'hedge' };
   const ns = cloneState(s);
+  ns.beetles = beetles.map(b=>({...b}));
   ns.segs = newSegs; ns.moves++;
   ev.eaten = null;
   if(t==='K'){ ns.keys++; ns.grid[ny][nx]='.'; ev.eaten='K'; }
@@ -93,7 +113,7 @@ function step(s, dirKey){
   // snails slide one tile after every move, turning around when something is in the way
   if(ns.snails.length){ ev.snails=[];
     for(const n of ns.snails){ const tx=n.x+n.dx, ty=n.y+n.dy; const from=[n.x,n.y];
-      const free = tileAt(ns,tx,ty)==='.' && !newSegs.some(q=>q[0]===tx&&q[1]===ty) && !ns.snails.some(o=>o!==n&&o.x===tx&&o.y===ty);
+      const free = tileAt(ns,tx,ty)==='.' && !newSegs.some(q=>q[0]===tx&&q[1]===ty) && !ns.snails.some(o=>o!==n&&o.x===tx&&o.y===ty) && beetleAt(ns,tx,ty)<0;
       if(free){ n.x=tx; n.y=ty; ev.snails.push({from,to:[tx,ty],turned:false}); } else { n.dx=-n.dx; n.dy=-n.dy; ev.snails.push({from,to:from,turned:true}); } } }
   if(tileAt(ns,dest[0],dest[1])==='E'){
     const left = countChar(ns,'C');
@@ -102,4 +122,4 @@ function step(s, dirKey){
   }
   return { state:ns, ev };
 }
-if(typeof module!=='undefined') module.exports = { DIRS, initState, step, tileAt, countChar, cloneState, hedgesOpen };
+if(typeof module!=='undefined') module.exports = { DIRS, initState, step, tileAt, countChar, cloneState, hedgesOpen, beetleAt };

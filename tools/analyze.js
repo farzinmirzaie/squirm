@@ -1,5 +1,5 @@
 const {initState, step} = require('../src/logic');
-const key = s => s.segs.map(p=>p.join(',')).join(';')+'|'+s.grid.map(r=>r.join('')).join('/')+'|'+s.keys+'|'+(s.raining?1:0)+'|'+(s.snails||[]).map(n=>n.x+','+n.y+','+n.dx+','+n.dy).join(';');
+const key = s => s.segs.map(p=>p.join(',')).join(';')+'|'+s.grid.map(r=>r.join('')).join('/')+'|'+s.keys+'|'+(s.raining?1:0)+'|'+(s.snails||[]).map(n=>n.x+','+n.y+','+n.dx+','+n.dy).join(';')+'|'+(s.beetles||[]).map(b=>b.x+','+b.y).sort().join(';');
 function analyze(L){
   const s0=initState(L); const id=new Map(), states=[], edges=[], dist=[]; 
   const add=(s,d)=>{const k=key(s); if(id.has(k)) return id.get(k); id.set(k,states.length); states.push(s); edges.push([]); dist.push(d); return states.length-1;};

@@ -32,7 +32,7 @@ bundler, no runtime dependencies besides three.js, no network requests at runtim
 ```
 src/shell.html   page markup + all CSS; has /*__FONTS__*/ /*__LOGIC__*/ /*__LEVELS__*/ /*__GAME__*/ slots
 src/logic.js     pure game rules: parseLevel, initState, step, tileAt, partner, cloneState (no DOM)
-src/levels.js    LEVELS array (150 levels) + CHAPTER_NAMES
+src/levels.js    LEVELS array (160 levels) + CHAPTER_NAMES
 src/game.js      everything else, in one IIFE: rendering, input, UI, audio, generator, solver
 src/sw.js        service worker template (version and file list filled in by the build)
 public/          manifest and icons, copied as-is into dist/
@@ -73,6 +73,7 @@ tools/curate.js  generates candidate levels with the in-game generator and picks
 | `>` `<` `^` `v` | snail with its starting direction (tile underneath is `.`) |
 | `B` / `H` | flower button / hedge: every hedge is open while any worm segment is on a flower |
 | `i` | wet leaf: the head keeps sliding the same way until it is off the leaves or blocked |
+| `O` | beetle (tile underneath is `.`): crawling into it pushes it one tile ahead |
 
 Snails move one tile after every worm move, only onto plain `.` tiles, and reverse instead of
 moving when blocked. The worm can't enter a snail's tile.
@@ -83,13 +84,20 @@ adds nothing to the solver key. A slide is one move: `step` calls `advance` repe
 move once at the end, and `ev.slide` carries the in-between states so the game can animate each
 tile of the slide.
 
+Beetles live in `state.beetles` (like snails, so the tile underneath is kept). The head pushes a beetle
+one tile on; it may only move onto grass, flower buttons, dry patches and wet leaves (where it keeps
+sliding), never onto the worm, a snail or another beetle, otherwise the move is blocked (`'beetle'`).
+A beetle on a flower holds every hedge open (`beetleOnFlower` in `hedgesOpen` and the hedge check), and
+snails turn around at beetles. `ev.pushed` (`{i, from, path}`) drives the animation; beetle positions are
+in every solver key, sorted so identical beetles don't double the state count.
+
 ## Hard rules for levels
 
 - Every level must be **solvable**, and `par` must equal the BFS shortest solution.
   Run `npm run verify`.
 - **Pacing:** chapters are 10 levels each. A mechanic may not appear before its chapter:
   flags from level 6, fruit 11, dry 21, keys 31, tunnels 41, rain 51, rivers 61, snails 101,
-  flower buttons 111, wet leaves 121.
+  flower buttons 111, wet leaves 121, beetles 151.
   Chapters 8-10 mix earlier mechanics at rising difficulty, and so do chapters 14-15 (14 mixes the
   late mechanics, snails, flower buttons and wet leaves; 15 mixes everything and ends the hardest). The first level of a chapter
   should be a gentle introduction to its mechanic.
@@ -204,6 +212,11 @@ map thumbnails, and `introAt` in `tools/verify-levels.js`.
   The worker reads `{on, hour, done, streak, told}` from the `squirm-state` cache, which the page
   writes (`shareRemindState`) and the worker's cache cleanup skips. Where only `setAppBadge` exists,
   the icon gets a badge instead. Setting: `squirm-remind` (device-specific, in `SAVE_SKIP`).
+- **Beetles:** `makeBeetle` builds one (the solid body merged into one mesh, with separate eyes,
+  antennae and legs so they can move); `pushBeetle` turns it to face the worm and scoots it along its
+  path with its eyes shut, `beetleNope` shakes its head at a blocked push, `updateBeetles` blinks,
+  follows the worm with its eyes, scrabbles its legs and looks content on a flower. Open hedges also
+  pull in from the tile edges so the change reads from above.
 - **Ambient motion:** river tiles register in `flowTiles` (drifting leaf, glints, ripple, a
   water-babble sound loop); snails leave a slime strip (`trail`) that grows from tile to tile.
 - **Rewards:** `BADGES` (id, icon, name, description, test) are checked after every win and after

@@ -9,7 +9,7 @@ const C = {
   peach:0xFFA27C, leaf:0x6CC97A, cap:0xB79CF2, stem:0xFFF1DE, key:0xF7C64F, gateWood:0xC88A55,
   flag:0xF27DA2, flagDone:0x79C95F, pole:0xB98A62,
   mushRed:0xF07A6A, topHat:0x4E3F5C, rainHat:0xFFD04A, brolly:0x9FD2F2, bowDark:0xE36A8C,
-  straw:0xF3D18A, strawDark:0xD9B166, acornCap:0x8A5A36, acornNut:0xC98E52, partyA:0x9FD2F2, partyB:0xFFF1A8, crown:0xF5C14E, beret:0xB79CF2, beanie:0x8FD0B0, beanieRib:0x6FB894, sunPetal:0xFFD34D, sunCore:0x7A4E2E,
+  straw:0xF3D18A, strawDark:0xD9B166, acornCap:0x8A5A36, acornNut:0xC98E52, partyA:0x9FD2F2, partyB:0xFFF1A8, crown:0xF5C14E, beret:0xB79CF2, beanie:0x8FD0B0, beanieRib:0x6FB894, beetle:0x7C8CF0, beetleDark:0x5566C8, beetleHead:0x3E3F84, beetleSpot:0xB5C0FA, beetleLeg:0x3A2F5E, sunPetal:0xFFD34D, sunCore:0x7A4E2E,
   wetLeaf:0x8EE0B4, leafVein:0x5DBA8A, dew:0xEAF8FF, hedge:0x5FA64F, hedgeDark:0x4E8F40, petalB:0xF7A8C4,
   burrow:0x3A2A22, mound:0xB07B57, ready:0x8EDB72, line:0x5B4436,
   portal:{ '1':0x7FCFEA, '2':0xC69CF7, '3':0xFFB877, '4':0x9BE39B }
@@ -92,6 +92,7 @@ const SFX={
   hedgeOpen:()=>{ noise(.3,{freq:900,vol:.09,q:1.2,slide:.5}); tone(392,.2,{type:'triangle',vol:.06,slide:.8}); },
   hedgeClose:()=>{ noise(.26,{freq:500,vol:.08,q:1.2,slide:1.6}); tone(294,.18,{type:'triangle',vol:.05,slide:1.2}); },
   yawn:()=>{ tone(330,.7,{type:'sine',vol:.05,slide:.6,attack:.25}); noise(.6,{freq:500,ftype:'lowpass',vol:.03,slide:.7}); },
+  push:()=>{ noise(.22,{freq:420,ftype:'lowpass',vol:.12,slide:.6}); tone(196,.16,{type:'triangle',vol:.09,slide:.8}); tone(392,.12,{type:'sine',vol:.05,slide:1.3,delay:.1}); },
   snail:()=>{ tone(330,.14,{type:'sine',vol:.05,slide:.75}); tone(250,.12,{type:'sine',vol:.035,slide:.8,delay:.08}); },
 };
 // ---------- music: a slow generated tune that follows the time of day and the rain ----------
@@ -129,7 +130,7 @@ function musicTick(){ if(!ac||!mBus) return; const want=musicOn&&!muted&&!docume
     mStep++; mNext+=e8; } }
 setInterval(musicTick,200);
 let hapticsOn=true; try{ hapticsOn=localStorage.getItem('squirm-haptics')!=='0'; }catch(e){}
-const HAPTIC={move:8,grow:[10,30,14],shrink:[14,30,10],key:[8,25,8,25,12],gate:22,flag:[12,40,16],portal:[10,30,24],crumble:28,bump:[14,30,14],stuck:[40,70,40],undo:6,
+const HAPTIC={push:16,move:8,grow:[10,30,14],shrink:[14,30,10],key:[8,25,8,25,12],gate:22,flag:[12,40,16],portal:[10,30,24],crumble:28,bump:[14,30,14],stuck:[40,70,40],undo:6,
   tap:6,on:8,off:8,badge:[15,40,15,40,30],win:[30,60,30,60,90],ready:[10,40,10],slide:6,hedgeOpen:[12,30,12],hedgeClose:14,rainOn:[30,50,15],creak:[20,40,20,40,20],rainOff:[15,50,30]};
 const iosHaptic=(()=>{ try{ const l=document.createElement('label'); l.setAttribute('aria-hidden','true'); l.style.cssText='position:fixed;left:-200px;top:0;width:1px;height:1px;opacity:0;pointer-events:none';
   const i=document.createElement('input'); i.type='checkbox'; i.setAttribute('switch',''); i.tabIndex=-1; l.appendChild(i); document.body.appendChild(l); return l; }catch(e){ return null; } })();
@@ -573,14 +574,15 @@ function buildBoard(){
   disposeTree(board); disposeTree(fx); board.clear(); fx.clear(); cells=[]; flowTiles=[];
   for(let y=0;y<state.h;y++){ const row=[]; for(let x=0;x<state.w;x++){
     const ch=state.grid[y][x]; row.push({ch, tile: ch===' '?null:makeTile(x,y,ch), item: makeItem(x,y,ch)}); } cells.push(row); }
-  buildGarden(); buildRain(); syncWeather(false); buildSnails(); syncHedges(false);
+  buildGarden(); buildRain(); syncWeather(false); buildSnails(); buildBeetles(); syncHedges(false);
 }
 // hedges stand while no flower is held and sink while one is (or while the worm is inside them)
 function syncHedges(animate){ if(!state) return; const open=hedgesOpen(state); let changed=false;
   for(let y=0;y<state.h;y++) for(let x=0;x<state.w;x++){ const it=cells[y]&&cells[y][x]&&cells[y][x].item; if(!it) continue; const u=it.userData;
-    if(u.flower){ const want=occupied(x,y)?.35:1; if(u.pressed!==want){ u.pressed=want; const f=u.flower, s0=f.scale.y; if(animate) tween(180,e=>{ f.scale.y=s0+(want-s0)*e; }); else f.scale.y=want; } }
-    if(u.hedge){ const want=occupied(x,y)?.06:open?.22:1; if(u.hedgeH!==want){ if(u.hedgeH!==undefined) changed=true; u.hedgeH=want; const h=u.hedge, s0=h.scale.y;
-        if(animate) tween(300,e=>{ h.scale.y=Math.max(.06,s0+(want-s0)*e); h.position.y=-(1-h.scale.y)*.06; }); else { h.scale.y=want; h.position.y=-(1-want)*.06; } } } }
+    if(u.flower){ const want=occupied(x,y)||beetleAt(state,x,y)>=0?.35:1; if(u.pressed!==want){ u.pressed=want; const f=u.flower, s0=f.scale.y; if(animate) tween(180,e=>{ f.scale.y=s0+(want-s0)*e; }); else f.scale.y=want; } }
+    // an open hedge sinks to a low cushion and pulls in from the tile edges, so grass shows round it even from above
+    if(u.hedge){ const want=occupied(x,y)?.06:open?.22:1, wide=want<1?.66:1; if(u.hedgeH!==want){ if(u.hedgeH!==undefined) changed=true; u.hedgeH=want; const h=u.hedge, s0=h.scale.y, w0=h.scale.x;
+        if(animate) tween(300,e=>{ h.scale.y=Math.max(.06,s0+(want-s0)*e); const w=w0+(wide-w0)*e; h.scale.x=h.scale.z=w; h.position.y=-(1-h.scale.y)*.06; }); else { h.scale.set(wide,want,wide); h.position.y=-(1-want)*.06; } } } }
   if(changed&&animate){ sfx(open?'hedgeOpen':'hedgeClose'); if(open) bumpStat('hedges'); } }
 function removeObj(o){ if(o&&o.parent) o.parent.remove(o); }
 // ---------- snails ----------
@@ -600,6 +602,92 @@ function makeSnail(){ const g=new THREE.Group(); const inner=new THREE.Group(); 
   const smile=new THREE.Mesh(new THREE.TorusGeometry(.025,.007,6,12,Math.PI),m('pupil')); smile.position.set(0,.13,.345); smile.rotation.z=Math.PI; inner.add(smile);
   board.add(g); return g; }
 const snailYaw=n=>Math.atan2(n.dx,n.dy);
+// ---------- beetles: round, sturdy, a little grumpy about being pushed ----------
+let beetleMeshes=[];
+function makeBeetle(){ const g=new THREE.Group(), size=new THREE.Group(), inner=new THREE.Group(); size.scale.setScalar(1.15); g.add(size); size.add(inner); g.userData.inner=inner;
+  // the solid body (shell, seam, spots, neck plate, head, horn) is one merged mesh plus its outline
+  const body=new THREE.Group();
+  const shell=new THREE.Mesh(sph(.28,28,20),m('beetle')); shell.scale.set(1,.76,1); shell.position.set(0,.19,-.05); outline(shell,.02); body.add(shell);
+  // a darker rim where the shell meets the body, and the seam between the two wing covers
+  const rim=new THREE.Mesh(new THREE.TorusGeometry(.272,.026,8,32),m('beetleDark')); rim.rotation.x=Math.PI/2; rim.position.set(0,.12,-.05); body.add(rim);
+  const seam=new THREE.Mesh(new THREE.TorusGeometry(.283,.012,6,28,Math.PI),m('beetleDark')); seam.rotation.y=Math.PI/2; seam.scale.set(1,.76,1); seam.position.set(0,.19,-.05); body.add(seam);
+  // pale spots sitting on the shell surface
+  const C0=new THREE.Vector3(0,.19,-.05);
+  for(const sd of [-1,1]) for(const [a,e,r] of [[.55,.95,.055],[.95,.5,.045],[.3,.45,.04]]){ const dir=new THREE.Vector3(sd*Math.sin(a)*Math.cos(e),Math.sin(e),-Math.cos(a)*Math.cos(e)*.2-.25).normalize();
+    const pos=new THREE.Vector3(dir.x*.28,dir.y*.28*.76,dir.z*.28).add(C0); const sp=new THREE.Mesh(sph(r,12,8),m('beetleSpot')); sp.scale.set(1,.3,1); sp.position.copy(pos);
+    sp.lookAt(pos.clone().add(new THREE.Vector3(dir.x,dir.y/.76,dir.z))); sp.rotateX(Math.PI/2); body.add(sp); }
+  const neck=new THREE.Mesh(sph(.17,20,14),m('beetleDark')); neck.scale.set(1.15,.72,.78); neck.position.set(0,.17,.22); outline(neck,.016); body.add(neck);
+  const head=new THREE.Mesh(sph(.16,22,16),m('beetleHead')); head.position.set(0,.17,.37); outline(head,.016); body.add(head);
+  // a little rhino horn: rises from the top of the head and curls forward, thinning to a rounded tip
+  const hornPts=[]; for(let k=0;k<=8;k++){ const t=k/8, a=t*1.35; hornPts.push(new THREE.Vector3(0,.29+Math.sin(a)*.13,.33+(1-Math.cos(a))*.13)); }
+  const hornPath=new THREE.CatmullRomCurve3(hornPts), hornG=new THREE.TubeGeometry(hornPath,12,.04,10,false), hp=hornG.attributes.position;
+  // taper the tube toward the tip
+  for(let k=0;k<hp.count;k++){ const ring=Math.floor(k/11), t=ring/12, c=hornPath.getPointAt(Math.min(1,t)); const f=1-t*.6; hp.setXYZ(k,c.x+(hp.getX(k)-c.x)*f,c.y+(hp.getY(k)-c.y)*f,c.z+(hp.getZ(k)-c.z)*f); }
+  hornG.computeVertexNormals(); hornG.computeBoundingSphere(); const hc=hornG.boundingSphere.center.clone(); hornG.translate(-hc.x,-hc.y,-hc.z); // centred, so its outline scales in place
+  const horn=new THREE.Mesh(hornG,m('beetleDark')); horn.position.copy(hc); outline(horn,.008); body.add(horn);
+  const hb=new THREE.Mesh(sph(.045,12,8),m('beetleDark')); hb.position.copy(hornPts[0]); body.add(hb);
+  const tip=new THREE.Mesh(sph(.018,8,6),m('beetleSpot')); tip.position.copy(hornPts[8]); body.add(tip);
+  inner.add(merged(body,1));
+  // a soft gloss on the shell
+  const gloss=new THREE.Mesh(sph(.07,12,8),MC.beetleGloss||(MC.beetleGloss=new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:.55,depthWrite:false})));
+  gloss.scale.set(1.3,.35,.8); gloss.position.set(-.1,.385,0); gloss.rotation.z=.35; inner.add(gloss);
+  // the face, on the front of the head: big eyes that follow the worm, closed arcs for blinks and bumps
+  const face=new THREE.Group(); face.position.set(0,.19,.49); inner.add(face); const F={eyes:[],pupils:[],arcs:[]}; g.userData.face=F;
+  for(const sd of [-1,1]){ const e=new THREE.Mesh(sph(.058,14,10),m('eye')); e.position.set(sd*.062,.03,0); outline(e,.012); face.add(e);
+    const pu=new THREE.Mesh(sph(.03,10,8),m('pupil')); pu.position.set(0,0,.042); e.add(pu); const hl=new THREE.Mesh(sph(.011,6,4),m('eye')); hl.position.set(.012,.012,.026); pu.add(hl);
+    const arc=new THREE.Mesh(new THREE.TorusGeometry(.036,.009,6,12,Math.PI),m('pupil')); arc.position.set(sd*.062,.03,.04); arc.visible=false; face.add(arc);
+    const ck=new THREE.Mesh(sph(.028,8,6),new THREE.MeshBasicMaterial({color:C.cheek,transparent:true,opacity:.55})); ck.position.set(sd*.1,-.04,.0); ck.scale.set(1,.55,.4); face.add(ck);
+    F.eyes.push(e); F.pupils.push(pu); F.arcs.push(arc); }
+  const smile=new THREE.Mesh(new THREE.TorusGeometry(.022,.007,6,12,Math.PI),m('pupil')); smile.position.set(0,-.045,.05); smile.rotation.z=Math.PI; face.add(smile); F.smile=smile;
+  const oo=new THREE.Mesh(new THREE.TorusGeometry(.016,.007,6,12),m('pupil')); oo.position.set(0,-.05,.05); oo.visible=false; face.add(oo); F.oo=oo;
+  // antennae and six stubby legs, each on a pivot so they can wiggle
+  const ants=[]; for(const sd of [-1,1]){ const a=new THREE.Group(); a.position.set(sd*.09,.27,.38); a.rotation.set(-.2,0,-sd*.75); inner.add(a);
+    const st=new THREE.Mesh(new THREE.CylinderGeometry(.009,.011,.1,6),m('beetleLeg')); st.position.y=.05; a.add(st);
+    const bl=new THREE.Mesh(sph(.022,8,6),m('beetleSpot')); bl.position.y=.105; outline(bl,.008); a.add(bl); ants.push(a); }
+  g.userData.ants=ants;
+  const legs=[]; for(const sd of [-1,1]) for(const z of [.15,-.02,-.19]){ const lg=new THREE.Group(); lg.position.set(sd*.21,.08,z); lg.rotation.z=sd*1.15; lg.rotation.y=sd*z*1.2; inner.add(lg);
+    const l=new THREE.Mesh(new THREE.CylinderGeometry(.032,.028,.09,8),m('beetleLeg')); l.position.y=-.045; lg.add(l);
+    const ft=new THREE.Mesh(sph(.036,10,8),m('beetleLeg')); ft.position.y=-.095; ft.scale.set(1,.65,1.25); lg.add(ft); lg.userData.sd=sd; legs.push(lg); }
+  g.userData.legs=legs; g.userData.blink=2+Math.random()*3; g.userData.ph=Math.random()*6;
+  g.traverse(o=>{ if(o.isMesh&&o.material!==lineMat&&o.material!==MC.beetleGloss) o.castShadow=true; });
+  board.add(g); return g; }
+function beetleFace(b,mode){ const F=b.userData.face; if(!F) return; b.userData.mood=mode;
+  const shut=mode==='oof'||mode==='happy'; F.eyes.forEach(e=>e.visible=!shut); F.arcs.forEach(a=>{ a.visible=shut; a.rotation.z=mode==='happy'?0:Math.PI; });
+  F.smile.visible=mode!=='oof'&&mode!=='wow'; F.oo.visible=mode==='oof'||mode==='wow'; }
+// face the camera by default; once pushed, face back toward the worm that pushed it
+function buildBeetles(){ beetleMeshes.forEach(g=>{ disposeTree(g); removeObj(g); }); beetleMeshes=(state.beetles||[]).map(b=>{ const g=makeBeetle(); g.position.copy(wp(b.x,b.y,0)); g.rotation.y=camYaw*Math.PI/180; beetleFace(g,'idle'); return g; }); }
+// undo, restart and resume: put the beetles back where the state says, without rebuilding them
+function snapBeetles(){ const bs=state.beetles||[]; if(beetleMeshes.length!==bs.length) return buildBeetles();
+  bs.forEach((b,i)=>{ const g=beetleMeshes[i]; g.userData.moving=false; g.userData.scrabble=0; g.userData.inner.scale.set(1,1,1); g.position.copy(wp(b.x,b.y,0)); beetleFace(g,'idle'); }); }
+// shoved along its path: it turns to face the worm, scrabbles backwards with its eyes squeezed shut, then looks up
+function pushBeetle(p,dur){ const g=beetleMeshes[p.i]; if(!g) return; const pts=[p.from,...p.path].map(q=>wp(q[0],q[1],0));
+  const dx=pts[1].x-pts[0].x, dz=pts[1].z-pts[0].z, face=Math.atan2(-dx,-dz); sfx('push'); dustPuff(pts[0]);
+  if(reduceMotion){ g.position.copy(pts[pts.length-1]); g.rotation.y=face; return; }
+  const n=pts.length-1, total=dur*(n>1?.6+n*.55:1), r0=g.rotation.y; let dr=face-r0; dr=((dr+Math.PI)%(Math.PI*2)+Math.PI*2)%(Math.PI*2)-Math.PI;
+  g.userData.moving=true; beetleFace(g,'oof'); const inner=g.userData.inner;
+  tween(total,(e,k)=>{ const f=Math.min(n-1e-6,k*n), j=Math.floor(f), t=f-j, a=pts[j], b=pts[j+1];
+    g.position.lerpVectors(a,b,n>1?t:e); g.rotation.y=r0+dr*Math.min(1,k*3);
+    const hop=n>1?Math.sin(k*Math.PI)*.05:Math.sin(t*Math.PI)*.07; g.position.y=hop;
+    const sq=Math.sin(k*Math.PI); inner.scale.set(1+sq*.08,1-sq*.12,1+sq*.06); g.userData.scrabble=1; },
+    ()=>{ g.position.copy(pts[n]); g.position.y=0; g.rotation.y=face; inner.scale.set(1,1,1); g.userData.moving=false; g.userData.scrabble=0;
+      beetleFace(g,n>1?'wow':'idle'); g.userData.moodT=n>1?1.2:0; if(n>1) burst(pts[n],C.beetleSpot); dustPuff(pts[n]); }); }
+// tried to push it into something: a little head shake
+function beetleNope(i){ const g=beetleMeshes[i]; if(!g||reduceMotion) return; const r0=g.rotation.y; beetleFace(g,'oof'); g.userData.moodT=.6;
+  tween(360,(e,k)=>{ g.rotation.y=r0+Math.sin(k*Math.PI*4)*.18*(1-k); },()=>{ g.rotation.y=r0; }); }
+function updateBeetles(dt){ const sec=dt/1000, hp=segMeshes[0]&&segMeshes[0].position;
+  beetleMeshes.forEach((g,i)=>{ const u=g.userData, F=u.face, t=idleT+u.ph;
+    if(u.moodT>0){ u.moodT-=sec; if(u.moodT<=0) beetleFace(g,'idle'); }
+    // sitting on a flower makes a beetle very content
+    const b=state.beetles&&state.beetles[i]; if(b&&!u.moving&&u.mood==='idle'&&tileAt(state,b.x,b.y)==='B') beetleFace(g,'happy');
+    if(b&&!u.moving&&u.mood==='happy'&&tileAt(state,b.x,b.y)!=='B') beetleFace(g,'idle');
+    if(reduceMotion) return;
+    u.inner.position.y=u.moving?0:Math.sin(t*2.1)*.008;
+    u.ants.forEach((a,j)=>{ a.rotation.x=-.35+Math.sin(t*3+j)*.12; });
+    u.legs.forEach((l,j)=>{ l.rotation.x=u.scrabble?Math.sin(idleT*40+j*2.1)*.6:Math.sin(t*1.3+j)*.05; });
+    // eyes follow the worm's head, and blink now and then
+    if(hp&&F){ const lp=g.worldToLocal(hp.clone()); const ax=Math.max(-.012,Math.min(.012,lp.x*.02)), ay=Math.max(-.01,Math.min(.01,(lp.y-.2)*.02)); F.pupils.forEach(p=>{ p.position.x=ax; p.position.y=ay; }); }
+    u.blink-=sec; let bl=1; if(u.blink<0){ bl=Math.max(.1,Math.abs(u.blink+.07)/.07); if(u.blink<-.14) u.blink=2+Math.random()*3.5; }
+    if(F) F.eyes.forEach(e=>e.scale.set(1,bl,1)); }); }
 function buildSnails(){ snailMeshes.forEach(removeObj); snailMeshes=(state.snails||[]).map(n=>{ const s=makeSnail(); s.userData.inner.scale.setScalar(1); s.children[0].scale.setScalar(1.4); s.position.copy(wp(n.x,n.y,0)); s.rotation.y=snailYaw(n); return s; }); }
 function syncSnails(animate,ev){ const ss=state.snails||[]; if(snailMeshes.length!==ss.length) return buildSnails();
   ss.forEach((n,i)=>{ const s=snailMeshes[i], to=wp(n.x,n.y,0), yaw=snailYaw(n);
@@ -802,8 +890,8 @@ const COL_A=new THREE.Color(0xFFB3C8), tmpC=new THREE.Color();
 // worm colours, earned with garden stars: [name, body, head, stars needed]
 // hats, earned by finishing chapters: [id, name, chapter index that unlocks it]. Each is built once and cloned.
 const HATS=[['none','No hat',-1],['crown','Flower crown',0],['mush','Mushroom cap',1],['straw','Straw hat',2],['tophat','Top hat',3],['leaf','Leaf cap',4],['rainhat','Rain hat',5],
-  ['acorn','Acorn cap',6],['bee','Bee antennae',7],['party','Party hat',8],['brolly','Tiny umbrella',9],['beret','Dewdrop beret',10],['bow','Ribbon bow',11],['gold','Garden crown',12],['beanie','Pompom beanie',13],['sunflower','Sunflower',14]];
-const HAT_ICON={none:'&#10006;',crown:'&#127804;',mush:'&#127812;',straw:'&#128082;',tophat:'&#127913;',leaf:'&#127811;',rainhat:'&#127783;',acorn:'&#127792;',bee:'&#128029;',party:'&#127881;',brolly:'&#9730;',beret:'&#129698;',bow:'&#127872;',gold:'&#128081;',beanie:'&#129526;',sunflower:'&#127803;'};
+  ['acorn','Acorn cap',6],['bee','Bee antennae',7],['party','Party hat',8],['brolly','Tiny umbrella',9],['beret','Dewdrop beret',10],['bow','Ribbon bow',11],['gold','Garden crown',12],['beanie','Pompom beanie',13],['sunflower','Sunflower',14],['horn','Beetle horn',15]];
+const HAT_ICON={none:'&#10006;',crown:'&#127804;',mush:'&#127812;',straw:'&#128082;',tophat:'&#127913;',leaf:'&#127811;',rainhat:'&#127783;',acorn:'&#127792;',bee:'&#128029;',party:'&#127881;',brolly:'&#9730;',beret:'&#129698;',bow:'&#127872;',gold:'&#128081;',beanie:'&#129526;',sunflower:'&#127803;',horn:'&#129714;'};
 const hatProto={};
 function buildHat(id){ const h=new THREE.Group();
   if(id==='crown'){ const ring=new THREE.Mesh(new THREE.TorusGeometry(.21,.04,8,28),m('leaf')); ring.rotation.x=Math.PI/2; ring.position.y=.05; outline(ring,.01); h.add(ring);
@@ -863,6 +951,16 @@ function buildHat(id){ const h=new THREE.Group();
     const core=new THREE.Mesh(sph(.085,16,10),m('sunCore')); core.scale.y=.45; core.position.y=.015; outline(core,.008); g.add(core);
     for(let i=0;i<7;i++){ const a=i/7*Math.PI*2, d=new THREE.Mesh(sph(.012,6,4),m('acornNut')); d.position.set(Math.sin(a)*.045,.05,Math.cos(a)*.045); g.add(d); }
     const lf=new THREE.Mesh(sph(.07,12,8),m('leaf')); lf.scale.set(.5,.18,1.3); lf.position.set(-.16,.0,-.08); lf.rotation.y=.9; outline(lf,.008); h.add(lf); }
+  else if(id==='horn'){ // a headband hugging the head side to side, with a curved beetle horn on top
+    const band=new THREE.Mesh(new THREE.TorusGeometry(.355,.03,8,30,Math.PI-.7),m('beetleDark')); band.rotation.z=.35; band.position.y=-.27; h.add(band);
+    const pts=[]; for(let k=0;k<=8;k++){ const t=k/8, a=t*1.4; pts.push(new THREE.Vector3(0,.06+Math.sin(a)*.2,-.06+(1-Math.cos(a))*.2)); }
+    const path=new THREE.CatmullRomCurve3(pts), g=new THREE.TubeGeometry(path,12,.06,12,false), hp=g.attributes.position;
+    for(let k=0;k<hp.count;k++){ const t=Math.floor(k/13)/12, c=path.getPointAt(Math.min(1,t)), f=1-t*.7; hp.setXYZ(k,c.x+(hp.getX(k)-c.x)*f,c.y+(hp.getY(k)-c.y)*f,c.z+(hp.getZ(k)-c.z)*f); }
+    g.computeVertexNormals(); g.computeBoundingSphere(); const c0=g.boundingSphere.center.clone(); g.translate(-c0.x,-c0.y,-c0.z);
+    const horn=new THREE.Mesh(g,m('beetle')); horn.position.copy(c0); outline(horn,.01); h.add(horn);
+    const base=new THREE.Mesh(sph(.075,14,10),m('beetleDark')); base.position.set(0,.05,-.06); base.scale.y=.6; outline(base,.01); h.add(base);
+    const tip=new THREE.Mesh(sph(.024,8,6),m('beetleSpot')); tip.position.copy(pts[8]); h.add(tip);
+    for(const [x,y,z] of [[.03,.16,-.02],[-.02,.22,.04]]){ const sp=new THREE.Mesh(sph(.018,8,6),m('beetleSpot')); sp.position.set(x,y,z); h.add(sp); } }
   h.traverse(o=>{ if(o.isMesh&&o.material!==lineMat) o.castShadow=true; });
   return h; }
 let hatId='none'; try{ hatId=localStorage.getItem('squirm-hat')||'none'; }catch(e){}
@@ -1022,6 +1120,7 @@ function tryMove(dir){
   if(r.blocked){ if(r.blocked==='over') return; queue.length=0; sfx('bump'); lastMoveT=idleT; react('oops',650);
     if(r.blocked==='locked') toast('This gate is locked. Find a key first.');
     if(r.blocked==='snail') toast('A snail is in the way. It will slide along soon.');
+    if(r.blocked==='beetle'){ const h=state.segs[0], dd=DIRS[dir], bi=beetleAt(state,h[0]+dd[0],h[1]+dd[1]); beetleNope(bi); toast('The beetle can\'t budge that way. Something is behind it.'); }
     if(r.blocked==='water') toast('Too wet to cross here. Look for a bridge.');
     if(r.blocked==='bridge') toast('Bridges only go along their planks.');
     if(r.blocked==='flooded') toast('That puddle is full of water. Wait for the sun.');
@@ -1046,6 +1145,7 @@ function animateMove(prev,ev,dir,sliding){
   if(ev.eaten==='C') bumpStat('flags'); if(ev.eaten==='G') bumpStat('gates'); if(ev.portal) bumpStat('tunnels'); if(ev.rain===true) bumpStat('rains');
   if(ev.swung&&ev.swung.length) bumpStat('swings'); if(ev.crumbled&&ev.crumbled.length) bumpStat('crumbles',ev.crumbled.length);
   syncBoard(true); syncWeather(true); syncHedges(true); if(ev.snails) syncSnails(true,ev);
+  if(ev.pushed){ pushBeetle(ev.pushed,sliding?95:queue.length?110:170); bumpStat('pushes'); }
   if(ev.swung){ sfx('creak'); const it=cells[state.segs[0][1]][state.segs[0][0]].item; if(it&&it.userData.wheel){ const w=it.userData.wheel, z0=w.rotation.z; tween(600,(e)=>{ w.rotation.z=z0-e*Math.PI*1.5; }); }
     if(!ev.swung.length) toast('Nothing turned. Bridges with you on them stay put.',2400); }
   if(ev.rain!==undefined){ sfx(ev.rain?'rainOn':'rainOff'); toast(ev.rain?'Rain is falling. Leaves grow, puddles fill.':'The sun is back. Puddles dry, leaves fold away.',2400); }
@@ -1159,21 +1259,21 @@ function onWin(){ shareText=''; newBest=false; chapterDone=null; const coloursBe
 }
 function undo(){
   if(!history.length) return; bumpStat('undos'); checkBadges(null); save(); tweens.length=0; animating=0; queue.length=0; slideSteps.length=0; sfx('undo'); lastMoveT=idleT;
-  clearDying(); clearHint(); const cur=state; state=history.pop(); syncBoard(false); syncWeather(false); syncSnails(false); syncHedges(false); updateHUD(true); saveResume();
+  clearDying(); clearHint(); const cur=state; state=history.pop(); syncBoard(false); syncWeather(false); syncSnails(false); snapBeetles(); syncHedges(false); updateHUD(true); saveResume();
   if(reduceMotion||cur.segs.length!==state.segs.length||segMeshes.length!==state.segs.length){ snapWorm(); return; }
   const n=state.segs.length, starts=segMeshes.map(s=>s.position.clone()), targets=state.segs.map((p,i)=>wp(p[0],p[1],segY(i,n)));
   const a=state.segs[0], b=state.segs[1]; if(b&&Math.abs(a[0]-b[0])+Math.abs(a[1]-b[1])===1) headDir=[a[0]-b[0],a[1]-b[1]];
   animating++; tween(150,(e)=>{ segMeshes.forEach((s,i)=>{ if(starts[i].distanceTo(targets[i])>1.3){ s.position.copy(targets[i]); return; } s.position.lerpVectors(starts[i],targets[i],e); }); },()=>{ animating--; if(queue.length) tryMove(queue.shift()); });
 }
 function restart(){ if(!L) return; clearHint(); tweens.length=0; clearDying(); animating=0; queue.length=0; slideSteps.length=0; hideAll(); sfx('undo');
-  if(state.status==='play' && state.moves>0){ history=[]; state=initState(L); syncBoard(false); snapWorm(); syncSnails(false); syncWeather(false); syncHedges(false); updateHUD(true); saveResume(); lastMoveT=idleT;
+  if(state.status==='play' && state.moves>0){ history=[]; state=initState(L); syncBoard(false); snapWorm(); syncSnails(false); snapBeetles(); syncWeather(false); syncHedges(false); updateHUD(true); saveResume(); lastMoveT=idleT;
     toast('Fresh start.',1800); return; }
   clearResume(); hintsUsed=0; if(mode==='garden') loadLevel(li,false); else startLevel(L,false); }
 
 // ---------- hints ----------
 let hintsUsed=0, hintMesh=null, hintBusy=false;
 function solveFrom(s0,cap=350000,ms=2500){ const until=performance.now()+ms;
-  const key=s=>s.segs.map(p=>p[0]+','+p[1]).join(';')+'|'+s.grid.map(r=>r.join('')).join('')+'|'+s.keys+(s.raining?'r':'')+'|'+(s.snails||[]).map(n=>n.x+','+n.y+','+n.dx+','+n.dy).join(';');
+  const key=s=>s.segs.map(p=>p[0]+','+p[1]).join(';')+'|'+s.grid.map(r=>r.join('')).join('')+'|'+s.keys+(s.raining?'r':'')+'|'+(s.snails||[]).map(n=>n.x+','+n.y+','+n.dx+','+n.dy).join(';')+'|'+(s.beetles||[]).map(b=>b.x+','+b.y).sort().join(';');
   const seen=new Set([key(s0)]); let q=[[s0,null]];
   while(q.length){ const nq=[];
     for(const [s,first] of q){ for(const d of ['N','S','W','E']){ const r=step(s,d); if(r.blocked) continue; const f=first||d;
@@ -1227,7 +1327,7 @@ function readResume(m){ try{ return JSON.parse(localStorage.getItem('squirm-resu
 function tryResume(){ try{ const r=readResume(mode); if(!r||!r.states||!r.states.length) return false; if(mode==='garden'&&r.name!==LEVELS[li].name) return false; if(mode==='endless'&&(!r.def||r.def.seed!==L.seed)) return false;
     const sts=r.states; const last=sts[sts.length-1]; if(last.status!=='play'||sts.length<2) return false;
     state=last; history=sts.slice(0,-1); hintsUsed=r.hints||0;
-    syncBoard(false); snapWorm(); syncWeather(false); syncSnails(false); updateHUD(true); return true; }catch(e){ return false; } }
+    syncBoard(false); snapWorm(); syncWeather(false); syncSnails(false); snapBeetles(); syncHedges(false); updateHUD(true); return true; }catch(e){ return false; } }
 
 // ---------- HUD ----------
 const $=id=>document.getElementById(id);
@@ -1302,11 +1402,11 @@ function renderMute(){ if($('homeSound')){ const hb=$('homeSound'); hb.setAttrib
 
 // ---------- endless meadow ----------
 const DIFF_NAME={easy:'Easy',medium:'Medium',hard:'Hard'};
-const FEATURES=[['flags','Flags'],['buttons','Flower buttons'],['leaves','Wet leaves'],['fruit','Fruit'],['keys','Keys & gates'],['portals','Tunnels'],['dry','Dry patches'],['rain','Rain'],['rivers','Rivers'],['snails','Snails']];
+const FEATURES=[['flags','Flags'],['buttons','Flower buttons'],['leaves','Wet leaves'],['fruit','Fruit'],['keys','Keys & gates'],['portals','Tunnels'],['dry','Dry patches'],['rain','Rain'],['rivers','Rivers'],['snails','Snails'],['beetles','Beetles']];
 const ADJ=['Clover','Mossy','Sunny','Dewy','Puddle','Bramble','Tulip','Daisy','Mint','Fern','Pebble','Willow','Honey','Petal','Thistle','Bluebell','Acorn','Buttercup'];
 const NOUN=['Corner','Patch','Hollow','Nook','Lane','Bend','Meadow','Path','Dell','Knoll','Row','Glade'];
 function analyzeCapped(Ld,cap){
-  const key=s=>s.segs.map(p=>p[0]+','+p[1]).join(';')+'|'+s.grid.map(r=>r.join('')).join('')+'|'+s.keys+(s.raining?'r':'')+'|'+(s.snails||[]).map(n=>n.x+','+n.y+','+n.dx+','+n.dy).join(';');
+  const key=s=>s.segs.map(p=>p[0]+','+p[1]).join(';')+'|'+s.grid.map(r=>r.join('')).join('')+'|'+s.keys+(s.raining?'r':'')+'|'+(s.snails||[]).map(n=>n.x+','+n.y+','+n.dx+','+n.dy).join(';')+'|'+(s.beetles||[]).map(b=>b.x+','+b.y).sort().join(';');
   const s0=initState(Ld), id=new Map([[key(s0),0]]), states=[s0], edges=[[]], par=[-1], pd=[''], wins=[]; let best=-1;
   for(let i=0;i<states.length;i++){ if(states.length>cap) return null; const s=states[i];
     for(const d of ['N','S','W','E']){ const r=step(s,d); if(r.blocked) continue;
@@ -1368,14 +1468,20 @@ function genCandidate(r,diff,o){
       const dirs=[['>',1,0],['<',-1,0],['v',0,1],['^',0,-1]].filter(([c,dx,dy])=>at(p[0]+dx,p[1]+dy)==='.'&&at(p[0]+2*dx,p[1]+2*dy)==='.'); if(!dirs.length) continue;
       const d=pick(dirs); g[p[1]][p[0]]=d[0]; used.add(p+''); placed++; }
     if(!placed) return null; }
+  // beetles sit on grass where at least one push is possible: something to stand on behind them, grass ahead
+  if(o.beetles){ const n=diff==='hard'?2:diff==='medium'?1+ri(2):1; let placed=0;
+    for(let t=0;t<60&&placed<n;t++){ const f=floor().filter(p=>!used.has(p+'')&&Math.abs(p[0]-worm[0][0])+Math.abs(p[1]-worm[0][1])>1); if(!f.length) break; const p=pick(f);
+      const pushable=[[1,0],[-1,0],[0,1],[0,-1]].some(([dx,dy])=>{ const bk=at(p[0]-dx,p[1]-dy); return bk!==' '&&bk!=='~'&&at(p[0]+dx,p[1]+dy)==='.'; });
+      if(!pushable) continue; g[p[1]][p[0]]='O'; used.add(p+''); placed++; }
+    if(!placed) return null; }
   return {name:pick(ADJ)+' '+pick(NOUN), exitLen, worm, map:g.map(row=>row.join('')), rain:false};
 }
 function usage(Ld,sol){ let s=initState(Ld); const u=new Set();
-  for(const d of sol){ const r=step(s,d); const ev=r.ev||{}; if(ev.slide) u.add('leaves'); const hd=r.state&&r.state.segs[0]; if(hd&&tileAt(s,hd[0],hd[1])==='H') u.add('buttons'); if(ev.portal) u.add('portals'); if(ev.rain!==undefined) u.add('rain'); if(ev.swung&&ev.swung.length) u.add('rivers');
+  for(const d of sol){ const r=step(s,d); const ev=r.ev||{}; if(ev.slide) u.add('leaves'); if(ev.pushed||(ev.slide&&ev.slide.some(x=>x.ev.pushed))) u.add('beetles'); const hd=r.state&&r.state.segs[0]; if(hd&&tileAt(s,hd[0],hd[1])==='H') u.add('buttons'); if(ev.portal) u.add('portals'); if(ev.rain!==undefined) u.add('rain'); if(ev.swung&&ev.swung.length) u.add('rivers');
     if(ev.eaten==='+'||ev.eaten==='-') u.add('fruit'); const h0=r.state&&r.state.segs[0]; if(h0&&r.state.snails&&r.state.snails.some(n=>Math.abs(n.x-h0[0])+Math.abs(n.y-h0[1])<=1)) u.add('snails'); if(ev.eaten==='G') u.add('keys'); if(ev.crumbled&&ev.crumbled.length) u.add('dry'); s=r.state; } return u; }
 async function generateEndless(diff,o,seed,fixedTries){
   const r=rng(seed); const budget={easy:1400,medium:2600,hard:4800}[diff]; const t0=performance.now(); let best=null, bestScore=-1e9, n=0;
-  const enabled=['fruit','keys','portals','dry','rain','rivers','snails','buttons','leaves'].filter(k=>o[k]); const needUse=Math.min(enabled.length,diff==='easy'?1:2);
+  const enabled=['fruit','keys','portals','dry','rain','rivers','snails','buttons','leaves','beetles'].filter(k=>o[k]); const needUse=Math.min(enabled.length,diff==='easy'?1:2);
   while(true){ n++; const Ld=genCandidate(r,diff,o);
     if(Ld){ const cap={easy:4000,medium:10000,hard:12000}[diff]; const a=analyzeCapped(Ld,cap);
       if(a&&a.par>=5){ const win=a.good/a.states; const u=usage(Ld,a.sol); const used=enabled.filter(k=>u.has(k)).length;
@@ -1391,7 +1497,7 @@ async function generateEndless(diff,o,seed,fixedTries){
     if(n>3) $('genText').textContent=['Planting seeds','Digging tunnels','Watering the soil','Checking every path'][Math.floor(el/700)%4]+'...';
     await new Promise(res=>setTimeout(res,0)); // let the page breathe between candidates
   }
-  const feats=FEATURES.filter(([k])=>k!=='flags'&&o[k]&&best.map.join('').match({buttons:/H/,leaves:/i/,fruit:/[+-]/,keys:/K/,portals:/1/,dry:/x/,rain:/R/,rivers:/L|=|\|/,snails:/[<>^v]/}[k])).map(([,n])=>n.toLowerCase());
+  const feats=FEATURES.filter(([k])=>k!=='flags'&&o[k]&&best.map.join('').match({buttons:/H/,leaves:/i/,fruit:/[+-]/,keys:/K/,portals:/1/,dry:/x/,rain:/R/,rivers:/L|=|\|/,snails:/[<>^v]/,beetles:/O/}[k])).map(([,n])=>n.toLowerCase());
   best.tries=n; best.seed=seed; best.hint=feats.length?`A fresh ${DIFF_NAME[diff].toLowerCase()} patch with ${feats.join(', ')}.`:`A fresh ${DIFF_NAME[diff].toLowerCase()} patch.`;
   return best;
 }
@@ -1485,7 +1591,7 @@ function renderSwatches(){ const have=coloursUnlocked();
     wormCol=i; try{ localStorage.setItem('squirm-colour',String(i)); }catch(e){} applyWormColour(); if(hHead) homeReact('joy'); renderWardrobe(); settle($('swatches').querySelector('button.on')); }); }
 const DIFF_ICON={easy:'&#127793;',medium:'&#127799;',hard:'&#127795;'};
 // short names for the mechanic tiles; the full name goes in the label
-const FEAT_SHORT={flags:'Flags',buttons:'Flowers',leaves:'Leaves',fruit:'Fruit',keys:'Keys',portals:'Tunnels',dry:'Dry',rain:'Rain',rivers:'Rivers',snails:'Snails'};
+const FEAT_SHORT={flags:'Flags',buttons:'Flowers',leaves:'Leaves',fruit:'Fruit',keys:'Keys',portals:'Tunnels',dry:'Dry',rain:'Rain',rivers:'Rivers',snails:'Snails',beetles:'Beetles'};
 function renderEndless(){
   $('diffSeg').innerHTML=['easy','medium','hard'].map((d,i)=>`<button role="radio" aria-checked="${d===endlessDiff}" data-d="${d}" class="diff ${d===endlessDiff?'on':''}"><span class="em" aria-hidden="true">${DIFF_ICON[d]}</span><b>${DIFF_NAME[d]}</b><span class="pips" aria-hidden="true">${[0,1,2].map(j=>`<i class="${j<=i?'f':''}"></i>`).join('')}</span><small>${progress.endless[d].cleared} cleared</small></button>`).join('');
   $('diffSeg').querySelectorAll('button').forEach(b=>b.onclick=()=>{ endlessDiff=b.dataset.d; renderEndless(); settle($('diffSeg').querySelector('.diff.on')); });
@@ -1524,7 +1630,7 @@ function finGo(k,el){
   layers[layers.length-1]='tab'; hide('finOv'); showTab(k,true); }
 $('finClose').onclick=()=>{ hide('finOv'); popLayer('finale'); renderHome(); };
 $('endlessGo').onclick=()=>{ newEndless(); };
-$('surprise').onclick=()=>{ const ks=['fruit','keys','portals','dry','rain','rivers','snails','buttons','leaves']; ks.forEach(k=>endlessOpts[k]=false); endlessOpts.flags=Math.random()<.8;
+$('surprise').onclick=()=>{ const ks=['fruit','keys','portals','dry','rain','rivers','snails','buttons','leaves','beetles']; ks.forEach(k=>endlessOpts[k]=false); endlessOpts.flags=Math.random()<.8;
   const n=2+Math.floor(Math.random()*2); for(let i=0;i<n;i++) endlessOpts[ks[Math.floor(Math.random()*ks.length)]]=true; renderEndless(); qa($('featGrid'),'.mech.on').forEach(settle); };
 $('dailyBtn').onclick=()=>{ ensureAudio(); const r=readResume('endless'); if(r&&r.def&&r.def.daily===todayKey()){ mode='endless'; hideAll(); startLevel(r.def,false); enterGame(); return; } startDaily(); };
 $('homeEndlessCont').onclick=()=>{ continueEndless(); };
@@ -1586,6 +1692,7 @@ const BADGES=[
   ['brave','&#128170;','Brave little worm','Clear a hard endless patch.',()=>progress.endless.hard.cleared>0],
   ['slides','&#127811;','Slip and slide','Slide across 50 wet leaves.',()=>progress.stats.slides>=50],
   ['hedges','&#127795;','Green thumb','Open hedges 20 times.',()=>progress.stats.hedges>=20],
+  ['pushes','&#129714;','Heave-ho','Push beetles 25 times.',()=>progress.stats.pushes>=25],
   ['snacks','&#127825;','Snack attack','Eat 30 peaches and mushrooms.',()=>progress.stats.fruit>=30],
   ['owl','&#127771;','Night owl','Finish a patch between 10 pm and 5 am.',c=>c&&c.won&&(c.hour>=22||c.hour<5)],
   ['quick','&#9889;','Quick crawl','Finish a patch with a par of 10 or more in under 30 seconds.',c=>c&&c.won&&c.par>=10&&c.secs<30],
@@ -1666,6 +1773,7 @@ const MECH={
   rain:{t:'Rain',d:'Step on a cloud stone to start or stop the rain. Rain grows seedlings into leaves you can cross, and fills puddles so you can\'t.',k:/[Rsw]/,i:'<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#5B4436" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M7 14a4 4 0 0 1-.5-8A5.5 5.5 0 0 1 17 5.5 4 4 0 0 1 17.5 14z" fill="#C9D6EA"/><path d="M8 17l-1 3M12 17l-1 3M16 17l-1 3" stroke="#6FA9D6"/></svg>'},
   snails:{t:'Snails',d:'A snail slides one tile every time you move and turns around when something blocks it. You cannot crawl through a snail, so time your moves.',k:/[<>^v]/,i:'<svg width="40" height="40" viewBox="0 0 24 24" stroke="#5B4436" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"><path d="M18.6 11.4l-.8-3.6M20.6 11.4l1.2-3.3" fill="none"/><circle cx="17.8" cy="7.6" r="1" fill="#5B4436" stroke="none"/><circle cx="21.9" cy="7.9" r="1" fill="#5B4436" stroke="none"/><path d="M2.5 19.6c0-1 .8-1.6 1.8-1.6h12.6l.7-3.6a2.4 2.4 0 0 1 4.7.5V18c0 1-.8 1.6-1.8 1.6z" fill="#F6E2B0"/><circle cx="10" cy="12.6" r="5.6" fill="#C9A0E6"/><path d="M10.2 12.8a1.2 1.2 0 1 1 1.3-1.5 2.6 2.6 0 0 1-2.4 3.7 3.6 3.6 0 0 1-2.5-6" fill="none" stroke="#7D5A9E"/></svg>'},
   buttons:{t:'Flower buttons',d:'Hedges open while any part of you rests on a big flower. Keep your tail on the flower while your head slips through.',k:/[BH]/,i:'<svg width="40" height="40" viewBox="0 0 24 24" stroke="#5B4436" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"><path d="M12 21V12.5a2.6 2.6 0 0 1 2.6-2.6 3 3 0 0 1 5.4-1 2.6 2.6 0 0 1 2.5 2.6V21z" fill="#5FA64F"/><g fill="#F7A8C4"><circle cx="5" cy="13.5" r="2.4"/><circle cx="8.6" cy="16" r="2.4"/><circle cx="7.3" cy="20" r="2.4"/><circle cx="2.7" cy="20" r="2.4"/><circle cx="1.4" cy="16" r="2.4"/></g><circle cx="5" cy="17.2" r="1.9" fill="#F7C64F"/></svg>'},
+  beetles:{t:'Beetles',d:'Bump into a beetle to push it one tile ahead. Beetles only move onto grass, flowers, dry patches and leaves, where they slide. A beetle resting on a flower holds the hedges open for you.',k:/O/,i:'<svg width="40" height="40" viewBox="0 0 24 24" stroke="#5B4436" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"><path d="M4.5 12.5l-2.5 1M4.8 15.5l-2.3 2.2M19.5 12.5l2.5 1M19.2 15.5l2.3 2.2" fill="none"/><ellipse cx="12" cy="14.5" rx="8" ry="6.5" fill="#7C8CF0"/><path d="M12 8.2V21" fill="none"/><circle cx="8.6" cy="15" r="1.3" fill="#B5C0FA" stroke="none"/><circle cx="15.4" cy="15" r="1.3" fill="#B5C0FA" stroke="none"/><circle cx="12" cy="7.2" r="3.6" fill="#3E3F84"/><path d="M12 3.8q.4-2.4 2.6-2.6" fill="none" stroke-width="1.8"/><circle cx="10.7" cy="7" r=".9" fill="#fff" stroke="none"/><circle cx="13.3" cy="7" r=".9" fill="#fff" stroke="none"/></svg>'},
   leaves:{t:'Wet leaves',d:'Dewy leaves are slippery. Crawl onto one and you slide along until you reach dry grass or bump into something.',k:/i/,i:'<svg width="40" height="40" viewBox="0 0 24 24" stroke="#5B4436" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"><path d="M3 13c2-6 9-9 18-8-1 9-7 14-14 13-2 0-3.5-2.5-4-5z" fill="#8EE0B4"/><path d="M5 17L17 8" fill="none" stroke="#5DBA8A"/><circle cx="12.5" cy="15.5" r="1.4" fill="#EAF8FF"/><circle cx="16" cy="12" r="1" fill="#EAF8FF"/><path d="M1 21h5M8.5 21h3" fill="none" stroke="#6FA9D6"/></svg>'},
   rivers:{t:'Rivers and bridges',d:'Water blocks the way. Bridges only go along their planks, and a crank swings every bridge you are not standing on.',k:/[~=|L]/,i:'<svg width="40" height="40" viewBox="0 0 24 24" stroke="#5B4436" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"><rect x="1.5" y="8" width="21" height="8" rx="2.5" fill="#8CCFEA"/><path d="M3.5 12c1-.8 2-.8 3 0M17.5 12c1-.8 2-.8 3 0" fill="none" stroke="#fff"/><rect x="8.5" y="3.5" width="7" height="17" rx="1.4" fill="#D9A56E"/><path d="M8.5 8h7M8.5 12h7M8.5 16h7" fill="none" stroke="#B98352"/></svg>'},
 };
@@ -1696,7 +1804,7 @@ function startLevel(def,withHint=true){ nudged=false; playT=0;
   $('skipBtn').hidden = mode!=='endless' || !!L.daily;
 }
 function introAnim(){ if(reduceMotion) return;
-  const items=snailMeshes.map(s=>({o:s,d:.3,y0:s.position.y})); snailMeshes.forEach(s=>s.scale.setScalar(.01)); for(let y=0;y<state.h;y++) for(let x=0;x<state.w;x++){ const c=cells[y][x]; [c.tile,c.item].forEach((o,j)=>{ if(o){ items.push({o,d:(x+y)*.035+j*.08,y0:o.position.y}); o.scale.setScalar(.01); } }); }
+  const items=[...snailMeshes,...beetleMeshes].map(s=>({o:s,d:.3,y0:s.position.y})); [...snailMeshes,...beetleMeshes].forEach(s=>s.scale.setScalar(.01)); for(let y=0;y<state.h;y++) for(let x=0;x<state.w;x++){ const c=cells[y][x]; [c.tile,c.item].forEach((o,j)=>{ if(o){ items.push({o,d:(x+y)*.035+j*.08,y0:o.position.y}); o.scale.setScalar(.01); } }); }
   const worm=segMeshes.slice(); worm.forEach(s=>s.scale.setScalar(.01)); wormG.visible=false;
   const total=.55+(state.w+state.h)*.035+.35; animating++;
   const back=t=>{ const c1=1.70158, c3=c1+1; return 1+c3*Math.pow(t-1,3)+c1*Math.pow(t-1,2); };
@@ -1706,15 +1814,15 @@ function introAnim(){ if(reduceMotion) return;
     ()=>{ items.forEach(it=>{ it.o.scale.setScalar(1); it.o.position.y=it.y0; }); worm.forEach(s=>s.scale.setScalar(1)); wormG.visible=true; animating--; if(queue.length) tryMove(queue.shift()); });
 }
 const CHAPTERS=CHAPTER_NAMES.map((name,k)=>({name,from:k*10,to:Math.min(LEVELS.length-1,k*10+9)}));
-const THUMB_COL={'B':'#F7A8C4','H':'#4E8F40','i':'#8EE0B4','<':'#C9A0E6','>':'#C9A0E6','^':'#C9A0E6','v':'#C9A0E6','.':'#B9E49E','x':'#EBD59C','~':'#8CCFEA','=':'#D9A56E','|':'#D9A56E','E':'#3A2A22','C':'#F27DA2','K':'#F7C64F','G':'#C88A55','+':'#FFA27C','-':'#B79CF2','R':'#C9D6EA','w':'#9ED6EF','s':'#7CC95F','L':'#B98352'};
+const THUMB_COL={'O':'#7C8CF0','B':'#F7A8C4','H':'#4E8F40','i':'#8EE0B4','<':'#C9A0E6','>':'#C9A0E6','^':'#C9A0E6','v':'#C9A0E6','.':'#B9E49E','x':'#EBD59C','~':'#8CCFEA','=':'#D9A56E','|':'#D9A56E','E':'#3A2A22','C':'#F27DA2','K':'#F7C64F','G':'#C88A55','+':'#FFA27C','-':'#B79CF2','R':'#C9D6EA','w':'#9ED6EF','s':'#7CC95F','L':'#B98352'};
 function drawThumb(cv,lv){ const g=cv.getContext('2d'); const h=lv.map.length, w=Math.max(...lv.map.map(r=>r.length)); const s=Math.floor(80/Math.max(w,h)), ox=(88-w*s)/2, oy=(88-h*s)/2;
   g.fillStyle='#9A6A4C'; g.fillRect(0,0,88,88);
   for(let y=0;y<h;y++) for(let x=0;x<w;x++){ const c=lv.map[y][x]||' '; if(c===' ') continue; g.fillStyle=THUMB_COL[c]||(c>='1'&&c<='9'?'#7FCFEA':'#B9E49E'); g.fillRect(ox+x*s+1,oy+y*s+1,s-2,s-2); }
   g.fillStyle='#FF8FAF'; lv.worm.forEach(p=>{ g.fillRect(ox+p[0]*s+2,oy+p[1]*s+2,s-4,s-4); }); }
 // the garden map: one little scene per chapter, its patches stepping stones along a winding path
-const SCENE_COL=['#CFEFB8','#FFD9C2','#E2D6FA','#FFE9A8','#CBE7F7','#FBD3E0','#D3EFD0','#F3DCC4','#CFE1F8','#F8D8EA','#D9F2C9','#FFD6DE','#C9EEDF','#FFE0C2','#FFF0A8'];
+const SCENE_COL=['#CFEFB8','#FFD9C2','#E2D6FA','#FFE9A8','#CBE7F7','#FBD3E0','#D3EFD0','#F3DCC4','#CFE1F8','#F8D8EA','#D9F2C9','#FFD6DE','#C9EEDF','#FFE0C2','#FFF0A8','#D9DEFC'];
 const SCENE_DECO=[['\u{1F331}','\u{1F6A9}'],['\u{1F351}','\u{1F344}'],['\u{1F342}','\u{1F33E}'],['\u{1F511}','\u{1F33B}'],['\u{1F33F}','\u{1FAB1}'],['\u{1F4A7}','\u{2601}\u{FE0F}'],['\u{1F30A}','\u{1FAB5}'],
-  ['\u{1F338}','\u{1F98B}'],['\u{1F333}','\u{1F41D}'],['\u{1F33C}','\u{1F343}'],['\u{1F40C}','\u{1F340}'],['\u{1F33A}','\u{1F33F}'],['\u{1F343}','\u{1F4A7}'],['\u{1F388}','\u{1F380}'],['\u{1F33B}','\u{1F31F}']];
+  ['\u{1F338}','\u{1F98B}'],['\u{1F333}','\u{1F41D}'],['\u{1F33C}','\u{1F343}'],['\u{1F40C}','\u{1F340}'],['\u{1F33A}','\u{1F33F}'],['\u{1F343}','\u{1F4A7}'],['\u{1F388}','\u{1F380}'],['\u{1F33B}','\u{1F31F}'],['\u{1FAB2}','\u{1F33C}']];
 // a few pebble outlines so the stepping stones don't all look stamped from one mould
 const STONES=['48% 52% 46% 54% / 56% 50% 50% 44%','54% 46% 52% 48% / 48% 56% 44% 52%','46% 54% 50% 50% / 52% 46% 54% 48%','52% 48% 56% 44% / 50% 54% 46% 50%','50% 50% 44% 56% / 46% 52% 48% 54%'];
 const LOCK_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><rect x="5" y="11" width="14" height="10" rx="2.5"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>';
@@ -1925,6 +2033,7 @@ function frame(now){
   windU.value=idleT; gustU.value=reduceMotion?1:1+1.2*Math.pow(Math.max(0,Math.sin(idleT*.21)),4);
   for(const s of swayers){ const a=(s.amp||1)*.07; s.o.rotation.z=Math.sin(idleT*1.6+s.ph)*a; s.o.rotation.x=Math.cos(idleT*1.3+s.ph)*a*.5; }
   const hp0=segMeshes[0]&&segMeshes[0].position;
+  updateBeetles(dt);
   snailMeshes.forEach((s,i)=>{ let lean=0; if(hp0){ const a=Math.atan2(hp0.x-s.position.x,hp0.z-s.position.z)-s.rotation.y; lean=-Math.sin(a)*.35; }
     s.userData.eyes.forEach((e,j)=>{ e.rotation.z=(j?-.25:.25)+lean+Math.sin(idleT*3+i+j)*.08; }); });
   if(hintMesh){ hintMesh.children[0].position.y=Math.sin(idleT*5)*.08; hintMesh.rotation.y+=dt*.002; }

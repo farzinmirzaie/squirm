@@ -144,6 +144,52 @@ test('moves never change the state they were given', () => {
   assert.equal(JSON.stringify(s), before);
 });
 
+test('the worm pushes a beetle one tile ahead', () => {
+  const s = initState(level(['..O..'], [[1, 0], [0, 0]]));
+  const r = play(s, ['E']);
+  assert.deepEqual(r.state.segs, [[2, 0], [1, 0]]);
+  assert.deepEqual(r.state.beetles, [{ x: 3, y: 0 }]);
+  assert.deepEqual(r.ev.pushed.path, [[3, 0]]);
+  assert.deepEqual(s.beetles, [{ x: 2, y: 0 }], 'the old state is untouched');
+});
+
+test('a beetle blocks the worm when it has nowhere to go', () => {
+  // soil, the edge, another beetle, an item, a snail and the worm itself all stop a beetle
+  for (const map of [['..O '], ['..O'], ['..OO.'], ['..OC.'], ['..O<.']]) {
+    const r = step(initState(level(map, [[1, 0], [0, 0]])), 'E');
+    assert.equal(r.blocked, 'beetle', map[0]);
+  }
+  // head at the top, body curling round so the tail sits right where the beetle will go
+  const loop = initState(level(['...', '.O.', '...'], [[1, 0], [0, 0], [0, 1], [0, 2], [1, 2]]));
+  const r = step(loop, 'S');
+  assert.ok(!r.blocked, 'a beetle can be pushed into the tile the tail is leaving');
+  assert.deepEqual(r.state.beetles, [{ x: 1, y: 2 }]);
+});
+
+test('a pushed beetle slides across wet leaves', () => {
+  const s = initState(level(['.Oiii..'], [[0, 0]]));
+  const r = play(s, ['E']);
+  assert.deepEqual(r.state.beetles, [{ x: 5, y: 0 }]);
+  assert.deepEqual(r.ev.pushed.path, [[2, 0], [3, 0], [4, 0], [5, 0]]);
+});
+
+test('a beetle on a flower button holds the hedges open', () => {
+  const s = initState(level(['.OB', '..H'], [[0, 0]]));
+  assert.equal(hedgesOpen(s), false);
+  const r = play(s, ['E']);
+  assert.equal(hedgesOpen(r.state), true);
+  // the worm can now go through the hedge without holding the flower itself
+  const r2 = play(r.state, ['S', 'E']);
+  assert.deepEqual(r2.state.segs[0], [2, 1]);
+});
+
+test('snails turn around at beetles', () => {
+  const s = initState(level(['.>O', '...'], [[0, 1]]));
+  const r = play(s, ['E']);
+  const n = r.state.snails[0];
+  assert.deepEqual([n.x, n.y, n.dx], [1, 0, -1], 'stays put and turns around');
+});
+
 test('level names are unique (progress is stored by name)', () => {
   const names = LEVELS.map(l => l.name);
   assert.equal(new Set(names).size, names.length);
