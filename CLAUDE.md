@@ -32,7 +32,7 @@ bundler, no runtime dependencies besides three.js, no network requests at runtim
 ```
 src/shell.html   page markup + all CSS; has /*__FONTS__*/ /*__LOGIC__*/ /*__LEVELS__*/ /*__GAME__*/ slots
 src/logic.js     pure game rules: parseLevel, initState, step, tileAt, partner, cloneState (no DOM)
-src/levels.js    LEVELS array (130 levels) + CHAPTER_NAMES
+src/levels.js    LEVELS array (150 levels) + CHAPTER_NAMES
 src/game.js      everything else, in one IIFE: rendering, input, UI, audio, generator, solver
 src/sw.js        service worker template (version and file list filled in by the build)
 public/          manifest and icons, copied as-is into dist/
@@ -90,7 +90,8 @@ tile of the slide.
 - **Pacing:** chapters are 10 levels each. A mechanic may not appear before its chapter:
   flags from level 6, fruit 11, dry 21, keys 31, tunnels 41, rain 51, rivers 61, snails 101,
   flower buttons 111, wet leaves 121.
-  Chapters 8-10 mix earlier mechanics at rising difficulty. The first level of a chapter
+  Chapters 8-10 mix earlier mechanics at rising difficulty, and so do chapters 14-15 (14 mixes the
+  late mechanics, snails, flower buttons and wet leaves; 15 mixes everything and ends the hardest). The first level of a chapter
   should be a gentle introduction to its mechanic.
 - Difficulty inside a chapter rises. Use `par * (1 - winnable)` from `tools/analyze.js` as
   a rough difficulty score.

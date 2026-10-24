@@ -9,7 +9,7 @@ garden patches, touch every flag, and slip into the burrow at exactly the right 
 
 <p align="center"><img src="docs/screenshot-home.png" width="260" alt="Squirm home screen"> <img src="docs/screenshot-game.png" width="260" alt="A worm crawling to its burrow"></p>
 
-- 130 patches in 13 chapters, each introducing one mechanic
+- 150 patches in 15 chapters: most introduce one mechanic, a few mix them at rising difficulty
 - Endless mode with generated, solver-checked patches (easy / medium / hard)
 - A daily patch that's the same for everyone, with stars, streaks, hints and undo
 - Badges to earn, hats to unlock, gentle generated music, haptics and synthesized sound (no audio or image files)

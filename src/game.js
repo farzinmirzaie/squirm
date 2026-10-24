@@ -9,7 +9,7 @@ const C = {
   peach:0xFFA27C, leaf:0x6CC97A, cap:0xB79CF2, stem:0xFFF1DE, key:0xF7C64F, gateWood:0xC88A55,
   flag:0xF27DA2, flagDone:0x79C95F, pole:0xB98A62,
   mushRed:0xF07A6A, topHat:0x4E3F5C, rainHat:0xFFD04A, brolly:0x9FD2F2, bowDark:0xE36A8C,
-  straw:0xF3D18A, strawDark:0xD9B166, acornCap:0x8A5A36, acornNut:0xC98E52, partyA:0x9FD2F2, partyB:0xFFF1A8, crown:0xF5C14E, beret:0xB79CF2,
+  straw:0xF3D18A, strawDark:0xD9B166, acornCap:0x8A5A36, acornNut:0xC98E52, partyA:0x9FD2F2, partyB:0xFFF1A8, crown:0xF5C14E, beret:0xB79CF2, beanie:0x8FD0B0, beanieRib:0x6FB894, sunPetal:0xFFD34D, sunCore:0x7A4E2E,
   wetLeaf:0x8EE0B4, leafVein:0x5DBA8A, dew:0xEAF8FF, hedge:0x5FA64F, hedgeDark:0x4E8F40, petalB:0xF7A8C4,
   burrow:0x3A2A22, mound:0xB07B57, ready:0x8EDB72, line:0x5B4436,
   portal:{ '1':0x7FCFEA, '2':0xC69CF7, '3':0xFFB877, '4':0x9BE39B }
@@ -802,8 +802,8 @@ const COL_A=new THREE.Color(0xFFB3C8), tmpC=new THREE.Color();
 // worm colours, earned with garden stars: [name, body, head, stars needed]
 // hats, earned by finishing chapters: [id, name, chapter index that unlocks it]. Each is built once and cloned.
 const HATS=[['none','No hat',-1],['crown','Flower crown',0],['mush','Mushroom cap',1],['straw','Straw hat',2],['tophat','Top hat',3],['leaf','Leaf cap',4],['rainhat','Rain hat',5],
-  ['acorn','Acorn cap',6],['bee','Bee antennae',7],['party','Party hat',8],['brolly','Tiny umbrella',9],['beret','Dewdrop beret',10],['bow','Ribbon bow',11],['gold','Garden crown',12]];
-const HAT_ICON={none:'&#10006;',crown:'&#127804;',mush:'&#127812;',straw:'&#128082;',tophat:'&#127913;',leaf:'&#127811;',rainhat:'&#127783;',acorn:'&#127792;',bee:'&#128029;',party:'&#127881;',brolly:'&#9730;',beret:'&#129698;',bow:'&#127872;',gold:'&#128081;'};
+  ['acorn','Acorn cap',6],['bee','Bee antennae',7],['party','Party hat',8],['brolly','Tiny umbrella',9],['beret','Dewdrop beret',10],['bow','Ribbon bow',11],['gold','Garden crown',12],['beanie','Pompom beanie',13],['sunflower','Sunflower',14]];
+const HAT_ICON={none:'&#10006;',crown:'&#127804;',mush:'&#127812;',straw:'&#128082;',tophat:'&#127913;',leaf:'&#127811;',rainhat:'&#127783;',acorn:'&#127792;',bee:'&#128029;',party:'&#127881;',brolly:'&#9730;',beret:'&#129698;',bow:'&#127872;',gold:'&#128081;',beanie:'&#129526;',sunflower:'&#127803;'};
 const hatProto={};
 function buildHat(id){ const h=new THREE.Group();
   if(id==='crown'){ const ring=new THREE.Mesh(new THREE.TorusGeometry(.21,.04,8,28),m('leaf')); ring.rotation.x=Math.PI/2; ring.position.y=.05; outline(ring,.01); h.add(ring);
@@ -852,6 +852,17 @@ function buildHat(id){ const h=new THREE.Group();
     const band=new THREE.Mesh(new THREE.CylinderGeometry(.19,.2,.09,24,1,true),gm2); band.position.y=.04; outline(band,.01); h.add(band);
     for(let i=0;i<6;i++){ const a=i/6*Math.PI*2; const sp=new THREE.Mesh(new THREE.ConeGeometry(.045,.11,8),m('crown')); sp.position.set(Math.cos(a)*.19,.13,Math.sin(a)*.19); outline(sp,.008); h.add(sp);
       const gm=new THREE.Mesh(sph(.025,8,6),i%2?m('petalB'):m('partyA')); gm.position.set(Math.cos(a)*.2,.04,Math.sin(a)*.2); h.add(gm); } }
+  else if(id==='beanie'){ // a knitted dome with a ribbed turn-up and a fluffy pompom
+    const dome=new THREE.Mesh(new THREE.SphereGeometry(.25,22,12,0,Math.PI*2,0,Math.PI/2),m('beanie')); dome.scale.y=.9; dome.position.y=-.02; outline(dome,.012); h.add(dome);
+    const rib=new THREE.Mesh(new THREE.TorusGeometry(.245,.05,8,28),m('beanieRib')); rib.rotation.x=Math.PI/2; rib.position.y=-.01; outline(rib,.01); h.add(rib);
+    for(let i=0;i<14;i++){ const a=i/14*Math.PI*2, k=new THREE.Mesh(new THREE.BoxGeometry(.012,.07,.02),m('beanie')); k.position.set(Math.cos(a)*.29,-.01,Math.sin(a)*.29); k.rotation.y=-a; h.add(k); }
+    const pom=new THREE.Mesh(sph(.075,14,10),m('dew')); pom.position.y=.25; outline(pom,.01); h.add(pom); }
+  else if(id==='sunflower'){ // one big bloom tucked on top, tipped toward the camera, with a leaf
+    const g=new THREE.Group(); g.position.set(.04,.06,.02); g.rotation.set(-.55,0,-.15); h.add(g);
+    for(let i=0;i<12;i++){ const a=i/12*Math.PI*2, pt=new THREE.Mesh(sph(.06,10,8),m('sunPetal')); pt.scale.set(.55,.22,1.25); pt.position.set(Math.sin(a)*.13,0,Math.cos(a)*.13); pt.rotation.y=a; outline(pt,.008); g.add(pt); }
+    const core=new THREE.Mesh(sph(.085,16,10),m('sunCore')); core.scale.y=.45; core.position.y=.015; outline(core,.008); g.add(core);
+    for(let i=0;i<7;i++){ const a=i/7*Math.PI*2, d=new THREE.Mesh(sph(.012,6,4),m('acornNut')); d.position.set(Math.sin(a)*.045,.05,Math.cos(a)*.045); g.add(d); }
+    const lf=new THREE.Mesh(sph(.07,12,8),m('leaf')); lf.scale.set(.5,.18,1.3); lf.position.set(-.16,.0,-.08); lf.rotation.y=.9; outline(lf,.008); h.add(lf); }
   h.traverse(o=>{ if(o.isMesh&&o.material!==lineMat) o.castShadow=true; });
   return h; }
 let hatId='none'; try{ hatId=localStorage.getItem('squirm-hat')||'none'; }catch(e){}
@@ -1701,9 +1712,9 @@ function drawThumb(cv,lv){ const g=cv.getContext('2d'); const h=lv.map.length, w
   for(let y=0;y<h;y++) for(let x=0;x<w;x++){ const c=lv.map[y][x]||' '; if(c===' ') continue; g.fillStyle=THUMB_COL[c]||(c>='1'&&c<='9'?'#7FCFEA':'#B9E49E'); g.fillRect(ox+x*s+1,oy+y*s+1,s-2,s-2); }
   g.fillStyle='#FF8FAF'; lv.worm.forEach(p=>{ g.fillRect(ox+p[0]*s+2,oy+p[1]*s+2,s-4,s-4); }); }
 // the garden map: one little scene per chapter, its patches stepping stones along a winding path
-const SCENE_COL=['#CFEFB8','#FFD9C2','#E2D6FA','#FFE9A8','#CBE7F7','#FBD3E0','#D3EFD0','#F3DCC4','#CFE1F8','#F8D8EA','#D9F2C9','#FFD6DE','#C9EEDF'];
+const SCENE_COL=['#CFEFB8','#FFD9C2','#E2D6FA','#FFE9A8','#CBE7F7','#FBD3E0','#D3EFD0','#F3DCC4','#CFE1F8','#F8D8EA','#D9F2C9','#FFD6DE','#C9EEDF','#FFE0C2','#FFF0A8'];
 const SCENE_DECO=[['\u{1F331}','\u{1F6A9}'],['\u{1F351}','\u{1F344}'],['\u{1F342}','\u{1F33E}'],['\u{1F511}','\u{1F33B}'],['\u{1F33F}','\u{1FAB1}'],['\u{1F4A7}','\u{2601}\u{FE0F}'],['\u{1F30A}','\u{1FAB5}'],
-  ['\u{1F338}','\u{1F98B}'],['\u{1F333}','\u{1F41D}'],['\u{1F33C}','\u{1F343}'],['\u{1F40C}','\u{1F340}'],['\u{1F33A}','\u{1F33F}'],['\u{1F343}','\u{1F4A7}']];
+  ['\u{1F338}','\u{1F98B}'],['\u{1F333}','\u{1F41D}'],['\u{1F33C}','\u{1F343}'],['\u{1F40C}','\u{1F340}'],['\u{1F33A}','\u{1F33F}'],['\u{1F343}','\u{1F4A7}'],['\u{1F388}','\u{1F380}'],['\u{1F33B}','\u{1F31F}']];
 // a few pebble outlines so the stepping stones don't all look stamped from one mould
 const STONES=['48% 52% 46% 54% / 56% 50% 50% 44%','54% 46% 52% 48% / 48% 56% 44% 52%','46% 54% 50% 50% / 52% 46% 54% 48%','52% 48% 56% 44% / 50% 54% 46% 50%','50% 50% 44% 56% / 46% 52% 48% 54%'];
 const LOCK_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><rect x="5" y="11" width="14" height="10" rx="2.5"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>';
