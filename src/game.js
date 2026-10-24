@@ -1113,7 +1113,7 @@ function onWin(){ shareText=''; newBest=false; chapterDone=null; const coloursBe
     if(newBest) extra+='<span class="newbest">New best</span>';
     // 5. say so when the next patch opens a new chapter
     const nextCh=!last&&CHAPTERS.find(c=>c.from===li+1);
-    $('winNext').textContent = last ? 'Back to patch 1' : nextCh ? 'Next chapter' : 'Next patch';
+    $('winNext').textContent = last&&allCleared() ? "What's next?" : last ? 'Back to patch 1' : nextCh ? 'Next chapter' : 'Next patch';
     if(nextCh) extra+=`<div class="stat-row"><span class="pill unlock">Next up: ${nextCh.name}</span></div>`;
     shareText=shareLine(`patch ${li+1} (${nm})`,mv,par,st);
   } else if(L.daily){
@@ -1282,8 +1282,8 @@ function hide(id){ const o=$(id); if(id==='homeOv'){ o.classList.remove('show');
   if(!ms){ o.classList.remove('show'); return; } o.classList.add('out'); o._out=setTimeout(()=>o.classList.remove('show','out'),ms); }
 // open and not on its way out
 const isOpen=id=>{ const c=$(id).classList; return c.contains('show')&&!c.contains('out'); };
-function hideAll(){ ['winOv','homeOv','setOv'].forEach(hide); }
-function anyOverlay(){ return ['winOv','homeOv','genOv','introOv','resetOv','setOv'].some(isOpen); }
+function hideAll(){ ['winOv','homeOv','setOv','finOv'].forEach(hide); }
+function anyOverlay(){ return ['winOv','homeOv','genOv','introOv','resetOv','setOv','finOv'].some(isOpen); }
 function renderMute(){ if($('homeSound')){ const hb=$('homeSound'); hb.setAttribute('aria-label',muted?'Turn sound on':'Turn sound off'); setTimeout(()=>{ hb.innerHTML=$('muteBtn').innerHTML; },0); } const b=$('muteBtn'); b.setAttribute('aria-pressed',String(muted)); b.setAttribute('aria-label',muted?'Turn sound on':'Turn sound off');
   b.innerHTML = muted
    ? '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path d="M17 9l5 6M22 9l-5 6"/></svg>'
@@ -1409,6 +1409,9 @@ function continueEndless(){ const r=readResume('endless'); if(r&&r.def&&r.diff&&
 // ---------- native back button: a small stack of layers mirrored in browser history ----------
 const layers=[]; let ignorePop=0;
 function pushLayer(n){ layers.push(n); try{ window.history.pushState({squirm:layers.length},''); }catch(e){} }
+// replace the layers from `from` upward with one new layer, without racing the async history.go
+function swapLayers(from,n){ const i=layers.lastIndexOf(from); if(i<0){ pushLayer(n); return; } const k=layers.length-i; layers.length=i; layers.push(n);
+  if(k>1){ ignorePop++; try{ window.history.go(-(k-1)); }catch(e){ ignorePop--; } } }
 function popLayer(n){ const i=layers.lastIndexOf(n); if(i<0) return; const k=layers.length-i; layers.length=i; ignorePop++; try{ window.history.go(-k); }catch(e){ ignorePop--; } }
 function enterGame(){ const top=layers[layers.length-1];
   if(top==='game') return;
@@ -1418,6 +1421,7 @@ function enterGame(){ const top=layers[layers.length-1];
 window.addEventListener('popstate',()=>{ if(ignorePop>0){ ignorePop--; return; } const top=layers.pop();
   if(top==='intro') closeIntro(true);
   else if(top==='reset') hide('resetOv');
+  else if(top==='finale') hide('finOv');
   else if(top==='settings') hide('setOv');
   else if(top==='setpage') setPage('main','back');
   else if(top==='tab') showTab('play',true);
@@ -1450,7 +1454,8 @@ function renderHome(){
   $('dailyBtn').classList.toggle('done',!!dr); $('dailySub').textContent = dr ? `Done in ${dr.moves} moves. Next one in ${wait}.` : (progress.daily.streak?`Keep your ${progress.daily.streak} day streak going`:'One patch for everyone today');
   $('dailyWeek').innerHTML=[6,5,4,3,2,1,0].map(n=>{ const d=new Date(); d.setDate(d.getDate()-n); return `<i class="${progress.daily.results[dateKey(d)]?'on':''} ${n?'':'today'}"></i>`; }).join('');
   const ni=nextGardenIndex(), started=LEVELS.some((l,i)=>isCleared(i));
-  $('playTitle').textContent=started?'Continue':'Play'; $('playSub').textContent=`Patch ${ni+1} · ${LEVELS[ni].name}`;
+  if(allCleared()){ const t=shineable().length; $('playTitle').textContent='Garden grown!'; $('playSub').textContent=t?`${t} ${t===1?'patch':'patches'} to shine up · what's next`:"All 3 stars · see what's next"; }
+  else { $('playTitle').textContent=started?'Continue':'Play'; $('playSub').textContent=`Patch ${ni+1} · ${LEVELS[ni].name}`; }
   renderMute(); renderHaptic();
   // what the page shows before the game has loaded next time (see the boot script in shell.html)
   try{ localStorage.setItem('squirm-boot',JSON.stringify({stars:$('homeStars').innerHTML,title:$('playTitle').textContent,sub:$('playSub').textContent,daily:$('dailySub').textContent,done:!!dr,day:new Date().toDateString()})); }catch(e){}
@@ -1483,7 +1488,30 @@ function renderEndless(){
 // the patch to continue with: the current one, or the next if the current one is already cleared
 function nextGardenIndex(){ const i=currentGardenIndex(); if(!isCleared(i)) return i;
   for(let j=i+1;j<LEVELS.length;j++) if(!isCleared(j)&&isUnlocked(j)) return j; return i; }
-$('homePlay').onclick=()=>{ ensureAudio(); hideAll(); loadLevel(nextGardenIndex()); enterGame(); };
+$('homePlay').onclick=()=>{ ensureAudio(); if(allCleared()){ showFinale(true); return; } hideAll(); loadLevel(nextGardenIndex()); enterGame(); };
+// ---------- the whole garden: what to do once every patch is cleared ----------
+function allCleared(){ return LEVELS.every((l,i)=>isCleared(i)); }
+function shineable(){ return LEVELS.map((l,i)=>i).filter(i=>isCleared(i)&&(progress.stars[LEVELS[i].name]||0)<3); }
+function renderFinale(){
+  const todo=shineable(), left=BADGES.filter(b=>!progress.badges[b[0]]), dailyDone=!!progress.daily.results[todayKey()];
+  $('finStats').innerHTML=`<div class="m-stat"><span class="ic" aria-hidden="true">${ICON.star}</span><b>${starTotal()}</b><small>of ${LEVELS.length*3} stars</small></div>`
+    +`<div class="m-stat"><span class="ic" aria-hidden="true">&#127941;</span><b>${Object.keys(progress.badges).length}</b><small>of ${BADGES.length} badges</small></div>`
+    +`<div class="m-stat"><span class="ic" aria-hidden="true">&#128027;</span><b>${(progress.stats.moves||0).toLocaleString()}</b><small>moves</small></div>`;
+  const row=(go,ico,title,sub,done)=>`<button class="set-link${done?' is-done':''}" data-go="${go}"><span class="set-ico" aria-hidden="true">${ico}</span><span><b>${title}</b><small>${sub}</small></span><span class="chev" aria-hidden="true">${done?'&#10003;':'&#8250;'}</span></button>`;
+  $('finNext').innerHTML=
+    row('shine','&#11088;',todo.length?'Shine up your stars':'Every patch has 3 stars',todo.length?`${todo.length} can earn more · next: ${LEVELS[todo[0]].name}`:'Not a single star left to find. Wow.',!todo.length)
+    +row('badges','&#127941;',left.length?'Badges to find':'Every badge found',left.length?`${left.length} to go, like ${left.slice(0,2).map(b=>b[2]).join(' and ')}`:'You found every last one.',!left.length)
+    +row('meadow','&#127804;','Endless meadow','Fresh patches, as many as you like',false)
+    +row('daily','&#128197;','Daily patch',dailyDone?'Done today. A new one grows tomorrow.':'A new one for everyone, every day',dailyDone);
+  qa($('finNext'),'.set-link').forEach(b=>b.onclick=()=>finGo(b.dataset.go,b)); }
+// push: open it as a new layer (from home); otherwise the caller already put a 'finale' layer in place
+function showFinale(push){ renderFinale(); show('finOv'); if(push) pushLayer('finale'); petals(); sfx('badge'); stagger(qa($('finOv'),'.fin-emb,.m-stat,.set-link'),'rise',100,60); }
+// each choice takes over the finale's place in the back stack, so back leads home
+function finGo(k,el){
+  if(k==='shine'){ const t=shineable(); if(!t.length){ nope(el,'Every patch already has 3 stars.'); return; } layers[layers.length-1]='game'; hideAll(); loadLevel(t[0]); return; }
+  if(k==='daily'){ if(progress.daily.results[todayKey()]){ nope(el,'Today\'s patch is done. Come back tomorrow for a new one.'); return; } layers[layers.length-1]='game'; hide('finOv'); $('dailyBtn').onclick(); return; }
+  layers[layers.length-1]='tab'; hide('finOv'); showTab(k,true); }
+$('finClose').onclick=()=>{ hide('finOv'); popLayer('finale'); renderHome(); };
 $('endlessGo').onclick=()=>{ newEndless(); };
 $('surprise').onclick=()=>{ const ks=['fruit','keys','portals','dry','rain','rivers','snails','buttons','leaves']; ks.forEach(k=>endlessOpts[k]=false); endlessOpts.flags=Math.random()<.8;
   const n=2+Math.floor(Math.random()*2); for(let i=0;i<n;i++) endlessOpts[ks[Math.floor(Math.random()*ks.length)]]=true; renderEndless(); qa($('featGrid'),'.mech.on').forEach(settle); };
@@ -1710,6 +1738,11 @@ function renderLevelList(){
       b.onclick=()=>{ if(locked){ nope(b,`Finish patch ${i} first, then this one opens.`,2200); return; }
         if(picked===i){ playPicked(); return; } pickPatch(i,true); };
       tr.appendChild(b); } });
+  // the end of the map: what's next once it's all grown, or a note that more is on the way
+  const end=document.createElement('div'); end.className='map-end';
+  end.innerHTML=allCleared()?`<span class="emb" aria-hidden="true">&#128081;</span><b>The whole garden is grown!</b><small>More patches are growing and will show up here by themselves.</small><button class="btn primary">What's next?</button>`
+    :`<span aria-hidden="true">&#127793;</span><b>More patches are growing</b><small>New ones will show up here by themselves when they're ready.</small>`;
+  const eb=end.querySelector('button'); if(eb) eb.onclick=()=>showFinale(true); g.appendChild(end);
   pickPatch(isUnlocked(li)?li:0,false);
   setTimeout(()=>{ const c=g.querySelector('.node.sel'); if(c) c.scrollIntoView({block:'center'}); },30);
 }
@@ -1822,7 +1855,8 @@ $('skipBtn').onclick=()=>{ if(mode!=='endless'||animating) return; const e=progr
 $('winShare').onclick=async()=>{ try{ if(navigator.share){ await navigator.share({text:shareText}); return; } }catch(e){ return; }
   try{ await navigator.clipboard.writeText(shareText); toast('Result copied. Paste it anywhere.',2200); }catch(e){ toast(shareText,5000); } };
 $('winReplay').onclick=()=>{ hideAll(); popLayer('win'); if(mode==='garden') loadLevel(li,false); else startLevel(L,false); };
-$('winNext').onclick=()=>{ hideAll(); if(L.daily){ popLayer('game'); showHome(); return; } popLayer('win'); if(mode==='garden') loadLevel(li===LEVELS.length-1?0:li+1); else newEndless(); };
+$('winNext').onclick=()=>{ hideAll(); if(L.daily){ popLayer('game'); showHome(); return; }
+  if(mode==='garden'&&li===LEVELS.length-1&&allCleared()){ swapLayers(layers.includes('game')?'game':'win','finale'); showHome(true); showFinale(false); return; } popLayer('win'); if(mode==='garden') loadLevel(li===LEVELS.length-1?0:li+1); else newEndless(); };
 function toggleMute(el){ ensureAudio(); muted=!muted; if(el) settle(el); try{ localStorage.setItem('squirm-muted',muted?'1':'0'); }catch(e){} renderMute(); if(state) syncWeather(false); sfx(muted?'off':'on'); }
 $('muteBtn').onclick=()=>toggleMute($('muteBtn'));
 renderMute();
@@ -1915,7 +1949,7 @@ window.addEventListener('unhandledrejection',()=>onGameError(null));
 // than relaunched, so check for one whenever the app comes back to the foreground, and reload into
 // the new version at a calm moment: right away on the home screen, otherwise on the way back home.
 let updateReady=false;
-const calmMoment=()=>$('homeOv').classList.contains('show') && !generating && !['winOv','genOv','introOv','resetOv','setOv'].some(isOpen);
+const calmMoment=()=>$('homeOv').classList.contains('show') && !generating && !['winOv','genOv','introOv','resetOv','setOv','finOv'].some(isOpen);
 if('serviceWorker' in navigator && /^https?:$/.test(location.protocol)){
   const hadWorker=!!navigator.serviceWorker.controller; let controlled=hadWorker, reg=null;
   const check=()=>{ if(reg&&navigator.onLine!==false) reg.update().catch(()=>{}); };

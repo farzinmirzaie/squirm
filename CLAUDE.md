@@ -162,6 +162,12 @@ map thumbnails, and `introAt` in `tools/verify-levels.js`.
   (endless setup), Me (wardrobe) and Badges.
   The home worm's canvas moves between the Play and Me tabs. Leaving Play pushes a `tab` layer, so
   the back button returns to Play; opening a patch from a tab replaces that layer with `game`.
+- **Finale:** once every patch is cleared (`allCleared`), winning the last patch offers "What's next?",
+  which opens `finOv` (`showFinale` / `renderFinale`): totals plus choices built from progress
+  (patches below 3 stars via `shineable`, badges left, the meadow, today's daily). The home Play card
+  turns into "Garden grown!" and opens it too, and the map ends with a card about more patches
+  coming. Each choice takes over the finale's layer (`swapLayers` when coming from the win dialog,
+  since `popLayer`'s `history.go` is async and must not race a new `pushState`).
 - **Motion:** `stagger(els, cls)` gives a list of elements a staggered entrance (`enter` drops in,
   `rise` comes up). Used by `hudIntro` (new patch), `tabIntro` (each home tab), the home top bar and
   tab bar in `showHome`, and `setPageIntro` (settings pages). `animOnce` replays a one-shot class.

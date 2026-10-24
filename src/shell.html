@@ -415,6 +415,20 @@ body.at-home #app{visibility:hidden}
 @keyframes halo{0%{transform:scale(.92);opacity:1}100%{transform:scale(1.22);opacity:0}}
 .node.sel::before{content:"";position:absolute;inset:-8px -8px -13px;border-radius:inherit;border:3px solid var(--honey);pointer-events:none}
 /* the card under the map for the stone you picked */
+.finale{gap:12px;text-align:center}
+.fin-emb{align-self:center;width:60px;height:60px;border-radius:50%;display:grid;place-items:center;font-size:24px;transform:scale(1.4);margin:6px 0 4px;background:var(--tint-honey);border:3px solid var(--honey-dark);box-shadow:0 4px 0 var(--honey-dark)}
+.finale h2{margin:0}
+.fin-sub{margin:-4px 0 0;font-size:15px;color:var(--ink-soft)}
+.finale p.label{text-align:left;margin:4px 0 -4px}
+.fin-next{display:flex;flex-direction:column;gap:8px;text-align:left}
+.fin-next .set-link.is-done{opacity:.6}
+.fin-next .set-link.is-done .chev{color:var(--leaf-dark);font-size:20px}
+.fin-note{margin:0;font-size:13px;color:var(--ink-soft)}
+/* the end of the map */
+.map-end{display:flex;flex-direction:column;align-items:center;gap:8px;padding:16px 14px 18px;text-align:center;border-radius:22px;border:3px dashed var(--edge)}
+.map-end b{font:800 18px/1.15 var(--fd)}
+.map-end small{font-size:13px;color:var(--ink-soft)}
+.map-end .btn{flex:none;min-height:44px;padding:0 18px;margin-top:2px}
 .pick{flex:none;display:flex;align-items:center;gap:12px;margin-top:10px;padding:10px 10px 10px 10px;border-radius:22px;background:var(--paper-2);border:3px solid var(--edge);box-shadow:0 4px 0 var(--edge)}
 .pick canvas.thumb{flex:none;position:static;width:58px;height:58px;border-radius:14px;background:var(--soil);box-shadow:0 3px 0 var(--edge)}
 .pick .pt{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
@@ -518,6 +532,17 @@ button:disabled{cursor:default}
   <h2 id="winTitle">Snug as a bug!</h2><p id="winText"></p><div id="winMedal"></div>
   <button class="btn share" id="winShare" hidden>Share result</button>
   <div class="row"><button class="btn" id="winReplay">Replay</button><button class="btn primary" id="winNext">Next patch</button></div>
+</div></div>
+
+<div class="ov" id="finOv"><div role="dialog" aria-modal="true" aria-labelledby="finTitle" class="dialog card sheet finale">
+  <span class="fin-emb" aria-hidden="true">&#128081;</span>
+  <h2 id="finTitle">The whole garden is grown!</h2>
+  <p class="fin-sub">You crawled through every patch. Every flower out there knows your name.</p>
+  <div class="m-stats" id="finStats"></div>
+  <p class="label">What's next</p>
+  <div class="fin-next" id="finNext"></div>
+  <p class="fin-note">&#127793; More patches are growing and will show up here by themselves.</p>
+  <div class="row"><button class="btn primary" id="finClose">Back home</button></div>
 </div></div>
 
 <div class="petals" id="petals"></div>
