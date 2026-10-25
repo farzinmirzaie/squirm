@@ -400,27 +400,40 @@ nav{display:flex;justify-content:center;align-items:flex-end;gap:16px}
 .m-stat .ic{width:36px;height:36px;margin-bottom:2px}.m-stat .ic svg{width:24px;height:24px}
 .m-stat b{font:800 21px/1.1 var(--fd)}
 .m-stat small{font-size:11px;font-weight:800;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.04em}
-.diff-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-.diff{--acc:var(--leaf);position:relative;display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 4px 9px;border-radius:18px;border:3px solid var(--edge);background:var(--paper-2);color:var(--ink);cursor:pointer;box-shadow:0 3px 0 var(--edge)}
-.diff[data-d=medium]{--acc:var(--honey-dark)} .diff[data-d=hard]{--acc:var(--berry)}
-.diff .em{height:34px;display:grid;place-items:center}
+.m-diffs{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.diff{--acc:var(--leaf);--tint:var(--tint-leaf);display:flex;align-items:center;justify-content:center;gap:6px;padding:7px 6px;border-radius:18px;border:3px solid var(--edge);background:var(--paper-2);color:var(--ink);cursor:pointer;font:inherit;box-shadow:0 3px 0 var(--edge)}
+.diff[data-d=medium]{--acc:var(--honey-dark);--tint:var(--tint-honey)} .diff[data-d=hard]{--acc:var(--berry);--tint:var(--tint-berry)}
 .diff b{font:800 16px/1 var(--fd)}
-.diff small{font-weight:700;font-size:12px;color:var(--ink-soft)}
-.diff .pips{display:flex;gap:4px;margin-top:2px}
-.diff .pips i{width:7px;height:7px;border-radius:50%;background:var(--edge)}
-.diff .pips i.f{background:var(--acc)}
-.diff.on{background:var(--paper);border-color:var(--acc);box-shadow:0 3px 0 var(--acc);transform:translateY(-2px)}
+.diff.on{background:var(--paper);border-color:var(--acc);box-shadow:0 3px 0 var(--acc)}
+/* the chosen difficulty: its picture, what it's like, and its own record */
+.m-hero{--acc:var(--leaf);--tint:var(--tint-leaf);flex:none;display:flex;align-items:center;gap:14px;padding:12px 14px;border-radius:22px;background:var(--tint);border:3px solid var(--acc);box-shadow:0 4px 0 var(--acc);color:var(--deep)}
+.m-hero[data-d=medium]{--acc:var(--honey-dark);--tint:var(--tint-honey)} .m-hero[data-d=hard]{--acc:var(--berry);--tint:var(--tint-berry)}
+.m-hero .m-em{flex:none;width:68px;height:68px;border-radius:50%;display:grid;place-items:center;background:var(--sticker);border:3px solid var(--sticker-edge)}
+.m-hero .m-info{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.m-hero b{font:800 21px/1.1 var(--fd)}
+.m-hero .m-desc{font:700 13px/1.25 var(--fb);color:var(--deep);opacity:.8}
+.m-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:5px}
+.m-chips span{display:inline-flex;align-items:center;gap:4px;padding:3px 8px 3px 4px;border-radius:999px;background:var(--sticker);border:2px solid var(--sticker-edge);font:800 13px/1 var(--fd);color:var(--deep)}
+.m-chips small{font:800 11px/1 var(--fb);opacity:.7}
+.m-hero.swap{animation:popin var(--dur) var(--ease-pop)}
+.m-links{flex:none;display:flex;align-items:center;gap:0}
+.m-links .link{padding:6px 5px;white-space:nowrap}
+.meadow .label-row{gap:6px}.meadow .label-row .label{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* short screens: a slimmer hero so the mix keeps room */
+@media (max-height:760px){ .meadow .sub-note,.m-hero .m-desc{display:none} .m-hero{padding:8px 12px;gap:12px} .m-hero .m-em{width:54px;height:54px} .m-hero .m-em svg{width:36px;height:36px} .m-chips{margin-top:2px} .mech-grid{min-height:112px} .panel.meadow{gap:9px;padding:14px 14px 18px} }
+@media (max-width:380px){ #surprise .txt{display:none} }
 .mix-n{margin-left:4px;color:var(--ink-soft);text-transform:none;letter-spacing:0}
-.mech-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:8px}
+#tabMeadow .panel{flex:1;min-height:0}
+.mech-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;flex:1;min-height:150px;margin:0 -8px;padding:6px 8px 10px;align-content:start}
 .mech{position:relative;display:flex;flex-direction:column;align-items:center;gap:4px;padding:7px 2px 6px;border-radius:18px;border:2px solid var(--edge);background:var(--paper-2);color:var(--ink-soft);cursor:pointer;font:800 11px/1.1 var(--fb);min-width:0}
-.mech .mi{width:38px;height:38px;border-radius:14px;background:var(--sticker);border:2px solid var(--sticker-edge);display:grid;place-items:center;opacity:.55;filter:grayscale(.7);transition:opacity var(--dur-fast),filter var(--dur-fast),transform var(--dur) var(--ease-pop)}
-.mech .mi svg{width:28px;height:28px}
+.mech .mi{width:44px;height:44px;border-radius:14px;background:var(--sticker);border:2px solid var(--sticker-edge);display:grid;place-items:center;opacity:.55;filter:grayscale(.7);transition:opacity var(--dur-fast),filter var(--dur-fast),transform var(--dur) var(--ease-pop)}
+.mech .mi svg{width:32px;height:32px}
 .mech .ok{position:absolute;top:-6px;right:-5px;width:20px;height:20px;border-radius:50%;background:var(--leaf);border:2px solid var(--paper);color:var(--on-accent);display:none;place-items:center}
 .mech .ok .ui-ic{width:12px;height:12px}
 .mech.on{background:var(--done);border-color:var(--leaf);color:var(--ink)}
 .mech.on .mi{opacity:1;filter:none;transform:scale(1.06)}
 .mech.on .ok{display:grid}
-.m-go .btn.primary{flex:2}
+.m-go{flex:none}.m-go .btn.primary{flex:2}
 /* -- Me: the wardrobe -- */
 .hat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
 .hat{display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 4px;border-radius:18px;border:3px solid var(--edge);background:var(--paper-2);color:var(--ink);cursor:pointer;font:inherit;box-shadow:0 3px 0 var(--edge)}
@@ -671,13 +684,12 @@ nav .enter,.rise{animation:navIn var(--dur-slow) var(--ease-pop) var(--d,0ms) bo
       </div>
     </section>
     <section class="tab-page fade-scroll" id="tabMeadow" aria-labelledby="endlessTitle" hidden>
-      <div class="panel card sheet meadow">
+      <div class="panel card meadow">
         <div class="panel-head"><h2 id="endlessTitle">Endless meadow</h2><span class="sub-note">Fresh patches, grown just for you</span></div>
-        <div class="m-stats" id="eStats"></div>
-        <p class="label">How tricky?</p>
-        <div class="diff-cards" id="diffSeg" role="radiogroup" aria-label="Difficulty"></div>
-        <div class="label-row"><p class="label">In the mix <span class="mix-n" id="mixCount"></span></p><button class="link" id="surprise" data-sfx="ready"><span data-art="dice" data-size="18"></span> Surprise me</button></div>
-        <div class="mech-grid" id="featGrid"></div>
+        <div class="m-hero" id="mHero" aria-live="polite"></div>
+        <div class="m-diffs" id="diffSeg" role="radiogroup" aria-label="How tricky"></div>
+        <div class="label-row"><p class="label">In the mix <span class="mix-n" id="mixCount"></span></p><span class="m-links"><button class="link" id="mixAll" data-sfx="none"></button><button class="link" id="surprise" data-sfx="ready" aria-label="Surprise me"><span data-art="dice" data-size="18"></span><span class="txt"> Surprise me</span></button></span></div>
+        <div class="mech-grid fade-scroll" id="featGrid"></div>
         <div class="row m-go"><button class="btn" id="homeEndlessCont" hidden>Resume</button><button class="btn primary" id="endlessGo"><span data-art="sprout" data-size="22"></span> Grow a patch</button></div>
       </div>
     </section>

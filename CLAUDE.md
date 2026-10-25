@@ -228,7 +228,10 @@ Sections are listed in the table of contents at the top of the file; each starts
 - **Home** (`homeOv`): five tabs switched by `showTab`: Play (worm, Continue, daily), Garden (the map:
   `renderLevelList` draws one scene per chapter with its patches as stepping stones on a winding SVG
   path; closed chapters fold into a small card; tapping a stone picks it (`pickPatch`) and shows its card
-  with a `drawThumb` preview; tapping again plays), Meadow (endless setup), Me (wardrobe) and Badges. The
+  with a `drawThumb` preview; tapping again plays), Meadow (endless setup: a hero card for the chosen difficulty
+  with its description and its own streak, best, stars and cleared count (`DIFF_DESC`), a compact
+  difficulty switch, the mechanics mix with All/None and Surprise me, and Grow a patch pinned at the
+  bottom), Me (wardrobe) and Badges. The
   home worm's canvas moves between Play and Me; `homeStage(me)` widens it on Me and shows `hBody`, a
   curled body built by `buildHomeBody` (rebuilt on every colour or pattern change) so the outfit shows.
   The wardrobe switches one grid between Hats / Colours / Patterns (`wardTab`), shows the outfit line,
@@ -258,8 +261,12 @@ Sections are listed in the table of contents at the top of the file; each starts
 - **Photo mode:** the win dialog's Photo button (`enterPhoto` / `exitPhoto`, a `photo` layer). The HUD
   fades out (`body.photo`), the camera glides to a full-screen framing (`glideCamera(photoFrame())`), and
   the worm pops its head out of the burrow and looks at the camera (`updateHead` has a `photoOn` branch;
-  Pose calls `newExpression`). Free camera: drag orbits around the board's centre (`orbit`, pitch
-  and zoom clamped), pinch or wheel zooms, Reset view (`resetView`, also R) glides back. `snapPhoto` renders a frame, draws it on a 2D canvas with a caption plaque
+  Pose calls `newExpression`). Free camera (`orbit`: yaw, pitch, distance and a look-at point `t`,
+  mirrored in `camLook`): one finger or mouse drag orbits; two fingers pinch to zoom, move together to
+  pan and twist to turn; right-drag or Shift-drag pans; the wheel zooms; arrow keys pan. Tilt, distance
+  and the look-at point (kept over the bed) are clamped. Reset view (`resetView`, also R) and leaving
+  photo mode glide back (`glideCamera` brings `camLook` home too). `#stage` gets `touch-action:none` in
+  photo mode and Safari's `gesturestart` is cancelled, so pinching never zooms the page. `snapPhoto` renders a frame, draws it on a 2D canvas with a caption plaque
   (patch and stars, from `photoInfo` set in `onWin`) and the name, then shares the PNG where the browser
   can share files and downloads it otherwise. Keys: Space/Enter snap, P pose, Esc back.
 - **Settings and backups:** the home gear opens `setOv`, a short list whose rows open sub-pages

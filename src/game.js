@@ -1316,7 +1316,7 @@ function onWin(){ shareText=''; newBest=false; chapterDone=null; const coloursBe
 // Snap saves (or shares) the garden with a little caption. Back returns to the win dialog.
 let photoOn=false, photoInfo=null;
 const photoFrame=()=>({top:Math.max(24,window.innerHeight*.06),bot:window.innerHeight-130});
-function enterPhoto(){ if(photoOn) return; photoOn=true; orbit=null; ptrs.clear(); $('photoReset').hidden=true; setTimeout(()=>{ if(photoOn) toast('Drag to look around. Pinch or scroll to zoom.',3000); },700); hide('winOv'); pushLayer('photo'); document.body.classList.add('photo'); $('photoBar').hidden=false; glideCamera(photoFrame());
+function enterPhoto(){ if(photoOn) return; photoOn=true; orbit=null; ptrs.clear(); $('photoReset').hidden=true; setTimeout(()=>{ if(photoOn) toast(matchMedia('(pointer: coarse)').matches?'Drag to look around. Pinch to zoom, two fingers to move.':'Drag to look around. Right-drag to move, scroll to zoom.',3200); },700); hide('winOv'); pushLayer('photo'); document.body.classList.add('photo'); $('photoBar').hidden=false; glideCamera(photoFrame());
   stagger(qa($('photoBar'),'button'),'rise',120,60);
   const ex=state.segs[0], at=wp(ex[0],ex[1],0), h=segMeshes[0]; wormG.visible=true;
   segMeshes.forEach((sg,i)=>{ sg.position.copy(at).setY(-.3-i*.05); sg.scale.setScalar(i<3?1:.02); });
@@ -1343,19 +1343,35 @@ async function snapPhoto(){ renderer.render(scene,camera); const src=renderer.do
   try{ if(navigator.canShare&&navigator.canShare({files:[file]})){ await navigator.share({files:[file]}); return; } }catch(e){ if(e&&e.name==='AbortError') return; }
   const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=file.name; document.body.appendChild(a); a.click(); a.remove();
   setTimeout(()=>URL.revokeObjectURL(a.href),4000); toast('Photo saved to your downloads.'); }
-// free camera: drag to orbit around the board, pinch or scroll to zoom, within limits that keep the garden in view
-let orbit=null; const ptrs=new Map();
-function orbitStart(){ if(!orbit){ const p=basePos, d=p.length(); orbit={yaw:Math.atan2(p.x,p.z),pitch:Math.asin(p.y/d),d,d0:d}; } }
-function orbitApply(){ const o=orbit; o.pitch=Math.max(.42,Math.min(1.45,o.pitch)); o.d=Math.max(o.d0*.45,Math.min(o.d0*1.35,o.d));
-  basePos.set(Math.sin(o.yaw)*Math.cos(o.pitch),Math.sin(o.pitch),Math.cos(o.yaw)*Math.cos(o.pitch)).multiplyScalar(o.d);
-  camera.position.copy(basePos); camera.lookAt(0,0,0); for(const row of cells) for(const c of row) if(c.item) faceCamera(c.item); $('photoReset').hidden=false; }
-stage.addEventListener('pointerdown',e=>{ if(!photoOn) return; orbitStart(); ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY}); try{ stage.setPointerCapture(e.pointerId); }catch(x){} });
+// free camera. Touch: one finger orbits; two fingers pinch to zoom, move together to pan and twist to turn.
+// Mouse: drag orbits, right-drag or Shift-drag pans, the wheel zooms. Keys: arrows pan. The point the camera
+// looks at (orbit.t, mirrored in camLook) stays over the bed, and tilt and distance stay in range.
+let orbit=null; const ptrs=new Map(), camLook=new THREE.Vector3();
+function orbitStart(){ if(orbit) return; const p=basePos.clone().sub(camLook), d=p.length(); orbit={yaw:Math.atan2(p.x,p.z),pitch:Math.asin(p.y/d),d,d0:d,t:camLook.clone()}; }
+function orbitApply(){ const o=orbit; o.pitch=Math.max(.42,Math.min(1.45,o.pitch)); o.d=Math.max(o.d0*.35,Math.min(o.d0*1.35,o.d));
+  const lim=boardCorners().reduce((m,p)=>({x:Math.max(m.x,Math.abs(p.x)),z:Math.max(m.z,Math.abs(p.z))}),{x:0,z:0});
+  o.t.x=Math.max(-lim.x,Math.min(lim.x,o.t.x)); o.t.z=Math.max(-lim.z,Math.min(lim.z,o.t.z)); o.t.y=0; camLook.copy(o.t);
+  basePos.set(Math.sin(o.yaw)*Math.cos(o.pitch),Math.sin(o.pitch),Math.cos(o.yaw)*Math.cos(o.pitch)).multiplyScalar(o.d).add(o.t);
+  camera.position.copy(basePos); camera.lookAt(o.t); for(const row of cells) for(const c of row) if(c.item) faceCamera(c.item); $('photoReset').hidden=false; }
+// slide the look-at point so the ground under the finger follows it
+function orbitPan(dx,dy){ const o=orbit, k=2*o.d*Math.tan(camera.fov*Math.PI/360)/window.innerHeight, sy=Math.sin(o.yaw), cy=Math.cos(o.yaw);
+  o.t.x-=(cy*dx)*k; o.t.z-=(-sy*dx)*k; const f=k/Math.max(.5,Math.sin(o.pitch)); o.t.x+=(-sy*dy)*f; o.t.z+=(-cy*dy)*f; }
+let panBtn=false;
+stage.addEventListener('pointerdown',e=>{ if(!photoOn) return; e.preventDefault(); orbitStart(); panBtn=e.pointerType==='mouse'&&(e.button===2||e.shiftKey);
+  ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY}); try{ stage.setPointerCapture(e.pointerId); }catch(x){} });
 stage.addEventListener('pointermove',e=>{ if(!photoOn||!ptrs.has(e.pointerId)) return; const prev=ptrs.get(e.pointerId), now={x:e.clientX,y:e.clientY};
-  if(ptrs.size===1){ orbit.yaw-=(now.x-prev.x)*.006; orbit.pitch+=(now.y-prev.y)*.004; }
-  else { const [a,b]=[...ptrs.values()], other=a===prev?b:a, d0=Math.hypot(prev.x-other.x,prev.y-other.y), d1=Math.hypot(now.x-other.x,now.y-other.y); if(d0>0&&d1>0) orbit.d*=d0/d1; }
+  if(ptrs.size===1){ const dx=now.x-prev.x, dy=now.y-prev.y; if(panBtn) orbitPan(dx,dy); else { orbit.yaw-=dx*.006; orbit.pitch+=dy*.004; } }
+  else { const other=[...ptrs.entries()].find(([id])=>id!==e.pointerId)[1];
+    const d0=Math.hypot(prev.x-other.x,prev.y-other.y), d1=Math.hypot(now.x-other.x,now.y-other.y); if(d0>4&&d1>4) orbit.d*=d0/d1;
+    orbit.yaw-=Math.atan2(now.y-other.y,now.x-other.x)-Math.atan2(prev.y-other.y,prev.x-other.x);
+    orbitPan((now.x-prev.x)/2,(now.y-prev.y)/2); }
   ptrs.set(e.pointerId,now); orbitApply(); });
-['pointerup','pointercancel'].forEach(ev=>stage.addEventListener(ev,e=>ptrs.delete(e.pointerId)));
-stage.addEventListener('wheel',e=>{ if(!photoOn) return; e.preventDefault(); orbitStart(); orbit.d*=Math.exp(e.deltaY*.0012); orbitApply(); },{passive:false});
+['pointerup','pointercancel','lostpointercapture'].forEach(ev=>stage.addEventListener(ev,e=>ptrs.delete(e.pointerId)));
+stage.addEventListener('contextmenu',e=>{ if(photoOn) e.preventDefault(); });
+stage.addEventListener('wheel',e=>{ if(!photoOn) return; e.preventDefault(); orbitStart(); orbit.d*=Math.exp(e.deltaY*(e.ctrlKey?.01:.0012)); orbitApply(); },{passive:false});
+// Safari's own pinch gesture would zoom the page instead
+document.addEventListener('gesturestart',e=>{ if(photoOn) e.preventDefault(); });
+function photoKeyPan(code){ const d={ArrowLeft:[1,0],ArrowRight:[-1,0],ArrowUp:[0,1],ArrowDown:[0,-1]}[code]; if(!d) return false; orbitStart(); orbitPan(d[0]*40,d[1]*40); orbitApply(); return true; }
 function resetView(){ orbit=null; ptrs.clear(); $('photoReset').hidden=true; glideCamera(photoFrame()); }
 $('photoReset').onclick=resetView;
 $('winPhoto').onclick=enterPhoto;
@@ -1430,7 +1446,7 @@ function tabIntro(name){ const pg=$('tab'+name[0].toUpperCase()+name.slice(1));
   if(name==='garden'){ const panel=pg.querySelector('.panel'); stagger([panel],'rise'); stagger([$('lvPick')],'rise',220);
     // the list scrolls to the current patch first, then the rows in view come in
     setTimeout(()=>{ const box=$('lvGrid').getBoundingClientRect(); stagger(qa($('lvGrid'),'.ch-banner,.node,.peek').filter(r=>{ const b=r.getBoundingClientRect(); return b.bottom>box.top&&b.top<box.bottom; }),'rise',0,35); },40); return; }
-  if(name==='meadow') { stagger([pg.querySelector('.panel'),...qa(pg,'.m-stat'),...qa(pg,'.diff')],'rise',0,40); stagger(qa(pg,'.mech'),'rise',260,22,10); stagger(qa(pg,'.m-go .btn'),'rise',420,60); return; }
+  if(name==='meadow') { stagger([pg.querySelector('.panel'),$('mHero'),...qa(pg,'.diff')],'rise',0,40); stagger(qa(pg,'.mech'),'rise',260,22,10); stagger(qa(pg,'.m-go .btn'),'rise',420,60); return; }
   if(name==='me'){ stagger([$('slotMe'),pg.querySelector('.panel')],'rise',0,60); stagger(qa(pg,'#wardGrid button'),'rise',140,22,12); return; }
   if(name==='badges'){ stagger([pg.querySelector('.panel')],'rise'); stagger(qa(pg,'.b-tile'),'rise',90,30,12); stagger([$('badgeDetail')],'rise',260); } }
 
@@ -1754,7 +1770,7 @@ window.addEventListener('popstate',()=>{ if(ignorePop>0){ ignorePop--; return; }
 // newest first: [id (a date), title, lines]. Returning players see the newest entry once on the Play tab,
 // new players never do (squirm-news holds the last id seen); Settings > About lists them all.
 const NEWS=[
-  ['2026-10-25','New in the garden',['Worm patterns: stripes, spots, a soft fade and a rainbow tail, in the wardrobe.','A new badges book, with your progress on every badge.','Snap a photo of your garden after you finish a patch, from any angle you like.','A new wardrobe that shows off your whole worm.']],
+  ['2026-10-25','New in the garden',['Worm patterns: stripes, spots, a soft fade and a rainbow tail, in the wardrobe.','A new badges book, with your progress on every badge.','Snap a photo of your garden after you finish a patch, from any angle you like.','A new wardrobe that shows off your whole worm, and a fresh look for the meadow.']],
   ['2026-10-24','Beetle bumps',['Chapter 16: push beetles around, even onto flower buttons.','A new hat to earn: the beetle horn.']],
   ['2026-10-20','A bigger garden',['Two new chapters, Garden party and Grand bloom.','A finale for when the whole garden is grown.']]];
 function renderNews(){ const seen=store.get('squirm-news'), n=NEWS[0], returning=LEVELS.some((l,i)=>isCleared(i))||Object.keys(progress.daily.results).length>0;
@@ -1831,19 +1847,25 @@ qa($('wardSeg'),'button').forEach(b=>b.onclick=()=>{ if(wardTab===b.dataset.w) r
 $('dressRandom').onclick=()=>{ const pick=(a,cur)=>{ const o=a.filter(x=>x!==cur); return (o.length?o:a)[Math.floor(Math.random()*(o.length||a.length))]; };
   wearHat(pick(HATS.filter(hatUnlocked).map(h=>h[0]),hatId)); wearColour(pick([...Array(coloursUnlocked()).keys()],wormCol)); wearPattern(pick(patternsUnlocked(),patOn()));
   if(hHead) homeReact('wow'); renderWardrobe(); };
-const DIFF_ICON={easy:art('sprout',32),medium:art('tulip',32),hard:art('tree',32)};
+const DIFF_ICON_KEY={easy:'sprout',medium:'tulip',hard:'tree'};
 // short names for the mechanic tiles; the full name goes in the label
 const FEAT_SHORT={flags:'Flags',buttons:'Flowers',leaves:'Leaves',fruit:'Fruit',keys:'Keys',portals:'Tunnels',dry:'Dry',rain:'Rain',rivers:'Rivers',snails:'Snails',beetles:'Beetles'};
-function renderEndless(){
-  $('diffSeg').innerHTML=['easy','medium','hard'].map((d,i)=>`<button role="radio" aria-checked="${d===endlessDiff}" data-d="${d}" class="diff ${d===endlessDiff?'on':''}"><span class="em" aria-hidden="true">${DIFF_ICON[d]}</span><b>${DIFF_NAME[d]}</b><span class="pips" aria-hidden="true">${[0,1,2].map(j=>`<i class="${j<=i?'f':''}"></i>`).join('')}</span><small>${progress.endless[d].cleared} cleared</small></button>`).join('');
-  $('diffSeg').querySelectorAll('button').forEach(b=>b.onclick=()=>{ endlessDiff=b.dataset.d; renderEndless(); settle($('diffSeg').querySelector('.diff.on')); });
+const DIFF_DESC={easy:'Small patches. A gentle stroll.',medium:'Roomier patches with a few more twists.',hard:'Big patches, longer worms, real head-scratchers.'};
+function renderEndless(anim){ const e=progress.endless[endlessDiff];
+  const h=$('mHero'); h.dataset.d=endlessDiff;
+  h.innerHTML=`<span class="m-em" aria-hidden="true">${art(DIFF_ICON_KEY[endlessDiff],46)}</span><div class="m-info"><b>${DIFF_NAME[endlessDiff]}</b><span class="m-desc">${DIFF_DESC[endlessDiff]}</span>`
+    +`<div class="m-chips"><span>${art('flame',18)}${e.streak}<small>streak</small></span><span>${art('trophy',18)}${e.best}<small>best</small></span><span>${art('star',18)}${e.stars}<small>stars</small></span><span>${art('sprout',18)}${e.cleared}<small>cleared</small></span></div></div>`;
+  if(anim) animOnce(h,'swap');
+  $('diffSeg').innerHTML=['easy','medium','hard'].map(d=>`<button role="radio" aria-checked="${d===endlessDiff}" data-d="${d}" class="diff ${d===endlessDiff?'on':''}">${art(DIFF_ICON_KEY[d],22)}<b>${DIFF_NAME[d]}</b></button>`).join('');
+  $('diffSeg').querySelectorAll('button').forEach(b=>b.onclick=()=>{ if(endlessDiff===b.dataset.d) return; endlessDiff=b.dataset.d; renderEndless(true); settle($('diffSeg').querySelector('.diff.on')); });
   $('featGrid').innerHTML=FEATURES.map(([k,n])=>`<button role="checkbox" aria-checked="${!!endlessOpts[k]}" aria-label="${n}" title="${n}" data-k="${k}" class="mech ${endlessOpts[k]?'on':''}"><span class="mi" aria-hidden="true">${MECH[k].i}</span>${FEAT_SHORT[k]}<span class="ok" aria-hidden="true">${UI_ICON.check}</span></button>`).join('');
   $('featGrid').querySelectorAll('button').forEach(b=>b.onclick=()=>{ const k=b.dataset.k; endlessOpts[k]=!endlessOpts[k]; sfx(endlessOpts[k]?'on':'off'); renderEndless(); settle($('featGrid').querySelector(`[data-k="${k}"]`)); });
   const on=FEATURES.filter(([k])=>endlessOpts[k]).length; $('mixCount').textContent=on?`${on} of ${FEATURES.length}`:'just the basics';
-  const e=progress.endless[endlessDiff];
-  $('eStats').innerHTML=`<div class="m-stat"><span class="ic" aria-hidden="true">${art('flame',26)}</span><b>${e.streak}</b><small>Streak</small></div><div class="m-stat"><span class="ic" aria-hidden="true">${art('trophy',26)}</span><b>${e.best}</b><small>Best</small></div><div class="m-stat"><span class="ic" aria-hidden="true">${art('star',26)}</span><b>${e.stars}</b><small>Stars</small></div>`;
+  $('mixAll').textContent=on===FEATURES.length?'None':'All';
   const r=readResume('endless'); $('homeEndlessCont').hidden=!(r&&r.def&&!r.def.daily&&r.diff===endlessDiff);
 }
+// All turns every mechanic on; once they all are, the same link clears them back to just the basics
+$('mixAll').onclick=()=>{ const all=FEATURES.every(([k])=>endlessOpts[k]); FEATURES.forEach(([k])=>endlessOpts[k]=!all); sfx(all?'off':'on'); renderEndless(); if(!all) qa($('featGrid'),'.mech.on').forEach(settle); };
 // the patch to continue with: the current one, or the next if the current one is already cleared
 function nextGardenIndex(){ const i=currentGardenIndex(); if(!isCleared(i)) return i;
   for(let j=i+1;j<LEVELS.length;j++) if(!isCleared(j)&&isUnlocked(j)) return j; return i; }
@@ -2206,8 +2228,8 @@ function fitCamera(refit,frame){
 }
 // move the camera to a new framing over a moment instead of jumping (basePos is where the frame loop puts it)
 function glideCamera(frame){ const W=window.innerWidth, H=window.innerHeight, p0=basePos.clone(), v=camera.view, o0=v&&v.enabled?[v.offsetX,v.offsetY]:[0,0];
-  fitCamera(false,frame); if(reduceMotion) return; const p1=basePos.clone(), o1=[camera.view.offsetX,camera.view.offsetY]; basePos.copy(p0);
-  tween(700,(e,k)=>{ const t=ease(k); basePos.lerpVectors(p0,p1,t); camera.position.copy(basePos); camera.lookAt(0,0,0); camera.setViewOffset(W,H,o0[0]+(o1[0]-o0[0])*t,o0[1]+(o1[1]-o0[1])*t,W,H); camera.updateProjectionMatrix(); }); }
+  fitCamera(false,frame); if(reduceMotion){ camLook.set(0,0,0); return; } const p1=basePos.clone(), o1=[camera.view.offsetX,camera.view.offsetY]; basePos.copy(p0);
+  const l0=camLook.clone(); tween(700,(e,k)=>{ const t=ease(k); basePos.lerpVectors(p0,p1,t); camLook.copy(l0).multiplyScalar(1-t); camera.position.copy(basePos); camera.lookAt(camLook); camera.setViewOffset(W,H,o0[0]+(o1[0]-o0[0])*t,o0[1]+(o1[1]-o0[1])*t,W,H); camera.updateProjectionMatrix(); }); }
 let resizeQueued=false;
 window.addEventListener('resize',()=>{ if(resizeQueued) return; resizeQueued=true; requestAnimationFrame(()=>{ resizeQueued=false; fitCamera(); }); });
 
@@ -2258,7 +2280,7 @@ function tapMove(e){
 }
 const KEYMAP={ArrowUp:[0,-1],KeyW:[0,-1],ArrowDown:[0,1],KeyS:[0,1],ArrowLeft:[-1,0],KeyA:[-1,0],ArrowRight:[1,0],KeyD:[1,0]};
 window.addEventListener('keydown',e=>{ if(e.ctrlKey||e.metaKey||e.altKey||(e.target&&/^(TEXTAREA|INPUT)$/.test(e.target.tagName))) return; ensureAudio();
-  if(photoOn){ if(e.code==='Escape') window.history.back(); else if(e.code==='Enter'||e.code==='Space'){ e.preventDefault(); snapPhoto(); } else if(e.code==='KeyP') posePhoto(); else if(e.code==='KeyR') resetView(); return; }
+  if(photoOn){ if(e.code==='Escape') window.history.back(); else if(e.code==='Enter'||e.code==='Space'){ e.preventDefault(); snapPhoto(); } else if(e.code==='KeyP') posePhoto(); else if(e.code==='KeyR') resetView(); else if(photoKeyPan(e.code)) e.preventDefault(); return; }
   if((e.code==='Enter'||e.code==='Space') && isOpen('winOv')){ e.preventDefault(); $('winNext').click(); return; }
   if(e.code==='KeyR' && isOpen('winOv')){ e.preventDefault(); $('winReplay').click(); return; }
   if(e.code==='Enter' && calmMoment() && curTab==='play' && (document.activeElement===document.body||!document.activeElement)){ e.preventDefault(); $('homePlay').click(); return; }
