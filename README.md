@@ -73,7 +73,7 @@ npm run build        # src/ + public/ -> dist/
 npm run serve        # serve dist/ locally (npm run serve -- --port 8080 --base /squirm/)
 npm test             # rule unit tests + level checks + build
 npm run smoke        # play patch 1 in headless Chromium (needs Playwright's Chromium)
-npm run check        # everything above; run this before pushing
+npm run check        # npm test + smoke; run this before pushing
 npm run verify       # check every level is solvable, pars are correct, pacing is right
 npm run analyze      # print par, state count and winnable % for every level
 ```
