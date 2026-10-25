@@ -935,6 +935,7 @@ const hatArt=(id,size=36)=>art('hat-'+id,size);
 const EXTRAS=[['none','Nothing','',()=>true],
   ['glasses','Round glasses','Earn 10 badges',()=>Object.keys(progress.badges).length>=10],
   ['tash','Fancy mustache','Say hi 50 times',()=>(progress.stats.taps||0)>=50],
+  ['walrus','Bushy mustache','Crawl 5,000 moves',()=>(progress.stats.moves||0)>=5000],
   ['shades','Sunglasses','Clear 10 meadow patches',()=>['easy','medium','hard'].reduce((a,d)=>a+progress.endless[d].cleared,0)>=10],
   ['hearts','Heart glasses','Collect 200 stars',()=>starTotal()>=200],
   ['monocle','Monocle','50 patches, no hints',()=>Object.keys(progress.clean).length>=50],
@@ -951,19 +952,29 @@ function shapedLens(mk,fr,lens,scale){ const g=new THREE.Group(), o=mk();
   const f=new THREE.Mesh(new THREE.ExtrudeGeometry(o,{depth:.12,bevelEnabled:false,curveSegments:16}),fr); f.scale.setScalar(scale); g.add(f);
   const l=new THREE.Mesh(new THREE.ShapeGeometry(new THREE.Shape(mk().getPoints(30).map(p=>p.multiplyScalar(.74))),24),lens); l.scale.setScalar(scale); l.position.z=.004; g.add(l); return g; }
 function buildExtra(id){ const g=new THREE.Group(), EY=.14, EZ=.365;
-  const arms=mat=>{ for(const s of [-1,1]){ const a=new THREE.Mesh(new THREE.CylinderGeometry(.013,.013,.3,8),mat); a.rotation.x=Math.PI/2; a.rotation.y=s*.25; a.position.set(s*.28,EY+.01,.2); g.add(a); } };
+  // a thin rod from point a to point b
+  const bar=(a,b,r,mat)=>{ const d=new THREE.Vector3().subVectors(b,a), c=new THREE.Mesh(new THREE.CylinderGeometry(r,r,d.length(),8),mat); c.position.copy(a).addScaledVector(d,.5); c.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),d.normalize()); return c; };
+  // the arms start at the frame's outer edge (x = ox) and run back to the side of the head
+  const arms=(mat,ox,z)=>{ for(const s of [-1,1]) g.add(bar(new THREE.Vector3(s*ox,EY,z),new THREE.Vector3(s*.325,EY+.03,0),.014,mat)); };
   if(id==='glasses'||id==='shades'){ const sh=id==='shades', z=sh?EZ+.03:EZ, rad=sh?.13:.12;
     for(const s of [-1,1]){ const r=new THREE.Mesh(new THREE.TorusGeometry(rad,.019,10,30),m('frame')); r.position.set(s*.13,EY,z); g.add(r);
       if(sh){ const l=new THREE.Mesh(new THREE.CircleGeometry(rad,28),m('lensDark')); l.position.set(s*.13,EY,z-.004); g.add(l);
         const hl=new THREE.Mesh(new THREE.CircleGeometry(.025,12),new THREE.MeshBasicMaterial({color:0xffffff})); hl.position.set(s*.13-.05,EY+.05,z+.002); hl.scale.set(1.6,.6,1); hl.rotation.z=.5; g.add(hl); } }
-    const br=new THREE.Mesh(new THREE.TorusGeometry(.03,.013,8,12,Math.PI),m('frame')); br.position.set(0,EY+.03,EZ+.005); g.add(br); arms(m('frame')); }
+    const br=new THREE.Mesh(new THREE.TorusGeometry(.03,.013,8,12,Math.PI),m('frame')); br.position.set(0,EY+.03,z+.005); g.add(br); arms(m('frame'),.13+rad,z); }
   else if(id==='hearts'||id==='stars'){ const mk=id==='hearts'?SHAPE_HEART:SHAPE_STAR, fr=m(id==='hearts'?'heartFrame':'starFrame'), lens=m(id==='hearts'?'petalB':'lensDark');
-    for(const s of [-1,1]){ const l=shapedLens(mk,fr,lens,id==='hearts'?.125:.15); l.position.set(s*.135,EY,EZ-.01); l.rotation.z=s*-.08; g.add(l); }
-    const br=new THREE.Mesh(new THREE.CylinderGeometry(.012,.012,.07,8),fr); br.rotation.z=Math.PI/2; br.position.set(0,EY+.02,EZ+.005); g.add(br); arms(fr); }
+    const sc=id==='hearts'?.125:.15;
+    for(const s of [-1,1]){ const l=shapedLens(mk,fr,lens,sc); l.position.set(s*.135,EY,EZ-.01); l.rotation.z=s*-.08; g.add(l); }
+    const br=new THREE.Mesh(new THREE.CylinderGeometry(.012,.012,.07,8),fr); br.rotation.z=Math.PI/2; br.position.set(0,EY+.02,EZ+.005); g.add(br); arms(fr,.135+sc*.95,EZ); }
   else if(id==='monocle'){ const r=new THREE.Mesh(new THREE.TorusGeometry(.125,.02,10,30),m('monocle')); r.position.set(-.13,EY,EZ+.005); g.add(r);
     for(let i=0;i<6;i++){ const t=i/5, c=new THREE.Mesh(sph(.014,8,6),m('monocle')); c.position.set(-.13-.12-.05*Math.sin(t*2.6),EY-.04-t*.26,EZ-.04-t*.06); g.add(c); } }
-  else if(id==='tash'){ for(const s of [-1,1]){ const b=new THREE.Mesh(sph(.075,16,12),m('tash')); b.position.set(s*.075,-.005,.33); b.scale.set(1.25,.48,.55); b.rotation.z=s*.32; g.add(b);
-      const c=new THREE.Mesh(sph(.035,12,8),m('tash')); c.position.set(s*.165,.03,.3); g.add(c); } }
+  else if(id==='tash'||id==='walrus'){ const half=id==='tash'
+      ?[[0,.1],[.2,.17],[.45,.11],[.68,.02],[.86,.06],[.97,.22],[.93,.37],[.82,.4],[.78,.31],[.85,.24],[.8,.13],[.66,-.04],[.45,-.17],[.2,-.17],[0,-.06]]
+      :[[0,.15],[.3,.2],[.6,.13],[.8,-.04],[.79,-.22],[.64,-.3],[.52,-.21],[.38,-.32],[.24,-.22],[.11,-.32],[0,-.22]];
+    const pts=[...half,...half.slice(1,-1).reverse().map(([x,y])=>[-x,y])].map(([x,y])=>new THREE.Vector2(x,y)), sh=new THREE.Shape();
+    sh.moveTo(pts[0].x,pts[0].y); sh.splineThru([...pts.slice(1),pts[0]]);
+    const geo=new THREE.ExtrudeGeometry(sh,{depth:.22,bevelEnabled:true,bevelSize:.05,bevelThickness:.05,bevelSegments:2,curveSegments:24}), w=id==='tash'?.17:.19;
+    geo.scale(w,w,w); const pos=geo.getAttribute('position'); for(let i=0;i<pos.count;i++){ const x=pos.getX(i); pos.setZ(i,pos.getZ(i)-x*x*1.5); } geo.computeVertexNormals();
+    const t=new THREE.Mesh(geo,m('tash')); t.position.set(0,id==='tash'?-.005:-.01,.322); t.rotation.x=-.22; outline(t,.008); g.add(t); }
   return g; }
 function dressExtra(g){ const slot=g&&g.userData.accSlot; if(!slot) return; slot.clear(); const id=extraOn(); if(id==='none') return;
   if(!extraProto[id]) extraProto[id]=buildExtra(id); slot.add(extraProto[id].clone()); }
@@ -1544,6 +1555,7 @@ const ART={
   'extra-hearts':'<path d="M7.4 17.4l-3.9-3.9c-1.4-1.4-1.2-3.6.4-4.4 1.3-.7 2.7-.2 3.5.9.8-1.1 2.2-1.6 3.5-.9 1.6.8 1.8 3 .4 4.4z" fill="#F27DA2"/><path d="M16.6 17.4l-3.9-3.9c-1.4-1.4-1.2-3.6.4-4.4 1.3-.7 2.7-.2 3.5.9.8-1.1 2.2-1.6 3.5-.9 1.6.8 1.8 3 .4 4.4z" fill="#F27DA2"/><path d="M11.1 11.6h1.8"/>',
   'extra-stars':'<path d="M7.30 7.80L8.71 10.86L12.06 11.25L9.58 13.54L10.24 16.85L7.30 15.20L4.36 16.85L5.02 13.54L2.54 11.25L5.89 10.86z" fill="#F5C14E"/><path d="M16.70 7.80L18.11 10.86L21.46 11.25L18.98 13.54L19.64 16.85L16.70 15.20L13.76 16.85L14.42 13.54L11.94 11.25L15.29 10.86z" fill="#F5C14E"/>',
   'extra-monocle':'<circle cx="14.4" cy="10.8" r="5" fill="#EAF8FF"/><circle cx="14.4" cy="10.8" r="3.7" stroke="#E0B04A" stroke-width="1.2"/><path d="M14.4 15.8c0 2.6-1.6 4.2-4.4 4.8" stroke-dasharray="1.1 1.7"/>',
+  'extra-walrus':'<path d="M12 9.4c-2.6-1-6.2-.9-7.9 1.1-1 1.2-1.3 3-1 4.7.5.8 1.4.6 1.8-.2.3.9 1.2 1.2 1.9.5.3.9 1.3 1.1 1.9.3.4.9 1.4.9 1.9 0 .4.8 1.4.8 1.4.1.4.7 1.4.7 1.8-.1.6.8 1.6.6 1.9-.3.7.7 1.6.4 1.9-.5.6.8 1.5.6 1.8-.2.3-1.7 0-3.5-1-4.7-1.7-2-5.3-2.1-7.9-1.1z" fill="#6B4A35"/>',
   'extra-tash':'<path d="M12 11.6c-1.6-1.6-4.6-1.8-6.4-.2-1 .9-2.2 1-3 .2.2 2.6 2.6 4.4 5.4 4.1 1.8-.2 3.2-1.2 4-2.4.8 1.2 2.2 2.2 4 2.4 2.8.3 5.2-1.5 5.4-4.1-.8.8-2 .7-3-.2-1.8-1.6-4.8-1.4-6.4.2z" fill="#6B4A35"/>',
   dice:'<rect x="4" y="4" width="16" height="16" rx="4.2" fill="#F7A8C4"/><g fill="#5B4436" stroke="none"><circle cx="8.6" cy="8.6" r="1.35"/><circle cx="15.4" cy="15.4" r="1.35"/><circle cx="12" cy="12" r="1.35"/><circle cx="15.4" cy="8.6" r="1.35"/><circle cx="8.6" cy="15.4" r="1.35"/></g>',
   lock:'<path d="M8 10.5V8.2a4 4 0 0 1 8 0v2.3"/><rect x="5" y="10.5" width="14" height="10" rx="3" fill="#F5C14E"/><path d="M12 14.6v2.2"/>',
@@ -2192,8 +2204,10 @@ function buildHomeBody(){ if(!hBody) return; const {tb,tl,tip,to}=hBody.userData
   tubeGeo(tb.geometry,sp,rr,cc,0,gs); tubeGeo(tl.geometry,sp,rr.map(r=>r+.035),null,0);
   const end=sp[S-1], r=rr[S-1]; tip.position.copy(end); tip.scale.setScalar(r); to.scale.setScalar(1+.035/r); tip.material.color.copy(cc[S-1]); }
 // the Play tab shows the head alone; the Me tab a wider stage with the whole worm
-function homeStage(me){ if(!homeR) return; const w=me?320:220, h=me?250:200; homeR.setSize(w,h,false); hCam.aspect=w/h;
-  if(me){ hCam.position.set(.32,2.1,5.5); hCam.lookAt(.32,.22,.1); hRig.position.set(-.42,0,0); } else { hCam.position.set(0,.5,4.66); hCam.lookAt(0,.63,0); hRig.position.set(0,0,0); }
+function homeStage(me){ if(!homeR) return; const w=me?320:220, h=me?(window.innerHeight<760?210:280):200; homeR.setSize(w,h,false); hCam.aspect=w/h;
+  homeCanvas.style.height=me?h+'px':'';
+  // headroom above the head so the tallest hats (wizard hat, umbrella) stay in frame
+  if(me){ hCam.position.set(.32,2.3,6); hCam.lookAt(.32,.42,.1); hRig.position.set(-.42,0,0); } else { hCam.position.set(0,.5,4.66); hCam.lookAt(0,.63,0); hRig.position.set(0,0,0); }
   hCam.updateProjectionMatrix(); hBody.visible=me; }
 function homeReact(e){ if(!hHead) return; applyExpr(hHead,e); hReactT=1.4; hExprT=0; const b=hHead.userData.body;
   tween(380,(x,k)=>{ const s=1+Math.sin(k*Math.PI)*.14; b.scale.set(s,1/s,s); b.position.y=Math.sin(k*Math.PI)*.12; },()=>{ b.scale.set(1,1,1); b.position.y=0; }); }

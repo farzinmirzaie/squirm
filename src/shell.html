@@ -66,12 +66,14 @@
   :root:not([data-theme="light"]){
     --scene-mix:24%;
     --ink:#FBEFDD; --ink-soft:#D9C2A8; --paper:#4A372D; --paper-2:#5A4436; --edge:#6D5444; --shadow:rgba(0,0,0,.35); --done:#4F6B3F; --title:#FFB4C6; --gloss:rgba(255,255,255,.1); --sticker-edge:#C9AE8A; --deep:#2A1E17;
+    --art-halo:drop-shadow(0 0 .6px rgba(255,241,222,.95)) drop-shadow(0 0 1.6px rgba(255,241,222,.55));
     --tint-berry:#E6C3CD; --tint-honey:#E8D6A4; --tint-leaf:#C3D8AE;
   }
 }
 :root[data-theme="dark"]{
   --scene-mix:24%;
   --ink:#FBEFDD; --ink-soft:#D9C2A8; --paper:#4A372D; --paper-2:#5A4436; --edge:#6D5444; --shadow:rgba(0,0,0,.35); --done:#4F6B3F; --title:#FFB4C6; --gloss:rgba(255,255,255,.1); --sticker-edge:#C9AE8A; --deep:#2A1E17;
+    --art-halo:drop-shadow(0 0 .6px rgba(255,241,222,.95)) drop-shadow(0 0 1.6px rgba(255,241,222,.55));
     --tint-berry:#E6C3CD; --tint-honey:#E8D6A4; --tint-leaf:#C3D8AE;
 }
 /* players who ask for more contrast get darker secondary text and stronger edges */
@@ -100,6 +102,8 @@ button[hidden]{display:none!important}
 button:focus-visible{outline:3px solid var(--honey);outline-offset:2px}
 /* hand-drawn icons: art() and the ui-ic glyphs are blocks; [data-art] spans in the markup get filled at boot */
 .art,.ui-ic{flex:none;display:block}
+:where(.art){filter:var(--art-halo,none)}
+.b-medal,.ic,.set-ico,.mode-ico,.emb,.m-em,.mech .mi,.ch-chip .emb,.m-chips span,.dialog .stars{--art-halo:none}
 [data-art]{display:inline-grid;vertical-align:-.28em}
 .link [data-art],.btn [data-art]{margin-right:2px}
 
@@ -290,9 +294,9 @@ nav{display:flex;justify-content:center;align-items:flex-end;gap:16px}
 /* -- Me: the worm on its stage (with its body, so colour and pattern show), then the wardrobe -- */
 #tabMe .panel{flex:1;min-height:0}
 #slotMe{margin-bottom:-10px}
-#slotMe #homeWorm{width:320px;height:250px;margin:-22px auto 0}
+#slotMe #homeWorm{width:320px;height:280px;margin:-6px auto 0}
 .outfit{margin:-10px 0 0;font:800 14px/1.2 var(--fb);color:var(--ink-soft)}
-#wardGrid{flex:1;min-height:0;margin:0 -8px;padding:4px 8px 10px;align-content:start}
+#wardGrid{flex:1;min-height:150px;margin:0 -8px;padding:4px 8px 10px;align-content:start}
 #wardSeg{grid-template-columns:repeat(4,1fr)}
 #wardGrid.ward-colours,#wardGrid.ward-patterns,#wardGrid.ward-extras{grid-template-columns:repeat(3,1fr)}
 #wardGrid.ward-colours .hat-ico,#wardGrid.ward-patterns .hat-ico,#wardGrid.ward-extras .hat-ico{height:50px}
@@ -327,7 +331,10 @@ nav{display:flex;justify-content:center;align-items:flex-end;gap:16px}
 /* Play: the worm's speech bubble, chapter pips on Continue, Daily and Meadow side by side, the closest badge */
 .logo{position:relative}
 .bubble{position:absolute;top:18px;left:calc(50% + 62px);max-width:min(150px,calc(50% - 70px));margin:0;padding:8px 12px;border-radius:18px;background:var(--paper);border:3px solid var(--edge);box-shadow:0 3px 0 var(--edge);font:800 14px/1.2 var(--fd);color:var(--ink);text-align:left;pointer-events:none}
-.bubble::before{content:"";position:absolute;left:-9px;bottom:14px;width:14px;height:14px;background:var(--paper);border-left:3px solid var(--edge);border-bottom:3px solid var(--edge);transform:rotate(45deg);border-radius:0 0 0 4px}
+/* the tail: an edge-coloured triangle with a paper one inside it, pointing at the worm */
+.bubble::before,.bubble::after{content:"";position:absolute;top:50%;width:0;height:0;border-style:solid;border-color:transparent}
+.bubble::before{left:-13px;margin-top:-10px;border-width:10px 13px 10px 0;border-right-color:var(--edge)}
+.bubble::after{left:-8px;margin-top:-7px;border-width:7px 9px 7px 0;border-right-color:var(--paper)}
 .bubble:empty{display:none}
 .bubble.say{animation:popin var(--dur) var(--ease-pop)}
 .ch-pips{display:flex;gap:4px;margin-top:3px}
