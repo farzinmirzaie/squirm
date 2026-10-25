@@ -390,6 +390,7 @@ nav{display:flex;justify-content:center;align-items:flex-end;gap:16px}
 .m-go .btn.primary{flex:2}
 /* -- Me: the wardrobe -- */
 .hat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.pat-grid{grid-template-columns:repeat(5,1fr);gap:6px}
 .hat{display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 4px;border-radius:18px;border:3px solid var(--edge);background:var(--paper-2);color:var(--ink);cursor:pointer;font:inherit;box-shadow:0 3px 0 var(--edge)}
 .hat .hat-ico{height:38px;display:grid;place-items:center}
 .hat b{font:800 12px/1.1 var(--fd);text-align:center}
@@ -626,6 +627,8 @@ nav .enter,.rise{animation:navIn var(--dur-slow) var(--ease-pop) var(--d,0ms) bo
         <div class="hat-grid" id="hatGrid"></div>
         <p class="label">Colours</p>
         <div class="swatches" id="swatches" role="group" aria-label="Worm colour"></div>
+        <p class="label">Patterns</p>
+        <div class="hat-grid pat-grid" id="patGrid" role="group" aria-label="Worm pattern"></div>
       </div>
     </section>
     <section class="tab-page" id="tabBadges" aria-label="Badges" hidden>

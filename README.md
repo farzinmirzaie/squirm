@@ -30,7 +30,8 @@ garden patches, touch every flag, and slip into the burrow at exactly the right 
 - **A garden map** where patches are stepping stones on a winding path, with a preview of each patch.
 - **Endless meadow:** fresh generated patches at easy, medium or hard, with the mechanics you pick.
 - **A daily patch** that's the same for everyone, with streaks and an optional daily reminder.
-- **Stars, 34 badges and a hat for every chapter**, plus worm colours to unlock.
+- **Stars, 35 badges and a hat for every chapter**, plus worm colours and patterns (stripes,
+  spots, a soft fade, a rainbow tail) to unlock.
 - **Undo, restart and hints.** A built-in solver points the way when you're stuck.
 - **Gentle generated music** and synthesized sound, haptics, light and dark themes, and reduced
   motion support.

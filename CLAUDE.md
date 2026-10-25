@@ -241,6 +241,10 @@ Sections are listed in the table of contents at the top of the file; each starts
 - **Rewards:** `BADGES` (id, icon, name, description, test) are checked after every win and after moves
   that bump a counter in `progress.stats`; earned ones live in `progress.badges`. `HATS` (one per
   chapter) unlock by finishing it, are built once (`buildHat`) and cloned into the head's `hatSlot`.
+  `WORM_COLS` unlock with stars. `PATTERNS` (id, name, how to earn, test) unlock with milestones and are
+  saved in `squirm-pattern`; `colorAt` draws stripes, fade and rainbow as tube vertex colours, and Spots
+  are drawn per pixel by `tubeMat`'s shader from the tube's `pg` attribute (`spotsU`). `patArt` draws the
+  wardrobe preview in the current colour.
 - **Settings and backups:** the home gear opens `setOv`, a short list whose rows open sub-pages
   (`setPage`, each pushing a `setpage` layer): Sound & music, Reminders, Look, Your garden (save code
   backup and restore) and About. A save code is `SQUIRM1:` + base64 JSON of every `squirm-` key except

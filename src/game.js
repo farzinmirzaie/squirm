@@ -905,6 +905,15 @@ function snapWorm(){
 }
 let tailExtras=[];
 const tubeMat=new THREE.MeshToonMaterial({color:0xffffff,vertexColors:true,gradientMap:gradTex});
+// the Spots pattern is drawn per pixel from 'pg' (place along the worm, ring angle as cos/sin): round pale spots on
+// the back, alternating left and right of the spine, two to a segment, none on the neck
+const spotsU={value:0};
+tubeMat.onBeforeCompile=sh=>{ sh.uniforms.uSpots=spotsU;
+  sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nattribute vec3 pg; varying vec3 vPg;').replace('#include <begin_vertex>','#include <begin_vertex>\nvPg=pg;');
+  sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nuniform float uSpots; varying vec3 vPg;').replace('#include <color_fragment>',`#include <color_fragment>
+    if(uSpots>.5 && vPg.x>.6){ float k=floor(vPg.x*2.+.5), side=mod(k,2.)>.5?.7:-.7, a=atan(vPg.z,vPg.y)-1.5708-side;
+      a=abs(mod(a+3.14159,6.28318)-3.14159); float d=length(vec2((vPg.x-k*.5)*1.3,a*.26));
+      diffuseColor.rgb=mix(diffuseColor.rgb,vec3(1.),.6*(1.-smoothstep(.1,.115,d))); }`); };
 const capMat=new THREE.MeshToonMaterial({color:0xffffff,gradientMap:gradTex});
 const COL_A=new THREE.Color(0xFFB3C8), tmpC=new THREE.Color();
 // worm colours, earned with garden stars: [name, body, head, stars needed]
@@ -993,19 +1002,29 @@ const WORM_COLS=[['Blossom',0xFFB3C8,0xFFB0C6,0],['Mint',0x7FD9B0,0x74D3A6,15],[
 const starTotal=()=>LEVELS.reduce((a,l)=>a+(progress.stars[l.name]||0),0);
 const coloursUnlocked=()=>WORM_COLS.filter(c=>starTotal()>=c[3]).length;
 let wormCol=Math.max(0,Math.min(WORM_COLS.length-1,parseInt(store.get('squirm-colour')||'0',10)||0));
-function applyWormColour(){ if(wormCol>=coloursUnlocked()) wormCol=0; const c=WORM_COLS[wormCol]; COL_A.setHex(c[1]); m('head').color.setHex(c[2]); }
+// worm patterns, earned with milestones: [id, name, how to earn, test]. Drawn by colorAt (and tubeGeo for spots)
+const PATTERNS=[['plain','Plain','',()=>true],
+  ['stripes','Stripes','Earn 5 badges',()=>Object.keys(progress.badges).length>=5],
+  ['spots','Spots','3 day daily streak',()=>progress.daily.best>=3],
+  ['fade','Soft fade','Clear 5 meadow patches',()=>['easy','medium','hard'].reduce((a,d)=>a+progress.endless[d].cleared,0)>=5],
+  ['rainbow','Rainbow tail','Finish 8 chapters',()=>CHAPTERS.filter((ch,k)=>chapterCleared(k)).length>=8]];
+const patternsUnlocked=()=>PATTERNS.filter(p=>p[3]()).map(p=>p[0]);
+let wormPat=store.get('squirm-pattern')||'plain';
+const patOn=()=>PATTERNS.some(p=>p[0]===wormPat&&p[3]())?wormPat:'plain';
+function applyWormColour(){ curPat=patOn(); spotsU.value=curPat==='spots'?1:0; if(wormCol>=coloursUnlocked()) wormCol=0; const c=WORM_COLS[wormCol]; COL_A.setHex(c[1]); m('head').color.setHex(c[2]); }
 const tubePool=[], capPool=[];
-function tubeGeo(geo,pts,rads,cols,extra){
+function tubeGeo(geo,pts,rads,cols,extra,gs){
   const S=pts.length, RS=20, verts=S*RS;
   let pos=geo.getAttribute('position');
   if(!pos||pos.count!==verts){
     geo.setAttribute('position',new THREE.BufferAttribute(new Float32Array(verts*3),3));
     geo.setAttribute('normal',new THREE.BufferAttribute(new Float32Array(verts*3),3));
     geo.setAttribute('color',new THREE.BufferAttribute(new Float32Array(verts*3),3));
+    geo.setAttribute('pg',new THREE.BufferAttribute(new Float32Array(verts*3),3));
     const idx=[]; for(let j=0;j<S-1;j++) for(let r=0;r<RS;r++){ const a=j*RS+r, b=j*RS+(r+1)%RS, c=(j+1)*RS+r, d=(j+1)*RS+(r+1)%RS; idx.push(a,c,b, b,c,d); }
     geo.setIndex(idx); pos=geo.getAttribute('position');
   }
-  const nor=geo.getAttribute('normal'), col=geo.getAttribute('color');
+  const nor=geo.getAttribute('normal'), col=geo.getAttribute('color'), pg=geo.getAttribute('pg');
   const up=new THREE.Vector3(0,1,0), T=new THREE.Vector3(), side=new THREE.Vector3(), U=new THREE.Vector3();
   for(let j=0;j<S;j++){
     const p=pts[j]; if(j<S-1) T.subVectors(pts[j+1],p); else T.subVectors(p,pts[j-1]); T.normalize();
@@ -1015,14 +1034,22 @@ function tubeGeo(geo,pts,rads,cols,extra){
       const nx=side.x*ca+U.x*sa, ny=side.y*ca+U.y*sa, nz=side.z*ca+U.z*sa;
       pos.array[i]=p.x+nx*r; pos.array[i+1]=p.y+ny*r; pos.array[i+2]=p.z+nz*r;
       nor.array[i]=nx; nor.array[i+1]=ny; nor.array[i+2]=nz;
-      if(cols){ col.array[i]=cols[j].r; col.array[i+1]=cols[j].g; col.array[i+2]=cols[j].b; } }
+      if(cols){ col.array[i]=cols[j].r; col.array[i+1]=cols[j].g; col.array[i+2]=cols[j].b; }
+      if(gs){ pg.array[i]=gs[j]; pg.array[i+1]=ca; pg.array[i+2]=sa; } }
   }
-  pos.needsUpdate=true; nor.needsUpdate=true; col.needsUpdate=true; geo.computeBoundingSphere();
+  pos.needsUpdate=true; nor.needsUpdate=true; col.needsUpdate=true; if(gs) pg.needsUpdate=true; geo.computeBoundingSphere();
 }
 function getTube(i){ if(!tubePool[i]){ const body=new THREE.Mesh(new THREE.BufferGeometry(),tubeMat), line=new THREE.Mesh(new THREE.BufferGeometry(),lineMat);
     body.castShadow=true; body.frustumCulled=false; line.frustumCulled=false; wormG.add(body,line); tubePool[i]={body,line}; } return tubePool[i]; }
 function getCap(i){ if(!capPool[i]){ const c=new THREE.Mesh(sph(1,24,16),capMat.clone()); c.castShadow=true; const o=new THREE.Mesh(c.geometry,lineMat); c.add(o); c.userData.o=o; wormG.add(c); capPool[i]=c; } return capPool[i]; }
-function colorAt(g,n){ tmpC.copy(COL_A); const f=(g*2)%1; if(g>.4 && f<.14) tmpC.multiplyScalar(.93+.07*(f/.14)); return tmpC.clone(); }
+const WHITE=new THREE.Color(0xffffff), RAINBOW=[0xFFB3C8,0xFFE08A,0x7FD9B0,0xA9D8F5,0xCDB8F5].map(c=>new THREE.Color(c));
+let curPat='plain';
+function colorAt(g,n){ tmpC.copy(COL_A); const f=(g*2)%1;
+  if(curPat==='stripes' && g>.55 && f>.45 && f<.8) tmpC.lerp(WHITE,.5);
+  else if(curPat==='fade' && n>1) tmpC.lerp(WHITE,.6*Math.min(1,g/(n-1)));
+  else if(curPat==='rainbow' && n>1 && g>(n-1)*.4){ const u=g*2, a=RAINBOW[Math.floor(u)%5], b=RAINBOW[(Math.floor(u)+1)%5], t=Math.min(1,(g-(n-1)*.4)*1.5);
+    tmpC.lerp(a.clone().lerp(b,u%1),t); }
+  if(g>.4 && f<.14) tmpC.multiplyScalar(.93+.07*(f/.14)); return tmpC.clone(); }
 let crawlK=-1;
 function radAt(g,n,anchors){ const i=Math.min(Math.floor(g),anchors.length-2), f=g-i;
   const sc=anchors[Math.max(0,i)].scale.x*(1-f)+anchors[Math.min(i+1,anchors.length-1)].scale.x*f;
@@ -1060,10 +1087,10 @@ function updateWorm(){
         // the neck starts low inside the head: its top stays under a hat's brim and its sides behind the cheeks
         if(ch[0]===0 && !diveFront) pts[0]=pts[0].clone().setY(pts[0].y-.08);
         const curve=new THREE.CatmullRomCurve3(pts,false,'centripetal');
-        const S=(pts.length-1)*9+1, sp=[], rr=[], cc=[];
+        const S=(pts.length-1)*9+1, sp=[], rr=[], cc=[], gs=curPat==='spots'?[]:null;
         for(let j=0;j<S;j++){ const u=j/(S-1); sp.push(curve.getPoint(u)); const fi=u*(pts.length-1), i0=Math.floor(Math.min(fi,pts.length-1.0001)), t=fi-i0;
-          const gg=G[i0]*(1-t)+G[i0+1]*t; rr.push(radAt(gg,n,anchors)*(tip&&i0===pts.length-2?1-(1-TIP_K)*t*t:1)); cc.push(colorAt(gg,n)); }
-        const tb=getTube(ti++); tb.body.visible=tb.line.visible=true; tubeGeo(tb.body.geometry,sp,rr,cc,0); tubeGeo(tb.line.geometry,sp,rr.map(r=>r+.03*Math.min(1,r/.15)),null,0);
+          const gg=G[i0]*(1-t)+G[i0+1]*t; rr.push(radAt(gg,n,anchors)*(tip&&i0===pts.length-2?1-(1-TIP_K)*t*t:1)); cc.push(colorAt(gg,n)); if(gs) gs.push(gg); }
+        const tb=getTube(ti++); tb.body.visible=tb.line.visible=true; tubeGeo(tb.body.geometry,sp,rr,cc,0,gs); tubeGeo(tb.line.geometry,sp,rr.map(r=>r+.03*Math.min(1,r/.15)),null,0);
       }
       const ends=[]; if(!diveFront && f!==0) ends.push(f); if(!diveBack && (l!==f || ch.length===1) && l!==0) ends.push(l);
       for(const end of ends){ const c=getCap(ci++); const atTip=tip&&end===l, r=atTip?Math.max(.001,tipR):Math.max(.001,radAt(Math.min(end,n-1),n,anchors));
@@ -1229,7 +1256,7 @@ const STAR=(on,i)=>`<svg class="star ${on?'on':''}" style="animation-delay:${.15
 let shareText='', newBest=false, chapterDone=null;
 const shareLine=(what,mv,par,st)=>`Squirm, ${what}: ${mv} moves (par ${par}) ${'★'.repeat(st)}${'☆'.repeat(3-st)}`+(GAME_URL?'\n'+GAME_URL:'');
 let winHats=[];
-function onWin(){ shareText=''; newBest=false; chapterDone=null; const coloursBefore=coloursUnlocked(); winHats=HATS.filter(hatUnlocked).map(h=>h[0]);
+function onWin(){ shareText=''; newBest=false; chapterDone=null; const coloursBefore=coloursUnlocked(), patsBefore=patternsUnlocked(); winHats=HATS.filter(hatUnlocked).map(h=>h[0]);
   const par=curPar(), mv=state.moves; const st=starsFor(mv,par,hintsUsed>0); clearResume();
   const titles=['Snug as a bug!','Home sweet burrow!','Wiggle well done!','Cozy and curled up!'];
   let extra='';
@@ -1270,6 +1297,7 @@ function onWin(){ shareText=''; newBest=false; chapterDone=null; const coloursBe
   if(earned.length) extra+=`<div class="stat-row">${earned.map(b=>`<span class="pill unlock">${art(b[1],18)} ${b[2]}</span>`).join('')}</div>`;
   const newHat=HATS.find(h=>h[2]>=0&&hatUnlocked(h)&&!hatsBefore.includes(h[0]));
   if(newHat) extra+=`<div class="stat-row"><span class="pill unlock">New hat: ${newHat[1]}</span></div>`;
+  const newPat=patternsUnlocked().find(x=>!patsBefore.includes(x)); if(newPat){ const p=PATTERNS.find(x=>x[0]===newPat); extra+=`<div class="stat-row"><span class="pill unlock">New worm pattern: ${p[1]}</span></div>`; }
   if(coloursUnlocked()>coloursBefore){ const c=WORM_COLS[coloursUnlocked()-1]; extra+=`<div class="stat-row"><span class="pill unlock">New worm colour: ${c[0]}</span></div>`; }
   $('winText').textContent = (mv<=par ? `${mv} moves. Right on par.` : `${mv} moves. Par is ${par}, so there's a shorter way.`)+` Time: ${playTime()}.`;
   $('winMedal').innerHTML = `<div class="stars">${[0,1,2].map(i=>STAR(i<st,i)).join('')}</div>` + (hintsUsed?`<p class="note">You used ${hintsUsed} ${hintsUsed===1?'hint':'hints'}. Solve it on your own for 3 stars.</p>`:'') + extra;
@@ -1336,7 +1364,7 @@ function tabIntro(name){ const pg=$('tab'+name[0].toUpperCase()+name.slice(1));
     // the list scrolls to the current patch first, then the rows in view come in
     setTimeout(()=>{ const box=$('lvGrid').getBoundingClientRect(); stagger(qa($('lvGrid'),'.ch-banner,.node,.peek').filter(r=>{ const b=r.getBoundingClientRect(); return b.bottom>box.top&&b.top<box.bottom; }),'rise',0,35); },40); return; }
   if(name==='meadow') { stagger([pg.querySelector('.panel'),...qa(pg,'.m-stat'),...qa(pg,'.diff')],'rise',0,40); stagger(qa(pg,'.mech'),'rise',260,22,10); stagger(qa(pg,'.m-go .btn'),'rise',420,60); return; }
-  if(name==='me'){ stagger([$('slotMe'),pg.querySelector('.panel')],'rise',0,60); stagger(qa(pg,'.hat-grid button'),'rise',140,22,14); stagger(qa(pg,'.swatches button'),'rise',360,40); return; }
+  if(name==='me'){ stagger([$('slotMe'),pg.querySelector('.panel')],'rise',0,60); stagger(qa(pg,'.hat-grid button'),'rise',140,22,14); stagger(qa(pg,'.pat-grid button'),'rise',300,30); stagger(qa(pg,'.swatches button'),'rise',360,40); return; }
   if(name==='badges'){ stagger([pg.querySelector('.panel')],'rise'); stagger(qa(pg,'.badge-card'),'rise',90,35,8); } }
 
 // ---------- resume an unfinished patch after reload ----------
@@ -1685,12 +1713,26 @@ function renderHome(){
   // what the page shows before the game has loaded next time (see the boot script in shell.html)
   store.set('squirm-boot',JSON.stringify({stars:$('homeStars').innerHTML,title:$('playTitle').textContent,sub:$('playSub').textContent,daily:$('dailySub').textContent,done:!!dr,day:new Date().toDateString()}));
 }
-function renderWardrobe(){ renderSwatches();
+function renderWardrobe(){ renderSwatches(); renderPatterns();
   $('hatGrid').innerHTML=HATS.map(h=>{ const ok=hatUnlocked(h), ch=CHAPTERS[h[2]];
     return `<button data-h="${h[0]}" class="hat ${h[0]===hatId?'on':''} ${ok?'':'locked'}" aria-pressed="${h[0]===hatId}"><span class="hat-ico" aria-hidden="true">${ok?hatArt(h[0]):art('lock',28)}</span><b>${h[1]}</b><small>${ok?(h[0]===hatId?'Wearing':'Tap to wear'):`Finish ${ch?ch.name:'a chapter'}`}</small></button>`; }).join('');
   $('hatGrid').querySelectorAll('button').forEach(b=>b.onclick=()=>{ const h=HATS.find(x=>x[0]===b.dataset.h);
     if(!hatUnlocked(h)){ nope(b,`Finish every patch in ${CHAPTERS[h[2]].name} to earn the ${h[1].toLowerCase()}.`,2800); return; }
     hatId=h[0]; store.set('squirm-hat',hatId); dressHat(hHead); dressHat(segMeshes[0]); if(hHead) homeReact(hatId==='none'?'wow':'joy'); renderWardrobe(); settle($('hatGrid').querySelector('.hat.on')); }); }
+// a little sticker worm in the current colour wearing a pattern, for the wardrobe
+function patArt(id,size=40){ const c=WORM_COLS[wormCol], hex=n=>'#'+n.toString(16).padStart(6,'0'), body=hex(c[1]), path='M3.5 15.5c2.2-4.4 5.3-4.4 7.5 0s5.3 4.4 7.5 0';
+  const over={stripes:`<path d="${path}" stroke="#fff" stroke-opacity=".55" stroke-width="5" stroke-linecap="butt" stroke-dasharray="1.6 2.4" stroke-dashoffset="-6"/>`,
+    spots:`<g fill="#fff" fill-opacity=".6" stroke="none"><circle cx="6.4" cy="13.6" r="1.1"/><circle cx="9.6" cy="13" r="1.1"/><circle cx="13" cy="17.4" r="1.1"/><circle cx="16.6" cy="17.6" r="1.1"/></g>`,
+    fade:`<path d="${path}" stroke="url(#pf${size})" stroke-width="5"/>`,
+    rainbow:`<path d="${path}" stroke="url(#pr${size})" stroke-width="5"/>`}[id]||'';
+  return `<svg class="art" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><defs><linearGradient id="pf${size}" x1="0" x2="1"><stop offset="0" stop-color="#fff" stop-opacity=".6"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient><linearGradient id="pr${size}" x1="0" x2="1">${['#CDB8F5','#A9D8F5','#7FD9B0','#FFE08A','#FFB3C8'].map((k,i)=>`<stop offset="${(i*.13).toFixed(2)}" stop-color="${k}"/>`).join('')}<stop offset=".62" stop-color="${body}" stop-opacity="0"/></linearGradient></defs>
+    <path d="${path}" stroke="#5B4436" stroke-width="7.4"/><path d="${path}" stroke="${body}" stroke-width="5"/>${over}<g stroke="none"><circle cx="20.2" cy="10.6" r="3.6" fill="#5B4436"/><circle cx="20.2" cy="10.6" r="2.5" fill="${hex(c[2])}"/><circle cx="21" cy="9.9" r=".7" fill="#5B4436"/></g></svg>`; }
+function renderPatterns(){ const have=patternsUnlocked();
+  $('patGrid').innerHTML=PATTERNS.map(p=>{ const ok=have.includes(p[0]), on=ok&&p[0]===patOn();
+    return `<button data-p="${p[0]}" class="hat ${on?'on':''} ${ok?'':'locked'}" aria-pressed="${on}"><span class="hat-ico" aria-hidden="true">${ok?patArt(p[0]):art('lock',28)}</span><b>${p[1]}</b><small>${ok?(on?'Wearing':'Tap to wear'):p[2]}</small></button>`; }).join('');
+  $('patGrid').querySelectorAll('button').forEach(b=>b.onclick=()=>{ const p=PATTERNS.find(x=>x[0]===b.dataset.p);
+    if(!p[3]()){ nope(b,`${p[1]}: ${p[2].charAt(0).toLowerCase()+p[2].slice(1)} to earn it.`,2800); return; }
+    wormPat=p[0]; store.set('squirm-pattern',wormPat); applyWormColour(); if(hHead) homeReact('joy'); renderWardrobe(); settle($('patGrid').querySelector('.hat.on')); }); }
 function renderSwatches(){ const have=coloursUnlocked();
   $('swatches').innerHTML=WORM_COLS.map((c,i)=>{ const locked=i>=have, hex='#'+c[1].toString(16).padStart(6,'0');
     return `<button data-i="${i}" class="${i===wormCol?'on':''} ${locked?'locked':''}" style="--sw:${hex}" aria-pressed="${i===wormCol}" aria-label="${c[0]} worm${locked?`, unlocks at ${c[3]} stars`:''}">${locked?art('lock',16):''}</button>`; }).join('');
@@ -1820,7 +1862,8 @@ const BADGES=[
   ['month','month','Month of wiggles','Keep a 30 day daily streak.',()=>progress.daily.best>=30],
   ['fearless','mountain','Fearless','Clear ten hard endless patches.',()=>progress.endless.hard.cleared>=10],
   ['dressup','hat-tophat','Dress-up box','Unlock five hats.',()=>HATS.filter(h=>h[2]>=0&&hatUnlocked(h)).length>=5],
-  ['rainbow','rainbow','Rainbow worm','Unlock every worm colour.',()=>coloursUnlocked()===WORM_COLS.length]];
+  ['rainbow','rainbow','Rainbow worm','Unlock every worm colour.',()=>coloursUnlocked()===WORM_COLS.length],
+  ['patterns','worm','Dressed to wiggle','Unlock every worm pattern.',()=>patternsUnlocked().length===PATTERNS.length]];
 // returns the badges earned just now; quiet ones (earned before badges existed) don't celebrate
 function checkBadges(ctx,quiet){ const got=[];
   for(const b of BADGES){ if(progress.badges[b[0]]) continue; let ok=false; try{ ok=!!b[4](ctx); }catch(e){} if(ok){ progress.badges[b[0]]=Date.now(); got.push(b); } }
