@@ -6,8 +6,10 @@ const fs = require('fs'), path = require('path'), vm = require('vm');
 module.exports = function loadGenerator() {
   const src = f => fs.readFileSync(path.join(__dirname, '..', 'src', f), 'utf8');
   const game = src('game.js');
-  const start = game.indexOf('// ---------- endless meadow ----------'), end = game.indexOf('const todayKey');
-  if (start < 0 || end < 0) throw new Error('endless meadow section not found in src/game.js');
+  // markers must start a line, so a comment that mentions them can't move the cut
+  const at = re => { const m = re.exec(game); return m ? m.index : -1; };
+  const start = at(/^\/\/ ---------- endless meadow ----------/m), end = at(/^const todayKey/m);
+  if (start < 0 || end <= start) throw new Error('endless meadow section not found in src/game.js');
   const rng = game.match(/function rng\(seed\)\{[^\n]*\n?/)[0];
   const code = src('logic.js').replace(/if\(typeof module.*$/m, '') + '\n' + rng + '\n' + game.slice(start, end) +
     '\n;({ genCandidate, analyzeCapped, usage, generateEndless, rng })';

@@ -1,7 +1,7 @@
 // Unit tests for the pure game rules in src/logic.js. Run with `npm test`.
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { initState, step, tileAt, hedgesOpen } = require('../src/logic');
+const { initState, step, tileAt, hedgesOpen, stateKey } = require('../src/logic');
 const LEVELS = require('../src/levels');
 
 const level = (map, worm, o = {}) => ({ name: 'test', par: 0, exitLen: worm.length, rain: false, map, worm, ...o });
@@ -193,4 +193,12 @@ test('snails turn around at beetles', () => {
 test('level names are unique (progress is stored by name)', () => {
   const names = LEVELS.map(l => l.name);
   assert.equal(new Set(names).size, names.length);
+});
+
+test('stateKey ignores the order of identical beetles but not where they are', () => {
+  const s = initState(level(['.....', '.O.O.', 'E....'], [[0, 1], [0, 0]]));
+  const swapped = { ...s, beetles: [...s.beetles].reverse() };
+  assert.equal(stateKey(swapped), stateKey(s));
+  const moved = play(s, ['E']).state; // the head pushes the first beetle one tile on
+  assert.notEqual(stateKey(moved), stateKey(s));
 });
