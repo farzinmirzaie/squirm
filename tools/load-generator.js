@@ -1,6 +1,7 @@
 // Loads the endless-mode generator and solver from src/game.js for use in Node (tools and tests),
 // so they run exactly the code the game ships. game.js is one browser IIFE, so the section between
 // the "endless meadow" marker and `const todayKey` is evaluated with logic.js in a sandbox.
+// usage: const { genCandidate, analyzeCapped, usage, generateEndless, rng } = require('./load-generator')();
 const fs = require('fs'), path = require('path'), vm = require('vm');
 module.exports = function loadGenerator() {
   const src = f => fs.readFileSync(path.join(__dirname, '..', 'src', f), 'utf8');

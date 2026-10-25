@@ -15,10 +15,11 @@
   "scripts": {
     "build": "node tools/build.js",
     "build:debug": "node tools/build.js --debug",
-    "serve": "npx --yes serve dist",
+    "serve": "node tools/serve.js dist",
     "test": "npm run test:unit && npm run verify && npm run build",
     "test:unit": "node --test test/*.test.js",
     "smoke": "node test/smoke.js",
+    "check": "npm test && npm run smoke",
     "verify": "node tools/verify-levels.js",
     "analyze": "node tools/analyze.js",
     "curate": "node tools/curate.js"

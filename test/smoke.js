@@ -1,29 +1,23 @@
 // Browser smoke test: builds a debug copy of the game, serves it under /squirm/ like GitHub Pages,
 // and plays it in headless Chromium: boot, first patch to a win, saved progress, offline reload.
-// usage: npm run smoke   (needs the playwright package and a Chromium it can launch)
+// usage: npm run smoke   (needs the playwright package and a Chromium it can launch:
+//        npx playwright install chromium; with a global playwright, NODE_PATH=$(npm root -g) npm run smoke)
 const { chromium } = require('playwright');
-const http = require('http'), fs = require('fs'), path = require('path'), os = require('os'), cp = require('child_process');
+const fs = require('fs'), path = require('path'), os = require('os'), cp = require('child_process');
 const assert = require('assert/strict');
+const { createServer } = require('../tools/serve');
 
 const root = path.join(__dirname, '..');
-const out = fs.mkdtempSync(path.join(os.tmpdir(), 'squirm-smoke-'));
-cp.execFileSync(process.execPath, [path.join(root, 'tools/build.js'), '--debug', '--out', out], { stdio: 'inherit' });
-
-const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.woff2': 'font/woff2', '.png': 'image/png', '.svg': 'image/svg+xml', '.webmanifest': 'application/manifest+json' };
-const server = http.createServer((req, res) => {
-  const url = decodeURIComponent(req.url.split('?')[0]);
-  const file = url.startsWith('/squirm/') && path.join(out, url.slice(8) || 'index.html');
-  if (!file || !file.startsWith(out) || !fs.existsSync(file) || fs.statSync(file).isDirectory()) { res.writeHead(404); return res.end(); }
-  res.writeHead(200, { 'content-type': TYPES[path.extname(file)] || 'application/octet-stream' });
-  fs.createReadStream(file).pipe(res);
-});
-
 const errors = [];
 (async () => {
-  await new Promise(r => server.listen(0, r));
-  const base = `http://localhost:${server.address().port}/squirm/`;
-  const browser = await chromium.launch({ args: ['--use-gl=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
+  const out = fs.mkdtempSync(path.join(os.tmpdir(), 'squirm-smoke-'));
+  const server = createServer(out, '/squirm/');
+  let browser;
   try {
+    cp.execFileSync(process.execPath, [path.join(root, 'tools/build.js'), '--debug', '--out', out], { stdio: 'inherit' });
+    await new Promise((resolve, reject) => server.once('error', reject).listen(0, resolve));
+    const base = `http://localhost:${server.address().port}/squirm/`;
+    browser = await chromium.launch({ args: ['--use-gl=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
     const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
     const page = await ctx.newPage();
     page.on('pageerror', e => errors.push(String(e)));
@@ -77,7 +71,7 @@ const errors = [];
     assert.deepEqual(errors, [], 'console errors');
     step('no console errors');
   } finally {
-    await browser.close();
+    if (browser) await browser.close().catch(() => {});
     server.close();
     fs.rmSync(out, { recursive: true, force: true });
   }
