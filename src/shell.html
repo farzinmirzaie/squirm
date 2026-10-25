@@ -313,7 +313,7 @@ nav{display:flex;justify-content:center;align-items:flex-end;gap:16px}
 .play b{font:800 30px/1 var(--fd);text-shadow:0 2px 0 var(--leaf-dark)}
 .play small{font-weight:800;font-size:14px;opacity:.95;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .big{display:flex;align-items:center;gap:14px;width:100%;padding:14px 16px;text-align:left;cursor:pointer;color:var(--ink);font:inherit;background-image:linear-gradient(180deg,var(--gloss),transparent 55%)}
-.big:active{transform:translateY(5px);box-shadow:0 0 0 var(--edge)}
+.big:active,.goal:active{transform:translateY(5px);box-shadow:0 0 0 var(--edge)}
 .big .bt{flex:1;display:flex;flex-direction:column;gap:4px}
 .big b{font:800 21px/1.1 var(--fd)}
 .big small{font-weight:700;color:var(--ink-soft);font-size:14px}
@@ -323,6 +323,32 @@ nav{display:flex;justify-content:center;align-items:flex-end;gap:16px}
 .daily-ico .cal{width:34px;height:36px;border-radius:10px;background:var(--on-accent);border:2px solid var(--deep);border-top:8px solid var(--berry);display:grid;place-items:center;font:800 16px/1 var(--fd);color:var(--deep)}
 #dailyBtn.done .daily-ico{background:var(--done)}
 .week{display:flex;gap:6px;margin-top:3px}
+/* Play: the worm's speech bubble, chapter pips on Continue, Daily and Meadow side by side, the closest badge */
+.logo{position:relative}
+.bubble{position:absolute;top:18px;left:calc(50% + 62px);max-width:min(150px,calc(50% - 70px));margin:0;padding:8px 12px;border-radius:18px;background:var(--paper);border:3px solid var(--edge);box-shadow:0 3px 0 var(--edge);font:800 14px/1.2 var(--fd);color:var(--ink);text-align:left;pointer-events:none}
+.bubble::before{content:"";position:absolute;left:-9px;bottom:14px;width:14px;height:14px;background:var(--paper);border-left:3px solid var(--edge);border-bottom:3px solid var(--edge);transform:rotate(45deg);border-radius:0 0 0 4px}
+.bubble:empty{display:none}
+.bubble.say{animation:popin var(--dur) var(--ease-pop)}
+.ch-pips{display:flex;gap:4px;margin-top:3px}
+.ch-pips i{width:8px;height:8px;border-radius:50%;background:rgba(0,0,0,.14)}
+.ch-pips i.on{background:var(--on-accent)}
+.ch-pips i.cur{background:none;box-shadow:inset 0 0 0 2px var(--on-accent)}
+.home-duo{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.big.mini{flex-direction:column;align-items:flex-start;gap:10px;padding:14px}
+.big.mini .go{display:none}
+.big.mini b{font-size:18px}
+.big.mini small{font-size:13px}
+.big.mini .week{gap:4px}.big.mini .week i{width:9px;height:9px}
+.meadow-ico{background:var(--tint-leaf)}
+.goal{display:flex;align-items:center;gap:12px;width:100%;padding:12px 14px;text-align:left;cursor:pointer;color:var(--ink);font:inherit}
+.goal[hidden]{display:none}
+.goal .b-medal{width:52px;height:52px}
+.goal .gt{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.goal .gt small{font:800 11px/1 var(--fb);color:var(--ink-soft);text-transform:uppercase;letter-spacing:.06em}
+.goal .gt b{font:800 18px/1.1 var(--fd)}
+.goal .gt em{font:700 13px/1.25 var(--fb);color:var(--ink-soft);font-style:normal}
+.goal .gbar{display:flex;align-items:center;gap:8px;font:800 12px/1 var(--fb);color:var(--ink-soft)}
+.goal .gbar .b-bar{flex:1;max-width:140px;height:8px}
 /* what's new: shown once after an update, dismissable; the About page keeps the log */
 .news{display:flex;align-items:flex-start;gap:14px;padding:14px 12px 14px 16px;text-align:left}
 .news[hidden]{display:none}
@@ -525,7 +551,7 @@ nav{display:flex;justify-content:center;align-items:flex-end;gap:16px}
 
 /* ==== 9. UI feedback: one press style per family, one selection pop, one error shake, one dialog motion ==== */
 /* press: controls that stand on a ledge sink onto it, flat ones squish. Pressing is quick, letting go springs back. */
-.btn,.round,.disc,.play,.big,.set-link,.pick .go,.snap,.hat,.b-tile,.diff,.node,.mech,.seg button,.stat,.icon-btn,.link,.tab svg{
+.btn,.round,.disc,.play,.big,.goal,.set-link,.pick .go,.snap,.hat,.b-tile,.diff,.node,.mech,.seg button,.stat,.icon-btn,.link,.tab svg{
   transition:transform var(--dur) var(--ease-pop),scale var(--dur) var(--ease-pop),box-shadow var(--dur) var(--ease-pop),background-color var(--dur-fast),border-color var(--dur-fast)}
 .btn:active,.round:active,.snap:active,.gbtn:active .disc,.play:active,.big:active,.set-link:active,.pick .go:active,.hat:active,.b-tile:active,.diff:active,.node:active,
 .mech:active,.seg button:active,.stat:active,.icon-btn:active,.link:active,.switch:active,.tab:active svg{transition-duration:var(--dur-fast);transition-timing-function:var(--ease-out)}
@@ -600,11 +626,11 @@ nav .enter,.rise{animation:navIn var(--dur-slow) var(--ease-pop) var(--d,0ms) bo
 
 /* ==== 11. Reduced motion: every animation and transition above stops ==== */
 @media (prefers-reduced-motion: reduce){
-  .dialog,.ov.show:not(.home),.ov.show.out,.ov.out .dialog,.pop,.enter,.rise,.nope,#flash.go,.spin,.pick.swap,.set-page.fwd,.set-page.back,#winNext,
+  .dialog,.ov.show:not(.home),.ov.show.out,.ov.out .dialog,.pop,.enter,.rise,.nope,#flash.go,.bubble.say,.spin,.pick.swap,.set-page.fwd,.set-page.back,#winNext,
   .tab.on.pop svg,.stat.cheer,.stat.cheer .ic,.stat.lost .mini,.gbtn.pop .disc,.gbtn.hint .disc svg,#hintBtn.busy svg,
   #tutorial .hand,.brand span,.node.cur::after{animation:none}
   .star{animation:none;transform:none}
-  .btn,.round,.disc,.play,.big,.set-link,.pick .go,.snap,.hat,.b-tile,.b-progress i,.b-medal>.art,.diff,.node,.mech,.seg button,.stat,.icon-btn,.link,.tab svg,.switch,.switch i,.mech .mi,#toast,#app{transition:none}
+  .btn,.round,.disc,.play,.big,.goal,.set-link,.pick .go,.snap,.hat,.b-tile,.b-progress i,.b-medal>.art,.diff,.node,.mech,.seg button,.stat,.icon-btn,.link,.tab svg,.switch,.switch i,.mech .mi,#toast,#app{transition:none}
   .diff.on:not(:active){transform:none}
   .petals{display:none}
 }
@@ -681,12 +707,20 @@ nav .enter,.rise{animation:navIn var(--dur-slow) var(--ease-pop) var(--d,0ms) bo
           <div class="worm-slot" id="slotPlay"><canvas id="homeWorm" width="220" height="200" role="button" tabindex="0" aria-label="The worm. Tap to say hi"></canvas></div>
           <h1 class="brand" aria-label="Squirm"><span>S</span><span>q</span><span>u</span><span>i</span><span>r</span><span>m</span></h1>
           <p class="tagline">a cozy garden puzzle</p>
+          <p class="bubble" id="wormSay" aria-live="polite"></p>
         </div>
-        <button class="play" id="homePlay"><span class="play-ico" aria-hidden="true"><svg width="30" height="30" viewBox="0 0 24 24"><path d="M8 5.5v13l10.5-6.5z" style="fill:var(--on-accent);stroke:var(--on-accent)" stroke-width="2" stroke-linejoin="round"/></svg></span><span class="pt"><b id="playTitle">Play</b><small id="playSub">Patch 1</small></span></button>
-        <button class="big card" id="dailyBtn">
+        <button class="play" id="homePlay"><span class="play-ico" aria-hidden="true"><svg width="30" height="30" viewBox="0 0 24 24"><path d="M8 5.5v13l10.5-6.5z" style="fill:var(--on-accent);stroke:var(--on-accent)" stroke-width="2" stroke-linejoin="round"/></svg></span><span class="pt"><b id="playTitle">Play</b><small id="playSub">Patch 1</small><span class="ch-pips" id="playPips" aria-hidden="true"></span></span></button>
+        <div class="home-duo">
+        <button class="big card mini" id="dailyBtn">
     <span class="mode-ico daily-ico" aria-hidden="true"><span class="cal" id="dailyDay">11</span></span>
     <span class="bt"><b>Daily patch</b><small id="dailySub">One patch for everyone today</small><span class="week" id="dailyWeek" aria-hidden="true"></span></span><span class="go" aria-hidden="true"><svg class="ui-ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 5.5L16 12l-6.5 6.5"/></svg></span>
   </button>
+        <button class="big card mini" id="meadowBtn">
+          <span class="mode-ico meadow-ico" aria-hidden="true" data-art="tulip" data-size="32"></span>
+          <span class="bt"><b>Meadow</b><small id="meadowSub">Fresh patches, grown for you</small></span>
+        </button>
+        </div>
+        <button class="card goal" id="goalCard" hidden></button>
         <div class="card news" id="newsCard" hidden>
           <span class="mode-ico news-ico" aria-hidden="true" data-art="sparkles" data-size="30"></span>
           <div class="bt"><b id="newsTitle">New in the garden</b><ul id="newsList"></ul></div>

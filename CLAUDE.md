@@ -225,7 +225,9 @@ Sections are listed in the table of contents at the top of the file; each starts
 - **Layers and the back button:** a small layer stack mirrored to `window.history` (`pushLayer` /
   `popLayer` / `swapLayers`). `popLayer`'s `history.go` is async, so use `swapLayers` when replacing a
   layer right after closing another (the finale does this coming from the win dialog).
-- **Home** (`homeOv`): five tabs switched by `showTab`: Play (worm, Continue, daily), Garden (the map:
+- **Home** (`homeOv`): five tabs switched by `showTab`: Play (the worm with a speech bubble, `say` / `sayHello`, new
+  line on every tap; Continue with the chapter's pips; Daily and Meadow side by side, Meadow growing or
+  resuming a patch in one tap; the closest badge, `renderGoal`, which opens it on Badges; what's new), Garden (the map:
   `renderLevelList` draws one scene per chapter with its patches as stepping stones on a winding SVG
   path; closed chapters fold into a small card; tapping a stone picks it (`pickPatch`) and shows its card
   with a `drawThumb` preview and the mechanics it uses; tapping again plays). Above the map: stars, a

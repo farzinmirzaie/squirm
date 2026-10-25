@@ -1443,7 +1443,7 @@ function hudIntro(){ stagger([document.querySelector('.plaque'),$('muteBtn'),doc
   stagger(document.querySelectorAll('nav .gbtn'),'enter',120,55); }
 // what comes in, in order, when a home tab opens
 function tabIntro(name){ const pg=$('tab'+name[0].toUpperCase()+name.slice(1));
-  if(name==='play'){ stagger([$('slotPlay'),document.querySelector('.brand'),document.querySelector('.tagline'),$('homePlay'),$('dailyBtn')],'rise',0,60); return; }
+  if(name==='play'){ stagger([$('slotPlay'),document.querySelector('.brand'),document.querySelector('.tagline'),$('homePlay'),$('dailyBtn'),$('meadowBtn'),$('goalCard')],'rise',0,60); return; }
   if(name==='garden'){ const panel=pg.querySelector('.panel'); stagger([panel],'rise'); stagger([$('lvPick')],'rise',220);
     // the list scrolls to the current patch first, then the rows in view come in
     setTimeout(()=>{ const box=$('lvGrid').getBoundingClientRect(); stagger(qa($('lvGrid'),'.ch-banner,.node,.peek').filter(r=>{ const b=r.getBoundingClientRect(); return b.bottom>box.top&&b.top<box.bottom; }),'rise',0,35); },40); return; }
@@ -1771,7 +1771,7 @@ window.addEventListener('popstate',()=>{ if(ignorePop>0){ ignorePop--; return; }
 // newest first: [id (a date), title, lines]. Returning players see the newest entry once on the Play tab,
 // new players never do (squirm-news holds the last id seen); Settings > About lists them all.
 const NEWS=[
-  ['2026-10-25','New in the garden',['16 new badges to earn, and a few of them are really tough.','Worm patterns: stripes, spots, a soft fade and a rainbow tail, in the wardrobe.','A new badges book, with your progress on every badge.','Snap a photo of your garden after you finish a patch, from any angle you like.','Fresh looks for the garden map, the meadow and a new wardrobe that shows off your whole worm.']],
+  ['2026-10-25','New in the garden',['16 new badges to earn, and a few of them are really tough.','Worm patterns: stripes, spots, a soft fade and a rainbow tail, in the wardrobe.','A new badges book, with your progress on every badge.','Snap a photo of your garden after you finish a patch, from any angle you like.','Fresh looks for the home screen, the garden map and the meadow, and a new wardrobe that shows off your whole worm.']],
   ['2026-10-24','Beetle bumps',['Chapter 16: push beetles around, even onto flower buttons.','A new hat to earn: the beetle horn.']],
   ['2026-10-20','A bigger garden',['Two new chapters, Garden party and Grand bloom.','A finale for when the whole garden is grown.']]];
 function renderNews(){ const seen=store.get('squirm-news'), n=NEWS[0], returning=LEVELS.some((l,i)=>isCleared(i))||Object.keys(progress.daily.results).length>0;
@@ -1809,6 +1809,12 @@ function renderHome(){
   const ni=nextGardenIndex(), started=LEVELS.some((l,i)=>isCleared(i));
   if(allCleared()){ const t=shineable().length; $('playTitle').textContent='Garden grown!'; $('playSub').textContent=t?`${t} ${t===1?'patch':'patches'} to shine up · what's next`:"All 3 stars · see what's next"; }
   else { $('playTitle').textContent=started?'Continue':'Play'; $('playSub').textContent=`Patch ${ni+1} · ${LEVELS[ni].name}`; }
+  // Continue: how far along its chapter the next patch is
+  const pc=CHAPTERS.find(c=>ni>=c.from&&ni<=c.to); $('playPips').innerHTML=pc&&!allCleared()?[...Array(pc.to-pc.from+1).keys()].map(j=>{ const i=pc.from+j; return `<i class="${isCleared(i)?'on':i===ni?'cur':''}"></i>`; }).join(''):'';
+  // Meadow: the saved difficulty and its streak; one tap grows (or resumes) a patch
+  const em=progress.endless[endlessDiff], er=readResume('endless'), canResume=er&&er.def&&!er.def.daily;
+  $('meadowSub').textContent=canResume?'Pick up where you left off':`${DIFF_NAME[endlessDiff]}${em.streak?` · streak ${em.streak}`:em.cleared?` · ${em.cleared} cleared`:''}`;
+  renderGoal(); sayHello();
   renderMute(); renderHaptic(); renderNews();
   // what the page shows before the game has loaded next time (see the boot script in shell.html)
   store.set('squirm-boot',JSON.stringify({stars:$('homeStars').innerHTML,title:$('playTitle').textContent,sub:$('playSub').textContent,daily:$('dailySub').textContent,done:!!dr,day:new Date().toDateString()}));
@@ -1897,6 +1903,20 @@ $('finClose').onclick=()=>{ hide('finOv'); popLayer('finale'); renderHome(); };
 $('endlessGo').onclick=()=>{ newEndless(); };
 $('surprise').onclick=()=>{ const ks=['fruit','keys','portals','dry','rain','rivers','snails','buttons','leaves','beetles']; ks.forEach(k=>endlessOpts[k]=false); endlessOpts.flags=Math.random()<.8;
   const n=2+Math.floor(Math.random()*2); for(let i=0;i<n;i++) endlessOpts[ks[Math.floor(Math.random()*ks.length)]]=true; renderEndless(); qa($('featGrid'),'.mech.on').forEach(settle); };
+$('meadowBtn').onclick=()=>{ ensureAudio(); if(!continueEndless()) newEndless(); };
+// the badge closest to being earned, as a little goal on the Play tab; tapping opens it on the Badges tab
+function renderGoal(){ const g=$('goalCard'), id=nearestBadge(), b=badgeById(id), p=badgeProg(b);
+  if(!b||progress.badges[id]){ g.hidden=true; return; } g.hidden=false; g.dataset.b=id;
+  g.innerHTML=`<span class="b-medal" aria-hidden="true">${art(b[1],32)}<span class="b-lock">${art('lock',12)}</span></span><span class="gt"><small>${p?'Almost there':'Next badge'}</small><b>${b[2]}</b>`
+    +(p?`<span class="gbar"><span class="b-bar" style="--p:${pct(p)}"></span>${p[0].toLocaleString()} of ${p[1].toLocaleString()}</span>`:`<em>${b[3]}</em>`)+`</span>`; }
+$('goalCard').onclick=()=>{ badgeSel=$('goalCard').dataset.b; badgeFilter='all'; showTab('badges'); };
+// the worm says hello: by time of day, about today's daily, and something new each time it's tapped
+const SAY_TAP=['Hi there!','That tickles!','Wheee!','Hello, friend!','*wiggle wiggle*','I like your hat.','Shall we crawl?','Mmm, peaches.'];
+let sayI=0;
+function say(t){ const el=$('wormSay'); if(!el||el.textContent===t) return; el.textContent=t; animOnce(el,'say'); }
+function sayHello(){ const h=new Date().getHours(), d=progress.daily, done=!!d.results[todayKey()];
+  const hi=h<5?'Up late?':h<12?'Good morning!':h<18?'Hello again!':'Good evening!', played=LEVELS.some((l,i)=>isCleared(i));
+  say(!done&&played?`${hi} Today's patch is ready.`:h<5?'Up late? Me too.':hi); }
 $('dailyBtn').onclick=()=>{ ensureAudio(); const r=readResume('endless'); if(r&&r.def&&r.def.daily===todayKey()){ mode='endless'; hideAll(); startLevel(r.def,false); enterGame(); return; } startDaily(); };
 $('homeEndlessCont').onclick=()=>{ continueEndless(); };
 $('homeSound').onclick=()=>toggleMute($('homeSound'));
@@ -2078,7 +2098,7 @@ function initHomeWorm(){ try{ homeR=new THREE.WebGLRenderer({canvas:homeCanvas,a
       if(Math.floor(t*4)!==Math.floor((t-.05)*4)) buzz(Math.round(6+t*6));
       if(t>=3){ endHold(); held=true; askReset(); } },50); });
   ['pointerup','pointerleave','pointercancel'].forEach(ev=>homeCanvas.addEventListener(ev,()=>{ const short=holdT && performance.now()-holdStart<600; endHold();
-    if(short&&!held){ homeReact(EXPRS[Math.floor(Math.random()*EXPRS.length)]); sfx('grow'); bumpStat('taps'); checkBadges(null); save(); } else if(!held && hHead) applyExpr(hHead,'smile'); }));
+    if(short&&!held){ homeReact(EXPRS[Math.floor(Math.random()*EXPRS.length)]); sfx('grow'); if(curTab==='play') say(SAY_TAP[sayI++%SAY_TAP.length]); bumpStat('taps'); checkBadges(null); save(); } else if(!held && hHead) applyExpr(hHead,'smile'); }));
   homeCanvas.addEventListener('contextmenu',e=>e.preventDefault());
   homeCanvas.addEventListener('keydown',e=>{ if(e.key!=='Enter'&&e.key!==' ') return; e.preventDefault(); ensureAudio(); homeReact(EXPRS[Math.floor(Math.random()*EXPRS.length)]); sfx('grow'); });
 }
