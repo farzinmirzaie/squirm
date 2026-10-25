@@ -25,6 +25,21 @@
 <link rel="preload" href="fonts/nunito-latin-800-normal.woff2" as="font" type="font/woff2" crossorigin>
 <style>
 /*__FONTS__*/
+/* Squirm's styles, in cascade order (later sections may rely on overriding earlier ones):
+   1. Tokens          colours, motion, fonts; dark mode and more-contrast values
+   2. Base            page, stage, app column, focus, icon art
+   3. Shared pieces   card, sticker icon, round and chunky buttons, links, labels, pills, stars,
+                      home panels, segmented picker, switch
+   4. Dialogs         scrim and card, sheets, intro, win, generator, petals
+   5. Game HUD        plaque, stat tiles, toast, game buttons, swipe tutorial
+   6. Home            shell and top bar, tab pages and tab bar, Play, Garden map, Meadow, Me, Badges
+   7. Settings
+   8. Finale
+   9. UI feedback     press, transitions, dialog motion, entrances, keyframes
+  10. Small screens
+  11. Reduced motion  (every animation and transition is listed here) */
+
+/* ==== 1. Tokens ==== */
 :root{
   --lawn:#8CC673; --ink:#5B4436; --ink-soft:#8C7464;
   --paper:#FFF8EA; --paper-2:#FBEBD0; --edge:#E7CFA8; --shadow:rgba(91,68,54,.22);
@@ -36,6 +51,8 @@
   --berry-dark:#C95C73; --on-accent:#fff; --soil:#9A6A4C; --deep:#5B4436; --petal:#F7B3C5; --lilac:#B79CF2;
   --tint-berry:#FFE3EC; --tint-honey:#FFF1C4; --tint-leaf:#DDF1C9;
   --scrim:rgba(70,50,35,.35); --shine:rgba(255,255,255,.35);
+  /* the soft top-light on raised pieces: --glaze on paper, --glaze-accent on leaf, honey and berry */
+  --glaze:linear-gradient(180deg,var(--gloss),transparent 60%); --glaze-accent:linear-gradient(180deg,var(--shine),transparent 60%);
   /* motion: every UI transition uses these (see "UI feedback" in CLAUDE.md) */
   --dur-fast:.14s; --dur:.3s; --dur-slow:.48s;
   --ease-pop:cubic-bezier(.2,1.5,.4,1); --ease-out:cubic-bezier(.2,1,.4,1); --ease-in:cubic-bezier(.5,0,.9,.5);
@@ -43,6 +60,7 @@
   box-sizing:border-box;
   padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
 }
+/* dark mode: the same values twice, once for "like device" and once for a forced dark theme */
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
     --scene-mix:24%;
@@ -53,6 +71,14 @@
   --scene-mix:24%;
   --ink:#FBEFDD; --ink-soft:#D9C2A8; --paper:#4A372D; --paper-2:#5A4436; --edge:#6D5444; --shadow:rgba(0,0,0,.35); --done:#4F6B3F; --title:#FFB4C6; --gloss:rgba(255,255,255,.1); --sticker-edge:#C9AE8A; --deep:#2A1E17;
 }
+/* players who ask for more contrast get darker secondary text and stronger edges */
+@media (prefers-contrast: more){
+  :root{--ink-soft:#5B4436;--edge:#B8955F}
+  :root[data-theme="dark"]{--ink-soft:#FBEFDD;--edge:#A08468}
+}
+@media (prefers-contrast: more) and (prefers-color-scheme: dark){ :root:not([data-theme="light"]){--ink-soft:#FBEFDD;--edge:#A08468} }
+
+/* ==== 2. Base ==== */
 *,*::before,*::after{box-sizing:border-box}
 html{height:100%;touch-action:none;scroll-padding-top:env(safe-area-inset-top,0px)}
 body{height:100%;margin:0;overflow:hidden;overscroll-behavior:none;touch-action:none;color:var(--ink);
@@ -66,28 +92,115 @@ canvas{position:absolute;inset:0;width:100%;height:100%;display:block;outline:no
 #app{position:relative;z-index:1;height:100%;display:flex;flex-direction:column;justify-content:space-between;
   max-width:560px;margin:0 auto;padding:10px 12px 12px;pointer-events:none}
 #app > *{pointer-events:auto}
+body.at-home #app{visibility:hidden}
+button[hidden]{display:none!important}
+button:focus-visible{outline:3px solid var(--honey);outline-offset:2px}
+/* hand-drawn icons: art() and the ui-ic glyphs are blocks; [data-art] spans in the markup get filled at boot */
+.art,.ui-ic{flex:none;display:block}
+[data-art]{display:inline-grid;vertical-align:-.28em}
+.link [data-art],.btn [data-art]{margin-right:2px}
+
+/* ==== 3. Shared pieces ==== */
 .card{background:var(--paper);border:3px solid var(--edge);border-radius:26px;box-shadow:0 5px 0 var(--edge),0 12px 26px var(--shadow)}
-/* ---- HUD: floating game pieces over the garden ---- */
+/* a round cream sticker behind a small icon (HUD tiles, toast, meadow stats) */
+.ic{flex:none;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;background:var(--sticker);border:2px solid var(--sticker-edge)}
+.ic svg{width:19px;height:19px}
+.round{width:46px;height:46px;flex:none;border-radius:50%;border:3px solid var(--edge);background:var(--paper) var(--glaze);color:var(--ink);
+  display:grid;place-items:center;cursor:pointer;box-shadow:0 4px 0 var(--edge),0 8px 18px var(--shadow);padding:0}
+.round:active{transform:translateY(4px);box-shadow:0 0 0 var(--edge)}
+.row{display:flex;gap:10px}
+.btn{flex:1;min-height:56px;border-radius:22px;border:3px solid var(--edge);background:var(--paper-2) var(--glaze);color:var(--ink);cursor:pointer;
+  font:800 18px/1 var(--fd);box-shadow:0 5px 0 var(--edge)}
+.btn:active{transform:translateY(5px);box-shadow:0 0 0 var(--edge)}
+.btn.primary{background-color:var(--leaf);background-image:var(--glaze-accent);border-color:var(--leaf-dark);color:var(--on-accent);text-shadow:0 2px 0 var(--leaf-dark);box-shadow:0 5px 0 var(--leaf-dark)}
+.btn.primary:active{box-shadow:0 0 0 var(--leaf-dark)}
+.btn.danger{background-color:var(--berry);border-color:var(--berry-dark);color:var(--on-accent);text-shadow:0 2px 0 var(--berry-dark);box-shadow:0 5px 0 var(--berry-dark)}
+.link.danger{align-self:center;color:var(--berry-dark)}
+.link{border:0;background:none;color:var(--berry);font:800 14px/1 var(--fb);cursor:pointer;padding:6px}
+.icon-btn{width:40px;height:40px;border-radius:50%;border:3px solid var(--edge);background:var(--paper-2);color:var(--ink);font:800 20px/1 var(--fb);cursor:pointer;display:grid;place-items:center;padding:0}
+.icon-btn[hidden]{visibility:hidden;display:grid!important}
+.label{margin:0 0 -6px;font-weight:800;font-size:13px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.06em}
+.label-row{display:flex;justify-content:space-between;align-items:center}
+.sub-note{font-size:14px;font-weight:700;color:var(--ink-soft)}
+.total{display:inline-flex;align-items:center;gap:6px;font-weight:800;margin:-6px 0 10px;padding:5px 12px;border-radius:999px;background:var(--paper-2);border:2px solid var(--edge)}
+.stat-row{display:flex;flex-wrap:wrap;gap:6px;justify-content:center}
+.pill{display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:999px;background:var(--paper-2);border:2px solid var(--edge);font-weight:800;font-size:13px}
+.pill.unlock{background:var(--honey);border-color:var(--honey-dark);color:var(--deep)}
+/* small star meters (HUD, map stones, patch card) and the big stars of the win dialog */
+.mini{display:flex;gap:4px;font-style:normal}
+.mini i{width:14px;height:14px;background:var(--edge);display:inline-block;clip-path:polygon(50% 0,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%)}
+.mini i.on{background:var(--honey)}
+.stars{display:flex;justify-content:center;gap:6px;margin:0 0 12px}
+.star{transform:scale(0);animation:starIn var(--dur-slow) var(--ease-pop) forwards}
+.star:nth-child(2){margin-top:-10px}
+/* the cards on the home tabs */
+.panel{width:min(100%,440px);display:flex;flex-direction:column;gap:12px;padding:18px 16px;border-radius:26px;text-align:left}
+.panel-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.panel-head h2{margin:0;font:800 26px/1.1 var(--fd);color:var(--title);text-shadow:0 3px 0 var(--edge)}
+.panel-head .total{margin:0}
+/* segmented picker (reminder time, theme) */
+.seg{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;padding:4px;border-radius:18px;background:var(--paper-2);border:2px solid var(--edge)}
+.seg button{border:0;border-radius:14px;background:transparent;color:var(--ink);padding:8px 4px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;min-height:52px}
+.seg b{font:800 16px/1 var(--fd)}
+.seg small{font-weight:700;font-size:12px;color:var(--ink-soft)}
+.seg button.on{background:var(--paper);box-shadow:0 3px 0 var(--edge);outline:2px solid var(--berry)}
+.switch{position:relative;width:58px;height:34px;flex:none;border-radius:999px;border:3px solid var(--edge);background:var(--paper-2);cursor:pointer;padding:0;transition:background-color var(--dur-fast),border-color var(--dur-fast),scale var(--dur) var(--ease-pop)}
+.switch i{position:absolute;top:2px;left:2px;width:24px;height:24px;border-radius:50%;background:var(--paper);box-shadow:0 2px 0 var(--edge);transition:transform var(--dur) var(--ease-pop)}
+.switch[aria-checked="true"]{background:var(--leaf);border-color:var(--leaf-dark)}
+.switch[aria-checked="true"] i{transform:translateX(24px);background:var(--on-accent)}
+.switch:disabled{opacity:.45;cursor:default}
+
+/* ==== 4. Dialogs ==== */
+.ov{position:fixed;inset:0;display:none;place-items:center;padding:calc(16px + env(safe-area-inset-top,0px)) 16px calc(16px + env(safe-area-inset-bottom,0px));background:var(--scrim);z-index:5;
+  backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px)}
+.ov.show{display:grid}
+/* dialogs never outgrow the screen: they scroll inside */
+.dialog{width:min(100%,370px);padding:26px 20px 20px;text-align:center;animation:pop var(--dur) var(--ease-pop);border-radius:26px;
+  box-shadow:inset 0 0 0 5px var(--paper),inset 0 0 0 7px var(--paper-2),0 6px 0 var(--edge),0 18px 40px var(--shadow);
+  max-height:100%;overflow:auto;overscroll-behavior:contain;touch-action:pan-y}
+.dialog h2{margin:6px 0 8px;font:800 30px/1.1 var(--fd);color:var(--title);text-shadow:0 3px 0 var(--edge)}
+.dialog p{margin:0 0 16px;color:var(--ink-soft);font-size:16px;line-height:1.45;font-weight:700}
+.dialog .stat-row{margin:-2px 0 14px}
+/* sheets: left-aligned dialogs and home panels built from labelled rows */
+.sheet{display:flex;flex-direction:column;gap:12px;text-align:left}
+.sheet h2{margin-bottom:12px;text-align:center}
+.sheet p.label{margin:4px 0 -4px}
+.sheet .label-row p.label{margin:0}
+/* "something new": the intro keeps its button in view */
+.intro-item{display:flex;gap:14px;align-items:center;text-align:left;margin:0 0 14px}
+.intro-item .ico{flex:none;width:60px;height:60px;border-radius:18px;background:var(--sticker);border:3px solid var(--sticker-edge);box-shadow:0 3px 0 var(--sticker-edge);display:grid;place-items:center}
+.intro-item b{display:block;font:800 18px/1.2 var(--fd);margin-bottom:3px}
+.intro-item span{font-weight:700;color:var(--ink-soft);font-size:14px;line-height:1.4}
+#introBody h2{margin-bottom:14px}
+#introOv .dialog{display:flex;flex-direction:column;overflow:hidden}
+#introBody{min-height:0;overflow:auto;overscroll-behavior:contain;touch-action:pan-y;margin:0 -6px 12px;padding:0 6px}
+#introBody .intro-item:last-child{margin-bottom:4px}
+#introOk{width:100%}
+/* win */
+.note{font-size:14px!important;margin-top:-4px!important}
+.newbest{display:inline-block;margin:-6px 0 10px;padding:4px 10px;border-radius:999px;background:var(--honey);color:var(--deep);font-weight:800;font-size:13px}
+.share{width:100%;margin:-4px 0 12px}
+.gen{max-width:300px}
+.petals{position:fixed;inset:0;pointer-events:none;z-index:6;overflow:hidden}
+.petals i{position:absolute;top:-20px;width:12px;height:9px;border-radius:60% 40% 60% 40%;animation:fall 2.6s ease-in forwards}
+
+/* ==== 5. Game HUD: floating game pieces over the garden ==== */
 header.hud{display:flex;flex-direction:column;gap:8px}
 .hud-top{display:flex;align-items:center;gap:8px}
-.plaque{flex:1;min-width:0;display:flex;align-items:center;gap:10px;padding:5px 18px 5px 5px;border-radius:999px;background:var(--paper) linear-gradient(180deg,var(--gloss),transparent 60%);
-  border:3px solid var(--edge);box-shadow:0 4px 0 var(--edge),0 10px 22px var(--shadow)}
+.plaque,.hud-stats{background:var(--paper) var(--glaze);border:3px solid var(--edge);box-shadow:0 4px 0 var(--edge),0 10px 22px var(--shadow)}
+.plaque{flex:1;min-width:0;display:flex;align-items:center;gap:10px;padding:5px 18px 5px 5px;border-radius:999px}
 .badge{position:relative;flex:none;width:54px;height:54px;display:grid;place-items:center;filter:drop-shadow(0 2px 0 var(--shadow))}
 .badge svg{position:absolute;inset:0}
 .badge span{position:relative;font:800 21px/1 var(--fd);color:var(--deep);margin-top:1px}
 .title{min-width:0}
 h1{margin:0;font:800 21px/1.2 var(--fd);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .sub{margin:1px 0 0;font-size:13px;font-weight:800;color:var(--ink-soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-transform:uppercase;letter-spacing:.06em}
-.round{width:46px;height:46px;flex:none;border-radius:50%;border:3px solid var(--edge);background:var(--paper) linear-gradient(180deg,var(--gloss),transparent 60%);color:var(--ink);
-  display:grid;place-items:center;cursor:pointer;box-shadow:0 4px 0 var(--edge),0 8px 18px var(--shadow);padding:0}
-.round:active{transform:translateY(4px);box-shadow:0 0 0 var(--edge)}
 .toggles{display:flex;gap:6px}
-.hud-stats{display:flex;gap:6px;align-items:stretch;padding:5px;border-radius:26px;background:var(--paper) linear-gradient(180deg,var(--gloss),transparent 60%);
-  border:3px solid var(--edge);box-shadow:0 4px 0 var(--edge),0 10px 22px var(--shadow)}
+.hud-stats{display:flex;gap:6px;align-items:stretch;padding:5px;border-radius:26px}
 .chips{display:contents}
 /* each stat is a small tile: icon and value on top, a word underneath */
 .stat{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:6px 3px 5px;border-radius:18px;
-  background:var(--paper-2);border:2px solid transparent;font:800 18px/1 var(--fd);transition:background .25s,border-color .25s}
+  background:var(--paper-2);border:2px solid transparent;font:800 18px/1 var(--fd);cursor:pointer}
 .stat .v{display:flex;align-items:center;gap:6px;white-space:nowrap}
 .stat .k{font:800 11px/1 var(--fb);color:var(--ink-soft);text-transform:uppercase;letter-spacing:.06em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
 .stat small{font:800 13px/1 var(--fb);color:var(--ink-soft)}
@@ -100,19 +213,20 @@ h1{margin:0;font:800 21px/1.2 var(--fd);white-space:nowrap;overflow:hidden;text-
 .stat.moves.over b{color:var(--berry)}
 .stat .par{font:800 11px/1 var(--fb);color:var(--ink-soft);text-transform:uppercase;letter-spacing:.06em}
 .stat .k.mv{display:flex;align-items:center;gap:6px}
-.ic{flex:none;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;background:var(--sticker);border:2px solid var(--sticker-edge)}
-.ic svg{width:19px;height:19px}
+.stat .mini{display:inline-flex;gap:1px}
+.stat .mini i{width:11px;height:11px}
+.stat:focus-visible{outline:3px solid var(--honey);outline-offset:1px}
 /* the toast floats above the game buttons, the home tab bar and any open dialog (toast() sets --toast-y) */
 #toast{position:fixed;left:0;right:0;bottom:var(--toast-y,120px);z-index:7;width:max-content;margin:0 auto;max-width:min(calc(100% - 32px),420px);padding:9px 16px 9px 9px;display:flex;gap:10px;align-items:center;border-radius:22px;
   font-weight:800;font-size:15px;line-height:1.35;opacity:0;transform:translateY(10px) scale(.96);transition:opacity var(--dur-fast) var(--ease-out),transform var(--dur) var(--ease-pop);pointer-events:none}
-#toast.show{opacity:1;transform:none}
+#toast.show{opacity:1;transform:none;pointer-events:auto;cursor:pointer}
 #toast .ic{width:32px;height:32px}#toast .ic svg{width:23px;height:23px}
 #toast .msg{min-width:0}
-/* ---- controls: chunky round game buttons ---- */
+/* controls: chunky round game buttons */
 .bottom{display:flex;flex-direction:column}
 nav{display:flex;justify-content:center;align-items:flex-end;gap:16px}
 .gbtn{display:flex;flex-direction:column;align-items:center;gap:6px;padding:0;border:0;background:none;cursor:pointer;color:var(--ink);-webkit-tap-highlight-color:transparent}
-.disc{width:60px;height:60px;border-radius:50%;display:grid;place-items:center;background:var(--paper) linear-gradient(180deg,var(--gloss),transparent 60%);border:3px solid var(--edge);
+.disc{width:60px;height:60px;border-radius:50%;display:grid;place-items:center;background:var(--paper) var(--glaze);border:3px solid var(--edge);
   box-shadow:0 5px 0 var(--edge),0 10px 20px var(--shadow)}
 .gbtn.hint .disc{background-color:var(--honey);border-color:var(--honey-dark);color:var(--deep);box-shadow:0 5px 0 var(--honey-dark),0 10px 22px var(--shadow)}
 .gbtn:active .disc{transform:translateY(5px);box-shadow:0 0 0 var(--edge)}
@@ -125,264 +239,72 @@ nav{display:flex;justify-content:center;align-items:flex-end;gap:16px}
 .gbtn:disabled .lbl{opacity:.7}
 .gbtn:focus-visible{outline:none}
 .gbtn:focus-visible .disc{outline:3px solid var(--honey);outline-offset:3px}
-button:focus-visible{outline:3px solid var(--honey);outline-offset:2px}
-.ov{position:fixed;inset:0;display:none;place-items:center;padding:calc(16px + env(safe-area-inset-top,0px)) 16px calc(16px + env(safe-area-inset-bottom,0px));background:var(--scrim);z-index:5;
-  backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px)}
-.ov.show{display:grid}
-.dialog{width:min(100%,370px);padding:26px 20px 20px;text-align:center;animation:pop var(--dur) var(--ease-pop);border-radius:26px;
-  box-shadow:inset 0 0 0 5px var(--paper),inset 0 0 0 7px var(--paper-2),0 6px 0 var(--edge),0 18px 40px var(--shadow)}
-@keyframes pop{from{transform:scale(.85) rotate(-2deg);opacity:0}to{transform:none;opacity:1}}
-.dialog h2{margin:6px 0 8px;font:800 30px/1.1 var(--fd);color:var(--title);text-shadow:0 3px 0 var(--edge)}
-.dialog p{margin:0 0 16px;color:var(--ink-soft);font-size:16px;line-height:1.45;font-weight:700}
-.row{display:flex;gap:10px}
-.btn{flex:1;min-height:56px;border-radius:22px;border:3px solid var(--edge);background:var(--paper-2) linear-gradient(180deg,var(--gloss),transparent 60%);color:var(--ink);cursor:pointer;
-  font:800 18px/1 var(--fd);box-shadow:0 5px 0 var(--edge)}
-.btn:active{transform:translateY(5px);box-shadow:0 0 0 var(--edge)}
-.btn.primary{background-color:var(--leaf);background-image:linear-gradient(180deg,var(--shine),transparent 60%);border-color:var(--leaf-dark);color:var(--on-accent);text-shadow:0 2px 0 var(--leaf-dark);box-shadow:0 5px 0 var(--leaf-dark)}
-.btn.primary:active{box-shadow:0 0 0 var(--leaf-dark)}
-.list{display:grid;gap:8px;margin:4px 0 16px;max-height:56vh;overflow:auto;text-align:left;touch-action:pan-y;padding:2px}
-.lv{display:flex;align-items:center;gap:12px;padding:8px 12px 8px 8px;border-radius:18px;border:2px solid var(--edge);background:var(--paper-2);
-  color:var(--ink);font:800 16px/1.2 var(--fb);cursor:pointer;min-height:58px;box-shadow:0 3px 0 var(--edge)}
-.lv b{flex:none;width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:var(--paper);border:2px solid var(--edge);font-family:var(--fd)}
-.lv span{flex:1}
-.lv small{color:var(--ink-soft);font-weight:700;font-size:13px;text-align:right}
-.lv.cur{border-color:var(--berry)}
-.lv.par b{background:var(--done)}
-.lv:disabled{opacity:.45;cursor:default}
-.petals{position:fixed;inset:0;pointer-events:none;z-index:6;overflow:hidden}
-.petals i{position:absolute;top:-20px;width:12px;height:9px;border-radius:60% 40% 60% 40%;animation:fall 2.6s ease-in forwards}
-@keyframes fall{to{transform:translateY(105vh) rotate(540deg);opacity:.2}}
-#hintBtn.busy svg{animation:wiggle .5s ease-in-out infinite}
+/* the hint bulb glints now and then, and wiggles while the solver thinks */
 .gbtn.hint .disc svg{animation:glow 3.2s ease-in-out infinite}
-@keyframes glow{0%,80%,100%{transform:none}88%{transform:rotate(-10deg) scale(1.08)}94%{transform:rotate(8deg) scale(1.08)}}
-@keyframes wiggle{50%{transform:rotate(12deg) scale(1.1)}}
-.pop{animation:popin var(--dur) var(--ease-pop)}
-/* HUD motion: pieces drop in when a patch starts, tiles cheer when a goal is met */
-.enter{animation:hudIn var(--dur-slow) var(--ease-pop) var(--d,0ms) both}
-nav .enter,.rise{animation:navIn var(--dur-slow) var(--ease-pop) var(--d,0ms) both}
-.tab.on.pop svg{animation:wiggle var(--dur) ease-in-out}
-@keyframes hudIn{from{opacity:0;translate:0 -16px;scale:.92}}
-@keyframes navIn{from{opacity:0;translate:0 22px;scale:.9}}
-.stat.cheer{animation:cheer var(--dur-slow) var(--ease-pop)}
-.stat.cheer .ic{animation:wiggle .3s ease-in-out 2}
-@keyframes cheer{0%{transform:scale(1)}30%{transform:scale(1.14) rotate(-3deg)}60%{transform:scale(.97) rotate(2deg)}100%{transform:none}}
-.stat.lost .mini{animation:nope var(--dur-slow) var(--ease-out)}
-.gbtn.pop .disc{animation:popin var(--dur) var(--ease-pop)}
-.gbtn.pop{animation:none}
-@keyframes popin{0%{scale:.86}60%{scale:1.07}100%{scale:1}}
-.stars{display:flex;justify-content:center;gap:6px;margin:0 0 12px}
-.star{transform:scale(0);animation:starIn var(--dur-slow) var(--ease-pop) forwards}
-.star:nth-child(2){margin-top:-10px}
-@keyframes starIn{to{transform:scale(1)}}
-.note{font-size:14px!important;margin-top:-4px!important}
-.total{display:inline-flex;align-items:center;gap:6px;font-weight:800;margin:-6px 0 10px;padding:5px 12px;border-radius:999px;background:var(--paper-2);border:2px solid var(--edge)}
-.chapter{display:flex;justify-content:space-between;align-items:baseline;margin:8px 4px 0;font:800 16px/1.2 var(--fd);color:var(--ink-soft)}
-.chapter small{font:800 13px/1 var(--fb)}
-.lv span{display:flex;flex-direction:column;gap:4px;align-items:flex-start;text-align:left}
-.mini{display:flex;gap:4px;font-style:normal}
-.mini i{width:14px;height:14px;background:var(--edge);display:inline-block;clip-path:polygon(50% 0,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%)}
-.mini i.on{background:var(--honey)}
+#hintBtn.busy svg{animation:wiggle .5s ease-in-out infinite}
 #tutorial{position:fixed;left:0;right:0;bottom:calc(140px + env(safe-area-inset-bottom,0px));z-index:4;display:none;place-items:center;pointer-events:none}
 #tutorial.show{display:grid}
 #tutorial .hand{grid-area:1/1;animation:swipe 2.2s ease-in-out infinite;filter:drop-shadow(0 4px 6px var(--shadow))}
 #tutorial .tip{grid-area:2/1;margin-top:6px;padding:10px 16px;font-weight:800}
-@keyframes swipe{0%{transform:translate(-60px,20px);opacity:0}15%{opacity:1}55%{transform:translate(60px,20px);opacity:1}75%,100%{transform:translate(60px,20px);opacity:0}}
-button[hidden]{display:none!important}
-.btn.danger{background-color:var(--berry);border-color:var(--berry-dark);color:var(--on-accent);text-shadow:0 2px 0 var(--berry-dark);box-shadow:0 5px 0 var(--berry-dark)}
-.brand span{display:inline-block;animation:squirm 2.4s ease-in-out infinite}
-.brand span:nth-child(2){animation-delay:.12s}.brand span:nth-child(3){animation-delay:.24s}.brand span:nth-child(4){animation-delay:.36s}.brand span:nth-child(5){animation-delay:.48s}.brand span:nth-child(6){animation-delay:.6s}
-@keyframes squirm{0%,60%,100%{transform:none}20%{transform:translateY(-4px) rotate(-4deg)}40%{transform:translateY(2px) rotate(3deg)}}
-.tagline{margin:10px 0 0;font-weight:800;font-size:15px;color:var(--deep);letter-spacing:.02em}
-@media (prefers-reduced-motion: reduce){ .brand span{animation:none} }
-#toast.show{pointer-events:auto;cursor:pointer}
-.lv.locked{opacity:.5}
-.nope{animation:nope var(--dur) var(--ease-out)}
-@keyframes nope{20%,60%{translate:-6px 0}40%,80%{translate:6px 0}}
-.daily-ico{background:var(--tint-berry)}
-.daily-ico .cal{width:34px;height:36px;border-radius:10px;background:var(--on-accent);border:2px solid var(--deep);border-top:8px solid var(--berry);display:grid;place-items:center;font:800 16px/1 var(--fd);color:var(--deep)}
-#dailyBtn.done .daily-ico{background:var(--done)}
 
-.big{display:flex;align-items:center;gap:14px;width:100%;padding:14px 16px;text-align:left;cursor:pointer;color:var(--ink);font:inherit;background-image:linear-gradient(180deg,var(--gloss),transparent 55%)}
-.big:active{transform:translateY(5px);box-shadow:0 0 0 var(--edge)}
-.big .bt{flex:1;display:flex;flex-direction:column;gap:4px}
-.big b{font:800 21px/1.1 var(--fd)}
-.big small{font-weight:700;color:var(--ink-soft);font-size:14px}
-.big .go{flex:none;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:var(--leaf);border:3px solid var(--leaf-dark);color:var(--on-accent);font:800 26px/1 var(--fd);padding-bottom:3px;box-shadow:0 3px 0 var(--leaf-dark)}
+/* ==== 6. Home ==== */
+.home{z-index:4;background:linear-gradient(180deg,color-mix(in srgb,var(--sticker) 55%,transparent),color-mix(in srgb,var(--lawn) 25%,transparent));padding:calc(10px + env(safe-area-inset-top,0px)) 0 0;overflow:hidden}
+.home.show{display:flex;flex-direction:column;align-items:stretch;place-items:stretch}
 .home-top{flex:none;display:flex;justify-content:space-between;align-items:center;gap:8px;padding:0 max(14px,env(safe-area-inset-right,0px)) 0 max(14px,env(safe-area-inset-left,0px));width:min(100%,560px);margin:0 auto}
 .home-top-tools{display:flex;gap:8px}
 .star-pill{display:inline-flex;align-items:center;gap:6px;height:40px;padding:0 14px 0 10px;border-radius:999px;background:var(--paper);border:3px solid var(--edge);box-shadow:0 3px 0 var(--edge);font:800 18px/1 var(--fd)}
+/* tab pages and the tab bar */
 .tab-pages{flex:1;min-height:0;position:relative}
 .tab-page{position:absolute;inset:0;overflow:auto;overscroll-behavior:contain;touch-action:pan-y;padding:10px max(14px,env(safe-area-inset-right,0px)) 16px max(14px,env(safe-area-inset-left,0px));display:flex;flex-direction:column;align-items:center}
-.tab-page[hidden]{display:none}
-@keyframes tabIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
-.panel{width:min(100%,440px);display:flex;flex-direction:column;gap:12px;padding:18px 16px;border-radius:26px;text-align:left}
-#tabGarden .panel{flex:1;min-height:0}
-#tabGarden .list{flex:1;min-height:0;max-height:none;margin:0;
-  -webkit-mask-image:linear-gradient(180deg,transparent,#000 16px,#000 calc(100% - 28px),transparent);mask-image:linear-gradient(180deg,transparent,#000 16px,#000 calc(100% - 28px),transparent)}
-.panel-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap}
-.panel-head h2{margin:0;font:800 26px/1.1 var(--fd);color:var(--title);text-shadow:0 3px 0 var(--edge)}
-.panel-head .total{margin:0}
-.badges-head{margin-top:8px}
-.sub-note{font-size:14px;font-weight:700;color:var(--ink-soft)}
-.worm-slot{display:flex;justify-content:center;flex:none}
-#slotMe{margin-bottom:-14px}
+.tab-page[hidden],.set-page[hidden]{display:none}
 .tabbar{flex:none;display:grid;grid-template-columns:repeat(5,1fr);gap:2px;width:100%;padding:8px max(10px,env(safe-area-inset-right,0px)) max(14px,calc(6px + env(safe-area-inset-bottom,0px))) max(10px,env(safe-area-inset-left,0px));background:var(--paper);border-top:3px solid var(--edge);box-shadow:0 -6px 20px var(--shadow)}
 .tab{display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 0 4px;border:0;border-radius:18px;background:none;color:var(--ink-soft);cursor:pointer;min-width:0;font:800 12px/1 var(--fd)}
 .tab.on{color:var(--ink);background:var(--paper-2)}
 .tab.on svg{color:var(--leaf-dark);transform:translateY(-1px) scale(1.08)}
-.hat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
-.hat{display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 4px;border-radius:18px;border:3px solid var(--edge);background:var(--paper-2);color:var(--ink);cursor:pointer;font:inherit;box-shadow:0 3px 0 var(--edge)}
-.hat .hat-ico{height:38px;display:grid;place-items:center}
-.hat b{font:800 12px/1.1 var(--fd);text-align:center}
-.hat small{font-size:11px;font-weight:700;color:var(--ink-soft);text-align:center;line-height:1.2}
-.hat.on{background:var(--done);border-color:var(--leaf);box-shadow:0 3px 0 var(--leaf)}
-.hat.locked{opacity:.6}
-.hat.locked .hat-ico{filter:grayscale(1)}
-
-.badge-grid{display:grid;gap:8px;margin:0}
-.badge-card{display:flex;gap:12px;align-items:center;padding:8px 12px 8px 8px;border-radius:18px;border:3px solid var(--edge);background:var(--paper-2);opacity:.7}
-.badge-card.on{opacity:1;background:var(--paper);border-color:var(--honey);box-shadow:0 3px 0 var(--honey-dark)}
-.badge-card .medal{flex:none;width:46px;height:46px;border-radius:50%;display:grid;place-items:center;font-size:24px;background:var(--sticker);border:3px solid var(--sticker-edge)}
-.badge-card.on .medal{background:var(--tint-honey);border-color:var(--honey-dark)}
-.badge-card:not(.on) .medal{filter:grayscale(1)}
-.badge-card b{display:block;font:800 16px/1.2 var(--fd)}
-.badge-card small{font-weight:700;font-size:13px;color:var(--ink-soft);line-height:1.3}
-.badge-card i{font-style:normal;color:var(--leaf-dark);white-space:nowrap}
-.settings{gap:10px}
-.set-head{display:grid;grid-template-columns:40px 1fr 40px;align-items:center}
-.set-head h2{margin:0!important}
-.icon-btn{width:40px;height:40px;border-radius:50%;border:3px solid var(--edge);background:var(--paper-2);color:var(--ink);font:800 20px/1 var(--fb);cursor:pointer;display:grid;place-items:center;padding:0}
-.icon-btn[hidden]{visibility:hidden;display:grid!important}
-.set-page{display:flex;flex-direction:column;gap:12px}
-.set-page[hidden]{display:none}
-.set-page.fwd{animation:setFwd var(--dur) var(--ease-out)}
-.set-page.back{animation:setBack var(--dur) var(--ease-out)}
-@keyframes setFwd{from{opacity:0;transform:translateX(36px)}to{opacity:1;transform:none}}
-@keyframes setBack{from{opacity:0;transform:translateX(-36px)}to{opacity:1;transform:none}}
-#setOv .dialog{overflow-x:hidden}
-.set-link{display:flex;align-items:center;gap:12px;width:100%;padding:10px 12px;border-radius:18px;border:3px solid var(--edge);background:var(--paper-2);color:var(--ink);cursor:pointer;text-align:left;font:inherit;box-shadow:0 3px 0 var(--edge)}
-.set-link:active{transform:translateY(3px);box-shadow:none}
-.set-link .set-ico{flex:none;width:40px;height:40px;border-radius:14px;display:grid;place-items:center;font-size:20px;color:var(--deep);font-weight:800;background:var(--sticker);border:2px solid var(--sticker-edge)}
-.set-link > span:nth-child(2){flex:1;display:flex;flex-direction:column;gap:2px}
-.set-link b{font:800 18px/1.15 var(--fd)}
-.set-link small{font-weight:700;font-size:13px;color:var(--ink-soft)}
-.set-link .chev{color:var(--ink-soft);display:grid}
-.btn.danger-soft{flex:none;background:transparent;border-color:var(--berry);color:var(--berry-dark);box-shadow:0 4px 0 var(--berry);min-height:48px;font-size:16px}
-.set-row{display:flex;justify-content:space-between;align-items:center;font:800 18px/1 var(--fd);padding:2px 2px}
-.set-row.vol{margin-top:-4px;font-size:15px;color:var(--ink-soft)}
-#setMusicVol{width:150px;accent-color:var(--leaf);touch-action:pan-x}
-#setMusicVol:disabled{opacity:.4}
-.switch{position:relative;width:58px;height:34px;flex:none;border-radius:999px;border:3px solid var(--edge);background:var(--paper-2);cursor:pointer;padding:0;transition:background-color var(--dur-fast),border-color var(--dur-fast),scale var(--dur) var(--ease-pop)}
-.switch i{position:absolute;top:2px;left:2px;width:24px;height:24px;border-radius:50%;background:var(--paper);box-shadow:0 2px 0 var(--edge);transition:transform var(--dur) var(--ease-pop)}
-.switch[aria-checked="true"]{background:var(--leaf);border-color:var(--leaf-dark)}
-.switch[aria-checked="true"] i{transform:translateX(24px);background:var(--on-accent)}
-.switch:disabled{opacity:.45;cursor:default}
-.set-note{margin:-4px 0 0!important;font-size:14px!important;text-align:left}
-#saveCode{width:100%;resize:none;border-radius:18px;border:3px solid var(--edge);background:var(--paper-2);color:var(--ink);font:700 13px/1.3 ui-monospace,Menlo,monospace;padding:10px;user-select:text;-webkit-user-select:text;touch-action:auto}
-.link.danger{align-self:center;color:var(--berry-dark)}
-.version{margin:-4px 0 0;text-align:center;font-size:12px;font-weight:700;color:var(--ink-soft);opacity:.75}
-.sheet h2{margin-bottom:12px}
-.sheet{display:flex;flex-direction:column;gap:12px;text-align:left}
-.sheet h2{text-align:center}
-.sheet p.label{margin:4px 0 -4px}
-.sheet .label-row p.label{margin:0}
-#lvOv .dialog h2{margin-bottom:10px}
-.label-row{display:flex;justify-content:space-between;align-items:center}
-.link{border:0;background:none;color:var(--berry);font:800 14px/1 var(--fb);cursor:pointer;padding:6px}
-.btn.ghost{background:transparent;box-shadow:none;border-color:transparent;min-height:40px;font-size:16px;color:var(--ink-soft)}
-.intro-item{display:flex;gap:14px;align-items:center;text-align:left;margin:0 0 14px}
-.intro-item .ico{flex:none;width:60px;height:60px;border-radius:18px;background:var(--sticker);border:3px solid var(--sticker-edge);box-shadow:0 3px 0 var(--sticker-edge);display:grid;place-items:center}
-.intro-item b{display:block;font:800 18px/1.2 var(--fd);margin-bottom:3px}
-.intro-item span{font-weight:700;color:var(--ink-soft);font-size:14px;line-height:1.4}
-#introBody h2{margin-bottom:14px}
-/* dialogs never outgrow the screen: they scroll inside, and the intro keeps its button in view */
-.dialog{max-height:100%;overflow:auto;overscroll-behavior:contain;touch-action:pan-y}
-#introOv .dialog{display:flex;flex-direction:column;overflow:hidden}
-#introBody{min-height:0;overflow:auto;overscroll-behavior:contain;touch-action:pan-y;margin:0 -6px 12px;padding:0 6px}
-#introBody .intro-item:last-child{margin-bottom:4px}
-#introOk{width:100%}
-.lv canvas.thumb{flex:none;width:44px;height:44px;border-radius:10px;background:var(--soil);position:static;display:block}
-.chapter .done{color:var(--leaf)}
-.newbest{display:inline-block;margin:-6px 0 10px;padding:4px 10px;border-radius:999px;background:var(--honey);color:var(--deep);font-weight:800;font-size:13px}
-
-body.at-home #app{visibility:hidden}
-.home{z-index:4;background:linear-gradient(180deg,color-mix(in srgb,var(--sticker) 55%,transparent),color-mix(in srgb,var(--lawn) 25%,transparent));padding:calc(10px + env(safe-area-inset-top,0px)) 0 0;overflow:hidden}
-.home.show{display:flex;flex-direction:column;align-items:stretch;place-items:stretch}
+/* the home worm's canvas moves between the Play and Me tabs */
+.worm-slot{display:flex;justify-content:center;flex:none}
+#slotMe{margin-bottom:-14px}
+/* -- Play: logo, the big play button, the daily patch and its week -- */
 .home-inner{width:min(100%,420px);margin:auto;align-items:stretch;display:flex;flex-direction:column;gap:14px}
 .logo{display:flex;flex-direction:column;align-items:center;text-align:center;margin:6px 0 2px}
 #homeWorm:focus-visible{outline:3px solid var(--honey);outline-offset:2px;border-radius:26px}
 #homeWorm{position:static;display:block;margin:-30px auto -8px;width:220px;height:200px;cursor:pointer;-webkit-touch-callout:none;user-select:none;touch-action:none}
 .brand{display:inline-block;margin:0;padding:0 0 4px;letter-spacing:.02em;white-space:normal;overflow:visible;font:800 52px/1.1 var(--fd);color:var(--deep);
   text-shadow:0 3px 0 var(--sticker),3px 0 0 var(--sticker),-3px 0 0 var(--sticker),0 -3px 0 var(--sticker),2px 2px 0 var(--sticker),-2px 2px 0 var(--sticker),2px -2px 0 var(--sticker),-2px -2px 0 var(--sticker),0 7px 0 var(--shadow)}
-.share{width:100%;margin:-4px 0 12px}
-.mode-ico{flex:none;width:52px;height:52px;border-radius:18px;display:grid;place-items:center;border:2px solid var(--edge)}
-.garden-ico{background:var(--tint-leaf)}.meadow-ico{background:var(--tint-honey)}
-.label{margin:0 0 -6px;font-weight:800;font-size:13px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.06em}
-.seg{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;padding:4px;border-radius:18px;background:var(--paper-2);border:2px solid var(--edge)}
-.seg button{border:0;border-radius:14px;background:transparent;color:var(--ink);padding:8px 4px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;min-height:52px}
-.seg b{font:800 16px/1 var(--fd)}
-.seg small{font-weight:700;font-size:12px;color:var(--ink-soft)}
-.seg button.on{background:var(--paper);box-shadow:0 3px 0 var(--edge);outline:2px solid var(--berry)}
-.m-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-.m-stat{display:flex;flex-direction:column;align-items:center;gap:2px;padding:9px 4px 8px;border-radius:18px;background:var(--paper-2);border:2px solid var(--edge)}
-.m-stat .ic{width:36px;height:36px;margin-bottom:2px}.m-stat .ic svg{width:24px;height:24px}
-.m-stat b{font:800 21px/1.1 var(--fd)}
-.m-stat small{font-size:11px;font-weight:800;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.04em}
-.diff-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-.diff{--acc:var(--leaf);position:relative;display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 4px 9px;border-radius:18px;border:3px solid var(--edge);background:var(--paper-2);color:var(--ink);cursor:pointer;box-shadow:0 3px 0 var(--edge)}
-.diff[data-d=medium]{--acc:var(--honey-dark)} .diff[data-d=hard]{--acc:var(--berry)}
-.diff .em{height:34px;display:grid;place-items:center}
-.diff b{font:800 16px/1 var(--fd)}
-.diff small{font-weight:700;font-size:12px;color:var(--ink-soft)}
-.diff .pips{display:flex;gap:4px;margin-top:2px}
-.diff .pips i{width:7px;height:7px;border-radius:50%;background:var(--edge)}
-.diff .pips i.f{background:var(--acc)}
-.diff.on{background:var(--paper);border-color:var(--acc);box-shadow:0 3px 0 var(--acc);transform:translateY(-2px)}
-.mix-n{margin-left:4px;color:var(--ink-soft);text-transform:none;letter-spacing:0}
-.mech-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:8px}
-.mech{position:relative;display:flex;flex-direction:column;align-items:center;gap:4px;padding:7px 2px 6px;border-radius:18px;border:2px solid var(--edge);background:var(--paper-2);color:var(--ink-soft);cursor:pointer;font:800 11px/1.1 var(--fb);min-width:0}
-.mech .mi{width:38px;height:38px;border-radius:14px;background:var(--sticker);border:2px solid var(--sticker-edge);display:grid;place-items:center;opacity:.55;filter:grayscale(.7);transition:opacity var(--dur-fast),filter var(--dur-fast),transform var(--dur) var(--ease-pop)}
-.mech .mi svg{width:28px;height:28px}
-.mech .ok{position:absolute;top:-6px;right:-5px;width:20px;height:20px;border-radius:50%;background:var(--leaf);border:2px solid var(--paper);color:var(--on-accent);display:none;place-items:center}
-.mech .ok .ui-ic{width:12px;height:12px}
-.mech.on{background:var(--done);border-color:var(--leaf);color:var(--ink)}
-.mech.on .mi{opacity:1;filter:none;transform:scale(1.06)}
-.mech.on .ok{display:grid}
-.m-go .btn.primary{flex:2}
-@media (prefers-reduced-motion:reduce){ .diff,.mech .mi{transition:none} .diff.on{transform:none} }
-.stat-row{display:flex;flex-wrap:wrap;gap:6px;justify-content:center}
-.pill{display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:999px;background:var(--paper-2);border:2px solid var(--edge);font-weight:800;font-size:13px}
-.dialog .stat-row{margin:-2px 0 14px}
-.gen{max-width:300px}
-.spin{animation:spin 1.6s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
-
-/* ---- home: the big play button, daily week ---- */
+.brand span{display:inline-block;animation:squirm 2.4s ease-in-out infinite}
+.brand span:nth-child(2){animation-delay:.12s}.brand span:nth-child(3){animation-delay:.24s}.brand span:nth-child(4){animation-delay:.36s}.brand span:nth-child(5){animation-delay:.48s}.brand span:nth-child(6){animation-delay:.6s}
+.tagline{margin:10px 0 0;font-weight:800;font-size:15px;color:var(--deep);letter-spacing:.02em}
 .play{display:flex;align-items:center;gap:14px;width:100%;padding:12px 18px 12px 12px;border-radius:26px;cursor:pointer;text-align:left;color:var(--on-accent);font:inherit;
-  background:var(--leaf) linear-gradient(180deg,var(--shine),transparent 60%);border:3px solid var(--leaf-dark);box-shadow:0 6px 0 var(--leaf-dark),0 14px 28px var(--shadow)}
+  background:var(--leaf) var(--glaze-accent);border:3px solid var(--leaf-dark);box-shadow:0 6px 0 var(--leaf-dark),0 14px 28px var(--shadow)}
 .play:active{transform:translateY(6px);box-shadow:0 0 0 var(--leaf-dark)}
 .play-ico{flex:none;width:58px;height:58px;border-radius:50%;display:grid;place-items:center;background:rgba(0,0,0,.12);border:3px solid rgba(255,255,255,.5);padding-left:4px}
 .play .pt{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
 .play b{font:800 30px/1 var(--fd);text-shadow:0 2px 0 var(--leaf-dark)}
 .play small{font-weight:800;font-size:14px;opacity:.95;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.big{display:flex;align-items:center;gap:14px;width:100%;padding:14px 16px;text-align:left;cursor:pointer;color:var(--ink);font:inherit;background-image:linear-gradient(180deg,var(--gloss),transparent 55%)}
+.big:active{transform:translateY(5px);box-shadow:0 0 0 var(--edge)}
+.big .bt{flex:1;display:flex;flex-direction:column;gap:4px}
+.big b{font:800 21px/1.1 var(--fd)}
+.big small{font-weight:700;color:var(--ink-soft);font-size:14px}
+.big .go{flex:none;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:var(--leaf);border:3px solid var(--leaf-dark);color:var(--on-accent);font:800 26px/1 var(--fd);padding-bottom:3px;box-shadow:0 3px 0 var(--leaf-dark)}
+.mode-ico{flex:none;width:52px;height:52px;border-radius:18px;display:grid;place-items:center;border:2px solid var(--edge)}
+.daily-ico{background:var(--tint-berry)}
+.daily-ico .cal{width:34px;height:36px;border-radius:10px;background:var(--on-accent);border:2px solid var(--deep);border-top:8px solid var(--berry);display:grid;place-items:center;font:800 16px/1 var(--fd);color:var(--deep)}
+#dailyBtn.done .daily-ico{background:var(--done)}
 .week{display:flex;gap:6px;margin-top:3px}
-.swatches{display:flex;justify-content:center;gap:10px}
-.swatches button{width:36px;height:36px;border-radius:50%;padding:0;cursor:pointer;display:grid;place-items:center;background:var(--sw);border:3px solid var(--paper);box-shadow:0 0 0 2px var(--edge),0 3px 0 2px var(--edge)}
-.swatches button.on{transform:scale(1.15);box-shadow:0 0 0 3px var(--outline),0 3px 0 3px var(--outline)}
-.swatches button.locked{filter:saturate(.35);opacity:.75}
-.stat{cursor:pointer}
-.pill.unlock{background:var(--honey);border-color:var(--honey-dark);color:var(--deep)}
-#winNext{animation:beckon 1.8s ease-in-out 1.4s infinite}
-@keyframes beckon{0%,70%,100%{transform:none}80%{transform:scale(1.05)}90%{transform:scale(.98)}}
 .week i{width:10px;height:10px;border-radius:50%;background:var(--paper-2);border:2px solid var(--edge)}
 .week i.on{background:var(--berry);border-color:var(--berry-dark)}
 .week i.today{outline:2px solid var(--honey);outline-offset:1px}
-/* ---- patch list: chapter headers stay put while scrolling ---- */
+/* -- Garden: each chapter is a little scene, its patches stepping stones along a path -- */
+#tabGarden .panel{flex:1;min-height:0}
+.list{display:grid;gap:8px;margin:4px 0 16px;max-height:56vh;overflow:auto;text-align:left;touch-action:pan-y;padding:2px}
+#tabGarden .list{flex:1;min-height:0;max-height:none;margin:0;
+  -webkit-mask-image:linear-gradient(180deg,transparent,#000 16px,#000 calc(100% - 28px),transparent);mask-image:linear-gradient(180deg,transparent,#000 16px,#000 calc(100% - 28px),transparent)}
 .map{display:flex;flex-direction:column;gap:14px;padding:2px 2px 18px}
-/* ---- garden map: each chapter is a little scene, its patches stepping stones along a path ---- */
-.scene{--mixed:color-mix(in srgb,var(--scene) var(--scene-mix,55%),var(--paper));position:relative;border-radius:22px;background:var(--paper-2);background:var(--mixed);border:2px solid var(--edge)}
+.scene{--mixed:color-mix(in srgb,var(--scene) var(--scene-mix,55%),var(--paper));position:relative;border-radius:22px;background:var(--mixed);border:2px solid var(--edge)}
 .scene.later{filter:saturate(.55)}
-.ch-banner{position:sticky;top:-2px;z-index:3;display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:22px 22px 14px 14px;background:var(--paper-2);background:var(--mixed);box-shadow:0 6px 10px -8px var(--shadow)}
+/* chapter banners stay put while the map scrolls */
+.ch-banner{position:sticky;top:-2px;z-index:3;display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:22px 22px 14px 14px;background:var(--mixed);box-shadow:0 6px 10px -8px var(--shadow)}
 .ch-banner .emb{flex:none;width:42px;height:42px;border-radius:14px;display:grid;place-items:center;font-size:24px;background:var(--sticker);border:2px solid var(--sticker-edge);box-shadow:0 3px 0 var(--sticker-edge)}
 .ch-banner .tt{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
 .ch-banner b{font:800 18px/1.1 var(--fd);color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -413,11 +335,101 @@ body.at-home #app{visibility:hidden}
 .node.locked svg{width:20px;height:20px;opacity:.8}
 .node.cur{--acc:var(--berry)}
 .node.cur::after{content:"";position:absolute;inset:-9px -9px -14px;border-radius:inherit;border:3px solid color-mix(in srgb,var(--berry) 50%,transparent);animation:halo 1.8s ease-out infinite;pointer-events:none}
-@keyframes halo{0%{transform:scale(.92);opacity:1}100%{transform:scale(1.22);opacity:0}}
 .node.sel::before{content:"";position:absolute;inset:-8px -8px -13px;border-radius:inherit;border:3px solid var(--honey);pointer-events:none}
+/* chapters you can't reach yet fold up into a small card */
+.scene.later .ch-banner{position:static;box-shadow:none}
+.scene.later .emb{filter:grayscale(.8);opacity:.7}
+.peek{display:flex;justify-content:center;gap:8px;padding:0 12px 13px}
+.peek i{width:15px;height:12px;border-radius:48% 52% 46% 54% / 56% 50% 50% 44%;background:color-mix(in srgb,var(--ink-soft) 45%,var(--paper));box-shadow:0 2px 0 color-mix(in srgb,var(--ink-soft) 65%,var(--deep));opacity:.75}
+.peek i:nth-child(even){transform:translateY(3px) rotate(8deg)}
+/* the end of the map */
+.map-end{display:flex;flex-direction:column;align-items:center;gap:8px;padding:16px 14px 18px;text-align:center;border-radius:22px;border:3px dashed var(--edge)}
+.map-end b{font:800 18px/1.15 var(--fd)}
+.map-end small{font-size:13px;color:var(--ink-soft)}
+.map-end .btn{flex:none;min-height:44px;padding:0 18px;margin-top:2px}
 /* the card under the map for the stone you picked */
+.pick{flex:none;display:flex;align-items:center;gap:12px;margin-top:10px;padding:10px 10px 10px 10px;border-radius:22px;background:var(--paper-2);border:3px solid var(--edge);box-shadow:0 4px 0 var(--edge)}
+.pick canvas.thumb{flex:none;position:static;width:58px;height:58px;border-radius:14px;background:var(--soil);box-shadow:0 3px 0 var(--edge)}
+.pick .pt{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
+.pick b{font:800 18px/1.15 var(--fd);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pick small{font:800 12px/1.2 var(--fb);color:var(--ink-soft);display:flex;align-items:center;gap:6px}
+.pick .mini i{width:13px;height:13px}
+.pick .go{flex:none;width:58px;height:58px;border-radius:50%;border:3px solid var(--leaf-dark);background:var(--leaf) var(--glaze-accent);box-shadow:0 4px 0 var(--leaf-dark);display:grid;place-items:center;cursor:pointer;padding:0}
+.pick .go:active{transform:translateY(4px);box-shadow:0 0 0 var(--leaf-dark)}
+/* -- Meadow: endless setup -- */
+.m-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.m-stat{display:flex;flex-direction:column;align-items:center;gap:2px;padding:9px 4px 8px;border-radius:18px;background:var(--paper-2);border:2px solid var(--edge)}
+.m-stat .ic{width:36px;height:36px;margin-bottom:2px}.m-stat .ic svg{width:24px;height:24px}
+.m-stat b{font:800 21px/1.1 var(--fd)}
+.m-stat small{font-size:11px;font-weight:800;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.04em}
+.diff-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.diff{--acc:var(--leaf);position:relative;display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 4px 9px;border-radius:18px;border:3px solid var(--edge);background:var(--paper-2);color:var(--ink);cursor:pointer;box-shadow:0 3px 0 var(--edge)}
+.diff[data-d=medium]{--acc:var(--honey-dark)} .diff[data-d=hard]{--acc:var(--berry)}
+.diff .em{height:34px;display:grid;place-items:center}
+.diff b{font:800 16px/1 var(--fd)}
+.diff small{font-weight:700;font-size:12px;color:var(--ink-soft)}
+.diff .pips{display:flex;gap:4px;margin-top:2px}
+.diff .pips i{width:7px;height:7px;border-radius:50%;background:var(--edge)}
+.diff .pips i.f{background:var(--acc)}
+.diff.on{background:var(--paper);border-color:var(--acc);box-shadow:0 3px 0 var(--acc);transform:translateY(-2px)}
+.mix-n{margin-left:4px;color:var(--ink-soft);text-transform:none;letter-spacing:0}
+.mech-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:8px}
+.mech{position:relative;display:flex;flex-direction:column;align-items:center;gap:4px;padding:7px 2px 6px;border-radius:18px;border:2px solid var(--edge);background:var(--paper-2);color:var(--ink-soft);cursor:pointer;font:800 11px/1.1 var(--fb);min-width:0}
+.mech .mi{width:38px;height:38px;border-radius:14px;background:var(--sticker);border:2px solid var(--sticker-edge);display:grid;place-items:center;opacity:.55;filter:grayscale(.7);transition:opacity var(--dur-fast),filter var(--dur-fast),transform var(--dur) var(--ease-pop)}
+.mech .mi svg{width:28px;height:28px}
+.mech .ok{position:absolute;top:-6px;right:-5px;width:20px;height:20px;border-radius:50%;background:var(--leaf);border:2px solid var(--paper);color:var(--on-accent);display:none;place-items:center}
+.mech .ok .ui-ic{width:12px;height:12px}
+.mech.on{background:var(--done);border-color:var(--leaf);color:var(--ink)}
+.mech.on .mi{opacity:1;filter:none;transform:scale(1.06)}
+.mech.on .ok{display:grid}
+.m-go .btn.primary{flex:2}
+/* -- Me: the wardrobe -- */
+.hat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.hat{display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 4px;border-radius:18px;border:3px solid var(--edge);background:var(--paper-2);color:var(--ink);cursor:pointer;font:inherit;box-shadow:0 3px 0 var(--edge)}
+.hat .hat-ico{height:38px;display:grid;place-items:center}
+.hat b{font:800 12px/1.1 var(--fd);text-align:center}
+.hat small{font-size:11px;font-weight:700;color:var(--ink-soft);text-align:center;line-height:1.2}
+.hat.on{background:var(--done);border-color:var(--leaf);box-shadow:0 3px 0 var(--leaf)}
+.hat.locked{opacity:.6}
+.hat.locked .hat-ico{filter:grayscale(1)}
+.swatches{display:flex;justify-content:center;gap:10px}
+.swatches button{width:36px;height:36px;border-radius:50%;padding:0;cursor:pointer;display:grid;place-items:center;background:var(--sw);border:3px solid var(--paper);box-shadow:0 0 0 2px var(--edge),0 3px 0 2px var(--edge)}
+.swatches button.on{transform:scale(1.15);box-shadow:0 0 0 3px var(--outline),0 3px 0 3px var(--outline)}
+.swatches button.locked{filter:saturate(.35);opacity:.75}
+/* -- Badges -- */
+.badge-grid{display:grid;gap:8px;margin:0}
+.badge-card{display:flex;gap:12px;align-items:center;padding:8px 12px 8px 8px;border-radius:18px;border:3px solid var(--edge);background:var(--paper-2);opacity:.7}
+.badge-card.on{opacity:1;background:var(--paper);border-color:var(--honey);box-shadow:0 3px 0 var(--honey-dark)}
+.badge-card .medal{flex:none;width:46px;height:46px;border-radius:50%;display:grid;place-items:center;font-size:24px;background:var(--sticker);border:3px solid var(--sticker-edge)}
+.badge-card.on .medal{background:var(--tint-honey);border-color:var(--honey-dark)}
+.badge-card:not(.on) .medal{filter:grayscale(1)}
+.badge-card b{display:block;font:800 16px/1.2 var(--fd)}
+.badge-card small{font-weight:700;font-size:13px;color:var(--ink-soft);line-height:1.3}
+.badge-card i{font-style:normal;color:var(--leaf-dark);white-space:nowrap}
+
+/* ==== 7. Settings: a short list whose rows open sub-pages ==== */
+#setOv .dialog{overflow-x:hidden}
+.set-head{display:grid;grid-template-columns:40px 1fr 40px;align-items:center}
+.set-head h2{margin:0!important}
+.set-page{display:flex;flex-direction:column;gap:12px}
+.set-link{display:flex;align-items:center;gap:12px;width:100%;padding:10px 12px;border-radius:18px;border:3px solid var(--edge);background:var(--paper-2);color:var(--ink);cursor:pointer;text-align:left;font:inherit;box-shadow:0 3px 0 var(--edge)}
+.set-link:active{transform:translateY(3px);box-shadow:none}
+.set-link .set-ico{flex:none;width:40px;height:40px;border-radius:14px;display:grid;place-items:center;font-size:20px;color:var(--deep);font-weight:800;background:var(--sticker);border:2px solid var(--sticker-edge)}
+.set-link > span:nth-child(2){flex:1;display:flex;flex-direction:column;gap:2px}
+.set-link b{font:800 18px/1.15 var(--fd)}
+.set-link small{font-weight:700;font-size:13px;color:var(--ink-soft)}
+.set-link .chev{color:var(--ink-soft);display:grid}
+.set-row{display:flex;justify-content:space-between;align-items:center;font:800 18px/1 var(--fd);padding:2px 2px}
+.set-row.vol{margin-top:-4px;font-size:15px;color:var(--ink-soft)}
+#setMusicVol{width:150px;accent-color:var(--leaf);touch-action:pan-x}
+#setMusicVol:disabled{opacity:.4}
+.set-note{margin:-4px 0 0!important;font-size:14px!important;text-align:left}
+#saveCode{width:100%;resize:none;border-radius:18px;border:3px solid var(--edge);background:var(--paper-2);color:var(--ink);font:700 13px/1.3 ui-monospace,Menlo,monospace;padding:10px;user-select:text;-webkit-user-select:text;touch-action:auto}
+.version{margin:-4px 0 0;text-align:center;font-size:12px;font-weight:700;color:var(--ink-soft);opacity:.75}
+
+/* ==== 8. Finale: "What's next?" once the whole garden is grown ==== */
 .finale{gap:12px;text-align:center}
-.fin-emb{align-self:center;width:76px;height:76px;border-radius:50%;display:grid;place-items:center;margin:2px 0 0;background:var(--tint-honey);border:3px solid var(--honey-dark);box-shadow:0 4px 0 var(--honey-dark)}
+.fin-emb{align-self:center;width:76px;height:76px;border-radius:50%;place-items:center;margin:2px 0 0;background:var(--tint-honey);border:3px solid var(--honey-dark);box-shadow:0 4px 0 var(--honey-dark)}
 .finale h2{margin:0}
 .fin-sub{margin:-4px 0 0;font-size:15px;color:var(--ink-soft)}
 .finale p.label{text-align:left;margin:4px 0 -4px}
@@ -425,35 +437,8 @@ body.at-home #app{visibility:hidden}
 .fin-next .set-link.is-done{opacity:.6}
 .fin-next .set-link.is-done .chev{color:var(--leaf-dark);font-size:20px}
 .fin-note{margin:0;font-size:13px;color:var(--ink-soft)}
-/* the end of the map */
-.map-end{display:flex;flex-direction:column;align-items:center;gap:8px;padding:16px 14px 18px;text-align:center;border-radius:22px;border:3px dashed var(--edge)}
-.map-end b{font:800 18px/1.15 var(--fd)}
-.map-end small{font-size:13px;color:var(--ink-soft)}
-.map-end .btn{flex:none;min-height:44px;padding:0 18px;margin-top:2px}
-.art,.ui-ic{flex:none;display:block}
-[data-art]{display:inline-grid;vertical-align:-.28em}
-.link [data-art],.btn [data-art]{margin-right:2px}
-.pick{flex:none;display:flex;align-items:center;gap:12px;margin-top:10px;padding:10px 10px 10px 10px;border-radius:22px;background:var(--paper-2);border:3px solid var(--edge);box-shadow:0 4px 0 var(--edge)}
-.pick canvas.thumb{flex:none;position:static;width:58px;height:58px;border-radius:14px;background:var(--soil);box-shadow:0 3px 0 var(--edge)}
-.pick .pt{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
-.pick b{font:800 18px/1.15 var(--fd);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.pick small{font:800 12px/1.2 var(--fb);color:var(--ink-soft);display:flex;align-items:center;gap:6px}
-.pick .mini i{width:13px;height:13px}
-.pick .go{flex:none;width:58px;height:58px;border-radius:50%;border:3px solid var(--leaf-dark);background:var(--leaf) linear-gradient(180deg,var(--shine),transparent 60%);box-shadow:0 4px 0 var(--leaf-dark);display:grid;place-items:center;cursor:pointer;padding:0}
-.pick .go:active{transform:translateY(4px);box-shadow:0 0 0 var(--leaf-dark)}
-.pick.swap{animation:popin var(--dur) var(--ease-pop)}
-/* chapters you can't reach yet fold up into a small card */
-.scene.later .ch-banner{position:static;box-shadow:none}
-.scene.later .emb{filter:grayscale(.8);opacity:.7}
-.peek{display:flex;justify-content:center;gap:8px;padding:0 12px 13px}
-.peek i{width:15px;height:12px;border-radius:48% 52% 46% 54% / 56% 50% 50% 44%;background:color-mix(in srgb,var(--ink-soft) 45%,var(--paper));box-shadow:0 2px 0 color-mix(in srgb,var(--ink-soft) 65%,var(--deep));opacity:.75}
-.peek i:nth-child(even){transform:translateY(3px) rotate(8deg)}
-.list .chapter{position:sticky;top:-2px;z-index:1;margin:6px 0 0;padding:6px 4px;background:var(--paper)}
-.chapter .new{margin-left:6px;padding:3px 7px;border-radius:999px;background:var(--berry);color:var(--on-accent);font:800 11px/1 var(--fb);text-transform:uppercase;letter-spacing:.06em;vertical-align:2px}
-.stat .mini{display:inline-flex;gap:1px}
-.stat .mini i{width:11px;height:11px}
-.stat:focus-visible{outline:3px solid var(--honey);outline-offset:1px}
-/* ---- UI feedback: one press style per family, one selection pop, one error shake, one dialog motion ---- */
+
+/* ==== 9. UI feedback: one press style per family, one selection pop, one error shake, one dialog motion ==== */
 /* press: controls that stand on a ledge sink onto it, flat ones squish. Pressing is quick, letting go springs back. */
 .btn,.round,.disc,.play,.big,.set-link,.pick .go,.hat,.diff,.node,.mech,.seg button,.swatches button,.stat,.icon-btn,.link,.tab svg{
   transition:transform var(--dur) var(--ease-pop),scale var(--dur) var(--ease-pop),box-shadow var(--dur) var(--ease-pop),background-color var(--dur-fast),border-color var(--dur-fast)}
@@ -469,12 +454,49 @@ button:disabled{cursor:default}
 .ov.show:not(.home){animation:ovIn var(--dur) var(--ease-out)}
 .ov.show.out{animation:ovOut var(--dur-fast) var(--ease-in) forwards;pointer-events:none}
 .ov.out .dialog{animation:dlgOut var(--dur-fast) var(--ease-in) forwards}
+/* selection pop (settle, pulse), staggered entrances (stagger: .enter drops in, .rise comes up), error shake (nope) */
+.pop{animation:popin var(--dur) var(--ease-pop)}
+.enter{animation:hudIn var(--dur-slow) var(--ease-pop) var(--d,0ms) both}
+nav .enter,.rise{animation:navIn var(--dur-slow) var(--ease-pop) var(--d,0ms) both}
+.tab.on.pop svg{animation:wiggle var(--dur) ease-in-out}
+/* HUD tiles cheer when a goal is met and shake when a star is lost */
+.stat.cheer{animation:cheer var(--dur-slow) var(--ease-pop)}
+.stat.cheer .ic{animation:wiggle .3s ease-in-out 2}
+.stat.lost .mini{animation:nope var(--dur-slow) var(--ease-out)}
+.gbtn.pop .disc{animation:popin var(--dur) var(--ease-pop)}
+.gbtn.pop{animation:none}
+.nope{animation:nope var(--dur) var(--ease-out)}
+.spin{animation:spin 1.6s linear infinite}
+.pick.swap{animation:popin var(--dur) var(--ease-pop)}
+.set-page.fwd{animation:setFwd var(--dur) var(--ease-out)}
+.set-page.back{animation:setBack var(--dur) var(--ease-out)}
+#winNext{animation:beckon 1.8s ease-in-out 1.4s infinite}
+/* keyframes; animations that must stack on an element's own transform use the individual scale / translate properties */
+@keyframes pop{from{transform:scale(.85) rotate(-2deg);opacity:0}to{transform:none;opacity:1}}
+@keyframes popin{0%{scale:.86}60%{scale:1.07}100%{scale:1}}
+@keyframes nope{20%,60%{translate:-6px 0}40%,80%{translate:6px 0}}
+@keyframes hudIn{from{opacity:0;translate:0 -16px;scale:.92}}
+@keyframes navIn{from{opacity:0;translate:0 22px;scale:.9}}
 @keyframes ovIn{from{opacity:0}}
 @keyframes ovOut{to{opacity:0}}
 @keyframes dlgOut{to{opacity:0;transform:scale(.94)}}
-/* ---- short screens (phones in landscape): one compact HUD row, smaller controls ---- */
+@keyframes setFwd{from{opacity:0;transform:translateX(36px)}to{opacity:1;transform:none}}
+@keyframes setBack{from{opacity:0;transform:translateX(-36px)}to{opacity:1;transform:none}}
+@keyframes cheer{0%{transform:scale(1)}30%{transform:scale(1.14) rotate(-3deg)}60%{transform:scale(.97) rotate(2deg)}100%{transform:none}}
+@keyframes wiggle{50%{transform:rotate(12deg) scale(1.1)}}
+@keyframes glow{0%,80%,100%{transform:none}88%{transform:rotate(-10deg) scale(1.08)}94%{transform:rotate(8deg) scale(1.08)}}
+@keyframes starIn{to{transform:scale(1)}}
+@keyframes beckon{0%,70%,100%{transform:none}80%{transform:scale(1.05)}90%{transform:scale(.98)}}
+@keyframes fall{to{transform:translateY(105vh) rotate(540deg);opacity:.2}}
+@keyframes swipe{0%{transform:translate(-60px,20px);opacity:0}15%{opacity:1}55%{transform:translate(60px,20px);opacity:1}75%,100%{transform:translate(60px,20px);opacity:0}}
+@keyframes squirm{0%,60%,100%{transform:none}20%{transform:translateY(-4px) rotate(-4deg)}40%{transform:translateY(2px) rotate(3deg)}}
+@keyframes halo{0%{transform:scale(.92);opacity:1}100%{transform:scale(1.22);opacity:0}}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ==== 10. Small screens ==== */
 /* narrow phones with many goals: tighter tiles */
 @media (max-width:400px){ .hud-stats{gap:4px;padding:4px} .stat{padding:6px 2px 5px;font-size:16px} .stat .v{gap:4px} .stat .ic{width:22px;height:22px} .stat .ic svg{width:17px;height:17px} .stat.moves b{font-size:18px} .stat .k{font-size:11px;letter-spacing:.03em} .stat .mini i{width:9px;height:9px} }
+/* short screens (phones in landscape): one compact HUD row, smaller controls */
 @media (max-height:520px){
   #app{max-width:none;padding:6px 12px 8px}
   header.hud{flex-direction:row;flex-wrap:wrap;align-items:center;gap:6px}
@@ -488,14 +510,17 @@ button:disabled{cursor:default}
   nav{gap:10px}.disc{width:48px;height:48px}.disc svg{width:22px;height:22px}
   .lbl{display:none}
 }
-/* players who ask for more contrast get darker secondary text and stronger edges */
-@media (prefers-contrast: more){
-  :root{--ink-soft:#5B4436;--edge:#B8955F}
-  :root[data-theme="dark"]{--ink-soft:#FBEFDD;--edge:#A08468}
+
+/* ==== 11. Reduced motion: every animation and transition above stops ==== */
+@media (prefers-reduced-motion: reduce){
+  .dialog,.ov.show:not(.home),.ov.show.out,.ov.out .dialog,.pop,.enter,.rise,.nope,.spin,.pick.swap,.set-page.fwd,.set-page.back,#winNext,
+  .tab.on.pop svg,.stat.cheer,.stat.cheer .ic,.stat.lost .mini,.gbtn.pop .disc,.gbtn.hint .disc svg,
+  #tutorial .hand,.brand span,.node.cur::after{animation:none}
+  .star{animation:none;transform:none}
+  .btn,.round,.disc,.play,.big,.set-link,.pick .go,.hat,.diff,.node,.mech,.seg button,.swatches button,.stat,.icon-btn,.link,.tab svg,.switch,.switch i,.mech .mi,#toast{transition:none}
+  .diff.on:not(:active){transform:none}
+  .petals{display:none}
 }
-@media (prefers-contrast: more) and (prefers-color-scheme: dark){ :root:not([data-theme="light"]){--ink-soft:#FBEFDD;--edge:#A08468} }
-@media (prefers-reduced-motion: reduce){ .node.cur::after,.nope,.pick.swap,.ov.show:not(.home),.ov.show.out,.ov.out .dialog{animation:none}
-  .btn,.round,.disc,.play,.big,.set-link,.pick .go,.hat,.diff,.node,.mech,.seg button,.swatches button,.stat,.icon-btn,.link,.tab svg,.switch,.switch i,.mech .mi{transition:none} .spin,.logo svg,.gbtn.hint .disc svg,#winNext,.set-page.fwd,.set-page.back,.tab-page.enter{animation:none} #tutorial .hand{animation:none} .enter,.rise,.tab.on.pop svg,.stat.cheer,.stat.cheer .ic,.stat.lost .mini,.gbtn.pop .disc{animation:none} .star{animation:none;transform:none} .pop{animation:none} .dialog{animation:none} #toast{transition:none} .petals{display:none} }
 </style>
 </head>
 <body class="at-home">
@@ -505,9 +530,9 @@ button:disabled{cursor:default}
     <div class="hud-top">
       <div class="plaque">
         <div class="badge" aria-hidden="true">
-          <svg viewBox="0 0 52 52"><g style="fill:var(--petal)" stroke="#5B4436" stroke-width="2">
+          <svg viewBox="0 0 52 52"><g style="fill:var(--petal);stroke:var(--outline)" stroke-width="2">
             <circle cx="26" cy="11" r="10"/><circle cx="40.3" cy="21.4" r="10"/><circle cx="34.8" cy="38.2" r="10"/><circle cx="17.2" cy="38.2" r="10"/><circle cx="11.7" cy="21.4" r="10"/></g>
-            <circle cx="26" cy="26" r="13" style="fill:var(--honey)" stroke="#5B4436" stroke-width="2"/></svg>
+            <circle cx="26" cy="26" r="13" style="fill:var(--honey);stroke:var(--outline)" stroke-width="2"/></svg>
           <span id="lvlNum">1</span>
         </div>
         <div class="title"><h1 id="lvlName">First wiggle</h1><p class="sub" id="lvlSub">First sprouts</p></div>
@@ -518,11 +543,11 @@ button:disabled{cursor:default}
   </header>
   <div class="bottom">
     <nav>
-      <button id="levelsBtn" class="gbtn" title="Home (Esc)"><span class="disc"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.15" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-5h4v5"/></svg></span><span class="lbl">Home</span></button>
-      <button id="undoBtn" class="gbtn" data-sfx="none" title="Undo (Z, hold to rewind)"><span class="disc"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.15" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg></span><span class="lbl">Undo</span></button>
-      <button id="hintBtn" class="gbtn hint" data-sfx="none" title="Hint (H)"><span class="disc"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z" style="fill:var(--sticker)"/></svg></span><span class="lbl">Hint</span></button>
-      <button id="restartBtn" class="gbtn" title="Restart (R)"><span class="disc"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.15" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg></span><span class="lbl">Restart</span></button>
-      <button id="skipBtn" class="gbtn" hidden><span class="disc"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.15" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5l8 7-8 7z" fill="currentColor"/><path d="M18 5v14"/></svg></span><span class="lbl">Skip</span></button>
+      <button id="levelsBtn" class="gbtn" title="Home (Esc)"><span class="disc"><svg width="28" height="28" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.15" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-5h4v5"/></svg></span><span class="lbl">Home</span></button>
+      <button id="undoBtn" class="gbtn" data-sfx="none" title="Undo (Z, hold to rewind)"><span class="disc"><svg width="28" height="28" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.15" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg></span><span class="lbl">Undo</span></button>
+      <button id="hintBtn" class="gbtn hint" data-sfx="none" title="Hint (H)"><span class="disc"><svg width="30" height="30" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z" style="fill:var(--sticker)"/></svg></span><span class="lbl">Hint</span></button>
+      <button id="restartBtn" class="gbtn" title="Restart (R)"><span class="disc"><svg width="28" height="28" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.15" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg></span><span class="lbl">Restart</span></button>
+      <button id="skipBtn" class="gbtn" hidden><span class="disc"><svg width="28" height="28" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.15" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5l8 7-8 7z" fill="currentColor"/><path d="M18 5v14"/></svg></span><span class="lbl">Skip</span></button>
     </nav>
   </div>
 </div>
@@ -530,9 +555,9 @@ button:disabled{cursor:default}
 <div id="toast" class="card" role="status"></div>
 
 <div class="ov" id="winOv"><div role="dialog" aria-modal="true" aria-labelledby="winTitle" class="dialog card">
-  <svg width="64" height="64" viewBox="0 0 52 52" aria-hidden="true"><g style="fill:var(--petal)" stroke="#5B4436" stroke-width="2">
+  <svg width="64" height="64" viewBox="0 0 52 52" aria-hidden="true"><g style="fill:var(--petal);stroke:var(--outline)" stroke-width="2">
     <circle cx="26" cy="11" r="10"/><circle cx="40.3" cy="21.4" r="10"/><circle cx="34.8" cy="38.2" r="10"/><circle cx="17.2" cy="38.2" r="10"/><circle cx="11.7" cy="21.4" r="10"/></g>
-    <circle cx="26" cy="26" r="13" style="fill:var(--honey)" stroke="#5B4436" stroke-width="2"/><circle cx="21.5" cy="24" r="2" fill="#5B4436"/><circle cx="30.5" cy="24" r="2" fill="#5B4436"/><path d="M21 29q5 4 10 0" stroke="#5B4436" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
+    <circle cx="26" cy="26" r="13" style="fill:var(--honey);stroke:var(--outline)" stroke-width="2"/><circle cx="21.5" cy="24" r="2" style="fill:var(--outline)"/><circle cx="30.5" cy="24" r="2" style="fill:var(--outline)"/><path d="M21 29q5 4 10 0" style="stroke:var(--outline)" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
   <h2 id="winTitle">Snug as a bug!</h2><p id="winText"></p><div id="winMedal"></div>
   <button class="btn share" id="winShare" hidden>Share result</button>
   <div class="row"><button class="btn" id="winReplay">Replay</button><button class="btn primary" id="winNext">Next patch</button></div>
@@ -553,7 +578,7 @@ button:disabled{cursor:default}
 <div class="home ov show" id="homeOv">
   <div class="home-top">
     <span class="star-pill" id="homeStars" aria-label="Stars"></span>
-    <span class="home-top-tools"><button class="round" id="homeSound"></button><button class="round" id="installBtn" aria-label="Install Squirm as an app" hidden><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7 10l5 5 5-5"/><path d="M5 19h14"/></svg></button><button class="round" id="settingsBtn" aria-label="Settings" title="Settings"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.8v2.4M12 18.8v2.4M2.8 12h2.4M18.8 12h2.4M5.5 5.5l1.7 1.7M16.8 16.8l1.7 1.7M5.5 18.5l1.7-1.7M16.8 7.2l1.7-1.7"/><circle cx="12" cy="12" r="6.6"/></svg></button></span>
+    <span class="home-top-tools"><button class="round" id="homeSound"></button><button class="round" id="installBtn" aria-label="Install Squirm as an app" hidden><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7 10l5 5 5-5"/><path d="M5 19h14"/></svg></button><button class="round" id="settingsBtn" aria-label="Settings" title="Settings"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.8v2.4M12 18.8v2.4M2.8 12h2.4M18.8 12h2.4M5.5 5.5l1.7 1.7M16.8 16.8l1.7 1.7M5.5 18.5l1.7-1.7M16.8 7.2l1.7-1.7"/><circle cx="12" cy="12" r="6.6"/></svg></button></span>
   </div>
   <div class="tab-pages">
     <section class="tab-page" id="tabPlay" aria-label="Play">
@@ -563,7 +588,7 @@ button:disabled{cursor:default}
           <h1 class="brand" aria-label="Squirm"><span>S</span><span>q</span><span>u</span><span>i</span><span>r</span><span>m</span></h1>
           <p class="tagline">a cozy garden puzzle</p>
         </div>
-        <button class="play" id="homePlay"><span class="play-ico" aria-hidden="true"><svg width="30" height="30" viewBox="0 0 24 24"><path d="M8 5.5v13l10.5-6.5z" fill="#fff" stroke="#fff" stroke-width="2" stroke-linejoin="round"/></svg></span><span class="pt"><b id="playTitle">Play</b><small id="playSub">Patch 1</small></span></button>
+        <button class="play" id="homePlay"><span class="play-ico" aria-hidden="true"><svg width="30" height="30" viewBox="0 0 24 24"><path d="M8 5.5v13l10.5-6.5z" style="fill:var(--on-accent);stroke:var(--on-accent)" stroke-width="2" stroke-linejoin="round"/></svg></span><span class="pt"><b id="playTitle">Play</b><small id="playSub">Patch 1</small></span></button>
         <button class="big card" id="dailyBtn">
     <span class="mode-ico daily-ico" aria-hidden="true"><span class="cal" id="dailyDay">11</span></span>
     <span class="bt"><b>Daily patch</b><small id="dailySub">One patch for everyone today</small><span class="week" id="dailyWeek" aria-hidden="true"></span></span><span class="go" aria-hidden="true"><svg class="ui-ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 5.5L16 12l-6.5 6.5"/></svg></span>
@@ -606,11 +631,11 @@ button:disabled{cursor:default}
     </section>
   </div>
   <nav class="tabbar" aria-label="Sections">
-    <button class="tab" data-tab="play"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M8 5.5v13l10.5-6.5z" fill="currentColor" fill-opacity=".25"/></svg><span>Play</span></button>
-    <button class="tab" data-tab="garden"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21V11"/><path d="M12 14c-4 0-7-2-7-6 4 0 7 2 7 6zM12 11c0-4 3-6 7-6 0 4-3 6-7 6z" fill="currentColor" fill-opacity=".25"/></svg><span>Garden</span></button>
-    <button class="tab" data-tab="meadow"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12c2-4 5-4 8 0s6 4 8 0"/><path d="M4 12c2 4 5 4 8 0s6-4 8 0"/></svg><span>Meadow</span></button>
-    <button class="tab" data-tab="me"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17c0-1.5 4-2.5 9-2.5s9 1 9 2.5-4 2.5-9 2.5-9-1-9-2.5z" fill="currentColor" fill-opacity=".25"/><path d="M7 15.2C7 9 8.5 5 12 5s5 4 5 10.2"/><path d="M7.3 12.5h9.4"/></svg><span>Me</span></button>
-    <button class="tab" data-tab="badges"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3l-2 7M16 3l2 7"/><circle cx="12" cy="15" r="6" fill="currentColor" fill-opacity=".25"/><path d="M12 12.3l.9 1.8 2 .3-1.45 1.4.35 2-1.8-.95-1.8.95.35-2-1.45-1.4 2-.3z" fill="currentColor"/></svg><span>Badges</span></button>
+    <button class="tab" data-tab="play"><svg width="26" height="26" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M8 5.5v13l10.5-6.5z" fill="currentColor" fill-opacity=".25"/></svg><span>Play</span></button>
+    <button class="tab" data-tab="garden"><svg width="26" height="26" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21V11"/><path d="M12 14c-4 0-7-2-7-6 4 0 7 2 7 6zM12 11c0-4 3-6 7-6 0 4-3 6-7 6z" fill="currentColor" fill-opacity=".25"/></svg><span>Garden</span></button>
+    <button class="tab" data-tab="meadow"><svg width="26" height="26" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12c2-4 5-4 8 0s6 4 8 0"/><path d="M4 12c2 4 5 4 8 0s6-4 8 0"/></svg><span>Meadow</span></button>
+    <button class="tab" data-tab="me"><svg width="26" height="26" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17c0-1.5 4-2.5 9-2.5s9 1 9 2.5-4 2.5-9 2.5-9-1-9-2.5z" fill="currentColor" fill-opacity=".25"/><path d="M7 15.2C7 9 8.5 5 12 5s5 4 5 10.2"/><path d="M7.3 12.5h9.4"/></svg><span>Me</span></button>
+    <button class="tab" data-tab="badges"><svg width="26" height="26" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3l-2 7M16 3l2 7"/><circle cx="12" cy="15" r="6" fill="currentColor" fill-opacity=".25"/><path d="M12 12.3l.9 1.8 2 .3-1.45 1.4.35 2-1.8-.95-1.8.95.35-2-1.45-1.4 2-.3z" fill="currentColor"/></svg><span>Badges</span></button>
   </nav>
 </div>
 <div class="ov" id="setOv"><div role="dialog" aria-modal="true" aria-labelledby="setTitle" class="dialog card sheet settings">
@@ -664,10 +689,10 @@ button:disabled{cursor:default}
   <button class="btn primary" id="introOk">Got it</button>
 </div></div>
 <div class="ov" id="genOv"><div role="dialog" aria-modal="true" aria-labelledby="genTitle" class="dialog card gen">
-  <svg class="spin" width="64" height="64" viewBox="0 0 52 52" aria-hidden="true"><g style="fill:var(--petal)" stroke="#5B4436" stroke-width="2"><circle cx="26" cy="11" r="10"/><circle cx="40.3" cy="21.4" r="10"/><circle cx="34.8" cy="38.2" r="10"/><circle cx="17.2" cy="38.2" r="10"/><circle cx="11.7" cy="21.4" r="10"/></g><circle cx="26" cy="26" r="13" style="fill:var(--honey)" stroke="#5B4436" stroke-width="2"/></svg>
+  <svg class="spin" width="64" height="64" viewBox="0 0 52 52" aria-hidden="true"><g style="fill:var(--petal);stroke:var(--outline)" stroke-width="2"><circle cx="26" cy="11" r="10"/><circle cx="40.3" cy="21.4" r="10"/><circle cx="34.8" cy="38.2" r="10"/><circle cx="17.2" cy="38.2" r="10"/><circle cx="11.7" cy="21.4" r="10"/></g><circle cx="26" cy="26" r="13" style="fill:var(--honey);stroke:var(--outline)" stroke-width="2"/></svg>
   <h2 id="genTitle">Growing a patch</h2><p id="genText">Planting seeds...</p>
 </div></div>
-<div id="tutorial" aria-hidden="true"><div class="hand"><svg width="64" height="64" viewBox="0 0 24 24" fill="#FFF8EA" stroke="#5B4436" stroke-width="1.4" stroke-linejoin="round"><path d="M9 11V5.5a1.5 1.5 0 0 1 3 0V10l.2-1a1.5 1.5 0 0 1 3 .3V11l.2-.6a1.5 1.5 0 0 1 2.8 1V15c0 3.3-2.2 6-5.7 6-2.3 0-3.7-1-4.9-2.7L5 14.6a1.5 1.5 0 0 1 2.3-1.9L9 14.5z"/></svg></div><div class="tip card">Swipe in any direction to crawl</div></div>
+<div id="tutorial" aria-hidden="true"><div class="hand"><svg width="64" height="64" viewBox="0 0 24 24" style="fill:var(--sticker);stroke:var(--outline)" stroke-width="1.4" stroke-linejoin="round"><path d="M9 11V5.5a1.5 1.5 0 0 1 3 0V10l.2-1a1.5 1.5 0 0 1 3 .3V11l.2-.6a1.5 1.5 0 0 1 2.8 1V15c0 3.3-2.2 6-5.7 6-2.3 0-3.7-1-4.9-2.7L5 14.6a1.5 1.5 0 0 1 2.3-1.9L9 14.5z"/></svg></div><div class="tip card">Swipe in any direction to crawl</div></div>
 
 <div id="noGL" class="ov"><div role="alertdialog" aria-modal="true" aria-labelledby="noGLTitle" class="dialog card">
   <h2 id="noGLTitle">No garden today</h2><p>Squirm needs WebGL to draw its garden, and this browser doesn't have it turned on. Try another browser or enable hardware acceleration.</p>
