@@ -246,6 +246,12 @@ map thumbnails, and `introAt` in `tools/verify-levels.js`.
 - Scales: display text 12/14/16/18/21/26/30/52px, body text 11/12/13/14/15/16px, icon glyphs
   16/20/24px; corner radius 10/14/18/22/26px, `999px` for pills, `50%` for circles; borders 2px
   (small inner pieces) or 3px (cards, buttons, tiles); gaps 2/4/6/8/10/12/14/16px.
+- Icons: no emoji or text glyphs in the UI. Pictures (badges, hats, settings rows, stats, difficulty,
+  map decorations) come from the `ART` sticker set in `game.js` via `art(name,size)`: a 24-unit grid,
+  pastel fills, brown `#5B4436` outline whose width scales with size, stars filled with `--honey`. In
+  `shell.html` write `<span data-art="name" data-size="28"></span>` and boot fills it in. Controls
+  (chevrons, back, close, check, the HUD buttons) are monoline `currentColor` SVGs (`UI_ICON`, class
+  `ui-ic`) with a stroke that renders about 2.5px. Add new pictures to `ART` rather than inlining SVG.
 - Respect `prefers-reduced-motion`.
 - Wrap `localStorage` access in try/catch.
 - Keep the mobile performance budget in mind. Scenery is the first thing to trim.

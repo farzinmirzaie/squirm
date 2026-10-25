@@ -232,7 +232,7 @@ button[hidden]{display:none!important}
 .tab.on svg{color:var(--leaf-dark);transform:translateY(-1px) scale(1.08)}
 .hat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
 .hat{display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 4px;border-radius:18px;border:3px solid var(--edge);background:var(--paper-2);color:var(--ink);cursor:pointer;font:inherit;box-shadow:0 3px 0 var(--edge)}
-.hat .hat-ico{font-size:24px;line-height:1.1}
+.hat .hat-ico{height:38px;display:grid;place-items:center}
 .hat b{font:800 12px/1.1 var(--fd);text-align:center}
 .hat small{font-size:11px;font-weight:700;color:var(--ink-soft);text-align:center;line-height:1.2}
 .hat.on{background:var(--done);border-color:var(--leaf);box-shadow:0 3px 0 var(--leaf)}
@@ -266,7 +266,7 @@ button[hidden]{display:none!important}
 .set-link > span:nth-child(2){flex:1;display:flex;flex-direction:column;gap:2px}
 .set-link b{font:800 18px/1.15 var(--fd)}
 .set-link small{font-weight:700;font-size:13px;color:var(--ink-soft)}
-.set-link .chev{font-size:24px;color:var(--ink-soft);line-height:1}
+.set-link .chev{color:var(--ink-soft);display:grid}
 .btn.danger-soft{flex:none;background:transparent;border-color:var(--berry);color:var(--berry-dark);box-shadow:0 4px 0 var(--berry);min-height:48px;font-size:16px}
 .set-row{display:flex;justify-content:space-between;align-items:center;font:800 18px/1 var(--fd);padding:2px 2px}
 .set-row.vol{margin-top:-4px;font-size:15px;color:var(--ink-soft)}
@@ -325,14 +325,13 @@ body.at-home #app{visibility:hidden}
 .seg button.on{background:var(--paper);box-shadow:0 3px 0 var(--edge);outline:2px solid var(--berry)}
 .m-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
 .m-stat{display:flex;flex-direction:column;align-items:center;gap:2px;padding:9px 4px 8px;border-radius:18px;background:var(--paper-2);border:2px solid var(--edge)}
-.m-stat .ic{font-size:20px;line-height:1;height:22px;display:grid;place-items:center}
-.m-stat .ic svg{width:22px;height:22px}
+.m-stat .ic{width:36px;height:36px;margin-bottom:2px}.m-stat .ic svg{width:24px;height:24px}
 .m-stat b{font:800 21px/1.1 var(--fd)}
 .m-stat small{font-size:11px;font-weight:800;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.04em}
 .diff-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
 .diff{--acc:var(--leaf);position:relative;display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 4px 9px;border-radius:18px;border:3px solid var(--edge);background:var(--paper-2);color:var(--ink);cursor:pointer;box-shadow:0 3px 0 var(--edge)}
 .diff[data-d=medium]{--acc:var(--honey-dark)} .diff[data-d=hard]{--acc:var(--berry)}
-.diff .em{font-size:24px;line-height:1.1}
+.diff .em{height:34px;display:grid;place-items:center}
 .diff b{font:800 16px/1 var(--fd)}
 .diff small{font-weight:700;font-size:12px;color:var(--ink-soft)}
 .diff .pips{display:flex;gap:4px;margin-top:2px}
@@ -344,7 +343,8 @@ body.at-home #app{visibility:hidden}
 .mech{position:relative;display:flex;flex-direction:column;align-items:center;gap:4px;padding:7px 2px 6px;border-radius:18px;border:2px solid var(--edge);background:var(--paper-2);color:var(--ink-soft);cursor:pointer;font:800 11px/1.1 var(--fb);min-width:0}
 .mech .mi{width:38px;height:38px;border-radius:14px;background:var(--sticker);border:2px solid var(--sticker-edge);display:grid;place-items:center;opacity:.55;filter:grayscale(.7);transition:opacity var(--dur-fast),filter var(--dur-fast),transform var(--dur) var(--ease-pop)}
 .mech .mi svg{width:28px;height:28px}
-.mech .ok{position:absolute;top:-6px;right:-5px;width:20px;height:20px;border-radius:50%;background:var(--leaf);border:2px solid var(--paper);color:var(--on-accent);font-size:11px;display:none;place-items:center}
+.mech .ok{position:absolute;top:-6px;right:-5px;width:20px;height:20px;border-radius:50%;background:var(--leaf);border:2px solid var(--paper);color:var(--on-accent);display:none;place-items:center}
+.mech .ok .ui-ic{width:12px;height:12px}
 .mech.on{background:var(--done);border-color:var(--leaf);color:var(--ink)}
 .mech.on .mi{opacity:1;filter:none;transform:scale(1.06)}
 .mech.on .ok{display:grid}
@@ -389,13 +389,14 @@ body.at-home #app{visibility:hidden}
 .ch-banner small{font:800 12px/1.2 var(--fb);color:var(--ink-soft)}
 .ch-banner .cnt{flex:none;display:flex;align-items:center;gap:4px;font:800 14px/1 var(--fd);color:var(--ink)}
 .ch-banner .cnt svg{width:18px;height:18px}
-.ch-banner .done{color:var(--leaf-dark);font-size:16px}
+.ch-banner .done{color:var(--leaf-dark);display:grid}
+.ch-banner .done .ui-ic{width:16px;height:16px}
 .trail{position:relative}
 .trail > svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none}
 .trail .road{fill:none;stroke:color-mix(in srgb,var(--edge) 60%,var(--soil));stroke-opacity:.4;stroke-width:18;stroke-linecap:round;vector-effect:non-scaling-stroke}
 .trail .walked{fill:none;stroke:var(--leaf);stroke-opacity:.5;stroke-width:12;stroke-linecap:round;vector-effect:non-scaling-stroke}
 .trail .edge{fill:none;stroke:var(--ink-soft);stroke-opacity:.35;stroke-width:2;stroke-dasharray:2 7;stroke-linecap:round;vector-effect:non-scaling-stroke}
-.deco{position:absolute;font-size:20px;opacity:.5;pointer-events:none;transform:translate(-50%,-50%) rotate(var(--r,0deg))}
+.deco{position:absolute;font-size:20px;opacity:.6;pointer-events:none;transform:translate(-50%,-50%) rotate(var(--r,0deg))}
 /* stones mix their face and edge from one accent token: sand, leaf when finished, honey at three stars, berry for the current patch */
 .node{--acc:var(--edge);--stone-a:color-mix(in srgb,var(--acc) 25%,var(--paper));--stone-b:color-mix(in srgb,var(--acc) 60%,var(--paper));--stone-e:color-mix(in srgb,var(--acc) 65%,var(--deep));position:absolute;z-index:1;transform:translate(-50%,-50%);width:62px;height:56px;padding:0;
   border-radius:var(--shape,48% 52% 46% 54% / 56% 50% 50% 44%);border:3px solid var(--stone-e);color:var(--ink);cursor:pointer;-webkit-tap-highlight-color:transparent;
@@ -416,7 +417,7 @@ body.at-home #app{visibility:hidden}
 .node.sel::before{content:"";position:absolute;inset:-8px -8px -13px;border-radius:inherit;border:3px solid var(--honey);pointer-events:none}
 /* the card under the map for the stone you picked */
 .finale{gap:12px;text-align:center}
-.fin-emb{align-self:center;width:60px;height:60px;border-radius:50%;display:grid;place-items:center;font-size:24px;transform:scale(1.4);margin:6px 0 4px;background:var(--tint-honey);border:3px solid var(--honey-dark);box-shadow:0 4px 0 var(--honey-dark)}
+.fin-emb{align-self:center;width:76px;height:76px;border-radius:50%;display:grid;place-items:center;margin:2px 0 0;background:var(--tint-honey);border:3px solid var(--honey-dark);box-shadow:0 4px 0 var(--honey-dark)}
 .finale h2{margin:0}
 .fin-sub{margin:-4px 0 0;font-size:15px;color:var(--ink-soft)}
 .finale p.label{text-align:left;margin:4px 0 -4px}
@@ -429,6 +430,9 @@ body.at-home #app{visibility:hidden}
 .map-end b{font:800 18px/1.15 var(--fd)}
 .map-end small{font-size:13px;color:var(--ink-soft)}
 .map-end .btn{flex:none;min-height:44px;padding:0 18px;margin-top:2px}
+.art,.ui-ic{flex:none;display:block}
+[data-art]{display:inline-grid;vertical-align:-.28em}
+.link [data-art],.btn [data-art]{margin-right:2px}
 .pick{flex:none;display:flex;align-items:center;gap:12px;margin-top:10px;padding:10px 10px 10px 10px;border-radius:22px;background:var(--paper-2);border:3px solid var(--edge);box-shadow:0 4px 0 var(--edge)}
 .pick canvas.thumb{flex:none;position:static;width:58px;height:58px;border-radius:14px;background:var(--soil);box-shadow:0 3px 0 var(--edge)}
 .pick .pt{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
@@ -514,11 +518,11 @@ button:disabled{cursor:default}
   </header>
   <div class="bottom">
     <nav>
-      <button id="levelsBtn" class="gbtn" title="Home (Esc)"><span class="disc"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-5h4v5"/></svg></span><span class="lbl">Home</span></button>
-      <button id="undoBtn" class="gbtn" data-sfx="none" title="Undo (Z, hold to rewind)"><span class="disc"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg></span><span class="lbl">Undo</span></button>
-      <button id="hintBtn" class="gbtn hint" data-sfx="none" title="Hint (H)"><span class="disc"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z" style="fill:var(--sticker)"/></svg></span><span class="lbl">Hint</span></button>
-      <button id="restartBtn" class="gbtn" title="Restart (R)"><span class="disc"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg></span><span class="lbl">Restart</span></button>
-      <button id="skipBtn" class="gbtn" hidden><span class="disc"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5l8 7-8 7z" fill="currentColor"/><path d="M18 5v14"/></svg></span><span class="lbl">Skip</span></button>
+      <button id="levelsBtn" class="gbtn" title="Home (Esc)"><span class="disc"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.15" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-5h4v5"/></svg></span><span class="lbl">Home</span></button>
+      <button id="undoBtn" class="gbtn" data-sfx="none" title="Undo (Z, hold to rewind)"><span class="disc"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.15" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg></span><span class="lbl">Undo</span></button>
+      <button id="hintBtn" class="gbtn hint" data-sfx="none" title="Hint (H)"><span class="disc"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z" style="fill:var(--sticker)"/></svg></span><span class="lbl">Hint</span></button>
+      <button id="restartBtn" class="gbtn" title="Restart (R)"><span class="disc"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.15" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg></span><span class="lbl">Restart</span></button>
+      <button id="skipBtn" class="gbtn" hidden><span class="disc"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.15" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5l8 7-8 7z" fill="currentColor"/><path d="M18 5v14"/></svg></span><span class="lbl">Skip</span></button>
     </nav>
   </div>
 </div>
@@ -535,13 +539,13 @@ button:disabled{cursor:default}
 </div></div>
 
 <div class="ov" id="finOv"><div role="dialog" aria-modal="true" aria-labelledby="finTitle" class="dialog card sheet finale">
-  <span class="fin-emb" aria-hidden="true">&#128081;</span>
+  <span class="fin-emb" aria-hidden="true" data-art="crown" data-size="40"></span>
   <h2 id="finTitle">The whole garden is grown!</h2>
   <p class="fin-sub">You crawled through every patch. Every flower out there knows your name.</p>
   <div class="m-stats" id="finStats"></div>
   <p class="label">What's next</p>
   <div class="fin-next" id="finNext"></div>
-  <p class="fin-note">&#127793; More patches are growing and will show up here by themselves.</p>
+  <p class="fin-note"><span data-art="sprout" data-size="18"></span> More patches are growing and will show up here by themselves.</p>
   <div class="row"><button class="btn primary" id="finClose">Back home</button></div>
 </div></div>
 
@@ -549,7 +553,7 @@ button:disabled{cursor:default}
 <div class="home ov show" id="homeOv">
   <div class="home-top">
     <span class="star-pill" id="homeStars" aria-label="Stars"></span>
-    <span class="home-top-tools"><button class="round" id="homeSound"></button><button class="round" id="installBtn" aria-label="Install Squirm as an app" hidden><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7 10l5 5 5-5"/><path d="M5 19h14"/></svg></button><button class="round" id="settingsBtn" aria-label="Settings" title="Settings"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.8v2.4M12 18.8v2.4M2.8 12h2.4M18.8 12h2.4M5.5 5.5l1.7 1.7M16.8 16.8l1.7 1.7M5.5 18.5l1.7-1.7M16.8 7.2l1.7-1.7"/><circle cx="12" cy="12" r="6.6"/></svg></button></span>
+    <span class="home-top-tools"><button class="round" id="homeSound"></button><button class="round" id="installBtn" aria-label="Install Squirm as an app" hidden><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7 10l5 5 5-5"/><path d="M5 19h14"/></svg></button><button class="round" id="settingsBtn" aria-label="Settings" title="Settings"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.8v2.4M12 18.8v2.4M2.8 12h2.4M18.8 12h2.4M5.5 5.5l1.7 1.7M16.8 16.8l1.7 1.7M5.5 18.5l1.7-1.7M16.8 7.2l1.7-1.7"/><circle cx="12" cy="12" r="6.6"/></svg></button></span>
   </div>
   <div class="tab-pages">
     <section class="tab-page" id="tabPlay" aria-label="Play">
@@ -562,7 +566,7 @@ button:disabled{cursor:default}
         <button class="play" id="homePlay"><span class="play-ico" aria-hidden="true"><svg width="30" height="30" viewBox="0 0 24 24"><path d="M8 5.5v13l10.5-6.5z" fill="#fff" stroke="#fff" stroke-width="2" stroke-linejoin="round"/></svg></span><span class="pt"><b id="playTitle">Play</b><small id="playSub">Patch 1</small></span></button>
         <button class="big card" id="dailyBtn">
     <span class="mode-ico daily-ico" aria-hidden="true"><span class="cal" id="dailyDay">11</span></span>
-    <span class="bt"><b>Daily patch</b><small id="dailySub">One patch for everyone today</small><span class="week" id="dailyWeek" aria-hidden="true"></span></span><span class="go" aria-hidden="true">&#8250;</span>
+    <span class="bt"><b>Daily patch</b><small id="dailySub">One patch for everyone today</small><span class="week" id="dailyWeek" aria-hidden="true"></span></span><span class="go" aria-hidden="true"><svg class="ui-ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 5.5L16 12l-6.5 6.5"/></svg></span>
   </button>
       </div>
     </section>
@@ -579,9 +583,9 @@ button:disabled{cursor:default}
         <div class="m-stats" id="eStats"></div>
         <p class="label">How tricky?</p>
         <div class="diff-cards" id="diffSeg" role="radiogroup" aria-label="Difficulty"></div>
-        <div class="label-row"><p class="label">In the mix <span class="mix-n" id="mixCount"></span></p><button class="link" id="surprise" data-sfx="ready">&#127922; Surprise me</button></div>
+        <div class="label-row"><p class="label">In the mix <span class="mix-n" id="mixCount"></span></p><button class="link" id="surprise" data-sfx="ready"><span data-art="dice" data-size="18"></span> Surprise me</button></div>
         <div class="mech-grid" id="featGrid"></div>
-        <div class="row m-go"><button class="btn" id="homeEndlessCont" hidden>Resume</button><button class="btn primary" id="endlessGo">&#127793; Grow a patch</button></div>
+        <div class="row m-go"><button class="btn" id="homeEndlessCont" hidden>Resume</button><button class="btn primary" id="endlessGo"><span data-art="sprout" data-size="22"></span> Grow a patch</button></div>
       </div>
     </section>
     <section class="tab-page" id="tabMe" aria-label="Me" hidden>
@@ -602,21 +606,21 @@ button:disabled{cursor:default}
     </section>
   </div>
   <nav class="tabbar" aria-label="Sections">
-    <button class="tab" data-tab="play"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 5.5v13l10.5-6.5z" fill="currentColor" fill-opacity=".25"/></svg><span>Play</span></button>
-    <button class="tab" data-tab="garden"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21V11"/><path d="M12 14c-4 0-7-2-7-6 4 0 7 2 7 6zM12 11c0-4 3-6 7-6 0 4-3 6-7 6z" fill="currentColor" fill-opacity=".25"/></svg><span>Garden</span></button>
-    <button class="tab" data-tab="meadow"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12c2-4 5-4 8 0s6 4 8 0"/><path d="M4 12c2 4 5 4 8 0s6-4 8 0"/></svg><span>Meadow</span></button>
-    <button class="tab" data-tab="me"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17c0-1.5 4-2.5 9-2.5s9 1 9 2.5-4 2.5-9 2.5-9-1-9-2.5z" fill="currentColor" fill-opacity=".25"/><path d="M7 15.2C7 9 8.5 5 12 5s5 4 5 10.2"/><path d="M7.3 12.5h9.4"/></svg><span>Me</span></button>
-    <button class="tab" data-tab="badges"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3l-2 7M16 3l2 7"/><circle cx="12" cy="15" r="6" fill="currentColor" fill-opacity=".25"/><path d="M12 12.3l.9 1.8 2 .3-1.45 1.4.35 2-1.8-.95-1.8.95.35-2-1.45-1.4 2-.3z" fill="currentColor"/></svg><span>Badges</span></button>
+    <button class="tab" data-tab="play"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M8 5.5v13l10.5-6.5z" fill="currentColor" fill-opacity=".25"/></svg><span>Play</span></button>
+    <button class="tab" data-tab="garden"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21V11"/><path d="M12 14c-4 0-7-2-7-6 4 0 7 2 7 6zM12 11c0-4 3-6 7-6 0 4-3 6-7 6z" fill="currentColor" fill-opacity=".25"/></svg><span>Garden</span></button>
+    <button class="tab" data-tab="meadow"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12c2-4 5-4 8 0s6 4 8 0"/><path d="M4 12c2 4 5 4 8 0s6-4 8 0"/></svg><span>Meadow</span></button>
+    <button class="tab" data-tab="me"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17c0-1.5 4-2.5 9-2.5s9 1 9 2.5-4 2.5-9 2.5-9-1-9-2.5z" fill="currentColor" fill-opacity=".25"/><path d="M7 15.2C7 9 8.5 5 12 5s5 4 5 10.2"/><path d="M7.3 12.5h9.4"/></svg><span>Me</span></button>
+    <button class="tab" data-tab="badges"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3l-2 7M16 3l2 7"/><circle cx="12" cy="15" r="6" fill="currentColor" fill-opacity=".25"/><path d="M12 12.3l.9 1.8 2 .3-1.45 1.4.35 2-1.8-.95-1.8.95.35-2-1.45-1.4 2-.3z" fill="currentColor"/></svg><span>Badges</span></button>
   </nav>
 </div>
 <div class="ov" id="setOv"><div role="dialog" aria-modal="true" aria-labelledby="setTitle" class="dialog card sheet settings">
-  <div class="set-head"><button class="icon-btn" id="setBack" aria-label="Back" hidden>&#8249;</button><h2 id="setTitle">Settings</h2><button class="icon-btn" id="setClose" aria-label="Close">&#10005;</button></div>
+  <div class="set-head"><button class="icon-btn" id="setBack" aria-label="Back" hidden><svg class="ui-ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 5.5L8 12l6.5 6.5"/></svg></button><h2 id="setTitle">Settings</h2><button class="icon-btn" id="setClose" aria-label="Close"><svg class="ui-ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></svg></button></div>
   <div class="set-page" data-p="main">
-    <button class="set-link" data-go="sound"><span class="set-ico" aria-hidden="true">&#128266;</span><span><b>Sound &amp; music</b><small>Music, sound effects, vibration</small></span><span class="chev" aria-hidden="true">&#8250;</span></button>
-    <button class="set-link" data-go="look"><span class="set-ico" aria-hidden="true">&#127912;</span><span><b>Look</b><small>Light, dark or like your device</small></span><span class="chev" aria-hidden="true">&#8250;</span></button>
-    <button class="set-link" data-go="remind"><span class="set-ico" aria-hidden="true">&#128276;</span><span><b>Reminders</b><small>A nudge when the daily patch is ready</small></span><span class="chev" aria-hidden="true">&#8250;</span></button>
-    <button class="set-link" data-go="garden"><span class="set-ico" aria-hidden="true">&#127793;</span><span><b>Your garden</b><small>Back up or restore your progress</small></span><span class="chev" aria-hidden="true">&#8250;</span></button>
-    <button class="set-link" data-go="about"><span class="set-ico" aria-hidden="true">&#8505;</span><span><b>About</b><small>Squirm, credits and version</small></span><span class="chev" aria-hidden="true">&#8250;</span></button>
+    <button class="set-link" data-go="sound"><span class="set-ico" aria-hidden="true" data-art="sound" data-size="28"></span><span><b>Sound &amp; music</b><small>Music, sound effects, vibration</small></span><span class="chev" aria-hidden="true"><svg class="ui-ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 5.5L16 12l-6.5 6.5"/></svg></span></button>
+    <button class="set-link" data-go="look"><span class="set-ico" aria-hidden="true" data-art="palette" data-size="28"></span><span><b>Look</b><small>Light, dark or like your device</small></span><span class="chev" aria-hidden="true"><svg class="ui-ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 5.5L16 12l-6.5 6.5"/></svg></span></button>
+    <button class="set-link" data-go="remind"><span class="set-ico" aria-hidden="true" data-art="bell" data-size="28"></span><span><b>Reminders</b><small>A nudge when the daily patch is ready</small></span><span class="chev" aria-hidden="true"><svg class="ui-ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 5.5L16 12l-6.5 6.5"/></svg></span></button>
+    <button class="set-link" data-go="garden"><span class="set-ico" aria-hidden="true" data-art="sprout" data-size="28"></span><span><b>Your garden</b><small>Back up or restore your progress</small></span><span class="chev" aria-hidden="true"><svg class="ui-ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 5.5L16 12l-6.5 6.5"/></svg></span></button>
+    <button class="set-link" data-go="about"><span class="set-ico" aria-hidden="true" data-art="info" data-size="28"></span><span><b>About</b><small>Squirm, credits and version</small></span><span class="chev" aria-hidden="true"><svg class="ui-ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 5.5L16 12l-6.5 6.5"/></svg></span></button>
   </div>
   <div class="set-page" data-p="sound" data-title="Sound &amp; music" hidden>
     <div class="set-row"><span>Music</span><button class="switch" id="setMusic" role="switch" aria-checked="true" aria-label="Music"><i></i></button></div>

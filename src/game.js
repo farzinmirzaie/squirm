@@ -891,7 +891,7 @@ const COL_A=new THREE.Color(0xFFB3C8), tmpC=new THREE.Color();
 // hats, earned by finishing chapters: [id, name, chapter index that unlocks it]. Each is built once and cloned.
 const HATS=[['none','No hat',-1],['crown','Flower crown',0],['mush','Mushroom cap',1],['straw','Straw hat',2],['tophat','Top hat',3],['leaf','Leaf cap',4],['rainhat','Rain hat',5],
   ['acorn','Acorn cap',6],['bee','Bee antennae',7],['party','Party hat',8],['brolly','Tiny umbrella',9],['beret','Dewdrop beret',10],['bow','Ribbon bow',11],['gold','Garden crown',12],['beanie','Pompom beanie',13],['sunflower','Sunflower',14],['horn','Beetle horn',15]];
-const HAT_ICON={none:'&#10006;',crown:'&#127804;',mush:'&#127812;',straw:'&#128082;',tophat:'&#127913;',leaf:'&#127811;',rainhat:'&#127783;',acorn:'&#127792;',bee:'&#128029;',party:'&#127881;',brolly:'&#9730;',beret:'&#129698;',bow:'&#127872;',gold:'&#128081;',beanie:'&#129526;',sunflower:'&#127803;',horn:'&#129714;'};
+const hatArt=(id,size=36)=>art('hat-'+id,size);
 const hatProto={};
 function buildHat(id){ const h=new THREE.Group();
   if(id==='crown'){ const ring=new THREE.Mesh(new THREE.TorusGeometry(.21,.04,8,28),m('leaf')); ring.rotation.x=Math.PI/2; ring.position.y=.05; outline(ring,.01); h.add(ring);
@@ -1247,7 +1247,7 @@ function onWin(){ shareText=''; newBest=false; chapterDone=null; const coloursBe
   save(); askPersist();
   const hatsBefore=winHats;
   const earned=checkBadges({won:true,mv,par,secs:playT,hour:new Date().getHours()});
-  if(earned.length) extra+=`<div class="stat-row">${earned.map(b=>`<span class="pill unlock">${b[1]} ${b[2]}</span>`).join('')}</div>`;
+  if(earned.length) extra+=`<div class="stat-row">${earned.map(b=>`<span class="pill unlock">${art(b[1],18)} ${b[2]}</span>`).join('')}</div>`;
   const newHat=HATS.find(h=>h[2]>=0&&hatUnlocked(h)&&!hatsBefore.includes(h[0]));
   if(newHat) extra+=`<div class="stat-row"><span class="pill unlock">New hat: ${newHat[1]}</span></div>`;
   if(coloursUnlocked()>coloursBefore){ const c=WORM_COLS[coloursUnlocked()-1]; extra+=`<div class="stat-row"><span class="pill unlock">New worm colour: ${c[0]}</span></div>`; }
@@ -1331,18 +1331,96 @@ function tryResume(){ try{ const r=readResume(mode); if(!r||!r.states||!r.states
 
 // ---------- HUD ----------
 const $=id=>document.getElementById(id);
-const ICON={
-  star:'<svg width="18" height="18" viewBox="0 0 24 24"><path d="M12 2.8l2.8 5.8 6.3.9-4.6 4.4 1.1 6.3L12 17.2l-5.6 3 1.1-6.3L2.9 9.5l6.3-.9z" style="fill:var(--honey)" stroke="#5B4436" stroke-width="1.8" stroke-linejoin="round"/></svg>',
-  sun:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5B4436" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4.5" style="fill:var(--honey)"/><path d="M12 2.5v2.5M12 19v2.5M2.5 12H5M19 12h2.5M5.3 5.3l1.8 1.8M16.9 16.9l1.8 1.8M5.3 18.7l1.8-1.8M16.9 7.1l1.8-1.8"/></svg>',
-  rain:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5B4436" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 15a4 4 0 0 1-.5-8A5.5 5.5 0 0 1 17 6.5 4 4 0 0 1 17.5 15z" fill="#C9D6EA"/><path d="M8 18l-1 2.5M12 18l-1 2.5M16 18l-1 2.5" stroke="#6FA9D6"/></svg>',
-  flag:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5B4436" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V4"/><path d="M5 4h12l-3 4 3 4H5" fill="#F27DA2"/></svg>',
-  key:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5B4436" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="4.5" fill="#F7C64F"/><path d="M11 11l8 8M16 16l2-2M18.5 18.5l2-2"/></svg>',
-  worm:'<svg width="20" height="18" viewBox="0 0 26 22" fill="none" stroke="#5B4436" stroke-width="2" stroke-linecap="round"><path d="M3 15c3-6 6-6 8 0s5 6 8 0" stroke="#FF97B4" stroke-width="5"/><circle cx="21" cy="11" r="4" fill="#FF8FAF"/><circle cx="22" cy="10" r="1" fill="#5B4436" stroke="none"/></svg>',
-  steps:'<svg width="18" height="18" viewBox="0 0 24 24" fill="#E8B98F" stroke="#5B4436" stroke-width="1.8"><ellipse cx="8.5" cy="9" rx="3.2" ry="4.6" transform="rotate(-12 8.5 9)"/><ellipse cx="15.5" cy="15.5" rx="3.2" ry="4.6" transform="rotate(12 15.5 15.5)"/></svg>',
-  burrow:'<svg width="18" height="18" viewBox="0 0 24 24" stroke="#5B4436" stroke-width="1.8"><ellipse cx="12" cy="14" rx="9.5" ry="6" fill="#B07B57"/><ellipse cx="12" cy="13.6" rx="5.2" ry="2.9" fill="#3A2A22" stroke="none"/></svg>',
-  hedge:'<svg width="18" height="18" viewBox="0 0 24 24" stroke="#5B4436" stroke-width="1.8" stroke-linejoin="round"><path d="M3 20V11a3 3 0 0 1 3-3 3.5 3.5 0 0 1 6-1.5A3.5 3.5 0 0 1 18 8a3 3 0 0 1 3 3v9z" fill="#5FA64F"/><circle cx="8" cy="12" r="1.2" fill="#F7A8C4" stroke="none"/><circle cx="15" cy="14" r="1.2" fill="#F7A8C4" stroke="none"/></svg>',
-  leaf:'<svg width="18" height="18" viewBox="0 0 24 24" fill="#78B65C" stroke="#5B4436" stroke-width="2" stroke-linejoin="round"><path d="M5 19C5 10 10 5 20 4c0 10-5 15-15 15z"/><path d="M5 19l8-8" fill="none"/></svg>'
+// ---------- sticker icons: one hand-drawn style for every picture in the UI ----------
+// 24-unit grid, brown outline with round caps and joins, pastel fills from the garden palette.
+// art(name,size) scales the outline so it looks the same weight at every size.
+const ART={
+  // settings and general
+  sound:'<path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" fill="#9FD2F2"/><path d="M15.5 9.2a4 4 0 0 1 0 5.6M18.2 6.6a7.6 7.6 0 0 1 0 10.8"/>',
+  palette:'<path d="M12 3.5c-4.9 0-8.5 3.6-8.5 8.1 0 4.6 3.7 8.4 8.2 8.4 1.5 0 2.2-.9 2.2-1.9 0-1.6-1.6-2.1 0-3.1h2.3c2.6 0 4.3-1.8 4.3-4.3 0-4-3.7-7.2-8.5-7.2z" fill="#FFE6C2"/><circle cx="8" cy="10.2" r="1.6" fill="#F0859F"/><circle cx="11.6" cy="7.2" r="1.6" fill="#F5C14E"/><circle cx="15.7" cy="8.7" r="1.6" fill="#78B65C"/><circle cx="8.4" cy="14.6" r="1.6" fill="#9FD2F2"/>',
+  bell:'<path d="M12 3.3v1.6"/><path d="M6.2 16.6V11a5.8 5.8 0 0 1 11.6 0v5.6l1.6 1.6H4.6z" fill="#F5C14E"/><path d="M10 20.2a2 2 0 0 0 4 0"/>',
+  sprout:'<path d="M12 20.5v-8"/><path d="M12 12.5c-.4-4-3.4-6.2-8-6.2 0 4.5 3 7 8 6.2z" fill="#8CC673"/><path d="M12 10.7c.4-3.6 3-5.7 7.6-5.7 0 4-2.8 6.3-7.6 5.7z" fill="#78B65C"/><path d="M7.5 20.5h9"/>',
+  info:'<circle cx="12" cy="12" r="8.6" fill="#9FD2F2"/><path d="M12 11v5.6"/><path d="M12 7.6v.1" stroke-width="2.6"/>',
+  dice:'<rect x="4" y="4" width="16" height="16" rx="4.2" fill="#FFF8EA"/><g fill="#5B4436" stroke="none"><circle cx="8.6" cy="8.6" r="1.35"/><circle cx="15.4" cy="15.4" r="1.35"/><circle cx="12" cy="12" r="1.35"/><circle cx="15.4" cy="8.6" r="1.35"/><circle cx="8.6" cy="15.4" r="1.35"/></g>',
+  lock:'<path d="M8 10.5V8.2a4 4 0 0 1 8 0v2.3"/><rect x="5" y="10.5" width="14" height="10" rx="3" fill="#F5C14E"/><path d="M12 14.6v2.2"/>',
+  // difficulty
+  tulip:'<path d="M12 20.5v-7.5"/><path d="M12 18c-2.6-.4-4.2-2-4.6-4.2 2.4 0 4 1.3 4.6 4.2zM12 19c2.6-.4 4.2-2 4.6-4.2-2.4 0-4 1.3-4.6 4.2z" fill="#78B65C"/><path d="M7.6 4.6L10 6.8l2-3 2 3 2.4-2.2v4.8a4.4 4.4 0 0 1-8.8 0z" fill="#F0859F"/>',
+  tree:'<path d="M12 20.5v-5.5" stroke-width="2.6"/><path d="M12 3.3a5 5 0 0 1 4.9 3.9 4.3 4.3 0 0 1-1 8.3H8.1a4.3 4.3 0 0 1-1-8.3A5 5 0 0 1 12 3.3z" fill="#78B65C"/><circle cx="9.4" cy="10.2" r="1" fill="#F0859F" stroke="none"/><circle cx="14.7" cy="8.4" r="1" fill="#F0859F" stroke="none"/><circle cx="13.4" cy="12.3" r="1" fill="#F0859F" stroke="none"/>',
+  // stats and rewards
+  flame:'<path d="M12 20.8c-3.8 0-6.4-2.6-6.4-6.1 0-3.3 2.5-5.2 3.5-8.2 1.6 1.2 2.2 2.7 2.2 4.2 1-1 1.6-2.6 1.5-4.4 3 1.9 5.6 5 5.6 8.5 0 3.4-2.6 6-6.4 6z" fill="#FFA27C"/><path d="M12 20.8c-1.7 0-2.9-1.2-2.9-2.8 0-1.7 1.6-2.7 2.9-4.4 1.3 1.7 2.9 2.7 2.9 4.4 0 1.6-1.2 2.8-2.9 2.8z" fill="#F5C14E"/>',
+  trophy:'<path d="M8 5.6H5.2a2.9 2.9 0 0 0 3.1 4.2M16 5.6h2.8a2.9 2.9 0 0 1-3.1 4.2"/><path d="M8 3.8h8v5.4a4 4 0 0 1-8 0z" fill="#F5C14E"/><path d="M12 13.2v3.2"/><path d="M8.6 20.5h6.8l-.9-4.1H9.5z" fill="#D9A56E"/>',
+  star:'<path d="M12 2.9l2.75 5.6 6.15.9-4.45 4.35 1.05 6.15L12 17l-5.5 2.9 1.05-6.15L3.1 9.4l6.15-.9z" style="fill:var(--honey)"/>',
+  stars:'<path d="M9.5 3.4l1.9 3.9 4.3.6-3.1 3 .7 4.3-3.8-2-3.8 2 .7-4.3-3.1-3 4.3-.6z" style="fill:var(--honey)"/><path d="M17.6 12.6l1 2 2.2.3-1.6 1.6.4 2.2-2-1-2 1 .4-2.2-1.6-1.6 2.2-.3z" fill="#FFF8EA"/>',
+  sparkles:'<path d="M10 3.2l1.7 4.6 4.6 1.7-4.6 1.7L10 15.8l-1.7-4.6L3.7 9.5l4.6-1.7z" style="fill:var(--honey)"/><path d="M17.2 12.8l.9 2.3 2.3.9-2.3.9-.9 2.3-.9-2.3-2.3-.9 2.3-.9z" fill="#FFF8EA"/>',
+  crown:'<path d="M4.2 17.2L3.2 8l5 4 3.8-6.2L15.8 12l5-4-1 9.2z" fill="#F5C14E"/><path d="M4.2 20h15.6"/><circle cx="12" cy="13.6" r="1.4" fill="#F0859F"/>',
+  medal:'<path d="M7.4 2.8h3.3l2.4 5.3-2.6 2.6zM16.6 2.8h-3.3L11 8l2.5 2.7z" fill="#9FD2F2"/><circle cx="12" cy="15" r="5.6" fill="#F5C14E"/><path d="M12 12.2l.85 1.75 1.9.27-1.38 1.34.33 1.9-1.7-.9-1.7.9.33-1.9-1.38-1.34 1.9-.27z" fill="#FFF8EA" stroke-width="1.1"/>',
+  daisy:'<g fill="#FFF8EA"><circle cx="12" cy="6.4" r="3"/><circle cx="17.3" cy="10.3" r="3"/><circle cx="15.3" cy="16.5" r="3"/><circle cx="8.7" cy="16.5" r="3"/><circle cx="6.7" cy="10.3" r="3"/></g><circle cx="12" cy="12" r="3" fill="#F5C14E"/>',
+  blossom:'<g fill="#F7B3C5"><circle cx="12" cy="6.4" r="3"/><circle cx="17.3" cy="10.3" r="3"/><circle cx="15.3" cy="16.5" r="3"/><circle cx="8.7" cy="16.5" r="3"/><circle cx="6.7" cy="10.3" r="3"/></g><circle cx="12" cy="12" r="2.8" fill="#FFF8EA"/>',
+  calendar:'<path d="M3.6 9.5V8a3 3 0 0 1 3-3h10.8a3 3 0 0 1 3 3v1.5z" fill="#F0859F"/><path d="M3.6 9.5h16.8v8a3 3 0 0 1-3 3H6.6a3 3 0 0 1-3-3z" fill="#FFF8EA"/><path d="M8 3.2v3.6M16 3.2v3.6"/><circle cx="12" cy="15" r="2" fill="#78B65C"/>',
+  week:'<path d="M3.6 9.5V8a3 3 0 0 1 3-3h10.8a3 3 0 0 1 3 3v1.5z" fill="#F0859F"/><path d="M3.6 9.5h16.8v8a3 3 0 0 1-3 3H6.6a3 3 0 0 1-3-3z" fill="#FFF8EA"/><path d="M8 3.2v3.6M16 3.2v3.6"/><path d="M9.8 12.8h4.4l-2.6 5"/>',
+  month:'<path d="M3.6 9.5V8a3 3 0 0 1 3-3h10.8a3 3 0 0 1 3 3v1.5z" fill="#B79CF2"/><path d="M3.6 9.5h16.8v8a3 3 0 0 1-3 3H6.6a3 3 0 0 1-3-3z" fill="#FFF8EA"/><path d="M8 3.2v3.6M16 3.2v3.6"/><path d="M12 12.4l1 2 2.2.3-1.6 1.5.4 2.2-2-1-2 1 .4-2.2-1.6-1.5 2.2-.3z" style="fill:var(--honey)" stroke-width="1.2"/>',
+  target:'<circle cx="12" cy="12" r="8.6" fill="#FFF8EA"/><circle cx="12" cy="12" r="5.3" fill="#F0859F"/><circle cx="12" cy="12" r="2" fill="#FFF8EA"/>',
+  book:'<path d="M3.8 5.6c2.8-1 5.5-1 8.2.7v14c-2.7-1.7-5.4-1.7-8.2-.7z" fill="#8CC673"/><path d="M20.2 5.6c-2.8-1-5.5-1-8.2.7v14c2.7-1.7 5.4-1.7 8.2-.7z" fill="#78B65C"/>',
+  bulb:'<path d="M9.3 17.8h5.4M10.2 20.8h3.6"/><path d="M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z" fill="#F5C14E"/>',
+  house:'<path d="M5.6 10.4V19a1.5 1.5 0 0 0 1.5 1.5h9.8a1.5 1.5 0 0 0 1.5-1.5v-8.6" fill="#FFF8EA"/><path d="M2.8 11.4L12 3.8l9.2 7.6" fill="#F0859F"/><path d="M10 20.5v-5h4v5" fill="#D9A56E"/>',
+  wheat:'<path d="M12 20.8V7"/><g fill="#F5C14E"><ellipse cx="9.5" cy="9.4" rx="1.6" ry="2.6" transform="rotate(-38 9.5 9.4)"/><ellipse cx="14.5" cy="9.4" rx="1.6" ry="2.6" transform="rotate(38 14.5 9.4)"/><ellipse cx="9.5" cy="14" rx="1.6" ry="2.6" transform="rotate(-38 9.5 14)"/><ellipse cx="14.5" cy="14" rx="1.6" ry="2.6" transform="rotate(38 14.5 14)"/><ellipse cx="12" cy="5" rx="1.6" ry="2.6"/></g>',
+  shield:'<path d="M12 3.2l7 2.5v5.4c0 4.4-2.9 8-7 9.8-4.1-1.8-7-5.4-7-9.8V5.7z" fill="#9FD2F2"/><path d="M8.6 12.1l2.3 2.3 4.5-4.6"/>',
+  mountain:'<path d="M2.8 19.5L9.4 8l3.6 5.6 2.4-3.4 5.8 9.3z" fill="#9FD2F2"/><path d="M7.4 11.5L9.4 8l2 3.2-1 .9-1-1z" fill="#FFF8EA"/><path d="M15.4 10.2l1.6 2.6" />',
+  leaf:'<path d="M5 19.2C5 10.4 10 5 19.6 4.4c0 9.6-5 14.8-14.6 14.8z" fill="#78B65C"/><path d="M5 19.2l8.3-8.3"/>',
+  wetleaf:'<path d="M5 19.2C5 10.4 10 5 19.6 4.4c0 9.6-5 14.8-14.6 14.8z" fill="#8EE0B4"/><path d="M5 19.2l8.3-8.3"/><path d="M16.6 14.6a1.6 1.6 0 0 0 3.2 0c0-1-1.6-3-1.6-3s-1.6 2-1.6 3z" fill="#EAF8FF" stroke-width="1.2"/>',
+  hedge:'<path d="M3.5 20V11.3a3 3 0 0 1 3-3 3.4 3.4 0 0 1 5.5-1.5 3.4 3.4 0 0 1 5.5 1.5 3 3 0 0 1 3 3V20z" fill="#5FA64F"/><circle cx="8.2" cy="12.8" r=".9" fill="#F7A8C4" stroke="none"/><circle cx="14.6" cy="11.4" r=".9" fill="#F7A8C4" stroke="none"/><circle cx="12" cy="16.2" r=".9" fill="#F7A8C4" stroke="none"/>',
+  beetle:'<path d="M4.8 12.6L2.6 13.8M5 15.8l-2.2 2M19.2 12.6l2.2 1.2M19 15.8l2.2 2"/><ellipse cx="12" cy="14.6" rx="7.4" ry="6" fill="#7C8CF0"/><path d="M12 9v11.6"/><circle cx="8.9" cy="14.6" r="1.2" fill="#B5C0FA" stroke="none"/><circle cx="15.1" cy="14.6" r="1.2" fill="#B5C0FA" stroke="none"/><circle cx="12" cy="7.4" r="3.4" fill="#3E3F84"/><path d="M12 4c.3-1.6 1.4-2.2 2.6-2.2"/>',
+  peach:'<path d="M12 7.6c-4.2-1.4-7.5 1.4-7.5 5.4 0 4.2 3.3 7.5 7.5 7.5s7.5-3.3 7.5-7.5c0-4-3.3-6.8-7.5-5.4z" fill="#FFA27C"/><path d="M12 7.6c-1 2.2-1 5 0 7"/><path d="M12 7.4c.8-2.6 3.2-3.8 5.8-3.4-.8 2.6-3.2 3.8-5.8 3.4z" fill="#78B65C"/>',
+  mushroom:'<path d="M9.6 13.2v5.3a2.4 2.4 0 0 0 4.8 0v-5.3" fill="#F6E2B0"/><path d="M3.6 13.2a8.4 7.6 0 0 1 16.8 0z" fill="#F07A6A"/><circle cx="9" cy="9.4" r="1.3" fill="#FFF8EA" stroke="none"/><circle cx="14.6" cy="8.4" r="1" fill="#FFF8EA" stroke="none"/><circle cx="16.4" cy="11.2" r=".9" fill="#FFF8EA" stroke="none"/>',
+  moon:'<path d="M15.4 3.6a8.5 8.5 0 1 0 5 13.2 7 7 0 0 1-5-13.2z" fill="#F5C14E"/><circle cx="18.6" cy="6.2" r=".6" fill="#5B4436" stroke="none"/>',
+  bolt:'<path d="M13.6 2.6L5.6 13.5h5.6L9.8 21.4l8-11h-5.6z" fill="#F5C14E"/>',
+  flag:'<path d="M5.2 21V3.8"/><path d="M5.2 4h12.2l-3 4 3 4H5.2" fill="#F27DA2"/>',
+  burrow:'<ellipse cx="12" cy="14.2" rx="9.4" ry="6" fill="#B07B57"/><ellipse cx="12" cy="13.8" rx="5.2" ry="2.9" fill="#3A2A22"/>',
+  key:'<circle cx="8" cy="8" r="4.5" fill="#F7C64F"/><path d="M11.2 11.2l8 8M16.2 16.2l2.2-2.2M18.6 18.6l1.8-1.8"/>',
+  crack:'<rect x="3.6" y="3.6" width="16.8" height="16.8" rx="4" fill="#EBD59C"/><path d="M7 8l4 3 1.5 4.5 4 2M11 11l5-3.2"/>',
+  rain:'<path d="M7 14.5a4 4 0 0 1-.5-8A5.5 5.5 0 0 1 17 6.1a4 4 0 0 1 .5 8.4z" fill="#C9D6EA"/><path d="M8.5 17.6l-1 2.2M12.5 17.6l-1 2.2M16.5 17.6l-1 2.2"/>',
+  drop:'<path d="M12 3.4s-6 6.9-6 11a6 6 0 0 0 12 0c0-4.1-6-11-6-11z" fill="#9FD2F2"/><path d="M9.2 14.6a2.8 2.8 0 0 0 1.8 2.6" stroke-width="1.3"/>',
+  bridge:'<path d="M3 13.6c3-3.4 6-5 9-5s6 1.6 9 5"/><path d="M3 13.6h18v4H3z" fill="#D9A56E"/><path d="M7.5 13.6v4M12 13.6v4M16.5 13.6v4"/><path d="M4 20.6q2-1 4 0t4 0 4 0 4 0" stroke-width="1.3"/>',
+  steps:'<ellipse cx="8.6" cy="9" rx="3.2" ry="4.6" transform="rotate(-12 8.6 9)" fill="#E8B98F"/><ellipse cx="15.5" cy="15.4" rx="3.2" ry="4.6" transform="rotate(-12 15.5 15.4)" fill="#E8B98F"/>',
+  rewind:'<circle cx="12" cy="12" r="8.6" fill="#9FD2F2"/><path d="M12.3 8.2l-3.8 3.8 3.8 3.8M16.3 8.2l-3.8 3.8 3.8 3.8"/>',
+  heart:'<path d="M12 20s-7.6-4.6-7.6-10A4.3 4.3 0 0 1 12 7.4 4.3 4.3 0 0 1 19.6 10c0 5.4-7.6 10-7.6 10z" fill="#F0859F"/>',
+  zzz:'<circle cx="12" cy="12" r="8.6" fill="#C9D6EA"/><path d="M7.4 9.4h4.2l-4.2 5h4.2M13.4 7.2h3.2l-3.2 3.8h3.2"/>',
+  owl:'<path d="M5.8 9.6a6.2 6.2 0 0 1 12.4 0v5a6.2 6.2 0 0 1-12.4 0z" fill="#D9A56E"/><path d="M5.8 5.4l2.6 3M18.2 5.4l-2.6 3"/><circle cx="9.4" cy="11.4" r="2.3" fill="#FFF8EA"/><circle cx="14.6" cy="11.4" r="2.3" fill="#FFF8EA"/><circle cx="9.6" cy="11.6" r=".8" fill="#5B4436" stroke="none"/><circle cx="14.4" cy="11.6" r=".8" fill="#5B4436" stroke="none"/><path d="M11.2 14.4l.8 1.2.8-1.2z" fill="#F5C14E"/>',
+  rainbow:'<path d="M2.6 18.4a9.4 9.4 0 0 1 18.8 0z" fill="#F0859F"/><path d="M5.6 18.4a6.4 6.4 0 0 1 12.8 0z" fill="#F5C14E"/><path d="M8.6 18.4a3.4 3.4 0 0 1 6.8 0z" fill="#9FD2F2"/>',
+  snail:'<path d="M2.8 18.6c0-1 .9-1.7 2.1-1.7h10.8c1.8 0 2.9-1.2 2.9-2.9v-2.2a1.7 1.7 0 0 1 3.4 0V14c0 2.7-2 4.9-4.8 4.9H3.9c-.6 0-1.1-.1-1.1-.3z" fill="#F6E2B0"/><path d="M19 10.6l-.8-3M21.4 10.6l.8-3"/><circle cx="10.2" cy="11.4" r="5.4" fill="#C9A0E6"/><path d="M10.6 12.2a.9.9 0 1 1 .5-1.5 2.2 2.2 0 1 1-3 2.6 3.4 3.4 0 1 1 5.6-3.4" stroke-width="1.3"/>',
+  butterfly:'<path d="M12 7.5v10"/><path d="M12 10C9.6 5.4 4 4.6 4 8.6c0 2.6 3 3.6 8 3.4zM12 10c2.4-4.6 8-5.4 8-1.4 0 2.6-3 3.6-8 3.4z" fill="#F7B3C5"/><path d="M12 12.2c-3.4.2-6 1.8-5 4.2 1 2.2 4 1.4 5-2.6zM12 12.2c3.4.2 6 1.8 5 4.2-1 2.2-4 1.4-5-2.6z" fill="#FFE07A"/><path d="M12 7.5l-1.6-2.6M12 7.5l1.6-2.6"/>',
+  bee:'<ellipse cx="12" cy="14" rx="6.2" ry="4.8" fill="#F5C14E"/><path d="M10.2 9.6v8.8M13.8 9.6v8.8" stroke-width="2.2"/><path d="M8.6 9.8C7 6 3.6 6.4 4.2 8.8c.5 1.8 2.6 2.2 4.4 1zM15.4 9.8c1.6-3.8 5-3.4 4.4-1-.5 1.8-2.6 2.2-4.4 1z" fill="#EAF8FF"/>',
+  balloon:'<path d="M12 15.4c-3.4 0-5.6-3-5.6-6.2a5.6 5.6 0 0 1 11.2 0c0 3.2-2.2 6.2-5.6 6.2z" fill="#F0859F"/><path d="M11 15.4h2l-1 1.4z" fill="#F0859F"/><path d="M12 16.8c-1.2 1.4 1.2 2.4 0 4"/><path d="M9.4 7.4a2.8 2.8 0 0 1 1.8-1.6" stroke-width="1.3"/>',
+  sunflower:'<g fill="#FFD34D"><ellipse cx="12" cy="5.6" rx="2" ry="3"/><ellipse cx="12" cy="18.4" rx="2" ry="3"/><ellipse cx="5.6" cy="12" rx="3" ry="2"/><ellipse cx="18.4" cy="12" rx="3" ry="2"/><ellipse cx="7.5" cy="7.5" rx="2" ry="3" transform="rotate(-45 7.5 7.5)"/><ellipse cx="16.5" cy="16.5" rx="2" ry="3" transform="rotate(-45 16.5 16.5)"/><ellipse cx="16.5" cy="7.5" rx="2" ry="3" transform="rotate(45 16.5 7.5)"/><ellipse cx="7.5" cy="16.5" rx="2" ry="3" transform="rotate(45 7.5 16.5)"/></g><circle cx="12" cy="12" r="3.6" fill="#7A4E2E"/>',
+  bowtie:'<path d="M10.4 12C8 8.4 5.6 6.2 3.8 6.8 2.6 7.2 2.4 9.6 2.4 12s.2 4.8 1.4 5.2c1.8.6 4.2-1.6 6.6-5.2zM13.6 12c2.4-3.6 4.8-5.8 6.6-5.2 1.2.4 1.4 2.8 1.4 5.2s-.2 4.8-1.4 5.2c-1.8.6-4.2-1.6-6.6-5.2z" fill="#F0859F"/><rect x="9.8" y="9.2" width="4.4" height="5.6" rx="1.8" fill="#E36A8C"/>',
+  sun:'<circle cx="12" cy="12" r="4.6" style="fill:var(--honey)"/><path d="M12 2.6v2.4M12 19v2.4M2.6 12H5M19 12h2.4M5.4 5.4l1.7 1.7M16.9 16.9l1.7 1.7M5.4 18.6l1.7-1.7M16.9 7.1l1.7-1.7"/>',
+  worm:'<path d="M3.4 15.6c2.6-5.4 5.4-5.4 7.6 0s5 5.4 7.4 0" stroke-width="6.4"/><path d="M3.4 15.6c2.6-5.4 5.4-5.4 7.6 0s5 5.4 7.4 0" stroke="#FF97B4" stroke-width="3.4"/><circle cx="19" cy="12.6" r="3.2" fill="#FF97B4"/><circle cx="20" cy="12" r=".7" fill="#5B4436" stroke="none"/>',
+  // hats, as worn: a little hat sitting on a pink worm-head curve
+  'hat-none':'<circle cx="12" cy="12" r="8.6" fill="#FFF8EA"/><path d="M8.8 8.8l6.4 6.4M15.2 8.8l-6.4 6.4"/>',
+  'hat-crown':'<path d="M3.4 17.4c1.4-5.2 4.8-8 8.6-8s7.2 2.8 8.6 8" stroke-width="4.6"/><path d="M3.4 17.4c1.4-5.2 4.8-8 8.6-8s7.2 2.8 8.6 8" stroke="#78B65C" stroke-width="2.4"/><g fill="#F7A8C4"><circle cx="5" cy="13.4" r="2.2"/><circle cx="12" cy="9.2" r="2.4"/><circle cx="19" cy="13.4" r="2.2"/></g><g fill="#FFF1A8"><circle cx="8.2" cy="10.6" r="1.9"/><circle cx="15.8" cy="10.6" r="1.9"/></g>',
+  'hat-mush':'<path d="M3.4 15.4a8.6 8.6 0 0 1 17.2 0z" fill="#F07A6A"/><circle cx="8.6" cy="11.6" r="1.4" fill="#FFF8EA" stroke="none"/><circle cx="13.8" cy="9.4" r="1.2" fill="#FFF8EA" stroke="none"/><circle cx="16.4" cy="13" r="1" fill="#FFF8EA" stroke="none"/><path d="M6 15.4v1.6a6 2 0 0 0 12 0v-1.6" fill="#F6E2B0"/>',
+  'hat-straw':'<ellipse cx="12" cy="15.8" rx="9.6" ry="3.4" fill="#F3D18A"/><path d="M7.2 15.2V12a4.8 4.8 0 0 1 9.6 0v3.2c-1.4.8-2.8 1.2-4.8 1.2s-3.4-.4-4.8-1.2z" fill="#F3D18A"/><path d="M7.2 13h9.6v1.8H7.2z" fill="#F0859F"/>',
+  'hat-tophat':'<ellipse cx="12" cy="18.2" rx="9" ry="2.6" fill="#4E3F5C"/><path d="M7.4 18V5.8h9.2V18c-1.4.6-2.8.8-4.6.8s-3.2-.2-4.6-.8z" fill="#4E3F5C"/><path d="M7.4 13.6h9.2v2.2H7.4z" fill="#F0859F"/>',
+  'hat-leaf':'<path d="M3.6 15.6C5 9 8.8 5.6 15 5c3.4 0 5.4 1 5.4 1-.4 6-4 9.6-16.8 9.6z" fill="#78B65C"/><path d="M5.2 15.2C9 11.6 13 9 18 7"/><path d="M12.4 6.8c-.6-1.6-.2-3 .8-3.8"/>',
+  'hat-rainhat':'<path d="M2.8 15.6c2 1.6 5 2.4 9.2 2.4s7.2-.8 9.2-2.4l-2.2-2.2H5z" fill="#FFD04A"/><path d="M6.6 13.6V11.2a5.4 5.4 0 0 1 10.8 0v2.4" fill="#FFD04A"/><path d="M15 7.4l1.6-1.6" stroke-width="1.3"/>',
+  'hat-acorn':'<path d="M5.6 12.6c0 4.4 2.8 7.8 6.4 7.8s6.4-3.4 6.4-7.8" fill="#C98E52"/><path d="M3.8 12.8a8.2 7.4 0 0 1 16.4 0z" fill="#8A5A36"/><path d="M7.2 9.4l2.2 3.4M11 7.6l2.2 5.2M15 8.4l1.8 4.4" stroke-width="1.2"/><path d="M12 5.4V3" stroke-width="2.2"/>',
+  'hat-bee':'<path d="M4 19.6a8 8 0 0 1 16 0" stroke-width="2.6"/><path d="M8.8 12.4L6.6 5.6M15.2 12.4l2.2-6.8"/><circle cx="6.4" cy="5" r="2.1" fill="#F5C14E"/><circle cx="17.6" cy="5" r="2.1" fill="#F5C14E"/>',
+  'hat-party':'<path d="M12 2.8l6.2 16.4H5.8z" fill="#9FD2F2"/><path d="M8.4 12.4l6.6-2.2M7 16.4l9.8-3.4" stroke="#FFF1A8" stroke-width="1.8"/><path d="M12 2.8l6.2 16.4H5.8z"/><circle cx="12" cy="3.4" r="2" fill="#F7A8C4"/>',
+  'hat-brolly':'<path d="M2.8 12a9.2 8 0 0 1 18.4 0c-1.5-1.1-3-1.1-4.6 0-1.5-1.1-3-1.1-4.6 0-1.5-1.1-3-1.1-4.6 0-1.5-1.1-3-1.1-4.6 0z" fill="#9FD2F2"/><path d="M12 12v6.6a2 2 0 0 1-4 0"/><path d="M12 4v-1"/>',
+  'hat-beret':'<ellipse cx="12" cy="13.4" rx="9" ry="5.2" fill="#B79CF2"/><path d="M5 15.6c2 1.4 4.4 2 7 2s5-.6 7-2"/><circle cx="12" cy="7.2" r="1.4" fill="#B79CF2"/><path d="M16.6 12.6a1.4 1.4 0 0 0 2.8 0c0-.9-1.4-2.6-1.4-2.6s-1.4 1.7-1.4 2.6z" fill="#EAF8FF" stroke-width="1.2"/>',
+  'hat-bow':'<path d="M12 12L4.6 7.4v9.2zM12 12l7.4-4.6v9.2z" fill="#F7A8C4"/><circle cx="12" cy="12" r="2.3" fill="#E36A8C"/>',
+  'hat-gold':'<path d="M4.2 17.2L3.2 8l5 4 3.8-6.2L15.8 12l5-4-1 9.2z" fill="#F5C14E"/><path d="M4.2 17.2h15.6v2.6H4.2z" fill="#F5C14E"/><circle cx="12" cy="18.5" r="1.1" fill="#F7A8C4"/><circle cx="7.6" cy="18.5" r="1" fill="#9FD2F2"/><circle cx="16.4" cy="18.5" r="1" fill="#9FD2F2"/>',
+  'hat-beanie':'<path d="M5 15.4a7 7 0 0 1 14 0z" fill="#8FD0B0"/><rect x="4" y="14.6" width="16" height="4.4" rx="1.8" fill="#6FB894"/><path d="M8 15.4v2.8M12 15.4v2.8M16 15.4v2.8" stroke-width="1.2"/><circle cx="12" cy="6.4" r="2.4" fill="#FFF8EA"/>',
+  'hat-sunflower':'<g fill="#FFD34D"><ellipse cx="12" cy="5.6" rx="2" ry="3"/><ellipse cx="12" cy="18.4" rx="2" ry="3"/><ellipse cx="5.6" cy="12" rx="3" ry="2"/><ellipse cx="18.4" cy="12" rx="3" ry="2"/><ellipse cx="7.5" cy="7.5" rx="2" ry="3" transform="rotate(-45 7.5 7.5)"/><ellipse cx="16.5" cy="16.5" rx="2" ry="3" transform="rotate(-45 16.5 16.5)"/><ellipse cx="16.5" cy="7.5" rx="2" ry="3" transform="rotate(45 16.5 7.5)"/><ellipse cx="7.5" cy="16.5" rx="2" ry="3" transform="rotate(45 7.5 16.5)"/></g><circle cx="12" cy="12" r="3.6" fill="#7A4E2E"/>',
+  'hat-horn':'<path d="M4 20a8 8 0 0 1 16 0" stroke-width="2.6"/><path d="M8.2 14.2c-.2-4.8 2.4-8.8 8-11.2-1 3.8-1 7.4 0 11.2z" fill="#7C8CF0"/><circle cx="12.2" cy="10" r=".85" fill="#B5C0FA" stroke="none"/><circle cx="13.6" cy="7" r=".7" fill="#B5C0FA" stroke="none"/>'
 };
+const art=(n,size=24)=>`<svg class="art" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="#5B4436" stroke-width="${Math.max(1.3,Math.min(2.6,1.9*24/size)).toFixed(2)}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ART[n]||''}</svg>`;
+// small stickers for the HUD tiles, toasts and pills
+const ICON={star:art('star',18),sun:art('sun',18),rain:art('rain',18),flag:art('flag',18),key:art('key',18),worm:art('worm',20),steps:art('steps',18),burrow:art('burrow',18),hedge:art('hedge',18),leaf:art('leaf',18)};
+// control icons: one line weight, drawn in the text colour
+const UI_ICON={
+  chev:'<svg class="ui-ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 5.5L16 12l-6.5 6.5"/></svg>',
+  check:'<svg class="ui-ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5.5 12.5l4.2 4.2 8.8-9.2"/></svg>'};
 const sticker=svg=>`<span class="ic" aria-hidden="true">${svg}</span>`;
 function hudSub(){ if(mode==='garden'){ const ch=CHAPTERS.find(c=>li>=c.from&&li<=c.to); return ch?`${ch.name} · ${li-ch.from+1} of ${ch.to-ch.from+1}`:''; }
   if(L.daily) return 'Daily patch'; const k=progress.endless[endlessDiff].streak; return 'Endless · '+DIFF_NAME[endlessDiff]+(k?` · streak ${k}`:''); }
@@ -1397,8 +1475,8 @@ function hideAll(){ ['winOv','homeOv','setOv','finOv'].forEach(hide); }
 function anyOverlay(){ return ['winOv','homeOv','genOv','introOv','resetOv','setOv','finOv'].some(isOpen); }
 function renderMute(){ if($('homeSound')){ const hb=$('homeSound'); hb.setAttribute('aria-label',muted?'Turn sound on':'Turn sound off'); setTimeout(()=>{ hb.innerHTML=$('muteBtn').innerHTML; },0); } const b=$('muteBtn'); b.setAttribute('aria-pressed',String(muted)); b.setAttribute('aria-label',muted?'Turn sound on':'Turn sound off');
   b.innerHTML = muted
-   ? '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path d="M17 9l5 6M22 9l-5 6"/></svg>'
-   : '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19.5 6a8.5 8.5 0 0 1 0 12"/></svg>'; }
+   ? '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path d="M17 9l5 6M22 9l-5 6"/></svg>'
+   : '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19.5 6a8.5 8.5 0 0 1 0 12"/></svg>'; }
 
 // ---------- endless meadow ----------
 const DIFF_NAME={easy:'Easy',medium:'Medium',hard:'Hard'};
@@ -1579,7 +1657,7 @@ function renderHome(){
 }
 function renderWardrobe(){ renderSwatches();
   $('hatGrid').innerHTML=HATS.map(h=>{ const ok=hatUnlocked(h), ch=CHAPTERS[h[2]];
-    return `<button data-h="${h[0]}" class="hat ${h[0]===hatId?'on':''} ${ok?'':'locked'}" aria-pressed="${h[0]===hatId}"><span class="hat-ico" aria-hidden="true">${ok?HAT_ICON[h[0]]:'&#128274;'}</span><b>${h[1]}</b><small>${ok?(h[0]===hatId?'Wearing':'Tap to wear'):`Finish ${ch?ch.name:'a chapter'}`}</small></button>`; }).join('');
+    return `<button data-h="${h[0]}" class="hat ${h[0]===hatId?'on':''} ${ok?'':'locked'}" aria-pressed="${h[0]===hatId}"><span class="hat-ico" aria-hidden="true">${ok?hatArt(h[0]):art('lock',28)}</span><b>${h[1]}</b><small>${ok?(h[0]===hatId?'Wearing':'Tap to wear'):`Finish ${ch?ch.name:'a chapter'}`}</small></button>`; }).join('');
   $('hatGrid').querySelectorAll('button').forEach(b=>b.onclick=()=>{ const h=HATS.find(x=>x[0]===b.dataset.h);
     if(!hatUnlocked(h)){ nope(b,`Finish every patch in ${CHAPTERS[h[2]].name} to earn the ${h[1].toLowerCase()}.`,2800); return; }
     hatId=h[0]; try{ localStorage.setItem('squirm-hat',hatId); }catch(e){} dressHat(hHead); dressHat(segMeshes[0]); if(hHead) homeReact(hatId==='none'?'wow':'joy'); renderWardrobe(); settle($('hatGrid').querySelector('.hat.on')); }); }
@@ -1589,17 +1667,17 @@ function renderSwatches(){ const have=coloursUnlocked();
   $('swatches').querySelectorAll('button').forEach(b=>b.onclick=()=>{ const i=+b.dataset.i, c=WORM_COLS[i];
     if(i>=coloursUnlocked()){ nope(b,`${c[0]} unlocks at ${c[3]} stars. You have ${starTotal()}.`,2600); return; }
     wormCol=i; try{ localStorage.setItem('squirm-colour',String(i)); }catch(e){} applyWormColour(); if(hHead) homeReact('joy'); renderWardrobe(); settle($('swatches').querySelector('button.on')); }); }
-const DIFF_ICON={easy:'&#127793;',medium:'&#127799;',hard:'&#127795;'};
+const DIFF_ICON={easy:art('sprout',32),medium:art('tulip',32),hard:art('tree',32)};
 // short names for the mechanic tiles; the full name goes in the label
 const FEAT_SHORT={flags:'Flags',buttons:'Flowers',leaves:'Leaves',fruit:'Fruit',keys:'Keys',portals:'Tunnels',dry:'Dry',rain:'Rain',rivers:'Rivers',snails:'Snails',beetles:'Beetles'};
 function renderEndless(){
   $('diffSeg').innerHTML=['easy','medium','hard'].map((d,i)=>`<button role="radio" aria-checked="${d===endlessDiff}" data-d="${d}" class="diff ${d===endlessDiff?'on':''}"><span class="em" aria-hidden="true">${DIFF_ICON[d]}</span><b>${DIFF_NAME[d]}</b><span class="pips" aria-hidden="true">${[0,1,2].map(j=>`<i class="${j<=i?'f':''}"></i>`).join('')}</span><small>${progress.endless[d].cleared} cleared</small></button>`).join('');
   $('diffSeg').querySelectorAll('button').forEach(b=>b.onclick=()=>{ endlessDiff=b.dataset.d; renderEndless(); settle($('diffSeg').querySelector('.diff.on')); });
-  $('featGrid').innerHTML=FEATURES.map(([k,n])=>`<button role="checkbox" aria-checked="${!!endlessOpts[k]}" aria-label="${n}" title="${n}" data-k="${k}" class="mech ${endlessOpts[k]?'on':''}"><span class="mi" aria-hidden="true">${MECH[k].i}</span>${FEAT_SHORT[k]}<span class="ok" aria-hidden="true">&#10003;</span></button>`).join('');
+  $('featGrid').innerHTML=FEATURES.map(([k,n])=>`<button role="checkbox" aria-checked="${!!endlessOpts[k]}" aria-label="${n}" title="${n}" data-k="${k}" class="mech ${endlessOpts[k]?'on':''}"><span class="mi" aria-hidden="true">${MECH[k].i}</span>${FEAT_SHORT[k]}<span class="ok" aria-hidden="true">${UI_ICON.check}</span></button>`).join('');
   $('featGrid').querySelectorAll('button').forEach(b=>b.onclick=()=>{ const k=b.dataset.k; endlessOpts[k]=!endlessOpts[k]; sfx(endlessOpts[k]?'on':'off'); renderEndless(); settle($('featGrid').querySelector(`[data-k="${k}"]`)); });
   const on=FEATURES.filter(([k])=>endlessOpts[k]).length; $('mixCount').textContent=on?`${on} of ${FEATURES.length}`:'just the basics';
   const e=progress.endless[endlessDiff];
-  $('eStats').innerHTML=`<div class="m-stat"><span class="ic" aria-hidden="true">&#128293;</span><b>${e.streak}</b><small>Streak</small></div><div class="m-stat"><span class="ic" aria-hidden="true">&#127942;</span><b>${e.best}</b><small>Best</small></div><div class="m-stat"><span class="ic" aria-hidden="true">${ICON.star}</span><b>${e.stars}</b><small>Stars</small></div>`;
+  $('eStats').innerHTML=`<div class="m-stat"><span class="ic" aria-hidden="true">${art('flame',26)}</span><b>${e.streak}</b><small>Streak</small></div><div class="m-stat"><span class="ic" aria-hidden="true">${art('trophy',26)}</span><b>${e.best}</b><small>Best</small></div><div class="m-stat"><span class="ic" aria-hidden="true">${art('star',26)}</span><b>${e.stars}</b><small>Stars</small></div>`;
   const r=readResume('endless'); $('homeEndlessCont').hidden=!(r&&r.def&&!r.def.daily&&r.diff===endlessDiff);
 }
 // the patch to continue with: the current one, or the next if the current one is already cleared
@@ -1611,15 +1689,15 @@ function allCleared(){ return LEVELS.every((l,i)=>isCleared(i)); }
 function shineable(){ return LEVELS.map((l,i)=>i).filter(i=>isCleared(i)&&(progress.stars[LEVELS[i].name]||0)<3); }
 function renderFinale(){
   const todo=shineable(), left=BADGES.filter(b=>!progress.badges[b[0]]), dailyDone=!!progress.daily.results[todayKey()];
-  $('finStats').innerHTML=`<div class="m-stat"><span class="ic" aria-hidden="true">${ICON.star}</span><b>${starTotal()}</b><small>of ${LEVELS.length*3} stars</small></div>`
-    +`<div class="m-stat"><span class="ic" aria-hidden="true">&#127941;</span><b>${Object.keys(progress.badges).length}</b><small>of ${BADGES.length} badges</small></div>`
-    +`<div class="m-stat"><span class="ic" aria-hidden="true">&#128027;</span><b>${(progress.stats.moves||0).toLocaleString()}</b><small>moves</small></div>`;
-  const row=(go,ico,title,sub,done)=>`<button class="set-link${done?' is-done':''}" data-go="${go}"><span class="set-ico" aria-hidden="true">${ico}</span><span><b>${title}</b><small>${sub}</small></span><span class="chev" aria-hidden="true">${done?'&#10003;':'&#8250;'}</span></button>`;
+  $('finStats').innerHTML=`<div class="m-stat"><span class="ic" aria-hidden="true">${art('star',26)}</span><b>${starTotal()}</b><small>of ${LEVELS.length*3} stars</small></div>`
+    +`<div class="m-stat"><span class="ic" aria-hidden="true">${art('medal',26)}</span><b>${Object.keys(progress.badges).length}</b><small>of ${BADGES.length} badges</small></div>`
+    +`<div class="m-stat"><span class="ic" aria-hidden="true">${art('worm',26)}</span><b>${(progress.stats.moves||0).toLocaleString()}</b><small>moves</small></div>`;
+  const row=(go,ico,title,sub,done)=>`<button class="set-link${done?' is-done':''}" data-go="${go}"><span class="set-ico" aria-hidden="true">${art(ico,28)}</span><span><b>${title}</b><small>${sub}</small></span><span class="chev" aria-hidden="true">${done?UI_ICON.check:UI_ICON.chev}</span></button>`;
   $('finNext').innerHTML=
-    row('shine','&#11088;',todo.length?'Shine up your stars':'Every patch has 3 stars',todo.length?`${todo.length} can earn more · next: ${LEVELS[todo[0]].name}`:'Not a single star left to find. Wow.',!todo.length)
-    +row('badges','&#127941;',left.length?'Badges to find':'Every badge found',left.length?`${left.length} to go, like ${left.slice(0,2).map(b=>b[2]).join(' and ')}`:'You found every last one.',!left.length)
-    +row('meadow','&#127804;','Endless meadow','Fresh patches, as many as you like',false)
-    +row('daily','&#128197;','Daily patch',dailyDone?'Done today. A new one grows tomorrow.':'A new one for everyone, every day',dailyDone);
+    row('shine','star',todo.length?'Shine up your stars':'Every patch has 3 stars',todo.length?`${todo.length} can earn more · next: ${LEVELS[todo[0]].name}`:'Not a single star left to find. Wow.',!todo.length)
+    +row('badges','medal',left.length?'Badges to find':'Every badge found',left.length?`${left.length} to go, like ${left.slice(0,2).map(b=>b[2]).join(' and ')}`:'You found every last one.',!left.length)
+    +row('meadow','daisy','Endless meadow','Fresh patches, as many as you like',false)
+    +row('daily','calendar','Daily patch',dailyDone?'Done today. A new one grows tomorrow.':'A new one for everyone, every day',dailyDone);
   qa($('finNext'),'.set-link').forEach(b=>b.onclick=()=>finGo(b.dataset.go,b)); }
 // push: open it as a new layer (from home); otherwise the caller already put a 'finale' layer in place
 function showFinale(push){ renderFinale(); show('finOv'); if(push) pushLayer('finale'); petals(); sfx('badge'); stagger(qa($('finOv'),'.fin-emb,.m-stat,.set-link'),'rise',100,60); }
@@ -1679,40 +1757,40 @@ $('saveLoad').onclick=()=>{ const t=$('saveCode');
 progress.badges=progress.badges||{}; progress.stats=Object.assign({slides:0,hedges:0,fruit:0},progress.stats||{}); progress.clean=progress.clean||{};
 const anyChapter=f=>CHAPTERS.some(ch=>{ for(let i=ch.from;i<=ch.to;i++) if(!f(i)) return false; return true; });
 const BADGES=[
-  ['first','&#127793;','First wiggle','Finish your first patch.',c=>(c&&c.won)||LEVELS.some((l,i)=>isCleared(i))],
-  ['par','&#127919;','Right on par','Finish a patch in par moves or fewer.',c=>c&&c.won&&c.mv<=c.par],
-  ['chapter','&#128215;','Chapter done','Finish every patch in a chapter.',()=>anyChapter(isCleared)],
-  ['clean','&#128161;','All by myself','Finish a whole chapter without using a hint.',()=>anyChapter(i=>progress.clean[LEVELS[i].name])],
-  ['stars50','&#11088;','Star gazer','Collect 50 stars in the garden.',()=>starTotal()>=50],
-  ['stars150','&#127775;','Constellation','Collect 150 stars in the garden.',()=>starTotal()>=150],
-  ['garden','&#127969;','The whole garden','Finish every garden patch.',()=>LEVELS.every((l,i)=>isCleared(i))],
-  ['daily','&#128197;','Early bird','Finish a daily patch.',()=>Object.keys(progress.daily.results).length>0],
-  ['streak7','&#128467;','Week of wiggles','Keep a seven day daily streak.',()=>progress.daily.best>=7],
-  ['meadow','&#127806;','Meadow wanderer','Clear ten endless patches.',()=>['easy','medium','hard'].reduce((a,d)=>a+progress.endless[d].cleared,0)>=10],
-  ['brave','&#128170;','Brave little worm','Clear a hard endless patch.',()=>progress.endless.hard.cleared>0],
-  ['slides','&#127811;','Slip and slide','Slide across 50 wet leaves.',()=>progress.stats.slides>=50],
-  ['hedges','&#127795;','Green thumb','Open hedges 20 times.',()=>progress.stats.hedges>=20],
-  ['pushes','&#129714;','Heave-ho','Push beetles 25 times.',()=>progress.stats.pushes>=25],
-  ['snacks','&#127825;','Snack attack','Eat 30 peaches and mushrooms.',()=>progress.stats.fruit>=30],
-  ['owl','&#127771;','Night owl','Finish a patch between 10 pm and 5 am.',c=>c&&c.won&&(c.hour>=22||c.hour<5)],
-  ['quick','&#9889;','Quick crawl','Finish a patch with a par of 10 or more in under 30 seconds.',c=>c&&c.won&&c.par>=10&&c.secs<30],
-  ['flags','&#128681;','Flag collector','Touch 100 flags.',()=>progress.stats.flags>=100],
-  ['tunnels','&#128371;','Burrow buddy','Travel through tunnels 25 times.',()=>progress.stats.tunnels>=25],
-  ['gates','&#128273;','Key keeper','Open 15 gates.',()=>progress.stats.gates>=15],
-  ['crumbs','&#127964;','Crumbly ground','Watch 50 dry patches sink.',()=>progress.stats.crumbles>=50],
-  ['rain','&#127783;','Rain dancer','Start the rain 10 times.',()=>progress.stats.rains>=10],
-  ['bridges','&#127753;','Bridge keeper','Swing bridges 15 times.',()=>progress.stats.swings>=15],
-  ['moves','&#128062;','Long crawl','Crawl 1,000 moves.',()=>progress.stats.moves>=1000],
-  ['undos','&#9194;','Second thoughts','Take back 100 moves.',()=>progress.stats.undos>=100],
-  ['taps','&#128075;','Best friends','Say hi to the worm 20 times.',()=>progress.stats.taps>=20],
-  ['nap','&#128164;','Nap time','Let the worm doze off mid-patch.',()=>progress.stats.naps>=1],
-  ['sage','&#129417;','Puzzle sage','Finish 20 patches without a hint.',()=>Object.keys(progress.clean).length>=20],
-  ['shiny','&#10024;','Shining garden','Get three stars on 30 patches.',()=>LEVELS.filter(l=>progress.stars[l.name]===3).length>=30],
-  ['chapters','&#127804;','Seasoned gardener','Finish seven chapters.',()=>CHAPTERS.filter((ch,k)=>chapterCleared(k)).length>=7],
-  ['month','&#127769;','Month of wiggles','Keep a 30 day daily streak.',()=>progress.daily.best>=30],
-  ['fearless','&#129409;','Fearless','Clear ten hard endless patches.',()=>progress.endless.hard.cleared>=10],
-  ['dressup','&#127913;','Dress-up box','Unlock five hats.',()=>HATS.filter(h=>h[2]>=0&&hatUnlocked(h)).length>=5],
-  ['rainbow','&#127752;','Rainbow worm','Unlock every worm colour.',()=>coloursUnlocked()===WORM_COLS.length]];
+  ['first','sprout','First wiggle','Finish your first patch.',c=>(c&&c.won)||LEVELS.some((l,i)=>isCleared(i))],
+  ['par','target','Right on par','Finish a patch in par moves or fewer.',c=>c&&c.won&&c.mv<=c.par],
+  ['chapter','book','Chapter done','Finish every patch in a chapter.',()=>anyChapter(isCleared)],
+  ['clean','bulb','All by myself','Finish a whole chapter without using a hint.',()=>anyChapter(i=>progress.clean[LEVELS[i].name])],
+  ['stars50','star','Star gazer','Collect 50 stars in the garden.',()=>starTotal()>=50],
+  ['stars150','stars','Constellation','Collect 150 stars in the garden.',()=>starTotal()>=150],
+  ['garden','house','The whole garden','Finish every garden patch.',()=>LEVELS.every((l,i)=>isCleared(i))],
+  ['daily','calendar','Early bird','Finish a daily patch.',()=>Object.keys(progress.daily.results).length>0],
+  ['streak7','week','Week of wiggles','Keep a seven day daily streak.',()=>progress.daily.best>=7],
+  ['meadow','wheat','Meadow wanderer','Clear ten endless patches.',()=>['easy','medium','hard'].reduce((a,d)=>a+progress.endless[d].cleared,0)>=10],
+  ['brave','shield','Brave little worm','Clear a hard endless patch.',()=>progress.endless.hard.cleared>0],
+  ['slides','wetleaf','Slip and slide','Slide across 50 wet leaves.',()=>progress.stats.slides>=50],
+  ['hedges','hedge','Green thumb','Open hedges 20 times.',()=>progress.stats.hedges>=20],
+  ['pushes','beetle','Heave-ho','Push beetles 25 times.',()=>progress.stats.pushes>=25],
+  ['snacks','peach','Snack attack','Eat 30 peaches and mushrooms.',()=>progress.stats.fruit>=30],
+  ['owl','moon','Night owl','Finish a patch between 10 pm and 5 am.',c=>c&&c.won&&(c.hour>=22||c.hour<5)],
+  ['quick','bolt','Quick crawl','Finish a patch with a par of 10 or more in under 30 seconds.',c=>c&&c.won&&c.par>=10&&c.secs<30],
+  ['flags','flag','Flag collector','Touch 100 flags.',()=>progress.stats.flags>=100],
+  ['tunnels','burrow','Burrow buddy','Travel through tunnels 25 times.',()=>progress.stats.tunnels>=25],
+  ['gates','key','Key keeper','Open 15 gates.',()=>progress.stats.gates>=15],
+  ['crumbs','crack','Crumbly ground','Watch 50 dry patches sink.',()=>progress.stats.crumbles>=50],
+  ['rain','rain','Rain dancer','Start the rain 10 times.',()=>progress.stats.rains>=10],
+  ['bridges','bridge','Bridge keeper','Swing bridges 15 times.',()=>progress.stats.swings>=15],
+  ['moves','steps','Long crawl','Crawl 1,000 moves.',()=>progress.stats.moves>=1000],
+  ['undos','rewind','Second thoughts','Take back 100 moves.',()=>progress.stats.undos>=100],
+  ['taps','heart','Best friends','Say hi to the worm 20 times.',()=>progress.stats.taps>=20],
+  ['nap','zzz','Nap time','Let the worm doze off mid-patch.',()=>progress.stats.naps>=1],
+  ['sage','owl','Puzzle sage','Finish 20 patches without a hint.',()=>Object.keys(progress.clean).length>=20],
+  ['shiny','sparkles','Shining garden','Get three stars on 30 patches.',()=>LEVELS.filter(l=>progress.stars[l.name]===3).length>=30],
+  ['chapters','blossom','Seasoned gardener','Finish seven chapters.',()=>CHAPTERS.filter((ch,k)=>chapterCleared(k)).length>=7],
+  ['month','month','Month of wiggles','Keep a 30 day daily streak.',()=>progress.daily.best>=30],
+  ['fearless','mountain','Fearless','Clear ten hard endless patches.',()=>progress.endless.hard.cleared>=10],
+  ['dressup','hat-tophat','Dress-up box','Unlock five hats.',()=>HATS.filter(h=>h[2]>=0&&hatUnlocked(h)).length>=5],
+  ['rainbow','rainbow','Rainbow worm','Unlock every worm colour.',()=>coloursUnlocked()===WORM_COLS.length]];
 // returns the badges earned just now; quiet ones (earned before badges existed) don't celebrate
 function checkBadges(ctx,quiet){ const got=[];
   for(const b of BADGES){ if(progress.badges[b[0]]) continue; let ok=false; try{ ok=!!b[4](ctx); }catch(e){} if(ok){ progress.badges[b[0]]=Date.now(); got.push(b); } }
@@ -1722,7 +1800,7 @@ function bumpStat(k,n=1){ progress.stats[k]=(progress.stats[k]||0)+n; }
 function renderBadges(){ const n=Object.keys(progress.badges).length;
   $('badgeCount').textContent=`${n} of ${BADGES.length} earned`;
   $('badgeGrid').innerHTML=BADGES.map(b=>{ const t=progress.badges[b[0]];
-    return `<div class="badge-card ${t?'on':''}"><span class="medal" aria-hidden="true">${t?b[1]:'&#128274;'}</span><span><b>${b[2]}</b><small>${b[3]}${t?` <i>${new Date(t).toLocaleDateString(undefined,{month:'short',day:'numeric'})}</i>`:''}</small></span></div>`; }).join(''); }
+    return `<div class="badge-card ${t?'on':''}"><span class="medal" aria-hidden="true">${t?art(b[1],32):art('lock',28)}</span><span><b>${b[2]}</b><small>${b[3]}${t?` <i>${new Date(t).toLocaleDateString(undefined,{month:'short',day:'numeric'})}</i>`:''}</small></span></div>`; }).join(''); }
 
 // ---------- secret reset ----------
 function askReset(){ sfx('stuck'); show('resetOv'); pushLayer('reset'); }
@@ -1821,11 +1899,10 @@ function drawThumb(cv,lv){ const g=cv.getContext('2d'); const h=lv.map.length, w
   g.fillStyle='#FF8FAF'; lv.worm.forEach(p=>{ g.fillRect(ox+p[0]*s+2,oy+p[1]*s+2,s-4,s-4); }); }
 // the garden map: one little scene per chapter, its patches stepping stones along a winding path
 const SCENE_COL=['#CFEFB8','#FFD9C2','#E2D6FA','#FFE9A8','#CBE7F7','#FBD3E0','#D3EFD0','#F3DCC4','#CFE1F8','#F8D8EA','#D9F2C9','#FFD6DE','#C9EEDF','#FFE0C2','#FFF0A8','#D9DEFC'];
-const SCENE_DECO=[['\u{1F331}','\u{1F6A9}'],['\u{1F351}','\u{1F344}'],['\u{1F342}','\u{1F33E}'],['\u{1F511}','\u{1F33B}'],['\u{1F33F}','\u{1FAB1}'],['\u{1F4A7}','\u{2601}\u{FE0F}'],['\u{1F30A}','\u{1FAB5}'],
-  ['\u{1F338}','\u{1F98B}'],['\u{1F333}','\u{1F41D}'],['\u{1F33C}','\u{1F343}'],['\u{1F40C}','\u{1F340}'],['\u{1F33A}','\u{1F33F}'],['\u{1F343}','\u{1F4A7}'],['\u{1F388}','\u{1F380}'],['\u{1F33B}','\u{1F31F}'],['\u{1FAB2}','\u{1F33C}']];
+const SCENE_DECO=[['sprout','flag'],['peach','mushroom'],['wheat','crack'],['key','sunflower'],['burrow','sprout'],['drop','rain'],['bridge','drop'],['blossom','butterfly'],['tree','bee'],['daisy','leaf'],['snail','leaf'],['blossom','hedge'],['wetleaf','drop'],['balloon','bowtie'],['sunflower','stars'],['beetle','daisy']];
 // a few pebble outlines so the stepping stones don't all look stamped from one mould
 const STONES=['48% 52% 46% 54% / 56% 50% 50% 44%','54% 46% 52% 48% / 48% 56% 44% 52%','46% 54% 50% 50% / 52% 46% 54% 48%','52% 48% 56% 44% / 50% 54% 46% 50%','50% 50% 44% 56% / 46% 52% 48% 54%'];
-const LOCK_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><rect x="5" y="11" width="14" height="10" rx="2.5"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>';
+const LOCK_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><rect x="5" y="11" width="14" height="10" rx="2.5"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>';
 let picked=-1;
 function renderLevelList(){
   const g=$('lvGrid'); g.innerHTML=''; const stars=i=>progress.stars[LEVELS[i].name]||0;
@@ -1835,7 +1912,7 @@ function renderLevelList(){
     for(let i=ch.from;i<=ch.to;i++){ cs+=stars(i); if(!isCleared(i)) allDone=false; else fresh=false; }
     const hat=HATS.find(h=>h[2]===k), sc=document.createElement('section'); sc.className='scene'+(open?'':' later'); sc.style.setProperty('--scene',SCENE_COL[k%SCENE_COL.length]);
     const sub=!open?(shownLocked?'Locked':`Finish ${CHAPTERS[k-1].name} to open`):allDone?(hat?`${hat[1]} earned`:'All done'):(hat?`Reward: ${hat[1].toLowerCase()}`:`${n} patches`);
-    sc.innerHTML=`<div class="ch-banner"><span class="emb" aria-hidden="true">${!open?'&#128274;':hat?HAT_ICON[hat[0]]:'&#127793;'}</span><span class="tt"><b>${ch.name}${fresh?' <small class="new">New</small>':''}</b><small>${sub}</small></span><span class="cnt">${allDone?'<span class="done" aria-label="Finished">&#10003;</span>':''}${open?STAR(true,0).replace('width="44" height="44"','width="18" height="18"')+`${cs}/${n*3}`:''}</span></div>`;
+    sc.innerHTML=`<div class="ch-banner"><span class="emb" aria-hidden="true">${!open?art('lock',28):hat?hatArt(hat[0],34):art('sprout',30)}</span><span class="tt"><b>${ch.name}${fresh?' <small class="new">New</small>':''}</b><small>${sub}</small></span><span class="cnt">${allDone?`<span class="done" aria-label="Finished">${UI_ICON.check}</span>`:''}${open?STAR(true,0).replace('width="44" height="44"','width="18" height="18"')+`${cs}/${n*3}`:''}</span></div>`;
     g.appendChild(sc);
     // a chapter you can't reach yet is just its banner and a row of dots
     if(!open){ shownLocked=true; sc.insertAdjacentHTML('beforeend',`<div class="peek" aria-hidden="true">${'<i></i>'.repeat(n)}</div>`); return; }
@@ -1845,7 +1922,7 @@ function renderLevelList(){
     let walked=-1; for(let j=0;j<n;j++) if(isUnlocked(ch.from+j)) walked=j;
     tr.innerHTML=`<svg viewBox="0 0 100 ${H}" preserveAspectRatio="none" aria-hidden="true"><path class="road" d="${pathTo(n-1)}"/><path class="edge" d="${pathTo(n-1)}"/>${walked>0?`<path class="walked" d="${pathTo(walked)}"/>`:''}</svg>`;
     // a few garden bits near the edges, away from the path
-    const deco=SCENE_DECO[k%SCENE_DECO.length]; [1,4,7].forEach((j,q)=>{ const x=pts[j][0]; const d=document.createElement('span'); d.className='deco'; d.textContent=deco[q%2];
+    const deco=SCENE_DECO[k%SCENE_DECO.length]; [1,4,7].forEach((j,q)=>{ const x=pts[j][0]; const d=document.createElement('span'); d.className='deco'; d.innerHTML=art(deco[q%2],26);
       d.style.left=(x<50?88:12)+'%'; d.style.top=(pts[j][1]+RH/2)+'px'; d.style.setProperty('--r',((j*37+k*11)%40-20)+'deg'); tr.appendChild(d); });
     for(let j=0;j<n;j++){ const i=ch.from+j, lv=LEVELS[i], st=stars(i), best=progress.best[lv.name], locked=!isUnlocked(i), [x,y]=pts[j];
       const b=document.createElement('button'); b.className='node'+(i===li?' cur':'')+(locked?' locked':isCleared(i)?' done':'')+(st===3?' gold':''); b.dataset.i=i;
@@ -1859,8 +1936,8 @@ function renderLevelList(){
       tr.appendChild(b); } });
   // the end of the map: what's next once it's all grown, or a note that more is on the way
   const end=document.createElement('div'); end.className='map-end';
-  end.innerHTML=allCleared()?`<span class="emb" aria-hidden="true">&#128081;</span><b>The whole garden is grown!</b><small>More patches are growing and will show up here by themselves.</small><button class="btn primary">What's next?</button>`
-    :`<span aria-hidden="true">&#127793;</span><b>More patches are growing</b><small>New ones will show up here by themselves when they're ready.</small>`;
+  end.innerHTML=allCleared()?`<span class="emb" aria-hidden="true">${art('crown',30)}</span><b>The whole garden is grown!</b><small>More patches are growing and will show up here by themselves.</small><button class="btn primary">What's next?</button>`
+    :`<span aria-hidden="true">${art('sprout',30)}</span><b>More patches are growing</b><small>New ones will show up here by themselves when they're ready.</small>`;
   const eb=end.querySelector('button'); if(eb) eb.onclick=()=>showFinale(true); g.appendChild(end);
   pickPatch(isUnlocked(li)?li:0,false);
   setTimeout(()=>{ const c=g.querySelector('.node.sel'); if(c) c.scrollIntoView({block:'center'}); },30);
@@ -1980,7 +2057,7 @@ function toggleMute(el){ ensureAudio(); muted=!muted; if(el) settle(el); try{ lo
 $('muteBtn').onclick=()=>toggleMute($('muteBtn'));
 renderMute();
 function renderHaptic(){ const b=$('hapticBtn'); b.setAttribute('aria-pressed',String(hapticsOn)); b.setAttribute('aria-label',hapticsOn?'Turn vibration off':'Turn vibration on');
-  b.innerHTML='<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="7.5" y="4" width="9" height="16" rx="2.5"/>'+(hapticsOn?'<path d="M4 9v6M20 9v6M1.5 10.5v3M22.5 10.5v3"/>':'<path d="M3 3l18 18"/>')+'</svg>'; }
+  b.innerHTML='<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round"><rect x="7.5" y="4" width="9" height="16" rx="2.5"/>'+(hapticsOn?'<path d="M4 9v6M20 9v6M1.5 10.5v3M22.5 10.5v3"/>':'<path d="M3 3l18 18"/>')+'</svg>'; }
 $('hapticBtn').onclick=()=>{ hapticsOn=!hapticsOn; try{ localStorage.setItem('squirm-haptics',hapticsOn?'1':'0'); }catch(e){} renderHaptic(); sfx(hapticsOn?'on':'off'); };
 renderHaptic();
 
@@ -2126,6 +2203,7 @@ window.addEventListener('appinstalled',()=>{ installEvt=null; $('installBtn').hi
 $('installBtn').onclick=async()=>{ const e=installEvt; if(!e) return; installEvt=null; $('installBtn').hidden=true; try{ await e.prompt(); }catch(err){} };
 
 // ---------- boot ----------
+document.querySelectorAll('[data-art]').forEach(e=>e.insertAdjacentHTML('afterbegin',art(e.dataset.art,+e.dataset.size||24)));
 // upload the shared effect textures once up front: otherwise each one is first sent to the GPU
 // whenever its effect first happens (a random sparkle, a snore), which shows up as a tiny hitch
 const warmTextures=()=>{ for(const t of [gradTex,glowTex,sparkTex,turfTex,crackTex,swirlTex,lawnTex,flowH,flowV,blobTex,zTex,slimeTex]) try{ renderer.initTexture(t); }catch(e){} };
