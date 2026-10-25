@@ -278,9 +278,11 @@ Sections are listed in the table of contents at the top of the file; each starts
   photo mode and Safari's `gesturestart` is cancelled, so pinching never zooms the page. `snapPhoto` renders a frame, draws it on a 2D canvas with a caption plaque
   (patch and stars, from `photoInfo` set in `onWin`) and the name, then shares the PNG where the browser
   can share files and downloads it otherwise. Keys: Space/Enter snap, P pose, Esc back.
-- **Settings and backups:** the home gear opens `setOv`, a short list whose rows open sub-pages
-  (`setPage`, each pushing a `setpage` layer): Sound & music, Reminders, Look, Your garden (save code
-  backup and restore) and About. A save code is `SQUIRM1:` + base64 JSON of every `squirm-` key except
+- **Settings and backups:** the home gear opens `setOv`, one scrolling page (`#setScroll`, a
+  `.fade-scroll`) of cards with sticker headings (`renderSettings`): a stats strip, Sound (music, volume,
+  effects, vibration), Look (theme with swatches; Graphics: Auto lets `watchSpeed` adapt, Saver pins the
+  lowest quality, Sharp the highest; `squirm-gfx`, device-specific), Reminders, Back up your garden (save
+  code) and About (with What's new folded into a `<details>`). A save code is `SQUIRM1:` + base64 JSON of every `squirm-` key except
   the throwaway ones in `SAVE_SKIP`; restoring replaces those keys and reloads. Starting over is only
   the secret reset: hold the home worm's head for 3 s, which clears every `squirm-` key.
 - **Music and sound:** `sfx(name)` plays synthesized effects. `musicTick` schedules a generated tune

@@ -50,6 +50,8 @@ let renderer;
 try{ renderer=new THREE.WebGLRenderer({canvas,antialias:true}); }catch(e){ document.getElementById('noGL').classList.add('show'); return; }
 // quality 2 = full, 1 = lighter shadows, 0 = also lower resolution; drops automatically on slow devices
 let quality=2; { const q=parseInt(store.get('squirm-quality'),10); if(q>=0&&q<=2) quality=q; }
+// Settings > Graphics: 'auto' lets watchSpeed adapt, 'saver' pins the lowest quality, 'best' the highest
+let gfx=store.get('squirm-gfx')||'auto'; if(gfx==='saver') quality=0; else if(gfx==='best') quality=2;
 const pixelRatio=()=>Math.min(window.devicePixelRatio||1,quality===2?2.5:quality===1?1.75:1.25);
 renderer.setPixelRatio(pixelRatio());
 renderer.setClearColor(C.lawn);
@@ -1848,7 +1850,6 @@ window.addEventListener('popstate',()=>{ if(ignorePop>0){ ignorePop--; return; }
   else if(top==='reset') hide('resetOv');
   else if(top==='finale') hide('finOv');
   else if(top==='settings') hide('setOv');
-  else if(top==='setpage') setPage('main','back');
   else if(top==='tab') showTab('play',true);
   else if(top==='photo') exitPhoto();
   else if(top==='win'){ hide('winOv'); if(layers.includes('game')) popLayer('game'); showHome(); }
@@ -1858,7 +1859,7 @@ window.addEventListener('popstate',()=>{ if(ignorePop>0){ ignorePop--; return; }
 // newest first: [id (a date), title, lines]. Returning players see the newest entry once on the Play tab,
 // new players never do (squirm-news holds the last id seen); Settings > About lists them all.
 const NEWS=[
-  ['2026-10-25','New in the garden',['16 new badges to earn, and a few of them are really tough.','New hats, colours and patterns, plus glasses, shades and a fancy mustache to wear.','A new badges book, with your progress on every badge.','Snap a photo of your garden after you finish a patch, from any angle you like.','Fresh looks for the home screen, the garden map and the meadow, and a new wardrobe that shows off your whole worm.']],
+  ['2026-10-25','New in the garden',['16 new badges to earn, and a few of them are really tough.','New hats, colours and patterns, plus glasses, shades and a fancy mustache to wear.','A tidier settings page, with a battery saver option.','A new badges book, with your progress on every badge.','Snap a photo of your garden after you finish a patch, from any angle you like.','Fresh looks for the home screen, the garden map and the meadow, and a new wardrobe that shows off your whole worm.']],
   ['2026-10-24','Beetle bumps',['Chapter 16: push beetles around, even onto flower buttons.','A new hat to earn: the beetle horn.']],
   ['2026-10-20','A bigger garden',['Two new chapters, Garden party and Grand bloom.','A finale for when the whole garden is grown.']]];
 function renderNews(){ const seen=store.get('squirm-news'), n=NEWS[0], returning=LEVELS.some((l,i)=>isCleared(i))||Object.keys(progress.daily.results).length>0;
@@ -2022,24 +2023,22 @@ $('setTheme').querySelectorAll('button').forEach(b=>b.onclick=()=>{ theme=b.data
 applyTheme();
 
 // ---------- settings: pages, toggles, theme, save code backup and restore ----------
-function renderSettings(){ $('setMusic').setAttribute('aria-checked',String(musicOn)); $('setMusicVol').value=Math.round(musicVol*100); $('setMusicVol').disabled=!musicOn; $('setSound').setAttribute('aria-checked',String(!muted)); $('setHaptic').setAttribute('aria-checked',String(hapticsOn)); applyTheme();
+function renderSettings(){ $('setMusic').setAttribute('aria-checked',String(musicOn)); $('setMusicVol').value=Math.round(musicVol*100); $('volRow').hidden=!musicOn;
+  // a little summary of the garden at the top
+  $('setHero').innerHTML=[[art('star',22),starTotal(),'stars'],[art('medal',22),Object.keys(progress.badges).length,'badges'],[art('sprout',22),LEVELS.filter((l,i)=>isCleared(i)).length,'patches']].map(([i,n,l])=>`<span>${i}${n}<small>${l}</small></span>`).join('');
+  qa($('setGfx'),'button').forEach(b=>{ const on=b.dataset.g===gfx; b.classList.toggle('on',on); b.setAttribute('aria-checked',String(on)); }); $('setSound').setAttribute('aria-checked',String(!muted)); $('setHaptic').setAttribute('aria-checked',String(hapticsOn)); applyTheme();
   $('saveCode').hidden=true; $('saveCode').value=''; $('saveLoad').textContent='Restore'; renderRemind(); }
-function setPage(p,dir){ document.querySelectorAll('#setOv .set-page').forEach(el=>{ el.hidden=el.dataset.p!==p; el.classList.remove('fwd','back'); if(!el.hidden&&dir){ void el.offsetWidth; el.classList.add(dir); } });
-  const pg=document.querySelector(`#setOv .set-page[data-p="${p}"]`); $('setTitle').textContent=pg.dataset.title||'Settings'; $('setBack').hidden=p==='main';
-  if(p==='garden'){ $('saveCode').hidden=true; $('saveCode').value=''; $('saveLoad').textContent='Restore'; }
-  setPageIntro(p); }
-// settings: each page's rows slide in one after another
-const setPageIntro=p=>stagger(qa(document.querySelector(`#setOv .set-page[data-p="${p}"]`),':scope > *'),'rise',60,40);
-document.querySelectorAll('#setOv .set-link').forEach(b=>b.onclick=()=>{ setPage(b.dataset.go,'fwd'); pushLayer('setpage'); });
-$('setBack').onclick=()=>window.history.back();
-$('settingsBtn').onclick=()=>{ ensureAudio(); renderSettings(); setPage('main'); show('setOv'); pushLayer('settings'); };
+$('settingsBtn').onclick=()=>{ ensureAudio(); renderSettings(); $('setScroll').scrollTop=0; const d=$('setOv').querySelector('details'); if(d) d.open=false;
+  show('setOv'); pushLayer('settings'); stagger(qa($('setScroll'),':scope > *'),'rise',60,45); };
 $('setClose').onclick=()=>{ hide('setOv'); popLayer('settings'); renderHome(); };
+$('setGfx').querySelectorAll('button').forEach(b=>b.onclick=()=>{ if(gfx===b.dataset.g) return; gfx=b.dataset.g; store.set('squirm-gfx',gfx);
+  if(gfx==='saver') setQuality(0); else if(gfx==='best') setQuality(2); renderSettings(); settle(b); });
 $('setSound').onclick=()=>{ toggleMute(); renderSettings(); };
 $('setHaptic').onclick=()=>{ $('hapticBtn').onclick(); renderSettings(); };
 $('setMusicVol').oninput=e=>{ musicVol=e.target.value/100; store.set('squirm-music-vol',String(musicVol)); ensureAudio(); musicTick(); };
 $('setMusic').onclick=()=>{ musicOn=!musicOn; store.set('squirm-music',musicOn?'1':'0'); ensureAudio(); sfx(musicOn?'on':'off'); renderSettings(); if(musicOn&&muted) toast('Turn sound on to hear the music.',2400); };
 // a save code is every squirm- key (except throwaway ones) as base64 JSON with a version prefix
-const SAVE_PREFIX='SQUIRM1:', SAVE_SKIP=['squirm-quality','squirm-offline-told','squirm-daily-patch','squirm-remind','squirm-boot'];
+const SAVE_PREFIX='SQUIRM1:', SAVE_SKIP=['squirm-quality','squirm-gfx','squirm-offline-told','squirm-daily-patch','squirm-remind','squirm-boot'];
 function saveCode(){ const d={}; for(const k of store.keys()) if(!SAVE_SKIP.includes(k)) d[k]=store.get(k);
   return SAVE_PREFIX+btoa(unescape(encodeURIComponent(JSON.stringify(d)))); }
 function readSaveCode(code){ code=String(code||'').trim(); if(!code.startsWith(SAVE_PREFIX)) return null;
@@ -2463,7 +2462,7 @@ renderHaptic();
 let drawn=false, last=performance.now(), last0=last, frameN=0, slowT=0, fastT=0, sampleT=0, raisedOnce=false;
 // steps quality down when frames run under ~25 fps (a phone in low power mode capped at 30 fps is fine),
 // and back up once frames are quick again, so one rough patch doesn't leave the garden blurry for good
-function watchSpeed(ms){ if(ms>250) return; sampleT+=ms; if(ms>40) slowT+=ms; if(ms<20) fastT+=ms;
+function watchSpeed(ms){ if(ms>250||gfx!=='auto') return; sampleT+=ms; if(ms>40) slowT+=ms; if(ms<20) fastT+=ms;
   if(sampleT<4000) return; const slow=slowT/sampleT>.5, fast=fastT/sampleT>.9; sampleT=slowT=fastT=0;
   if(slow&&quality>0) setQuality(quality-1);
   else if(fast&&quality<2&&!raisedOnce){ raisedOnce=true; setQuality(quality+1); } }
