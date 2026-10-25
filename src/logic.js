@@ -32,6 +32,13 @@ function onFlower(s,segs){ return segs.some(p=>tileAt(s,p[0],p[1])==='B'); }
 function beetleOnFlower(s,beetles){ return (beetles||[]).some(b=>tileAt(s,b.x,b.y)==='B'); }
 function hedgesOpen(s){ return onFlower(s,s.segs)||beetleOnFlower(s,s.beetles); }
 
+// everything that tells two states apart, as one string, for the solvers' visited sets. Hedges follow
+// from the worm and beetles, so they add nothing; beetles are sorted so identical ones don't double up.
+function stateKey(s){
+  return s.segs.map(p=>p[0]+','+p[1]).join(';')+'|'+s.grid.map(r=>r.join('')).join('')+'|'+s.keys+(s.raining?'r':'')+'|'+
+    (s.snails||[]).map(n=>n.x+','+n.y+','+n.dx+','+n.dy).join(';')+'|'+(s.beetles||[]).map(b=>b.x+','+b.y).sort().join(';');
+}
+
 // One crawl of the head by one tile, with everything it touches. No snails, no win check:
 // step() runs this once, or several times while the worm slides over wet leaves.
 function advance(s, dirKey){
@@ -122,4 +129,4 @@ function step(s, dirKey){
   }
   return { state:ns, ev };
 }
-if(typeof module!=='undefined') module.exports = { DIRS, initState, step, tileAt, countChar, cloneState, hedgesOpen, beetleAt };
+if(typeof module!=='undefined') module.exports = { DIRS, initState, step, tileAt, countChar, cloneState, hedgesOpen, beetleAt, stateKey };
