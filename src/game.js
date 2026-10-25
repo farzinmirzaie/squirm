@@ -37,6 +37,8 @@ const C = {
   straw:0xF3D18A, strawDark:0xD9B166, acornCap:0x8A5A36, acornNut:0xC98E52, partyA:0x9FD2F2, partyB:0xFFF1A8, crown:0xF5C14E, beret:0xB79CF2, beanie:0x8FD0B0, beanieRib:0x6FB894, beetle:0x7C8CF0, beetleDark:0x5566C8, beetleHead:0x3E3F84, beetleSpot:0xB5C0FA, beetleLeg:0x3A2F5E, sunPetal:0xFFD34D, sunCore:0x7A4E2E,
   wetLeaf:0x8EE0B4, leafVein:0x5DBA8A, dew:0xEAF8FF, hedge:0x5FA64F, hedgeDark:0x4E8F40, petalB:0xF7A8C4,
   burrow:0x3A2A22, mound:0xB07B57, ready:0x8EDB72, line:0x5B4436,
+  chef:0xFFFBF2, wizard:0x8E7BE0, cowboy:0xC98E52, cowboyBand:0x8A5A36, phones:0xF7A8C4, phonesBand:0x6E5F86,
+  frame:0x4A3C52, lensDark:0x3E3548, heartFrame:0xF27DA2, starFrame:0xF5C14E, monocle:0xE0B04A, tash:0x6B4A35,
   portal:{ '1':0x7FCFEA, '2':0xC69CF7, '3':0xFFB877, '4':0x9BE39B }
 };
 // ---------- DOM helpers ----------
@@ -866,6 +868,7 @@ function makeSeg(i,parent){
     const flat=new THREE.Mesh(new THREE.CylinderGeometry(.013,.013,.075,8),dark); flat.rotation.z=Math.PI/2; flat.position.set(0,-.06,.33); face.add(flat); F.mouths.flat=flat;
     const tongue=new THREE.Mesh(sph(.035,14,10),toon(0xFF7A98)); tongue.position.set(.02,-.1,.31); tongue.scale.set(1,1.2,.5); tongue.visible=false; face.add(tongue); F.tongue=tongue;
     const hat=new THREE.Group(); hat.position.set(0,.27,-.02); hat.rotation.x=-.18; head.add(hat); g.userData.hatSlot=hat; dressHat(g);
+    const acc=new THREE.Group(); head.add(acc); g.userData.accSlot=acc; dressExtra(g);
     g.userData.expr='smile'; applyExpr(g,'smile');
   }
   (parent||wormG).add(g); return g;
@@ -908,22 +911,77 @@ let tailExtras=[];
 const tubeMat=new THREE.MeshToonMaterial({color:0xffffff,vertexColors:true,gradientMap:gradTex});
 // the Spots pattern is drawn per pixel from 'pg' (place along the worm, ring angle as cos/sin): round pale spots on
 // the back, alternating left and right of the spine, two to a segment, none on the neck
-const spotsU={value:0};
-tubeMat.onBeforeCompile=sh=>{ sh.uniforms.uSpots=spotsU;
+const spotsU={value:0}, glitterU={value:0};
+tubeMat.onBeforeCompile=sh=>{ sh.uniforms.uSpots=spotsU; sh.uniforms.uGlitter=glitterU;
   sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nattribute vec3 pg; varying vec3 vPg;').replace('#include <begin_vertex>','#include <begin_vertex>\nvPg=pg;');
-  sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nuniform float uSpots; varying vec3 vPg;').replace('#include <color_fragment>',`#include <color_fragment>
+  sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nuniform float uSpots; uniform float uGlitter; varying vec3 vPg;').replace('#include <color_fragment>',`#include <color_fragment>
     if(uSpots>.5 && vPg.x>.6){ float k=floor(vPg.x*2.+.5), side=mod(k,2.)>.5?.7:-.7, a=atan(vPg.z,vPg.y)-1.5708-side;
       a=abs(mod(a+3.14159,6.28318)-3.14159); float d=length(vec2((vPg.x-k*.5)*1.3,a*.26));
-      diffuseColor.rgb=mix(diffuseColor.rgb,vec3(1.),.6*(1.-smoothstep(.1,.115,d))); }`); };
+      diffuseColor.rgb=mix(diffuseColor.rgb,vec3(1.),.6*(1.-smoothstep(.1,.115,d))); }
+    if(uGlitter>.5 && vPg.x>.5){ vec2 c=vec2(vPg.x*9.,atan(vPg.z,vPg.y)*3.2), id=floor(c), fr=fract(c)-.5; float h=fract(sin(dot(id,vec2(12.9898,78.233)))*43758.5453);
+      if(h>.55){ vec2 o=vec2(fract(h*7.31),fract(h*13.7))-.5; float d=length(fr-o*.5); diffuseColor.rgb=mix(diffuseColor.rgb,vec3(1.),.9*(1.-smoothstep(.07,.12,d))); } }`); };
 const capMat=new THREE.MeshToonMaterial({color:0xffffff,gradientMap:gradTex});
 const COL_A=new THREE.Color(0xFFB3C8), tmpC=new THREE.Color();
 // worm colours, earned with garden stars: [name, body, head, stars needed]
 // hats, earned by finishing chapters: [id, name, chapter index that unlocks it]. Each is built once and cloned.
 const HATS=[['none','No hat',-1],['crown','Flower crown',0],['mush','Mushroom cap',1],['straw','Straw hat',2],['tophat','Top hat',3],['leaf','Leaf cap',4],['rainhat','Rain hat',5],
-  ['acorn','Acorn cap',6],['bee','Bee antennae',7],['party','Party hat',8],['brolly','Tiny umbrella',9],['beret','Dewdrop beret',10],['bow','Ribbon bow',11],['gold','Garden crown',12],['beanie','Pompom beanie',13],['sunflower','Sunflower',14],['horn','Beetle horn',15]];
+  ['acorn','Acorn cap',6],['bee','Bee antennae',7],['party','Party hat',8],['brolly','Tiny umbrella',9],['beret','Dewdrop beret',10],['bow','Ribbon bow',11],['gold','Garden crown',12],['beanie','Pompom beanie',13],['sunflower','Sunflower',14],['horn','Beetle horn',15],
+  ['chef','Chef hat',-2,'Eat 100 snacks',()=>(progress.stats.fruit||0)>=100],
+  ['wizard','Wizard hat',-2,'30 patches, no hints',()=>Object.keys(progress.clean).length>=30],
+  ['cowboy','Cowboy hat',-2,'Clear 15 meadow patches',()=>['easy','medium','hard'].reduce((a,d)=>a+progress.endless[d].cleared,0)>=15],
+  ['phones','Headphones',-2,'Finish 10 daily patches',()=>(progress.stats.dailies||0)>=10]];
 const hatArt=(id,size=36)=>art('hat-'+id,size);
+// extras: things for the face, earned with milestones: [id, name, how to earn, test]. Built once and cloned, like hats.
+const EXTRAS=[['none','Nothing','',()=>true],
+  ['glasses','Round glasses','Earn 10 badges',()=>Object.keys(progress.badges).length>=10],
+  ['tash','Fancy mustache','Say hi 50 times',()=>(progress.stats.taps||0)>=50],
+  ['shades','Sunglasses','Clear 10 meadow patches',()=>['easy','medium','hard'].reduce((a,d)=>a+progress.endless[d].cleared,0)>=10],
+  ['hearts','Heart glasses','Collect 200 stars',()=>starTotal()>=200],
+  ['monocle','Monocle','50 patches, no hints',()=>Object.keys(progress.clean).length>=50],
+  ['stars','Star shades','3 stars on 60 patches',()=>LEVELS.filter(l=>progress.stars[l.name]===3).length>=60]];
+let extraId=store.get('squirm-extra')||'none';
+const extraOn=()=>{ const e=EXTRAS.find(x=>x[0]===extraId); return e&&e[3]()?extraId:'none'; };
+const extraArt=(id,size=36)=>art(id==='none'?'hat-none':'extra-'+id,size);
+const extraProto={};
+const SHAPE_HEART=()=>{ const s=new THREE.Shape(); s.moveTo(0,-1); s.bezierCurveTo(-.6,-.45,-1.25,-.1,-1.05,.45); s.bezierCurveTo(-.88,.95,-.25,1.05,0,.55); s.bezierCurveTo(.25,1.05,.88,.95,1.05,.45); s.bezierCurveTo(1.25,-.1,.6,-.45,0,-1); return s; };
+const SHAPE_STAR=()=>{ const s=new THREE.Shape(); for(let i=0;i<10;i++){ const a=Math.PI/2+i*Math.PI/5, r=i%2?.45:1; s[i?'lineTo':'moveTo'](Math.cos(a)*r,Math.sin(a)*r); } return s; };
+// a flat frame with a lens in it, from a shape: the frame is the shape with a smaller copy cut out
+function shapedLens(mk,fr,lens,scale){ const g=new THREE.Group(), o=mk();
+  const inner=new THREE.Path(mk().getPoints(30).map(p=>p.multiplyScalar(.72)).reverse()); o.holes.push(inner);
+  const f=new THREE.Mesh(new THREE.ExtrudeGeometry(o,{depth:.12,bevelEnabled:false,curveSegments:16}),fr); f.scale.setScalar(scale); g.add(f);
+  const l=new THREE.Mesh(new THREE.ShapeGeometry(new THREE.Shape(mk().getPoints(30).map(p=>p.multiplyScalar(.74))),24),lens); l.scale.setScalar(scale); l.position.z=.004; g.add(l); return g; }
+function buildExtra(id){ const g=new THREE.Group(), EY=.14, EZ=.365;
+  const arms=mat=>{ for(const s of [-1,1]){ const a=new THREE.Mesh(new THREE.CylinderGeometry(.013,.013,.3,8),mat); a.rotation.x=Math.PI/2; a.rotation.y=s*.25; a.position.set(s*.28,EY+.01,.2); g.add(a); } };
+  if(id==='glasses'||id==='shades'){ const sh=id==='shades', z=sh?EZ+.03:EZ, rad=sh?.13:.12;
+    for(const s of [-1,1]){ const r=new THREE.Mesh(new THREE.TorusGeometry(rad,.019,10,30),m('frame')); r.position.set(s*.13,EY,z); g.add(r);
+      if(sh){ const l=new THREE.Mesh(new THREE.CircleGeometry(rad,28),m('lensDark')); l.position.set(s*.13,EY,z-.004); g.add(l);
+        const hl=new THREE.Mesh(new THREE.CircleGeometry(.025,12),new THREE.MeshBasicMaterial({color:0xffffff})); hl.position.set(s*.13-.05,EY+.05,z+.002); hl.scale.set(1.6,.6,1); hl.rotation.z=.5; g.add(hl); } }
+    const br=new THREE.Mesh(new THREE.TorusGeometry(.03,.013,8,12,Math.PI),m('frame')); br.position.set(0,EY+.03,EZ+.005); g.add(br); arms(m('frame')); }
+  else if(id==='hearts'||id==='stars'){ const mk=id==='hearts'?SHAPE_HEART:SHAPE_STAR, fr=m(id==='hearts'?'heartFrame':'starFrame'), lens=m(id==='hearts'?'petalB':'lensDark');
+    for(const s of [-1,1]){ const l=shapedLens(mk,fr,lens,id==='hearts'?.125:.15); l.position.set(s*.135,EY,EZ-.01); l.rotation.z=s*-.08; g.add(l); }
+    const br=new THREE.Mesh(new THREE.CylinderGeometry(.012,.012,.07,8),fr); br.rotation.z=Math.PI/2; br.position.set(0,EY+.02,EZ+.005); g.add(br); arms(fr); }
+  else if(id==='monocle'){ const r=new THREE.Mesh(new THREE.TorusGeometry(.125,.02,10,30),m('monocle')); r.position.set(-.13,EY,EZ+.005); g.add(r);
+    for(let i=0;i<6;i++){ const t=i/5, c=new THREE.Mesh(sph(.014,8,6),m('monocle')); c.position.set(-.13-.12-.05*Math.sin(t*2.6),EY-.04-t*.26,EZ-.04-t*.06); g.add(c); } }
+  else if(id==='tash'){ for(const s of [-1,1]){ const b=new THREE.Mesh(sph(.075,16,12),m('tash')); b.position.set(s*.075,-.005,.33); b.scale.set(1.25,.48,.55); b.rotation.z=s*.32; g.add(b);
+      const c=new THREE.Mesh(sph(.035,12,8),m('tash')); c.position.set(s*.165,.03,.3); g.add(c); } }
+  return g; }
+function dressExtra(g){ const slot=g&&g.userData.accSlot; if(!slot) return; slot.clear(); const id=extraOn(); if(id==='none') return;
+  if(!extraProto[id]) extraProto[id]=buildExtra(id); slot.add(extraProto[id].clone()); }
 const hatProto={};
 function buildHat(id){ const h=new THREE.Group();
+  if(id==='chef'){ const band=new THREE.Mesh(new THREE.CylinderGeometry(.19,.2,.13,24),m('chef')); band.position.y=.05; outline(band,.012); h.add(band);
+    for(const [x,y,z,r] of [[0,.24,0,.15],[.12,.19,.03,.12],[-.12,.19,.03,.12],[0,.19,-.11,.12],[0,.2,.11,.11]]){ const p=new THREE.Mesh(sph(r,18,14),m('chef')); p.position.set(x,y,z); outline(p,.012); h.add(p); } return h; }
+  if(id==='wizard'){ const brim=new THREE.Mesh(new THREE.CylinderGeometry(.31,.33,.03,28),m('wizard')); outline(brim,.012); h.add(brim);
+    const cone=new THREE.Mesh(new THREE.ConeGeometry(.19,.52,26),m('wizard')); cone.position.set(.02,.27,0); cone.rotation.z=-.16; outline(cone,.012); h.add(cone);
+    const band=new THREE.Mesh(new THREE.CylinderGeometry(.188,.19,.05,24),m('crown')); band.position.y=.04; h.add(band);
+    for(const [x,y,z,s] of [[.1,.2,.12,.05],[-.07,.33,.08,.04],[.04,.12,.17,.035]]){ const st=new THREE.Mesh(new THREE.OctahedronGeometry(s),m('crown')); st.position.set(x,y,z); st.rotation.set(.4,.6,0); h.add(st); } return h; }
+  if(id==='cowboy'){ const brim=new THREE.Mesh(new THREE.CylinderGeometry(.38,.38,.03,30),m('cowboy')); brim.scale.z=.82; outline(brim,.012); h.add(brim);
+    const top=new THREE.Mesh(new THREE.CylinderGeometry(.16,.2,.2,24),m('cowboy')); top.position.y=.11; outline(top,.012); h.add(top);
+    const dent=new THREE.Mesh(sph(.07,12,8),m('cowboyBand')); dent.position.set(0,.2,0); dent.scale.set(1.6,.25,.6); h.add(dent);
+    const band=new THREE.Mesh(new THREE.CylinderGeometry(.196,.2,.04,24),m('cowboyBand')); band.position.y=.03; h.add(band); return h; }
+  if(id==='phones'){ const arc=new THREE.Mesh(new THREE.TorusGeometry(.36,.035,10,30,Math.PI),m('phonesBand')); arc.position.y=-.22; outline(arc,.01); h.add(arc);
+    for(const sx of [-1,1]){ const cup=new THREE.Mesh(new THREE.CylinderGeometry(.12,.12,.09,22),m('phones')); cup.rotation.z=Math.PI/2; cup.position.set(sx*.37,-.24,0); outline(cup,.012); h.add(cup);
+      const pad=new THREE.Mesh(new THREE.CylinderGeometry(.085,.085,.03,18),m('phonesBand')); pad.rotation.z=Math.PI/2; pad.position.set(sx*.43,-.24,0); h.add(pad); } return h; }
   if(id==='crown'){ const ring=new THREE.Mesh(new THREE.TorusGeometry(.21,.04,8,28),m('leaf')); ring.rotation.x=Math.PI/2; ring.position.y=.05; outline(ring,.01); h.add(ring);
     for(let i=0;i<7;i++){ const a=i/7*Math.PI*2, f=new THREE.Group(); f.position.set(Math.cos(a)*.21,.1,Math.sin(a)*.21); f.rotation.z=Math.cos(a)*.5; f.rotation.x=-Math.sin(a)*.5; h.add(f); const col=i%2?m('petalB'):m('partyB');
       for(let k=0;k<5;k++){ const pt=new THREE.Mesh(sph(.045,8,6),col); const b=k/5*Math.PI*2; pt.position.set(Math.cos(b)*.05,0,Math.sin(b)*.05); pt.scale.y=.55; f.add(pt); }
@@ -995,11 +1053,12 @@ function buildHat(id){ const h=new THREE.Group();
   return h; }
 let hatId=store.get('squirm-hat')||'none';
 const chapterCleared=k=>{ const ch=CHAPTERS[k]; if(!ch) return false; for(let i=ch.from;i<=ch.to;i++) if(!isCleared(i)) return false; return true; };
-const hatUnlocked=h=>h[2]<0||chapterCleared(h[2]);
+const hatUnlocked=h=>h[4]?h[4]():h[2]<0||chapterCleared(h[2]);
 function dressHat(g){ const slot=g&&g.userData.hatSlot; if(!slot) return; slot.clear();
   const h=HATS.find(x=>x[0]===hatId); if(!h||h[0]==='none'||!hatUnlocked(h)) return;
   if(!hatProto[hatId]) hatProto[hatId]=buildHat(hatId); slot.add(hatProto[hatId].clone()); }
-const WORM_COLS=[['Blossom',0xFFB3C8,0xFFB0C6,0],['Mint',0x7FD9B0,0x74D3A6,15],['Butter',0xFFE08A,0xFFDA7A,45],['Lavender',0xCDB8F5,0xC5AEF2,90],['Sky',0xA9D8F5,0x9FD2F2,150]];
+const WORM_COLS=[['Blossom',0xFFB3C8,0xFFB0C6,0],['Mint',0x7FD9B0,0x74D3A6,15],['Butter',0xFFE08A,0xFFDA7A,45],['Lavender',0xCDB8F5,0xC5AEF2,90],['Sky',0xA9D8F5,0x9FD2F2,150],
+  ['Peach',0xFFC29A,0xFFB98C,210],['Teal',0x7ED3CC,0x6ECBC3,270],['Cocoa',0xD6AE8C,0xCDA27F,330],['Twilight',0xA4A6E4,0x9A9CDF,400],['Golden',0xF7D36A,0xF3CA55,480]];
 const starTotal=()=>LEVELS.reduce((a,l)=>a+(progress.stars[l.name]||0),0);
 const coloursUnlocked=()=>WORM_COLS.filter(c=>starTotal()>=c[3]).length;
 let wormCol=Math.max(0,Math.min(WORM_COLS.length-1,parseInt(store.get('squirm-colour')||'0',10)||0));
@@ -1008,11 +1067,14 @@ const PATTERNS=[['plain','Plain','',()=>true],
   ['stripes','Stripes','Earn 5 badges',()=>Object.keys(progress.badges).length>=5],
   ['spots','Spots','3 day daily streak',()=>progress.daily.best>=3],
   ['fade','Soft fade','Clear 5 meadow patches',()=>['easy','medium','hard'].reduce((a,d)=>a+progress.endless[d].cleared,0)>=5],
-  ['rainbow','Rainbow tail','Finish 8 chapters',()=>CHAPTERS.filter((ch,k)=>chapterCleared(k)).length>=8]];
+  ['rainbow','Rainbow tail','Finish 8 chapters',()=>CHAPTERS.filter((ch,k)=>chapterCleared(k)).length>=8],
+  ['bands','Bands','Crawl 2,000 moves',()=>(progress.stats.moves||0)>=2000],
+  ['sunset','Sunset','Finish 10 chapters',()=>CHAPTERS.filter((ch,k)=>chapterCleared(k)).length>=10],
+  ['glitter','Glitter','Earn 25 badges',()=>Object.keys(progress.badges).length>=25]];
 const patternsUnlocked=()=>PATTERNS.filter(p=>p[3]()).map(p=>p[0]);
 let wormPat=store.get('squirm-pattern')||'plain';
 const patOn=()=>PATTERNS.some(p=>p[0]===wormPat&&p[3]())?wormPat:'plain';
-function applyWormColour(){ curPat=patOn(); spotsU.value=curPat==='spots'?1:0; if(wormCol>=coloursUnlocked()) wormCol=0; const c=WORM_COLS[wormCol]; COL_A.setHex(c[1]); m('head').color.setHex(c[2]); buildHomeBody(); }
+function applyWormColour(){ curPat=patOn(); spotsU.value=curPat==='spots'?1:0; glitterU.value=curPat==='glitter'?1:0; if(wormCol>=coloursUnlocked()) wormCol=0; const c=WORM_COLS[wormCol]; COL_A.setHex(c[1]); m('head').color.setHex(c[2]); buildHomeBody(); }
 const tubePool=[], capPool=[];
 function tubeGeo(geo,pts,rads,cols,extra,gs){
   const S=pts.length, RS=20, verts=S*RS;
@@ -1043,11 +1105,13 @@ function tubeGeo(geo,pts,rads,cols,extra,gs){
 function getTube(i){ if(!tubePool[i]){ const body=new THREE.Mesh(new THREE.BufferGeometry(),tubeMat), line=new THREE.Mesh(new THREE.BufferGeometry(),lineMat);
     body.castShadow=true; body.frustumCulled=false; line.frustumCulled=false; wormG.add(body,line); tubePool[i]={body,line}; } return tubePool[i]; }
 function getCap(i){ if(!capPool[i]){ const c=new THREE.Mesh(sph(1,24,16),capMat.clone()); c.castShadow=true; const o=new THREE.Mesh(c.geometry,lineMat); c.add(o); c.userData.o=o; wormG.add(c); capPool[i]=c; } return capPool[i]; }
-const WHITE=new THREE.Color(0xffffff), RAINBOW=[0xFFB3C8,0xFFE08A,0x7FD9B0,0xA9D8F5,0xCDB8F5].map(c=>new THREE.Color(c));
+const WHITE=new THREE.Color(0xffffff), SUNSET=new THREE.Color(0xFF9A7A), RAINBOW=[0xFFB3C8,0xFFE08A,0x7FD9B0,0xA9D8F5,0xCDB8F5].map(c=>new THREE.Color(c));
 let curPat='plain';
 function colorAt(g,n){ tmpC.copy(COL_A); const f=(g*2)%1;
   if(curPat==='stripes' && g>.55 && f>.45 && f<.8) tmpC.lerp(WHITE,.5);
   else if(curPat==='fade' && n>1) tmpC.lerp(WHITE,.6*Math.min(1,g/(n-1)));
+  else if(curPat==='sunset' && n>1) tmpC.lerp(SUNSET,.75*Math.min(1,g/(n-1)));
+  else if(curPat==='bands' && g>.55 && f>.4 && f<.5) tmpC.multiplyScalar(.8);
   else if(curPat==='rainbow' && n>1 && g>(n-1)*.4){ const u=g*2, a=RAINBOW[Math.floor(u)%5], b=RAINBOW[(Math.floor(u)+1)%5], t=Math.min(1,(g-(n-1)*.4)*1.5);
     tmpC.lerp(a.clone().lerp(b,u%1),t); }
   if(g>.4 && f<.14) tmpC.multiplyScalar(.93+.07*(f/.14)); return tmpC.clone(); }
@@ -1088,7 +1152,7 @@ function updateWorm(){
         // the neck starts low inside the head: its top stays under a hat's brim and its sides behind the cheeks
         if(ch[0]===0 && !diveFront) pts[0]=pts[0].clone().setY(pts[0].y-.08);
         const curve=new THREE.CatmullRomCurve3(pts,false,'centripetal');
-        const S=(pts.length-1)*9+1, sp=[], rr=[], cc=[], gs=curPat==='spots'?[]:null;
+        const S=(pts.length-1)*9+1, sp=[], rr=[], cc=[], gs=curPat==='spots'||curPat==='glitter'?[]:null;
         for(let j=0;j<S;j++){ const u=j/(S-1); sp.push(curve.getPoint(u)); const fi=u*(pts.length-1), i0=Math.floor(Math.min(fi,pts.length-1.0001)), t=fi-i0;
           const gg=G[i0]*(1-t)+G[i0+1]*t; rr.push(radAt(gg,n,anchors)*(tip&&i0===pts.length-2?1-(1-TIP_K)*t*t:1)); cc.push(colorAt(gg,n)); if(gs) gs.push(gg); }
         const tb=getTube(ti++); tb.body.visible=tb.line.visible=true; tubeGeo(tb.body.geometry,sp,rr,cc,0,gs); tubeGeo(tb.line.geometry,sp,rr.map(r=>r+.03*Math.min(1,r/.15)),null,0);
@@ -1300,7 +1364,7 @@ function onWin(){ shareText=''; newBest=false; chapterDone=null; const coloursBe
   const hatsBefore=winHats;
   const earned=checkBadges({won:true,mv,par,secs:playT,hour:new Date().getHours(),undos:undosHere,hinted:hintsUsed>0});
   if(earned.length) extra+=`<div class="stat-row">${earned.map(b=>`<span class="pill unlock">${art(b[1],18)} ${b[2]}</span>`).join('')}</div>`;
-  const newHat=HATS.find(h=>h[2]>=0&&hatUnlocked(h)&&!hatsBefore.includes(h[0]));
+  const newHat=HATS.find(h=>h[0]!=='none'&&hatUnlocked(h)&&!hatsBefore.includes(h[0]));
   if(newHat) extra+=`<div class="stat-row"><span class="pill unlock">New hat: ${newHat[1]}</span></div>`;
   const newPat=patternsUnlocked().find(x=>!patsBefore.includes(x)); if(newPat){ const p=PATTERNS.find(x=>x[0]===newPat); extra+=`<div class="stat-row"><span class="pill unlock">New worm pattern: ${p[1]}</span></div>`; }
   if(coloursUnlocked()>coloursBefore){ const c=WORM_COLS[coloursUnlocked()-1]; extra+=`<div class="stat-row"><span class="pill unlock">New worm colour: ${c[0]}</span></div>`; }
@@ -1471,6 +1535,16 @@ const ART={
   sprout:'<path d="M12 20.5v-8"/><path d="M12 12.5c-.4-4-3.4-6.2-8-6.2 0 4.5 3 7 8 6.2z" fill="#8CC673"/><path d="M12 10.7c.4-3.6 3-5.7 7.6-5.7 0 4-2.8 6.3-7.6 5.7z" fill="#78B65C"/><path d="M7.5 20.5h9"/>',
   info:'<circle cx="12" cy="12" r="8.6" fill="#9FD2F2"/><path d="M12 11v5.6"/><path d="M12 7.6v.1" stroke-width="2.6"/>',
   camera:'<path d="M8.4 7.4l1.5-2.6h4.2l1.5 2.6" fill="#F6E2B0"/><rect x="3" y="7.2" width="18" height="12.8" rx="3.4" fill="#A9D8F5"/><circle cx="12" cy="13.6" r="3.9" fill="#FFF8EA"/><circle cx="12" cy="13.6" r="1.6" fill="#5B4436" stroke="none"/><circle cx="17.6" cy="10.1" r=".85" fill="#F27DA2" stroke="none"/>',
+  'hat-chef':'<path d="M7 15.4h10v4.3H7z" fill="#FFFBF2"/><path d="M7 15.4c-2.6-.4-3.8-2.6-3-4.6.8-2 3-2.6 4.5-1.8.4-2.4 2.3-3.9 3.5-3.9s3.1 1.5 3.5 3.9c1.5-.8 3.7-.2 4.5 1.8.8 2-.4 4.2-3 4.6z" fill="#FFFBF2"/>',
+  'hat-wizard':'<path d="M3 19.5c2.5-1.6 15.5-1.6 18 0-2.5 1.3-15.5 1.3-18 0z" fill="#8E7BE0"/><path d="M6.8 18.6L12.6 3.2c1.4 1.2 2.3 3.1 2.6 5.2l2 10.2z" fill="#8E7BE0"/><path d="M12.40 11.30L12.99 12.79L14.59 12.89L13.35 13.91L13.75 15.46L12.40 14.60L11.05 15.46L11.45 13.91L10.21 12.89L11.81 12.79z" fill="#F5C14E" stroke-width="1"/>',
+  'hat-cowboy':'<path d="M2.5 15c1.5 2.9 5.2 4.2 9.5 4.2s8-1.3 9.5-4.2c-2 .9-4.2 1.3-5.5 1.3H8c-1.3 0-3.5-.4-5.5-1.3z" fill="#C98E52"/><path d="M7.4 16.3l.8-7.2c.3-2.2 1.6-3.4 3.8-2.2 2.2-1.2 3.5 0 3.8 2.2l.8 7.2z" fill="#C98E52"/><path d="M7.7 13.8h8.6" stroke-width="2.2" stroke="#8A5A36"/>',
+  'hat-phones':'<path d="M5 15.5V12a7 7 0 0 1 14 0v3.5" stroke="#6E5F86"/><rect x="2.8" y="12.6" width="4.6" height="7.2" rx="2.2" fill="#F7A8C4"/><rect x="16.6" y="12.6" width="4.6" height="7.2" rx="2.2" fill="#F7A8C4"/>',
+  'extra-glasses':'<circle cx="7.4" cy="12.8" r="4.1" fill="#EAF8FF"/><circle cx="16.6" cy="12.8" r="4.1" fill="#EAF8FF"/><path d="M11.4 12.2q.6-.9 1.2 0M3.3 11.8L1.8 10.4M20.7 11.8l1.5-1.4"/><path d="M5.6 11.2l1.2-1" stroke="#fff" stroke-width="1"/>',
+  'extra-shades':'<path d="M2.8 10.2h7.8c0 3.6-1.4 5.8-3.9 5.8S2.8 13.8 2.8 10.2zM13.4 10.2h7.8c0 3.6-1.4 5.8-3.9 5.8s-3.9-2.2-3.9-5.8z" fill="#3E3548"/><path d="M10.6 10.8h2.8"/><path d="M4.8 11.6l1.6-.1" stroke="#fff" stroke-width="1"/>',
+  'extra-hearts':'<path d="M7.4 17.4l-3.9-3.9c-1.4-1.4-1.2-3.6.4-4.4 1.3-.7 2.7-.2 3.5.9.8-1.1 2.2-1.6 3.5-.9 1.6.8 1.8 3 .4 4.4z" fill="#F27DA2"/><path d="M16.6 17.4l-3.9-3.9c-1.4-1.4-1.2-3.6.4-4.4 1.3-.7 2.7-.2 3.5.9.8-1.1 2.2-1.6 3.5-.9 1.6.8 1.8 3 .4 4.4z" fill="#F27DA2"/><path d="M11.1 11.6h1.8"/>',
+  'extra-stars':'<path d="M7.30 7.80L8.71 10.86L12.06 11.25L9.58 13.54L10.24 16.85L7.30 15.20L4.36 16.85L5.02 13.54L2.54 11.25L5.89 10.86z" fill="#F5C14E"/><path d="M16.70 7.80L18.11 10.86L21.46 11.25L18.98 13.54L19.64 16.85L16.70 15.20L13.76 16.85L14.42 13.54L11.94 11.25L15.29 10.86z" fill="#F5C14E"/>',
+  'extra-monocle':'<circle cx="14.4" cy="10.8" r="5" fill="#EAF8FF"/><circle cx="14.4" cy="10.8" r="3.7" stroke="#E0B04A" stroke-width="1.2"/><path d="M14.4 15.8c0 2.6-1.6 4.2-4.4 4.8" stroke-dasharray="1.1 1.7"/>',
+  'extra-tash':'<path d="M12 11.6c-1.6-1.6-4.6-1.8-6.4-.2-1 .9-2.2 1-3 .2.2 2.6 2.6 4.4 5.4 4.1 1.8-.2 3.2-1.2 4-2.4.8 1.2 2.2 2.2 4 2.4 2.8.3 5.2-1.5 5.4-4.1-.8.8-2 .7-3-.2-1.8-1.6-4.8-1.4-6.4.2z" fill="#6B4A35"/>',
   dice:'<rect x="4" y="4" width="16" height="16" rx="4.2" fill="#F7A8C4"/><g fill="#5B4436" stroke="none"><circle cx="8.6" cy="8.6" r="1.35"/><circle cx="15.4" cy="15.4" r="1.35"/><circle cx="12" cy="12" r="1.35"/><circle cx="15.4" cy="8.6" r="1.35"/><circle cx="8.6" cy="15.4" r="1.35"/></g>',
   lock:'<path d="M8 10.5V8.2a4 4 0 0 1 8 0v2.3"/><rect x="5" y="10.5" width="14" height="10" rx="3" fill="#F5C14E"/><path d="M12 14.6v2.2"/>',
   // difficulty
@@ -1771,7 +1845,7 @@ window.addEventListener('popstate',()=>{ if(ignorePop>0){ ignorePop--; return; }
 // newest first: [id (a date), title, lines]. Returning players see the newest entry once on the Play tab,
 // new players never do (squirm-news holds the last id seen); Settings > About lists them all.
 const NEWS=[
-  ['2026-10-25','New in the garden',['16 new badges to earn, and a few of them are really tough.','Worm patterns: stripes, spots, a soft fade and a rainbow tail, in the wardrobe.','A new badges book, with your progress on every badge.','Snap a photo of your garden after you finish a patch, from any angle you like.','Fresh looks for the home screen, the garden map and the meadow, and a new wardrobe that shows off your whole worm.']],
+  ['2026-10-25','New in the garden',['16 new badges to earn, and a few of them are really tough.','New hats, colours and patterns, plus glasses, shades and a fancy mustache to wear.','A new badges book, with your progress on every badge.','Snap a photo of your garden after you finish a patch, from any angle you like.','Fresh looks for the home screen, the garden map and the meadow, and a new wardrobe that shows off your whole worm.']],
   ['2026-10-24','Beetle bumps',['Chapter 16: push beetles around, even onto flower buttons.','A new hat to earn: the beetle horn.']],
   ['2026-10-20','A bigger garden',['Two new chapters, Garden party and Grand bloom.','A finale for when the whole garden is grown.']]];
 function renderNews(){ const seen=store.get('squirm-news'), n=NEWS[0], returning=LEVELS.some((l,i)=>isCleared(i))||Object.keys(progress.daily.results).length>0;
@@ -1824,8 +1898,11 @@ function patArt(id,size=40,col=wormCol){ const c=WORM_COLS[col], hex=n=>'#'+n.to
   const over={stripes:`<path d="${path}" stroke="#fff" stroke-opacity=".55" stroke-width="5" stroke-linecap="butt" stroke-dasharray="1.6 2.4" stroke-dashoffset="-6"/>`,
     spots:`<g fill="#fff" fill-opacity=".6" stroke="none"><circle cx="6.4" cy="13.6" r="1.1"/><circle cx="9.6" cy="13" r="1.1"/><circle cx="13" cy="17.4" r="1.1"/><circle cx="16.6" cy="17.6" r="1.1"/></g>`,
     fade:`<path d="${path}" stroke="url(#pf${size}-${col})" stroke-width="5"/>`,
-    rainbow:`<path d="${path}" stroke="url(#pr${size}-${col})" stroke-width="5"/>`}[id]||'';
-  return `<svg class="art" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><defs><linearGradient id="pf${size}-${col}" x1="0" x2="1"><stop offset="0" stop-color="#fff" stop-opacity=".6"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient><linearGradient id="pr${size}-${col}" x1="0" x2="1">${['#CDB8F5','#A9D8F5','#7FD9B0','#FFE08A','#FFB3C8'].map((k,i)=>`<stop offset="${(i*.13).toFixed(2)}" stop-color="${k}"/>`).join('')}<stop offset=".62" stop-color="${body}" stop-opacity="0"/></linearGradient></defs>
+    rainbow:`<path d="${path}" stroke="url(#pr${size}-${col})" stroke-width="5"/>`,
+    bands:`<path d="${path}" stroke="#5B4436" stroke-opacity=".3" stroke-width="5" stroke-linecap="butt" stroke-dasharray=".9 3.1" stroke-dashoffset="-5"/>`,
+    sunset:`<path d="${path}" stroke="url(#ps${size}-${col})" stroke-width="5"/>`,
+    glitter:`<g fill="#fff" stroke="none"><circle cx="5.6" cy="14.2" r=".75"/><circle cx="8.6" cy="11.9" r=".55"/><circle cx="11.2" cy="15.4" r=".7"/><circle cx="13.8" cy="18.2" r=".55"/><circle cx="16.4" cy="17" r=".75"/></g>`}[id]||'';
+  return `<svg class="art" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><defs><linearGradient id="pf${size}-${col}" x1="0" x2="1"><stop offset="0" stop-color="#fff" stop-opacity=".6"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient><linearGradient id="ps${size}-${col}" x1="0" x2="1"><stop offset="0" stop-color="#FF9A7A"/><stop offset=".7" stop-color="${body}" stop-opacity="0"/></linearGradient><linearGradient id="pr${size}-${col}" x1="0" x2="1">${['#CDB8F5','#A9D8F5','#7FD9B0','#FFE08A','#FFB3C8'].map((k,i)=>`<stop offset="${(i*.13).toFixed(2)}" stop-color="${k}"/>`).join('')}<stop offset=".62" stop-color="${body}" stop-opacity="0"/></linearGradient></defs>
     <path d="${path}" stroke="#5B4436" stroke-width="7.4"/><path d="${path}" stroke="${body}" stroke-width="5"/>${over}<g stroke="none"><circle cx="20.2" cy="10.6" r="3.6" fill="#5B4436"/><circle cx="20.2" cy="10.6" r="2.5" fill="${hex(c[2])}"/><circle cx="21" cy="9.9" r=".7" fill="#5B4436"/></g></svg>`; }
 // ---------- wardrobe (Me tab) ----------
 // the worm on its stage shows the whole outfit; Hats / Colours / Patterns switch one grid of tiles
@@ -1835,16 +1912,19 @@ function outfitChanged(el){ if(hHead) homeReact('joy'); renderWardrobe(); const 
 function wearHat(id){ hatId=id; store.set('squirm-hat',hatId); dressHat(hHead); dressHat(segMeshes[0]); }
 function wearColour(i){ wormCol=i; store.set('squirm-colour',String(i)); applyWormColour(); }
 function wearPattern(id){ wormPat=id; store.set('squirm-pattern',wormPat); applyWormColour(); }
-function renderWardrobe(){ const hats=HATS.filter(hatUnlocked), cols=coloursUnlocked(), pats=patternsUnlocked(), hat=HATS.find(h=>h[0]===hatId)||HATS[0];
-  $('outfitLine').textContent=[hat[0]==='none'?'No hat':hat[1],WORM_COLS[wormCol][0],PATTERNS.find(x=>x[0]===patOn())[1]].join(' · ');
-  const n={hats:[hats.length-1,HATS.length-1],colours:[cols,WORM_COLS.length],patterns:[pats.length,PATTERNS.length]};
+function wearExtra(id){ extraId=id; store.set('squirm-extra',extraId); dressExtra(hHead); dressExtra(segMeshes[0]); }
+function renderWardrobe(){ const hats=HATS.filter(hatUnlocked), cols=coloursUnlocked(), pats=patternsUnlocked(), exs=EXTRAS.filter(e=>e[3]()), hat=HATS.find(h=>h[0]===hatId)||HATS[0], ex=EXTRAS.find(e=>e[0]===extraOn());
+  $('outfitLine').textContent=[hat[0]==='none'?'No hat':hat[1],WORM_COLS[wormCol][0],PATTERNS.find(x=>x[0]===patOn())[1],...(ex[0]==='none'?[]:[ex[1]])].join(' · ');
+  const n={hats:[hats.length-1,HATS.length-1],colours:[cols,WORM_COLS.length],patterns:[pats.length,PATTERNS.length],extras:[exs.length-1,EXTRAS.length-1]};
   qa($('wardSeg'),'button').forEach(b=>{ const on=b.dataset.w===wardTab, c=n[b.dataset.w]; b.classList.toggle('on',on); b.setAttribute('aria-selected',String(on)); b.querySelector('small').textContent=`${c[0]} of ${c[1]}`; });
   const g=$('wardGrid'); g.className=`hat-grid fade-scroll ward-${wardTab}`;
-  if(wardTab==='hats') g.innerHTML=HATS.map(h=>tile('h',h[0],h[0]===hatId,hatUnlocked(h),hatArt(h[0]),h[1],`Finish ${CHAPTERS[h[2]]?CHAPTERS[h[2]].name:'a chapter'}`)).join('');
+  if(wardTab==='hats') g.innerHTML=HATS.map(h=>tile('h',h[0],h[0]===hatId,hatUnlocked(h),hatArt(h[0]),h[1],h[3]||`Finish ${CHAPTERS[h[2]]?CHAPTERS[h[2]].name:'a chapter'}`)).join('');
+  else if(wardTab==='extras') g.innerHTML=EXTRAS.map(e=>tile('x',e[0],e[0]===extraOn(),e[3](),extraArt(e[0],44),e[1],e[2])).join('');
   else if(wardTab==='colours') g.innerHTML=WORM_COLS.map((c,i)=>tile('c',i,i===wormCol,i<cols,patArt(patOn(),46,i),c[0],`${c[3]} stars`)).join('');
   else g.innerHTML=PATTERNS.map(p=>tile('p',p[0],p[0]===patOn(),pats.includes(p[0]),patArt(p[0],46),p[1],p[2])).join('');
   qa(g,'button').forEach(b=>b.onclick=()=>{
-    if(b.dataset.h){ const h=HATS.find(x=>x[0]===b.dataset.h); if(!hatUnlocked(h)){ nope(b,`Finish every patch in ${CHAPTERS[h[2]].name} to earn the ${h[1].toLowerCase()}.`,2800); return; } wearHat(h[0]); }
+    if(b.dataset.h){ const h=HATS.find(x=>x[0]===b.dataset.h); if(!hatUnlocked(h)){ nope(b,h[3]?`${h[1]}: ${h[3].charAt(0).toLowerCase()+h[3].slice(1)} to earn it.`:`Finish every patch in ${CHAPTERS[h[2]].name} to earn the ${h[1].toLowerCase()}.`,2800); return; } wearHat(h[0]); }
+    else if(b.dataset.x){ const e=EXTRAS.find(x=>x[0]===b.dataset.x); if(!e[3]()){ nope(b,`${e[1]}: ${e[2].charAt(0).toLowerCase()+e[2].slice(1)} to earn it.`,2800); return; } wearExtra(e[0]); }
     else if(b.dataset.c!=null){ const i=+b.dataset.c, c=WORM_COLS[i]; if(i>=coloursUnlocked()){ nope(b,`${c[0]} unlocks at ${c[3]} stars. You have ${starTotal()}.`,2600); return; } wearColour(i); }
     else { const p=PATTERNS.find(x=>x[0]===b.dataset.p); if(!p[3]()){ nope(b,`${p[1]}: ${p[2].charAt(0).toLowerCase()+p[2].slice(1)} to earn it.`,2800); return; } wearPattern(p[0]); }
     outfitChanged(); }); }
@@ -1852,7 +1932,7 @@ qa($('wardSeg'),'button').forEach(b=>b.onclick=()=>{ if(wardTab===b.dataset.w) r
   stagger(qa($('wardGrid'),'button'),'rise',0,22,12); });
 // a random outfit from what's unlocked, different from the current one where possible
 $('dressRandom').onclick=()=>{ const pick=(a,cur)=>{ const o=a.filter(x=>x!==cur); return (o.length?o:a)[Math.floor(Math.random()*(o.length||a.length))]; };
-  wearHat(pick(HATS.filter(hatUnlocked).map(h=>h[0]),hatId)); wearColour(pick([...Array(coloursUnlocked()).keys()],wormCol)); wearPattern(pick(patternsUnlocked(),patOn()));
+  wearHat(pick(HATS.filter(hatUnlocked).map(h=>h[0]),hatId)); wearColour(pick([...Array(coloursUnlocked()).keys()],wormCol)); wearPattern(pick(patternsUnlocked(),patOn())); wearExtra(pick(EXTRAS.filter(e=>e[3]()).map(e=>e[0]),extraOn()));
   if(hHead) homeReact('wow'); renderWardrobe(); };
 const DIFF_ICON_KEY={easy:'sprout',medium:'tulip',hard:'tree'};
 // short names for the mechanic tiles; the full name goes in the label
@@ -2000,7 +2080,7 @@ const BADGES=[
   ['chapters','blossom','Seasoned gardener','Finish seven chapters.',counted(()=>[CHAPTERS.filter((ch,k)=>chapterCleared(k)).length,7])],
   ['month','month','Month of wiggles','Keep a 30 day daily streak.',counted(()=>[progress.daily.best,30])],
   ['fearless','mountain','Fearless','Clear ten hard endless patches.',counted(()=>[progress.endless.hard.cleared,10])],
-  ['dressup','hat-tophat','Dress-up box','Unlock five hats.',counted(()=>[HATS.filter(h=>h[2]>=0&&hatUnlocked(h)).length,5])],
+  ['dressup','hat-tophat','Dress-up box','Unlock five hats.',counted(()=>[HATS.filter(h=>h[0]!=='none'&&hatUnlocked(h)).length,5])],
   ['rainbow','rainbow','Rainbow worm','Unlock every worm colour.',counted(()=>[coloursUnlocked(),WORM_COLS.length])],
   ['patterns','worm','Dressed to wiggle','Unlock every worm pattern.',counted(()=>[patternsUnlocked().length,PATTERNS.length])],
   ['golden','trophy','Golden chapter','Get three stars on every patch in a chapter.',()=>anyChapter(i=>progress.stars[LEVELS[i].name]===3)],
@@ -2017,7 +2097,8 @@ const BADGES=[
   ['photos','camera','Say cheese','Snap 5 photos of your garden.',counted(()=>[progress.stats.photos,5])],
   ['marathon','butterfly','Marathon worm','Crawl 10,000 moves.',counted(()=>[progress.stats.moves,10000])],
   ['dawn','drop','Dawn chorus','Finish a patch between 5 and 7 in the morning.',c=>c&&c.won&&c.hour>=5&&c.hour<7],
-  ['hatrack','hat-gold','Hat collector','Unlock every hat.',counted(()=>[HATS.filter(h=>h[2]>=0&&hatUnlocked(h)).length,HATS.length-1])],
+  ['hatrack','hat-gold','Hat collector','Unlock every hat.',counted(()=>[HATS.filter(h=>h[0]!=='none'&&hatUnlocked(h)).length,HATS.length-1])],
+  ['fashion','extra-shades','Fashion icon','Unlock every extra.',counted(()=>[EXTRAS.filter(e=>e[0]!=='none'&&e[3]()).length,EXTRAS.length-1])],
   ['collector','medal','Badge collector','Earn 40 other badges.',counted(()=>[Object.keys(progress.badges).filter(k=>k!=='collector').length,40])]];
 // returns the badges earned just now; quiet ones (earned before badges existed) don't celebrate
 function checkBadges(ctx,quiet){ const got=[];
@@ -2029,7 +2110,7 @@ function bumpStat(k,n=1){ progress.stats[k]=(progress.stats[k]||0)+n; }
 const BADGE_GROUPS=[['Garden journey',['first','par','chapter','clean','sage','stars50','stars150','shiny','chapters','garden','golden','pure','notake','lightning','allstars']],
   ['Daily and meadow',['daily','streak7','month','sunrises','meadow','brave','fearless','unstoppable','legend']],
   ['Garden helpers',['flags','snacks','appetite','crumbs','gates','tunnels','rain','bridges','slides','wheee','hedges','pushes','flowerpower']],
-  ['Just for fun',['moves','marathon','undos','taps','nap','owl','dawn','quick','photos','dressup','hatrack','rainbow','patterns','collector']]];
+  ['Just for fun',['moves','marathon','undos','taps','nap','owl','dawn','quick','photos','dressup','hatrack','rainbow','patterns','fashion','collector']]];
 // a badge left out of every group still shows, in the last one
 { const seen=new Set(BADGE_GROUPS.flatMap(g=>g[1])); BADGE_GROUPS[BADGE_GROUPS.length-1][1].push(...BADGES.map(b=>b[0]).filter(id=>!seen.has(id))); }
 let badgeFilter='all', badgeSel=null;
@@ -2106,7 +2187,7 @@ function initHomeWorm(){ try{ homeR=new THREE.WebGLRenderer({canvas:homeCanvas,a
 function buildHomeBody(){ if(!hBody) return; const {tb,tl,tip,to}=hBody.userData;
   const pts=[[0,.22,-.18],[.12,-.14,-.3],[.5,-.3,-.28],[.9,-.3,-.05],[1.02,-.31,.32],[.78,-.33,.6],[.5,-.36,.66]].map(p=>new THREE.Vector3(...p));
   // about one game segment per unit of length, like in a patch, so stripes and spots keep their size
-  const curve=new THREE.CatmullRomCurve3(pts,false,'centripetal'), S=60, len=curve.getLength(), n=1+len, sp=[], rr=[], cc=[], gs=curPat==='spots'?[]:null;
+  const curve=new THREE.CatmullRomCurve3(pts,false,'centripetal'), S=60, len=curve.getLength(), n=1+len, sp=[], rr=[], cc=[], gs=curPat==='spots'||curPat==='glitter'?[]:null;
   for(let j=0;j<S;j++){ const u=j/(S-1), g=.5+u*len; sp.push(curve.getPoint(u)); rr.push(.33*(1-.55*u*u)*(1+.04*Math.cos(g*4*Math.PI))); cc.push(colorAt(g,n)); if(gs) gs.push(g); }
   tubeGeo(tb.geometry,sp,rr,cc,0,gs); tubeGeo(tl.geometry,sp,rr.map(r=>r+.035),null,0);
   const end=sp[S-1], r=rr[S-1]; tip.position.copy(end); tip.scale.setScalar(r); to.scale.setScalar(1+.035/r); tip.material.color.copy(cc[S-1]); }

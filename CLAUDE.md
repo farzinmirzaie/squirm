@@ -238,7 +238,7 @@ Sections are listed in the table of contents at the top of the file; each starts
   bottom), Wardrobe (ids still `me` / `tabMe`) and Badges. The
   home worm's canvas moves between Play and Wardrobe; `homeStage(me)` widens it there and shows `hBody`, a
   curled body built by `buildHomeBody` (rebuilt on every colour or pattern change) so the outfit shows.
-  The wardrobe switches one grid between Hats / Colours / Patterns (`wardTab`), shows the outfit line,
+  The wardrobe switches one grid between Hats / Colours / Patterns / Extras (`wardTab`), shows the outfit line,
   and has a Surprise outfit button; `wearHat` / `wearColour` / `wearPattern` save and apply. Leaving Play pushes a `tab` layer, so back returns to
   Play; opening a patch from a tab replaces that layer with `game`.
 - **Endless meadow and daily:** `genCandidate` + `analyzeCapped` + difficulty scoring in
@@ -252,11 +252,16 @@ Sections are listed in the table of contents at the top of the file; each starts
   that bump a counter in `progress.stats`; earned ones live in `progress.badges` (with a timestamp, not
   shown). A test written as `counted(()=>[have,need])` also reports progress, which the Badges tab shows.
   The tab groups badges by `BADGE_GROUPS` (add new badges to one; ungrouped ones land in the last), with an All / Earned / To find
-  filter and a detail card for the tapped badge (`renderBadges`, `renderBadgeDetail`). `HATS` (one per
-  chapter) unlock by finishing it, are built once (`buildHat`) and cloned into the head's `hatSlot`.
+  filter and a detail card for the tapped badge (`renderBadges`, `renderBadgeDetail`). `HATS` ([id, name,
+  chapter], one per chapter, unlocked by finishing it; or [id, name, -2, how to earn, test] for milestone
+  hats like the chef hat) are built once (`buildHat`) and cloned into the head's `hatSlot`. `EXTRAS`
+  (glasses, shades, a mustache, ...: [id, name, how to earn, test]) work the same way through `buildExtra`
+  into the head's `accSlot`, saved in `squirm-extra`; every new hat or extra needs a sticker in `ART`
+  (`hat-<id>` / `extra-<id>`).
   `WORM_COLS` unlock with stars. `PATTERNS` (id, name, how to earn, test) unlock with milestones and are
   saved in `squirm-pattern`; `colorAt` draws stripes, fade and rainbow as tube vertex colours, and Spots
-  are drawn per pixel by `tubeMat`'s shader from the tube's `pg` attribute (`spotsU`). `patArt` draws the
+  and Glitter
+  are drawn per pixel by `tubeMat`'s shader from the tube's `pg` attribute (`spotsU`, `glitterU`). `patArt` draws the
   wardrobe preview in the current colour.
 - **What's new:** `NEWS` (newest first: date id, title, lines). Returning players see the newest entry
   once as a card on the Play tab (`renderNews`; `squirm-news` holds the last id seen, new players never

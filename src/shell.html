@@ -293,8 +293,9 @@ nav{display:flex;justify-content:center;align-items:flex-end;gap:16px}
 #slotMe #homeWorm{width:320px;height:250px;margin:-22px auto 0}
 .outfit{margin:-10px 0 0;font:800 14px/1.2 var(--fb);color:var(--ink-soft)}
 #wardGrid{flex:1;min-height:0;margin:0 -8px;padding:4px 8px 10px;align-content:start}
-#wardGrid.ward-colours,#wardGrid.ward-patterns{grid-template-columns:repeat(3,1fr)}
-#wardGrid.ward-colours .hat-ico,#wardGrid.ward-patterns .hat-ico{height:50px}
+#wardSeg{grid-template-columns:repeat(4,1fr)}
+#wardGrid.ward-colours,#wardGrid.ward-patterns,#wardGrid.ward-extras{grid-template-columns:repeat(3,1fr)}
+#wardGrid.ward-colours .hat-ico,#wardGrid.ward-patterns .hat-ico,#wardGrid.ward-extras .hat-ico{height:50px}
 /* -- Play: logo, the big play button, the daily patch and its week -- */
 .home-inner{width:min(100%,420px);margin:auto;align-items:stretch;display:flex;flex-direction:column;gap:14px}
 .logo{display:flex;flex-direction:column;align-items:center;text-align:center;margin:6px 0 2px}
@@ -752,7 +753,7 @@ nav .enter,.rise{animation:navIn var(--dur-slow) var(--ease-pop) var(--d,0ms) bo
       <div class="panel card me">
         <div class="panel-head"><h2>Wardrobe</h2><button class="link" id="dressRandom" data-sfx="ready"><span data-art="dice" data-size="18"></span> Surprise outfit</button></div>
         <p class="outfit" id="outfitLine"></p>
-        <div class="seg seg-sm" id="wardSeg" role="tablist" aria-label="Wardrobe"><button role="tab" data-w="hats"><b>Hats</b><small></small></button><button role="tab" data-w="colours"><b>Colours</b><small></small></button><button role="tab" data-w="patterns"><b>Patterns</b><small></small></button></div>
+        <div class="seg seg-sm" id="wardSeg" role="tablist" aria-label="Wardrobe"><button role="tab" data-w="hats"><b>Hats</b><small></small></button><button role="tab" data-w="colours"><b>Colours</b><small></small></button><button role="tab" data-w="patterns"><b>Patterns</b><small></small></button><button role="tab" data-w="extras"><b>Extras</b><small></small></button></div>
         <div class="hat-grid fade-scroll" id="wardGrid" role="group" aria-label="Wardrobe items"></div>
       </div>
     </section>
