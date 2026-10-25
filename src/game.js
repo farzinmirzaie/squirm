@@ -1424,7 +1424,8 @@ function screenWord(d){ const v=screenVec(DIRS[d]); return Math.abs(v.x)>Math.ab
 // Scrolling, resizing and new content update it on their own (el.fadeUpdate() forces it).
 function fadeScroll(el){ if(el.fadeUpdate) return el.fadeUpdate;
   const top=+(el.dataset.fadeTop||el.dataset.fade||24), bot=+(el.dataset.fade||24);
-  const upd=el.fadeUpdate=()=>{ const t=el.scrollTop, rest=el.scrollHeight-el.clientHeight-t;
+  const x=el.classList.contains('x');
+  const upd=el.fadeUpdate=()=>{ const t=x?el.scrollLeft:el.scrollTop, rest=(x?el.scrollWidth-el.clientWidth:el.scrollHeight-el.clientHeight)-t;
     el.style.setProperty('--fade-t',Math.max(0,Math.min(t,top))+'px'); el.style.setProperty('--fade-b',Math.max(0,Math.min(rest,bot))+'px'); };
   el.addEventListener('scroll',upd,{passive:true}); if(window.ResizeObserver) new ResizeObserver(upd).observe(el);
   new MutationObserver(()=>requestAnimationFrame(upd)).observe(el,{childList:true,subtree:true}); upd(); return upd; }
@@ -1770,7 +1771,7 @@ window.addEventListener('popstate',()=>{ if(ignorePop>0){ ignorePop--; return; }
 // newest first: [id (a date), title, lines]. Returning players see the newest entry once on the Play tab,
 // new players never do (squirm-news holds the last id seen); Settings > About lists them all.
 const NEWS=[
-  ['2026-10-25','New in the garden',['16 new badges to earn, and a few of them are really tough.','Worm patterns: stripes, spots, a soft fade and a rainbow tail, in the wardrobe.','A new badges book, with your progress on every badge.','Snap a photo of your garden after you finish a patch, from any angle you like.','A new wardrobe that shows off your whole worm, and a fresh look for the meadow.']],
+  ['2026-10-25','New in the garden',['16 new badges to earn, and a few of them are really tough.','Worm patterns: stripes, spots, a soft fade and a rainbow tail, in the wardrobe.','A new badges book, with your progress on every badge.','Snap a photo of your garden after you finish a patch, from any angle you like.','Fresh looks for the garden map, the meadow and a new wardrobe that shows off your whole worm.']],
   ['2026-10-24','Beetle bumps',['Chapter 16: push beetles around, even onto flower buttons.','A new hat to earn: the beetle horn.']],
   ['2026-10-20','A bigger garden',['Two new chapters, Garden party and Grand bloom.','A finale for when the whole garden is grown.']]];
 function renderNews(){ const seen=store.get('squirm-news'), n=NEWS[0], returning=LEVELS.some((l,i)=>isCleared(i))||Object.keys(progress.daily.results).length>0;
@@ -2169,11 +2170,16 @@ const LOCK_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strok
 let picked=-1;
 function renderLevelList(){
   const g=$('lvGrid'); g.innerHTML=''; const stars=i=>progress.stars[LEVELS[i].name]||0;
-  let total=0; LEVELS.forEach((l,i)=>total+=stars(i)); $('lvTotal').innerHTML=`${STAR(true,0).replace('width="44" height="44"','width="20" height="20"')} ${total} of ${LEVELS.length*3} stars`;
+  let total=0; LEVELS.forEach((l,i)=>total+=stars(i)); $('lvTotal').innerHTML=`${STAR(true,0).replace('width="44" height="44"','width="20" height="20"')} ${total} of ${LEVELS.length*3}`;
+  const grown=LEVELS.filter((l,i)=>isCleared(i)).length; $('lvBar').style.setProperty('--p',(100*grown/LEVELS.length).toFixed(1)+'%'); $('lvGrown').textContent=`${grown} of ${LEVELS.length} patches grown`;
+  $('chStrip').innerHTML=CHAPTERS.map((ch,k)=>{ const n=ch.to-ch.from+1, open=isUnlocked(ch.from), hat=HATS.find(h=>h[2]===k); let c=0; for(let i=ch.from;i<=ch.to;i++) if(isCleared(i)) c++;
+    return `<button class="ch-chip ${c===n?'done':''} ${open?'':'locked'}" role="tab" data-k="${k}" aria-label="Chapter ${k+1}, ${ch.name}, ${c} of ${n} grown"><span class="ring" style="--p:${(100*c/n).toFixed(1)}%"><span class="emb">${open&&hat?hatArt(hat[0],28):art(open?'sprout':'lock',open?24:20)}</span></span>${k+1}</button>`; }).join('');
+  qa($('chStrip'),'.ch-chip').forEach(b=>b.onclick=()=>{ const sc=g.querySelector(`.scene[data-k="${b.dataset.k}"]`); if(!sc) return;
+    g.scrollTo({top:g.scrollTop+sc.getBoundingClientRect().top-g.getBoundingClientRect().top-2,behavior:reduceMotion?'auto':'smooth'}); markChapter(+b.dataset.k); settle(b.querySelector('.ring')); });
   const RH=96, TOP=56; let shownLocked=false;
   CHAPTERS.forEach((ch,k)=>{ const n=ch.to-ch.from+1, open=isUnlocked(ch.from); let cs=0, allDone=true, fresh=ch.from>0&&open;
     for(let i=ch.from;i<=ch.to;i++){ cs+=stars(i); if(!isCleared(i)) allDone=false; else fresh=false; }
-    const hat=HATS.find(h=>h[2]===k), sc=document.createElement('section'); sc.className='scene'+(open?'':' later'); sc.style.setProperty('--scene',SCENE_COL[k%SCENE_COL.length]);
+    const hat=HATS.find(h=>h[2]===k), sc=document.createElement('section'); sc.className='scene'+(open?'':' later'); sc.dataset.k=k; sc.style.setProperty('--scene',SCENE_COL[k%SCENE_COL.length]);
     const sub=!open?(shownLocked?'Locked':`Finish ${CHAPTERS[k-1].name} to open`):allDone?(hat?`${hat[1]} earned`:'All done'):(hat?`Reward: ${hat[1].toLowerCase()}`:`${n} patches`);
     sc.innerHTML=`<div class="ch-banner"><span class="emb" aria-hidden="true">${!open?art('lock',28):hat?hatArt(hat[0],34):art('sprout',30)}</span><span class="tt"><b>${ch.name}${fresh?' <small class="new">New</small>':''}</b><small>${sub}</small></span><span class="cnt">${allDone?`<span class="done" aria-label="Finished">${UI_ICON.check}</span>`:''}${open?STAR(true,0).replace('width="44" height="44"','width="18" height="18"')+`${cs}/${n*3}`:''}</span></div>`;
     g.appendChild(sc);
@@ -2203,11 +2209,17 @@ function renderLevelList(){
     :`<span aria-hidden="true">${art('sprout',30)}</span><b>More patches are growing</b><small>New ones will show up here by themselves when they're ready.</small>`;
   const eb=end.querySelector('button'); if(eb) eb.onclick=()=>showFinale(true); g.appendChild(end);
   pickPatch(isUnlocked(li)?li:0,false);
-  setTimeout(()=>{ const c=g.querySelector('.node.sel'); if(c) c.scrollIntoView({block:'center'}); },30);
+  setTimeout(()=>{ const c=g.querySelector('.node.sel'); if(c) c.scrollIntoView({block:'center'}); spyChapter(); },30);
 }
+// the chip of the chapter in view lights up, and the strip keeps it on screen
+function markChapter(k){ qa($('chStrip'),'.ch-chip').forEach(b=>{ const on=+b.dataset.k===k; b.classList.toggle('on',on); b.setAttribute('aria-selected',String(on));
+  if(on){ const st=$('chStrip'), l=b.offsetLeft-st.offsetLeft, want=l-(st.clientWidth-b.offsetWidth)/2; if(Math.abs(st.scrollLeft-want)>20) st.scrollTo({left:want,behavior:reduceMotion?'auto':'smooth'}); } }); }
+let spyQ=false;
+function spyChapter(){ const g=$('lvGrid'), top=g.getBoundingClientRect().top+60; let k=0; qa(g,'.scene').forEach(sc=>{ if(sc.getBoundingClientRect().top<=top) k=+sc.dataset.k; }); markChapter(k); }
+$('lvGrid').addEventListener('scroll',()=>{ if(spyQ) return; spyQ=true; requestAnimationFrame(()=>{ spyQ=false; spyChapter(); }); },{passive:true});
 function pickPatch(i,anim){ picked=i; const lv=LEVELS[i], st=progress.stars[lv.name]||0, best=progress.best[lv.name], ch=CHAPTERS.find(c=>i>=c.from&&i<=c.to);
   document.querySelectorAll('#lvGrid .node').forEach(n=>n.classList.toggle('sel',+n.dataset.i===i));
-  const p=$('lvPick'); p.innerHTML=`<canvas class="thumb" width="88" height="88" aria-hidden="true"></canvas><span class="pt"><b>${i+1}. ${lv.name}</b><small><em class="mini" aria-hidden="true">${[0,1,2].map(q=>`<i class="${q<st?'on':''}"></i>`).join('')}</em>${best?`best ${best} · par ${lv.par}`:`par ${lv.par}`}</small><small>${ch?ch.name:''}</small></span><button class="go" aria-label="Play patch ${i+1}"><svg width="26" height="26" viewBox="0 0 24 24"><path d="M8 5.5v13l10.5-6.5z" fill="#fff" stroke="#fff" stroke-width="2" stroke-linejoin="round"/></svg></button>`;
+  const p=$('lvPick'); p.innerHTML=`<canvas class="thumb" width="88" height="88" aria-hidden="true"></canvas><span class="pt"><b>${i+1}. ${lv.name}</b><small><em class="mini" aria-hidden="true">${[0,1,2].map(q=>`<i class="${q<st?'on':''}"></i>`).join('')}</em>${best?`best ${best} · par ${lv.par}`:`par ${lv.par}`}</small><small>${ch?ch.name:''}<span class="mechs" aria-hidden="true">${Object.keys(MECH).filter(k=>k!=='basics'&&MECH[k].k.test(lv.map.join(''))).map(k=>MECH[k].i.replace(/width="40" height="40"/,'width="21" height="21"').replace(/stroke-width="[\d.]+"/,'stroke-width="2.2"')).join('')}</span></small></span><button class="go" aria-label="Play patch ${i+1}"><svg width="26" height="26" viewBox="0 0 24 24"><path d="M8 5.5v13l10.5-6.5z" fill="#fff" stroke="#fff" stroke-width="2" stroke-linejoin="round"/></svg></button>`;
   drawThumb(p.querySelector('canvas'),lv); p.querySelector('.go').onclick=playPicked;
   if(anim){ settle(document.querySelector('#lvGrid .node.sel')); animOnce(p,'swap'); } }
 function playPicked(){ if(picked<0) return; hideAll(); loadLevel(picked); enterGame(); }

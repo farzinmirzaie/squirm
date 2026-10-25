@@ -142,6 +142,10 @@ button:focus-visible{outline:3px solid var(--honey);outline-offset:2px}
 .panel-head h2{margin:0;font:800 26px/1.1 var(--fd);color:var(--title);text-shadow:0 3px 0 var(--edge)}
 .panel-head .total{margin:0}
 /* segmented picker (reminder time, theme) */
+.fade-scroll.x{overflow-x:auto;overflow-y:hidden;touch-action:pan-x;scrollbar-width:none;
+  -webkit-mask-image:linear-gradient(90deg,transparent,#000 var(--fade-t,0px),#000 calc(100% - var(--fade-b,0px)),transparent);
+  mask-image:linear-gradient(90deg,transparent,#000 var(--fade-t,0px),#000 calc(100% - var(--fade-b,0px)),transparent)}
+.fade-scroll.x::-webkit-scrollbar{display:none}
 .fade-scroll{overflow-y:auto;overscroll-behavior:contain;touch-action:pan-y;
   /* fades content out at an edge only while there's more to scroll that way; fadeScroll() in game.js sets the sizes */
   -webkit-mask-image:linear-gradient(180deg,transparent,#000 var(--fade-t,0px),#000 calc(100% - var(--fade-b,0px)),transparent);
@@ -334,7 +338,21 @@ nav{display:flex;justify-content:center;align-items:flex-end;gap:16px}
 .week i.on{background:var(--berry);border-color:var(--berry-dark)}
 .week i.today{outline:2px solid var(--honey);outline-offset:1px}
 /* -- Garden: each chapter is a little scene, its patches stepping stones along a path -- */
-#tabGarden .panel{flex:1;min-height:0}
+#tabGarden .panel{flex:1;min-height:0;gap:10px}
+.g-progress{flex:none;display:flex;flex-direction:column;gap:5px;margin-top:-8px}
+.g-progress .b-progress{margin:0}
+.g-progress small{font:800 12px/1 var(--fb);color:var(--ink-soft)}
+/* one sticker per chapter: its hat (or a lock) inside a ring that fills as patches are grown; tap to jump */
+.ch-strip{flex:none;display:flex;gap:6px;margin:-4px -16px -2px;padding:9px 16px 8px;scroll-behavior:smooth}
+.ch-chip{flex:none;display:flex;flex-direction:column;align-items:center;gap:7px;padding:0;border:0;background:none;cursor:pointer;color:var(--ink-soft);font:800 11px/1 var(--fd)}
+.ch-chip .ring{width:48px;height:48px;border-radius:50%;display:grid;place-items:center;background:conic-gradient(var(--leaf) var(--p,0%),var(--edge) 0);transition:box-shadow var(--dur) var(--ease-pop)}
+.ch-chip .emb{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;background:var(--sticker)}
+.ch-chip.done .ring{background:var(--honey)}
+.ch-chip.locked .emb{opacity:.6}
+.ch-chip.on{color:var(--ink)}
+.ch-chip.on .ring{box-shadow:0 0 0 2px var(--paper),0 0 0 4px var(--berry)}
+.ch-chip.on{font-size:12px}
+.pick .mechs{display:inline-flex;gap:2px;margin-left:2px}
 .list{display:grid;gap:8px;margin:4px 0 16px;max-height:56vh;overflow:auto;text-align:left;touch-action:pan-y;padding:2px}
 #tabGarden .list{flex:1;min-height:0;max-height:none;margin:0}
 .map{display:flex;flex-direction:column;gap:14px;padding:2px 2px 18px}
@@ -679,6 +697,8 @@ nav .enter,.rise{animation:navIn var(--dur-slow) var(--ease-pop) var(--d,0ms) bo
     <section class="tab-page fade-scroll" id="tabGarden" aria-labelledby="lvTitle" hidden>
       <div class="panel card">
         <div class="panel-head"><h2 id="lvTitle">Garden patches</h2><span class="total" id="lvTotal"></span></div>
+        <div class="g-progress"><div class="b-progress" aria-hidden="true"><i id="lvBar"></i></div><small id="lvGrown"></small></div>
+        <div class="ch-strip fade-scroll x" id="chStrip" data-fade="28" role="tablist" aria-label="Chapters"></div>
         <div class="list map fade-scroll" id="lvGrid" data-fade-top="10"></div>
         <div class="pick" id="lvPick" aria-live="polite"></div>
       </div>
@@ -693,7 +713,7 @@ nav .enter,.rise{animation:navIn var(--dur-slow) var(--ease-pop) var(--d,0ms) bo
         <div class="row m-go"><button class="btn" id="homeEndlessCont" hidden>Resume</button><button class="btn primary" id="endlessGo"><span data-art="sprout" data-size="22"></span> Grow a patch</button></div>
       </div>
     </section>
-    <section class="tab-page fade-scroll" id="tabMe" aria-label="Me" hidden>
+    <section class="tab-page fade-scroll" id="tabMe" aria-label="Wardrobe" hidden>
       <div class="worm-slot me-stage" id="slotMe"></div>
       <div class="panel card me">
         <div class="panel-head"><h2>Wardrobe</h2><button class="link" id="dressRandom" data-sfx="ready"><span data-art="dice" data-size="18"></span> Surprise outfit</button></div>
@@ -716,7 +736,7 @@ nav .enter,.rise{animation:navIn var(--dur-slow) var(--ease-pop) var(--d,0ms) bo
     <button class="tab" data-tab="play"><svg width="26" height="26" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M8 5.5v13l10.5-6.5z" fill="currentColor" fill-opacity=".25"/></svg><span>Play</span></button>
     <button class="tab" data-tab="garden"><svg width="26" height="26" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21V11"/><path d="M12 14c-4 0-7-2-7-6 4 0 7 2 7 6zM12 11c0-4 3-6 7-6 0 4-3 6-7 6z" fill="currentColor" fill-opacity=".25"/></svg><span>Garden</span></button>
     <button class="tab" data-tab="meadow"><svg width="26" height="26" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12c2-4 5-4 8 0s6 4 8 0"/><path d="M4 12c2 4 5 4 8 0s6-4 8 0"/></svg><span>Meadow</span></button>
-    <button class="tab" data-tab="me"><svg width="26" height="26" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17c0-1.5 4-2.5 9-2.5s9 1 9 2.5-4 2.5-9 2.5-9-1-9-2.5z" fill="currentColor" fill-opacity=".25"/><path d="M7 15.2C7 9 8.5 5 12 5s5 4 5 10.2"/><path d="M7.3 12.5h9.4"/></svg><span>Me</span></button>
+    <button class="tab" data-tab="me"><svg width="26" height="26" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17c0-1.5 4-2.5 9-2.5s9 1 9 2.5-4 2.5-9 2.5-9-1-9-2.5z" fill="currentColor" fill-opacity=".25"/><path d="M7 15.2C7 9 8.5 5 12 5s5 4 5 10.2"/><path d="M7.3 12.5h9.4"/></svg><span>Wardrobe</span></button>
     <button class="tab" data-tab="badges"><svg width="26" height="26" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3l-2 7M16 3l2 7"/><circle cx="12" cy="15" r="6" fill="currentColor" fill-opacity=".25"/><path d="M12 12.3l.9 1.8 2 .3-1.45 1.4.35 2-1.8-.95-1.8.95.35-2-1.45-1.4 2-.3z" fill="currentColor"/></svg><span>Badges</span></button>
   </nav>
 </div>

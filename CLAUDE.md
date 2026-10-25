@@ -228,11 +228,13 @@ Sections are listed in the table of contents at the top of the file; each starts
 - **Home** (`homeOv`): five tabs switched by `showTab`: Play (worm, Continue, daily), Garden (the map:
   `renderLevelList` draws one scene per chapter with its patches as stepping stones on a winding SVG
   path; closed chapters fold into a small card; tapping a stone picks it (`pickPatch`) and shows its card
-  with a `drawThumb` preview; tapping again plays), Meadow (endless setup: a hero card for the chosen difficulty
+  with a `drawThumb` preview and the mechanics it uses; tapping again plays). Above the map: stars, a
+  patches-grown bar and the chapter strip (`#chStrip`, one chip per chapter with its hat in a progress
+  ring; tapping glides the map to that chapter, and `spyChapter` highlights the chapter in view), Meadow (endless setup: a hero card for the chosen difficulty
   with its description and its own streak, best, stars and cleared count (`DIFF_DESC`), a compact
   difficulty switch, the mechanics mix with All/None and Surprise me, and Grow a patch pinned at the
-  bottom), Me (wardrobe) and Badges. The
-  home worm's canvas moves between Play and Me; `homeStage(me)` widens it on Me and shows `hBody`, a
+  bottom), Wardrobe (ids still `me` / `tabMe`) and Badges. The
+  home worm's canvas moves between Play and Wardrobe; `homeStage(me)` widens it there and shows `hBody`, a
   curled body built by `buildHomeBody` (rebuilt on every colour or pattern change) so the outfit shows.
   The wardrobe switches one grid between Hats / Colours / Patterns (`wardTab`), shows the outfit line,
   and has a Surprise outfit button; `wearHat` / `wearColour` / `wearPattern` save and apply. Leaving Play pushes a `tab` layer, so back returns to
@@ -349,7 +351,8 @@ Sections are listed in the table of contents at the top of the file; each starts
 - Scales: display text 12/14/16/18/21/26/30/52px, body text 11/12/13/14/15/16px, icon glyphs
   16/20/24px; corner radius 10/14/18/22/26px, `999px` for pills, `50%` for circles; borders 2px (small
   inner pieces) or 3px (cards, buttons, tiles); gaps 2/4/6/8/10/12/14/16px.
-- Scrolling areas use `.fade-scroll` (every home tab page, the garden map, the badges list): content
+- Scrolling areas use `.fade-scroll` (every home tab page, the garden map, the badges list; add `.x`
+  for a sideways scroller like the chapter strip): content
   fades out at an edge only while there's more to scroll that way, growing with that distance, so
   nothing is cut off sharply. `fadeScroll(el)` wires it up (done at boot for every `.fade-scroll` in the
   markup; call it for ones you create later); `data-fade` / `data-fade-top` set the size in px. It sets
