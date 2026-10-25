@@ -1180,7 +1180,7 @@ function tryMove(dir){
     if(r.blocked==='hedge') toast('The hedge only opens while part of you rests on a flower.');
     nudge(dir); return; }
   history.push(state); const prev=state; state=r.state; lastMoveT=idleT; clearHint(); saveResume(); bumpStat('moves'); dismissTutorial();
-  if(r.ev.slide){ slideSteps=r.ev.slide.slice(1).map(x=>({state:x.state,ev:x.ev})).concat([{state:r.state,ev:r.ev}]); state=r.ev.slide[0].state; animateMove(prev,r.ev.slide[0].ev,dir); return; }
+  if(r.ev.slide){ progress.stats.slideMax=Math.max(progress.stats.slideMax||0,r.ev.slide.length); slideSteps=r.ev.slide.slice(1).map(x=>({state:x.state,ev:x.ev})).concat([{state:r.state,ev:r.ev}]); state=r.ev.slide[0].state; animateMove(prev,r.ev.slide[0].ev,dir); return; }
   animateMove(prev,r.ev,dir);
 }
 function nudge(dir){ // the head leans toward the blocked spot and springs back
@@ -1197,7 +1197,7 @@ function animateMove(prev,ev,dir,sliding){
   if(ev.eaten==='C') bumpStat('flags'); if(ev.eaten==='G') bumpStat('gates'); if(ev.portal) bumpStat('tunnels'); if(ev.rain===true) bumpStat('rains');
   if(ev.swung&&ev.swung.length) bumpStat('swings'); if(ev.crumbled&&ev.crumbled.length) bumpStat('crumbles',ev.crumbled.length);
   syncBoard(true); syncWeather(true); syncHedges(true); if(ev.snails) syncSnails(true,ev);
-  if(ev.pushed){ pushBeetle(ev.pushed,sliding?95:queue.length?110:170); bumpStat('pushes'); }
+  if(ev.pushed){ pushBeetle(ev.pushed,sliding?95:queue.length?110:170); bumpStat('pushes'); const bb=state.beetles[ev.pushed.i]; if(bb&&tileAt(state,bb.x,bb.y)==='B') bumpStat('beetleFlower'); }
   if(ev.swung){ sfx('creak'); const it=cells[state.segs[0][1]][state.segs[0][0]].item; if(it&&it.userData.wheel){ const w=it.userData.wheel, z0=w.rotation.z; tween(600,(e)=>{ w.rotation.z=z0-e*Math.PI*1.5; }); }
     if(!ev.swung.length) toast('Nothing turned. Bridges with you on them stay put.',2400); }
   if(ev.rain!==undefined){ sfx(ev.rain?'rainOn':'rainOff'); toast(ev.rain?'Rain is falling. Leaves grow, puddles fill.':'The sun is back. Puddles dry, leaves fold away.',2400); }
@@ -1281,7 +1281,7 @@ function onWin(){ shareText=''; newBest=false; chapterDone=null; const coloursBe
     shareText=shareLine(`patch ${li+1} (${nm})`,mv,par,st);
   } else if(L.daily){
     const D=progress.daily, k=L.daily, prev=D.results[k];
-    if(!prev){ const y=new Date(); y.setDate(y.getDate()-1); const yk=dateKey(y);
+    if(!prev){ bumpStat('dailies'); const y=new Date(); y.setDate(y.getDate()-1); const yk=dateKey(y);
       D.streak = D.last===yk ? D.streak+1 : 1; D.best=Math.max(D.best,D.streak); D.last=k; }
     if(!prev||mv<prev.moves) D.results[k]={moves:mv,stars:Math.max(st,prev?prev.stars:0)};
     const old=new Date(); old.setDate(old.getDate()-90); const ok=dateKey(old); for(const d in D.results) if(d<ok) delete D.results[d];
@@ -1298,7 +1298,7 @@ function onWin(){ shareText=''; newBest=false; chapterDone=null; const coloursBe
   if(mode==='garden'&&!hintsUsed) progress.clean[LEVELS[li].name]=true;
   save(); askPersist();
   const hatsBefore=winHats;
-  const earned=checkBadges({won:true,mv,par,secs:playT,hour:new Date().getHours()});
+  const earned=checkBadges({won:true,mv,par,secs:playT,hour:new Date().getHours(),undos:undosHere,hinted:hintsUsed>0});
   if(earned.length) extra+=`<div class="stat-row">${earned.map(b=>`<span class="pill unlock">${art(b[1],18)} ${b[2]}</span>`).join('')}</div>`;
   const newHat=HATS.find(h=>h[2]>=0&&hatUnlocked(h)&&!hatsBefore.includes(h[0]));
   if(newHat) extra+=`<div class="stat-row"><span class="pill unlock">New hat: ${newHat[1]}</span></div>`;
@@ -1337,7 +1337,7 @@ async function snapPhoto(){ renderer.render(scene,camera); const src=renderer.do
   for(let i=0;i<3;i++){ g.save(); g.translate(px+14*u+i*21*u,py+33*u); g.scale(.85*u,.85*u); g.fillStyle=i<st?'#F5C14E':'#E7CFA8'; g.fill(star); g.lineWidth=1.6; g.strokeStyle='#5B4436'; g.stroke(star); g.restore(); }
   g.font=`800 ${Math.round(13*u)}px Grandstander, sans-serif`; g.textAlign='right'; g.fillStyle='rgba(255,248,234,.92)'; g.strokeStyle='rgba(91,68,54,.55)'; g.lineWidth=4*u;
   g.strokeText('Squirm',W-16*u,H-20*u); g.fillText('Squirm',W-16*u,H-20*u);
-  sfx('shutter'); buzz(18); if(!reduceMotion) animOnce($('flash'),'go');
+  sfx('shutter'); buzz(18); if(!reduceMotion) animOnce($('flash'),'go'); bumpStat('photos'); checkBadges(null); save();
   const blob=await new Promise(r=>c.toBlob(r,'image/png')); if(!blob){ toast('That photo didn\'t work. Try again?'); return; }
   const file=new File([blob],`squirm-${title.replace(/^\d+\.\s*/,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')||'garden'}.png`,{type:'image/png'});
   try{ if(navigator.canShare&&navigator.canShare({files:[file]})){ await navigator.share({files:[file]}); return; } }catch(e){ if(e&&e.name==='AbortError') return; }
@@ -1379,7 +1379,7 @@ $('photoBack').onclick=()=>window.history.back();
 $('photoSnap').onclick=snapPhoto;
 $('photoPose').onclick=posePhoto;
 function undo(){
-  if(!history.length) return; bumpStat('undos'); checkBadges(null); save(); tweens.length=0; animating=0; queue.length=0; slideSteps.length=0; sfx('undo'); lastMoveT=idleT;
+  if(!history.length) return; bumpStat('undos'); undosHere++; checkBadges(null); save(); tweens.length=0; animating=0; queue.length=0; slideSteps.length=0; sfx('undo'); lastMoveT=idleT;
   clearDying(); clearHint(); const cur=state; state=history.pop(); syncBoard(false); syncWeather(false); syncSnails(false); snapBeetles(); syncHedges(false); updateHUD(true); saveResume();
   if(reduceMotion||cur.segs.length!==state.segs.length||segMeshes.length!==state.segs.length){ snapWorm(); return; }
   const n=state.segs.length, starts=segMeshes.map(s=>s.position.clone()), targets=state.segs.map((p,i)=>wp(p[0],p[1],segY(i,n)));
@@ -1389,10 +1389,10 @@ function undo(){
 function restart(){ if(!L) return; clearHint(); tweens.length=0; clearDying(); animating=0; queue.length=0; slideSteps.length=0; hideAll(); sfx('undo');
   if(state.status==='play' && state.moves>0){ history=[]; state=initState(L); syncBoard(false); snapWorm(); syncSnails(false); snapBeetles(); syncWeather(false); syncHedges(false); updateHUD(true); saveResume(); lastMoveT=idleT;
     toast('Fresh start.',1800); return; }
-  clearResume(); hintsUsed=0; if(mode==='garden') loadLevel(li,false); else startLevel(L,false); }
+  clearResume(); hintsUsed=0; undosHere=0; if(mode==='garden') loadLevel(li,false); else startLevel(L,false); }
 
 // ---------- hints ----------
-let hintsUsed=0, hintMesh=null, hintBusy=false;
+let hintsUsed=0, undosHere=0, hintMesh=null, hintBusy=false;
 function solveFrom(s0,cap=350000,ms=2500){ const until=performance.now()+ms;
   const seen=new Set([stateKey(s0)]); let q=[[s0,null]];
   while(q.length){ const nq=[];
@@ -1770,7 +1770,7 @@ window.addEventListener('popstate',()=>{ if(ignorePop>0){ ignorePop--; return; }
 // newest first: [id (a date), title, lines]. Returning players see the newest entry once on the Play tab,
 // new players never do (squirm-news holds the last id seen); Settings > About lists them all.
 const NEWS=[
-  ['2026-10-25','New in the garden',['Worm patterns: stripes, spots, a soft fade and a rainbow tail, in the wardrobe.','A new badges book, with your progress on every badge.','Snap a photo of your garden after you finish a patch, from any angle you like.','A new wardrobe that shows off your whole worm, and a fresh look for the meadow.']],
+  ['2026-10-25','New in the garden',['16 new badges to earn, and a few of them are really tough.','Worm patterns: stripes, spots, a soft fade and a rainbow tail, in the wardrobe.','A new badges book, with your progress on every badge.','Snap a photo of your garden after you finish a patch, from any angle you like.','A new wardrobe that shows off your whole worm, and a fresh look for the meadow.']],
   ['2026-10-24','Beetle bumps',['Chapter 16: push beetles around, even onto flower buttons.','A new hat to earn: the beetle horn.']],
   ['2026-10-20','A bigger garden',['Two new chapters, Garden party and Grand bloom.','A finale for when the whole garden is grown.']]];
 function renderNews(){ const seen=store.get('squirm-news'), n=NEWS[0], returning=LEVELS.some((l,i)=>isCleared(i))||Object.keys(progress.daily.results).length>0;
@@ -1941,6 +1941,8 @@ $('saveLoad').onclick=()=>{ const t=$('saveCode');
 
 // ---------- badges: small goals, checked after wins and after moves that bump a counter ----------
 progress.badges=progress.badges||{}; progress.stats=Object.assign({slides:0,hedges:0,fruit:0},progress.stats||{}); progress.clean=progress.clean||{};
+// dailies finished, counted from now on; players from before start with the days still on record (the last 90)
+if(progress.stats.dailies==null) progress.stats.dailies=Object.keys(progress.daily.results).length;
 const anyChapter=f=>CHAPTERS.some(ch=>{ for(let i=ch.from;i<=ch.to;i++) if(!f(i)) return false; return true; });
 // a badge test that also reports progress: [have, need], shown on the badges screen
 const counted=f=>Object.assign(()=>{ const [a,b]=f(); return a>=b; },{prog:f});
@@ -1979,7 +1981,23 @@ const BADGES=[
   ['fearless','mountain','Fearless','Clear ten hard endless patches.',counted(()=>[progress.endless.hard.cleared,10])],
   ['dressup','hat-tophat','Dress-up box','Unlock five hats.',counted(()=>[HATS.filter(h=>h[2]>=0&&hatUnlocked(h)).length,5])],
   ['rainbow','rainbow','Rainbow worm','Unlock every worm colour.',counted(()=>[coloursUnlocked(),WORM_COLS.length])],
-  ['patterns','worm','Dressed to wiggle','Unlock every worm pattern.',counted(()=>[patternsUnlocked().length,PATTERNS.length])]];
+  ['patterns','worm','Dressed to wiggle','Unlock every worm pattern.',counted(()=>[patternsUnlocked().length,PATTERNS.length])],
+  ['golden','trophy','Golden chapter','Get three stars on every patch in a chapter.',()=>anyChapter(i=>progress.stars[LEVELS[i].name]===3)],
+  ['allstars','crown','Every star in the sky','Get three stars on every garden patch.',counted(()=>[LEVELS.filter(l=>progress.stars[l.name]===3).length,LEVELS.length])],
+  ['pure','daisy','Pure gardener','Finish 100 patches without a hint.',counted(()=>[Object.keys(progress.clean).length,100])],
+  ['notake','tulip','No take-backs','Finish a patch with a par of 25 or more without undo or hints.',c=>c&&c.won&&c.par>=25&&c.undos===0&&!c.hinted],
+  ['lightning','flame','Lightning worm','Finish a patch with a par of 30 or more, right on par, in under a minute.',c=>c&&c.won&&c.par>=30&&c.mv<=c.par&&c.secs<60],
+  ['sunrises','sun','Fifty sunrises','Finish 50 daily patches.',counted(()=>[progress.stats.dailies,50])],
+  ['legend','tree','Meadow legend','Clear 50 hard endless patches.',counted(()=>[progress.endless.hard.cleared,50])],
+  ['unstoppable','bee','Unstoppable','Clear 10 hard endless patches in a row.',counted(()=>[progress.endless.hard.best,10])],
+  ['appetite','mushroom','Big appetite','Eat 200 peaches and mushrooms.',counted(()=>[progress.stats.fruit,200])],
+  ['flowerpower','flowerbtn','Flower power','Push a beetle onto a flower button.',counted(()=>[progress.stats.beetleFlower,1])],
+  ['wheee','leaf','Wheee!','Slide across four wet leaves in one go.',counted(()=>[progress.stats.slideMax,4])],
+  ['photos','camera','Say cheese','Snap 5 photos of your garden.',counted(()=>[progress.stats.photos,5])],
+  ['marathon','butterfly','Marathon worm','Crawl 10,000 moves.',counted(()=>[progress.stats.moves,10000])],
+  ['dawn','drop','Dawn chorus','Finish a patch between 5 and 7 in the morning.',c=>c&&c.won&&c.hour>=5&&c.hour<7],
+  ['hatrack','hat-gold','Hat collector','Unlock every hat.',counted(()=>[HATS.filter(h=>h[2]>=0&&hatUnlocked(h)).length,HATS.length-1])],
+  ['collector','medal','Badge collector','Earn 40 other badges.',counted(()=>[Object.keys(progress.badges).filter(k=>k!=='collector').length,40])]];
 // returns the badges earned just now; quiet ones (earned before badges existed) don't celebrate
 function checkBadges(ctx,quiet){ const got=[];
   for(const b of BADGES){ if(progress.badges[b[0]]) continue; let ok=false; try{ ok=!!b[4](ctx); }catch(e){} if(ok){ progress.badges[b[0]]=Date.now(); got.push(b); } }
@@ -1987,10 +2005,10 @@ function checkBadges(ctx,quiet){ const got=[];
   return got; }
 function bumpStat(k,n=1){ progress.stats[k]=(progress.stats[k]||0)+n; }
 // badges screen: a filter, groups of sticker tiles in a fading scroller, and a card for the picked badge
-const BADGE_GROUPS=[['Garden journey',['first','par','chapter','clean','sage','stars50','stars150','shiny','chapters','garden']],
-  ['Daily and meadow',['daily','streak7','month','meadow','brave','fearless']],
-  ['Garden helpers',['flags','snacks','crumbs','gates','tunnels','rain','bridges','slides','hedges','pushes']],
-  ['Just for fun',['moves','undos','taps','nap','owl','quick','dressup','rainbow','patterns']]];
+const BADGE_GROUPS=[['Garden journey',['first','par','chapter','clean','sage','stars50','stars150','shiny','chapters','garden','golden','pure','notake','lightning','allstars']],
+  ['Daily and meadow',['daily','streak7','month','sunrises','meadow','brave','fearless','unstoppable','legend']],
+  ['Garden helpers',['flags','snacks','appetite','crumbs','gates','tunnels','rain','bridges','slides','wheee','hedges','pushes','flowerpower']],
+  ['Just for fun',['moves','marathon','undos','taps','nap','owl','dawn','quick','photos','dressup','hatrack','rainbow','patterns','collector']]];
 // a badge left out of every group still shows, in the last one
 { const seen=new Set(BADGE_GROUPS.flatMap(g=>g[1])); BADGE_GROUPS[BADGE_GROUPS.length-1][1].push(...BADGES.map(b=>b[0]).filter(id=>!seen.has(id))); }
 let badgeFilter='all', badgeSel=null;
@@ -2118,7 +2136,7 @@ function loadLevel(i,withHint=true){ mode='garden'; li=i; startLevel(LEVELS[i],w
 let nudged=false, playT=0;
 const playTime=()=>{ const s=Math.round(playT); return s<60?`${s}s`:`${Math.floor(s/60)}m ${String(s%60).padStart(2,'0')}s`; };
 function startLevel(def,withHint=true){ nudged=false; playT=0;
-  L=def; state=initState(L); history=[]; queue.length=0; slideSteps.length=0; wasReady=false; hintsUsed=0; clearHint();
+  L=def; state=initState(L); history=[]; queue.length=0; slideSteps.length=0; wasReady=false; hintsUsed=0; undosHere=0; clearHint();
   buildBoard(); snapWorm(); fitCamera(); updateHUD(true); hudIntro(); lastMoveT=idleT;
   const resumed=tryResume(); if(!resumed) clearResume();
   introAnim();
