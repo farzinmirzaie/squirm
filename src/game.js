@@ -3,6 +3,15 @@
 const motionQuery = window.matchMedia ? matchMedia('(prefers-reduced-motion: reduce)') : null;
 let reduceMotion = !!(motionQuery && motionQuery.matches);
 if(motionQuery && motionQuery.addEventListener) motionQuery.addEventListener('change',e=>{ reduceMotion=e.matches; });
+// ---------- saved data ----------
+// every key starts with squirm- and must never be renamed; storage can be missing or full, so none of these ever throw
+const store={
+  get:k=>{ try{ return localStorage.getItem(k); }catch(e){ return null; } },
+  set:(k,v)=>{ try{ localStorage.setItem(k,v); }catch(e){} },
+  del:k=>{ try{ localStorage.removeItem(k); }catch(e){} },
+  json:k=>{ try{ return JSON.parse(localStorage.getItem(k)||'null'); }catch(e){ return null; } },
+  keys:()=>{ try{ return Object.keys(localStorage).filter(k=>k.startsWith('squirm-')); }catch(e){ return []; } }
+};
 const C = {
   turf1:0xB9E49E, turf2:0xAADB8E, dry:0xEBD59C, soil:0x9A6A4C, soilDark:0x7E543B, wood:0xD29A62, lawn:0x8CC673,
   head:0xFFB0C6, riverWater:0x8CCFEA, plank:0xD9A56E, plankDark:0xB98352, leafBig:0x7CC95F, water:0x9ED6EF, mud:0x8A5E43, cloud:0xFFFFFF, rainCloud:0xAEBBD2, eye:0xFFFFFF, pupil:0x3B2A22, cheek:0xFF6F96,
@@ -19,7 +28,7 @@ const canvas=document.getElementById('c'), stage=document.getElementById('stage'
 let renderer;
 try{ renderer=new THREE.WebGLRenderer({canvas,antialias:true}); }catch(e){ document.getElementById('noGL').classList.add('show'); return; }
 // quality 2 = full, 1 = lighter shadows, 0 = also lower resolution; drops automatically on slow devices
-let quality=2; try{ const q=parseInt(localStorage.getItem('squirm-quality'),10); if(q>=0&&q<=2) quality=q; }catch(e){}
+let quality=2; { const q=parseInt(store.get('squirm-quality'),10); if(q>=0&&q<=2) quality=q; }
 const pixelRatio=()=>Math.min(window.devicePixelRatio||1,quality===2?2.5:quality===1?1.75:1.25);
 renderer.setPixelRatio(pixelRatio());
 renderer.setClearColor(C.lawn);
@@ -49,8 +58,7 @@ function outlineBox(mesh,t,w,h,d){ const o=new THREE.Mesh(mesh.geometry,lineMat)
 const GC={}; const sph=(r,ws=28,hs=20)=>{ r=Math.round(r*100)/100; const k=r+'_'+ws+'_'+hs; return GC[k]||(GC[k]=new THREE.SphereGeometry(r,ws,hs)); };
 
 // ---------- audio ----------
-const AC=window.AudioContext||window.webkitAudioContext; let ac=null, master=null, muted=false;
-try{ muted=localStorage.getItem('squirm-muted')==='1'; }catch(e){}
+const AC=window.AudioContext||window.webkitAudioContext; let ac=null, master=null, muted=store.get('squirm-muted')==='1';
 function ensureAudio(){ if(!AC) return; if(!ac){ ac=new AC(); master=ac.createGain(); master.gain.value=.55;
     const comp=ac.createDynamicsCompressor(); master.connect(comp); comp.connect(ac.destination); musicSetup(); }
   if(ac.state==='suspended') ac.resume(); }
@@ -97,7 +105,7 @@ const SFX={
 };
 // ---------- music: a slow generated tune that follows the time of day and the rain ----------
 // music starts off for first-time visitors; players from before that change keep it on unless they turned it off
-let musicOn=false, musicVol=.7; try{ const m=localStorage.getItem('squirm-music'); musicOn=m===null?localStorage.getItem('squirm-progress')!==null:m==='1'; const v=parseFloat(localStorage.getItem('squirm-music-vol')); if(v>=0&&v<=1) musicVol=v; }catch(e){}
+let musicOn=false, musicVol=.7; { const m=store.get('squirm-music'), v=parseFloat(store.get('squirm-music-vol')); musicOn=m===null?store.get('squirm-progress')!==null:m==='1'; if(v>=0&&v<=1) musicVol=v; }
 let mBus=null, mLp=null, mNext=0, mStep=0, mDeg=2;
 const SCALES={major:[0,2,4,7,9],minor:[0,3,5,7,10]};
 const PROG={major:[[0,4,7],[-3,0,4],[5,9,12],[7,11,14]],minor:[[0,3,7],[-4,0,3],[3,7,10],[-2,2,5]]};
@@ -129,7 +137,7 @@ function musicTick(){ if(!ac||!mBus) return; const want=musicOn&&!muted&&!docume
       const semi=sc[mDeg%sc.length]+12*Math.floor(mDeg/sc.length), beats=Math.random()<.4?2:1; mNote(midiHz(md.root+semi),t,.04,spb*beats*.7,spb*.9,.05,md.wave); }
     mStep++; mNext+=e8; } }
 setInterval(musicTick,200);
-let hapticsOn=true; try{ hapticsOn=localStorage.getItem('squirm-haptics')!=='0'; }catch(e){}
+let hapticsOn=store.get('squirm-haptics')!=='0';
 const HAPTIC={push:16,move:8,grow:[10,30,14],shrink:[14,30,10],key:[8,25,8,25,12],gate:22,flag:[12,40,16],portal:[10,30,24],crumble:28,bump:[14,30,14],stuck:[40,70,40],undo:6,
   tap:6,on:8,off:8,badge:[15,40,15,40,30],win:[30,60,30,60,90],ready:[10,40,10],slide:6,hedgeOpen:[12,30,12],hedgeClose:14,rainOn:[30,50,15],creak:[20,40,20,40,20],rainOff:[15,50,30]};
 const iosHaptic=(()=>{ try{ const l=document.createElement('label'); l.setAttribute('aria-hidden','true'); l.style.cssText='position:fixed;left:-200px;top:0;width:1px;height:1px;opacity:0;pointer-events:none';
@@ -151,41 +159,40 @@ const sfx=(k,...a)=>{ fbNow.s=true; try{ SFX[k](...a); }catch(e){} buzz(HAPTIC[k
 let mode='garden', endlessDiff='medium', li=0, L=null, state=null, history=[], cells=[], segMeshes=[];
 let animating=0, queue=[], headDir=[1,0], idleT=0, lastMoveT=0, wasReady=false;
 let progress={v:2,best:{},stars:{}};
-try{ const p=JSON.parse(localStorage.getItem('squirm-progress')||'null'); if(p&&p.best) progress=Object.assign(progress,p); }catch(e){}
+{ const p=store.json('squirm-progress'); if(p&&p.best) progress=Object.assign(progress,p); }
 const isCleared=i=>progress.best[LEVELS[i].name]!=null;
 const isUnlocked=i=>i===0||isCleared(i)||isCleared(i-1);
-function currentGardenIndex(){ let n=null; try{ n=localStorage.getItem('squirm-current-name'); }catch(e){} const i=LEVELS.findIndex(l=>l.name===n); return i>=0&&isUnlocked(i)?i:0; }
+function currentGardenIndex(){ const n=store.get('squirm-current-name'), i=LEVELS.findIndex(l=>l.name===n); return i>=0&&isUnlocked(i)?i:0; }
 progress.endless=progress.endless||{}; ['easy','medium','hard'].forEach(d=>{ progress.endless[d]=Object.assign({cleared:0,streak:0,best:0,stars:0},progress.endless[d]||{}); });
 let endlessOpts={flags:true,fruit:true,keys:true,portals:false,dry:true,rain:false,rivers:false};
-try{ const o=JSON.parse(localStorage.getItem('squirm-endless-opts')||'null'); if(o){ Object.assign(endlessOpts,o.opts||{}); if(o.diff) endlessDiff=o.diff; } }catch(e){}
+{ const o=store.json('squirm-endless-opts'); if(o){ Object.assign(endlessOpts,o.opts||{}); if(o.diff) endlessDiff=o.diff; } }
 const curPar=()=> L.par;
 function askPersist(){ try{ const st=navigator.storage; if(st&&st.persist) st.persisted().then(p=>p||st.persist()).catch(()=>{}); }catch(e){} }
-const save=()=>{ try{ localStorage.setItem('squirm-progress',JSON.stringify(progress)); }catch(e){} };
+const save=()=>{ store.set('squirm-progress',JSON.stringify(progress)); };
 function wp(x,y,yy=0){ return new THREE.Vector3(x-(state.w-1)/2, yy, y-(state.h-1)/2); }
 function rng(seed){ return ()=>{ seed|=0; seed=seed+0x6D2B79F5|0; let t=Math.imul(seed^seed>>>15,1|seed); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
 
 // ---------- geometry helpers ----------
+// a texture drawn once on a fresh canvas; rep>0 makes it tile (rep times across a face)
+function canvasTex(w,h,draw,rep){ const cv=document.createElement('canvas'); cv.width=w; cv.height=h; draw(cv.getContext('2d'));
+  const t=new THREE.CanvasTexture(cv); if(rep){ t.wrapS=t.wrapT=THREE.RepeatWrapping; t.repeat.set(rep,rep); } return t; }
 function rrShape(w,d,r){ const s=new THREE.Shape(), x=-w/2, y=-d/2;
   s.moveTo(x+r,y); s.lineTo(x+w-r,y); s.quadraticCurveTo(x+w,y,x+w,y+r); s.lineTo(x+w,y+d-r); s.quadraticCurveTo(x+w,y+d,x+w-r,y+d);
   s.lineTo(x+r,y+d); s.quadraticCurveTo(x,y+d,x,y+d-r); s.lineTo(x,y+r); s.quadraticCurveTo(x,y,x+r,y); return s; }
 function slab(w,d,r,h,b){ const g=new THREE.ExtrudeGeometry(rrShape(w-2*b,d-2*b,r),{depth:Math.max(.01,h-2*b),bevelEnabled:true,bevelThickness:b,bevelSize:b,bevelSegments:5,curveSegments:8});
   g.rotateX(-Math.PI/2); g.center(); g.computeVertexNormals(); return g; }
 const TURF=slab(.94,.94,.16,.3,.08), HEDGE=slab(.8,.8,.12,.5,.06);
-const turfTex=(()=>{ const cv=document.createElement('canvas'); cv.width=cv.height=256; const g=cv.getContext('2d'); g.fillStyle='#fff'; g.fillRect(0,0,256,256);
-  for(let i=0;i<1040;i++){ const x=Math.random()*256,y=Math.random()*256; g.fillStyle=Math.random()<.5?'rgba(80,140,60,.16)':'rgba(255,255,255,.5)'; g.beginPath(); g.ellipse(x,y,1.2+Math.random()*1.6,3+Math.random()*3,Math.random()*3,0,Math.PI*2); g.fill(); }
-  const t=new THREE.CanvasTexture(cv); t.wrapS=t.wrapT=THREE.RepeatWrapping; t.repeat.set(1.6,1.6); return t; })();
+const turfTex=canvasTex(256,256,g=>{ g.fillStyle='#fff'; g.fillRect(0,0,256,256);
+  for(let i=0;i<1040;i++){ const x=Math.random()*256,y=Math.random()*256; g.fillStyle=Math.random()<.5?'rgba(80,140,60,.16)':'rgba(255,255,255,.5)'; g.beginPath(); g.ellipse(x,y,1.2+Math.random()*1.6,3+Math.random()*3,Math.random()*3,0,Math.PI*2); g.fill(); } },1.6);
 MC.turf1=toon(C.turf1,{map:turfTex}); MC.turf2=toon(C.turf2,{map:turfTex});
-const crackTex=(()=>{ const cv=document.createElement('canvas'); cv.width=cv.height=128; const g=cv.getContext('2d');
+const crackTex=canvasTex(128,128,g=>{
   g.strokeStyle='rgba(150,110,70,.85)'; g.lineWidth=5; g.lineCap='round'; g.lineJoin='round';
-  g.beginPath(); g.moveTo(18,36); g.lineTo(50,56); g.lineTo(62,90); g.lineTo(98,108); g.moveTo(50,56); g.lineTo(90,42); g.lineTo(110,22); g.moveTo(62,90); g.lineTo(30,106); g.stroke();
-  return new THREE.CanvasTexture(cv); })();
-const swirlTex=(()=>{ const cv=document.createElement('canvas'); cv.width=cv.height=128; const g=cv.getContext('2d');
+  g.beginPath(); g.moveTo(18,36); g.lineTo(50,56); g.lineTo(62,90); g.lineTo(98,108); g.moveTo(50,56); g.lineTo(90,42); g.lineTo(110,22); g.moveTo(62,90); g.lineTo(30,106); g.stroke(); });
+const swirlTex=canvasTex(128,128,g=>{
   g.translate(64,64); g.strokeStyle='rgba(255,255,255,.95)'; g.lineWidth=7; g.lineCap='round';
-  for(let a=0;a<3;a++){ g.beginPath(); for(let t=0;t<1;t+=.02){ const r=6+t*52, an=a*2.094+t*4.2; const px=Math.cos(an)*r, py=Math.sin(an)*r; t?g.lineTo(px,py):g.moveTo(px,py);} g.stroke(); }
-  return new THREE.CanvasTexture(cv); })();
-const lawnTex=(()=>{ const cv=document.createElement('canvas'); cv.width=64; cv.height=8; const g=cv.getContext('2d');
-  g.fillStyle='#8CC673'; g.fillRect(0,0,64,8); g.fillStyle='#84BF6B'; g.fillRect(32,0,32,8);
-  const t=new THREE.CanvasTexture(cv); t.wrapS=t.wrapT=THREE.RepeatWrapping; t.repeat.set(60,60); return t; })();
+  for(let a=0;a<3;a++){ g.beginPath(); for(let t=0;t<1;t+=.02){ const r=6+t*52, an=a*2.094+t*4.2; const px=Math.cos(an)*r, py=Math.sin(an)*r; t?g.lineTo(px,py):g.moveTo(px,py);} g.stroke(); } });
+const lawnTex=canvasTex(64,8,g=>{
+  g.fillStyle='#8CC673'; g.fillRect(0,0,64,8); g.fillStyle='#84BF6B'; g.fillRect(32,0,32,8); },60);
 
 // ---------- garden scenery ----------
 const lawnMat=toon(0xffffff,{map:lawnTex});
@@ -264,8 +271,8 @@ function batchScenery(src,dst){ src.updateMatrixWorld(true);
     bg.computeBoundingSphere(); const mesh=new THREE.Mesh(bg,mat); mesh.castShadow=mat===batchMat&&quality>0; dst.add(mesh); });
   disposeTree(src); swayers=swayers.filter(w=>!swayOf.has(w.o)||!isUnder(w.o,src)); }
 const isUnder=(o,root)=>{ for(let a=o;a;a=a.parent) if(a===root) return true; return false; };
-const blobTex=(()=>{ const cv=document.createElement('canvas'); cv.width=cv.height=64; const c=cv.getContext('2d'); const gr=c.createRadialGradient(32,32,2,32,32,30);
-  gr.addColorStop(0,'rgba(40,30,25,.32)'); gr.addColorStop(1,'rgba(40,30,25,0)'); c.fillStyle=gr; c.fillRect(0,0,64,64); return new THREE.CanvasTexture(cv); })();
+const blobTex=canvasTex(64,64,c=>{ const gr=c.createRadialGradient(32,32,2,32,32,30);
+  gr.addColorStop(0,'rgba(40,30,25,.32)'); gr.addColorStop(1,'rgba(40,30,25,0)'); c.fillStyle=gr; c.fillRect(0,0,64,64); });
 let flyShadows=[], bedBox={cx:0,cz:0,hw:1,hd:1};
 // things standing on the lawn, so the bird hops around them instead of through them
 let lawnObstacles=[], treeObstacles=[];
@@ -391,10 +398,9 @@ function updateCritters(dt){ const sec=dt/1000;
   birdSong=Math.max(0,birdSong-sec); }
 
 // ---------- tiles and items ----------
-const flowTex=(()=>{ const cv=document.createElement('canvas'); cv.width=cv.height=64; const g=cv.getContext('2d'); g.fillStyle='#fff'; g.fillRect(0,0,64,64);
+const flowTex=canvasTex(64,64,g=>{ g.fillStyle='#fff'; g.fillRect(0,0,64,64);
   g.strokeStyle='rgba(255,255,255,1)'; g.fillStyle='rgba(120,190,220,.18)'; for(let i=0;i<3;i++){ g.fillRect(0,i*21+8,64,2); }
-  g.strokeStyle='rgba(255,255,255,.95)'; g.lineWidth=2.5; g.lineCap='round'; for(let i=0;i<5;i++){ const y=Math.random()*64,x=Math.random()*64; g.beginPath(); g.moveTo(x,y); g.quadraticCurveTo(x+6,y-3,x+12,y); g.stroke(); }
-  const t=new THREE.CanvasTexture(cv); t.wrapS=t.wrapT=THREE.RepeatWrapping; return t; })();
+  g.strokeStyle='rgba(255,255,255,.95)'; g.lineWidth=2.5; g.lineCap='round'; for(let i=0;i<5;i++){ const y=Math.random()*64,x=Math.random()*64; g.beginPath(); g.moveTo(x,y); g.quadraticCurveTo(x+6,y-3,x+12,y); g.stroke(); } },1);
 flowTex.anisotropy=turfTex.anisotropy; const flowH=flowTex, flowV=flowTex.clone(); flowV.needsUpdate=true; flowV.center.set(.5,.5); flowV.rotation=Math.PI/2;
 const waterMatH=toon(C.riverWater,{map:flowH}), waterMatV=toon(C.riverWater,{map:flowV});
 const WATER=new THREE.BoxGeometry(1,.1,1);
@@ -451,18 +457,11 @@ function makeTile(x,y,ch){
     water.scale.setScalar(.01); water.visible=false; g.userData.water=water; }
   g.position.copy(wp(x,y)); board.add(g); return g;
 }
-function numberTex(n){ const cv=document.createElement('canvas'); cv.width=cv.height=128; const g=cv.getContext('2d');
+function numberTex(n){ return canvasTex(128,128,g=>{
   g.fillStyle='#FFF8EA'; g.beginPath(); g.arc(64,64,52,0,Math.PI*2); g.fill(); g.lineWidth=7; g.strokeStyle='#5B4436'; g.stroke();
   g.fillStyle='#5B4436'; g.font='800 70px Grandstander, Nunito, sans-serif'; g.textAlign='center'; g.textBaseline='middle'; g.fillText(String(n),64,70);
-  return new THREE.CanvasTexture(cv); }
+  }); }
 function faceCamera(o){ const yaw=(typeof camYaw==='number'?camYaw:0)*Math.PI/180; if(o.userData.faceCam){ o.rotation.y=yaw; if(o.userData.lean){ o.rotation.order='YXZ'; o.rotation.x=o.userData.lean; } } if(o.userData.signs) o.userData.signs.forEach(s=>{ s.rotation.y=yaw-o.rotation.y; s.position.set(-Math.sin(yaw)*.36+Math.cos(yaw)*.26,0,-Math.cos(yaw)*.36-Math.sin(yaw)*.26); }); }
-function numberSprite(n){
-  const cv=document.createElement('canvas'); cv.width=cv.height=128; const g=cv.getContext('2d');
-  g.fillStyle='#5B4436'; g.beginPath(); g.arc(64,64,58,0,Math.PI*2); g.fill();
-  g.fillStyle='#FFF8EA'; g.beginPath(); g.arc(64,64,50,0,Math.PI*2); g.fill();
-  g.fillStyle='#5B4436'; g.font='800 70px Grandstander, Nunito, sans-serif'; g.textAlign='center'; g.textBaseline='middle'; g.fillText(String(n),64,70);
-  const s=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(cv),depthWrite:false})); s.scale.set(.46,.46,1); return s;
-}
 // the soil heaped around a tunnel: a low torus whose thickness wobbles, so it reads as dug-up earth
 function moundGeo(seed){ const R=.32, g=new THREE.TorusGeometry(R,.095,10,40), pa=g.attributes.position, v=new THREE.Vector3();
   for(let i=0;i<pa.count;i++){ v.fromBufferAttribute(pa,i); const u=Math.atan2(v.y,v.x), cx=Math.cos(u)*R, cy=Math.sin(u)*R;
@@ -696,9 +695,9 @@ function syncSnails(animate,ev){ const ss=state.snails||[]; if(snailMeshes.lengt
     if(!turned){ trail(from,to); tween(260,(e,k)=>{ s.position.lerpVectors(from,to,e); s.userData.inner.scale.set(1.4,1.4*(1-Math.sin(k*Math.PI)*.08),1.4*(1+Math.sin(k*Math.PI)*.12)); },()=>s.userData.inner.scale.setScalar(1.4)); }
     else { sfx('snail'); let d=yaw-r0; d=((d+Math.PI)%(Math.PI*2)+Math.PI*2)%(Math.PI*2)-Math.PI; if(Math.abs(d)<.01) d=Math.PI;
       tween(380,(e,k)=>{ s.rotation.y=r0+d*e; s.userData.inner.position.y=Math.sin(k*Math.PI)*.05; },()=>{ s.rotation.y=yaw; s.userData.inner.position.y=0; }); } }); }
-const slimeTex=(()=>{ const cv=document.createElement('canvas'); cv.width=128; cv.height=32; const c=cv.getContext('2d');
+const slimeTex=canvasTex(128,32,c=>{
   const g=c.createLinearGradient(0,0,0,32); g.addColorStop(0,'rgba(255,255,255,0)'); g.addColorStop(.3,'rgba(235,248,255,.75)'); g.addColorStop(.5,'rgba(255,255,255,1)'); g.addColorStop(.7,'rgba(235,248,255,.75)'); g.addColorStop(1,'rgba(255,255,255,0)');
-  c.fillStyle=g; c.beginPath(); c.roundRect?c.roundRect(2,0,124,32,16):c.rect(2,0,124,32); c.fill(); return new THREE.CanvasTexture(cv); })();
+  c.fillStyle=g; c.beginPath(); c.roundRect?c.roundRect(2,0,124,32,16):c.rect(2,0,124,32); c.fill(); });
 // where the strip crosses the gap between two tiles it thins to a strand and sags a little, instead of a flat bar floating over it
 const slimeGap=s=>{ const d=Math.abs(s-.56)/.12; return d>=1?0:(1+Math.cos(d*Math.PI))/2; };
 function trail(from,to){ if(reduceMotion) return; const dx=to.x-from.x, dz=to.z-from.z, len=Math.hypot(dx,dz)+.12;
@@ -739,9 +738,9 @@ function syncBoard(animate){
 // every sprite shares three's one quad; keep it when a patch's meshes are freed
 const spriteGeo=new THREE.Sprite().geometry;
 // a key's twinkles: a four-pointed star with a warm rim, so it reads against the gold key and the grass
-const sparkTex=(()=>{ const cv=document.createElement('canvas'); cv.width=cv.height=64; const c=cv.getContext('2d'); c.translate(32,32);
+const sparkTex=canvasTex(64,64,c=>{ c.translate(32,32);
   const star=(R,r)=>{ c.beginPath(); for(let i=0;i<8;i++){ const a=i*Math.PI/4-Math.PI/2, d=i%2?r:R; c.lineTo(Math.cos(a)*d,Math.sin(a)*d); } c.closePath(); };
-  star(29,7); c.fillStyle='#F2A93B'; c.fill(); star(22,4.5); c.fillStyle='#FFFDF2'; c.fill(); return new THREE.CanvasTexture(cv); })();
+  star(29,7); c.fillStyle='#F2A93B'; c.fill(); star(22,4.5); c.fillStyle='#FFFDF2'; c.fill(); });
 let fxTimer=0; const sparkMat=new THREE.SpriteMaterial({map:sparkTex,transparent:true,depthWrite:false});
 function sparkle(p){ const s=new THREE.Sprite(sparkMat); s.position.set(p.x+(Math.random()-.5)*.45,.3+Math.random()*.45,p.z+(Math.random()-.5)*.45); s.scale.setScalar(.01); fx.add(s);
   const sz=.13+Math.random()*.07; tween(600,(e,k)=>{ s.scale.setScalar(Math.max(.01,sz*Math.sin(k*Math.PI))); },kill(s)); }
@@ -800,8 +799,8 @@ let todName='day', fireflies=null;
 function pickTod(){ if(typeof renderHome==='function'&&$('homeOv').classList.contains('show')) renderHome(); const h=new Date().getHours()+new Date().getMinutes()/60;
   const was=todName; todName= h>=6&&h<10?'morning' : h>=10&&h<17?'day' : h>=17&&h<20?'evening' : 'night'; if(was!==todName||!fireflies) buildFireflies(); }
 // a soft round glow with a bright core, shared by every firefly
-const glowTex=(()=>{ const cv=document.createElement('canvas'); cv.width=cv.height=64; const c=cv.getContext('2d'); const gr=c.createRadialGradient(32,32,0,32,32,32);
-  gr.addColorStop(0,'rgba(255,255,255,1)'); gr.addColorStop(.18,'rgba(255,250,200,.95)'); gr.addColorStop(.45,'rgba(255,230,120,.35)'); gr.addColorStop(1,'rgba(255,220,100,0)'); c.fillStyle=gr; c.fillRect(0,0,64,64); return new THREE.CanvasTexture(cv); })();
+const glowTex=canvasTex(64,64,c=>{ const gr=c.createRadialGradient(32,32,0,32,32,32);
+  gr.addColorStop(0,'rgba(255,255,255,1)'); gr.addColorStop(.18,'rgba(255,250,200,.95)'); gr.addColorStop(.45,'rgba(255,230,120,.35)'); gr.addColorStop(1,'rgba(255,220,100,0)'); c.fillStyle=gr; c.fillRect(0,0,64,64); });
 function buildFireflies(){ if(fireflies){ disposeTree(fireflies); removeObj(fireflies); fireflies=null; } if(todName!=='night'&&todName!=='evening') return;
   fireflies=new THREE.Group(); const n=todName==='night'?18:8;
   for(let i=0;i<n;i++){ const f=new THREE.Sprite(new THREE.SpriteMaterial({map:glowTex,color:0xFFF0A0,transparent:true,opacity:.9,depthWrite:false,blending:THREE.AdditiveBlending})); f.scale.setScalar(.26); f.userData={ph:Math.random()*10,r:1+Math.random()*4,s:.2+Math.random()*.3,y:.4+Math.random()*1.2}; fireflies.add(f); } scene.add(fireflies); }
@@ -851,13 +850,13 @@ function makeSeg(i,parent){
 }
 const EXPRS=['grin','joy','wink','wow','sleepy','cheeky'];
 let reactT=0, zT=0;
-const zTex=(()=>{ const cv=document.createElement('canvas'); cv.width=cv.height=64; const c=cv.getContext('2d'); c.font='800 48px Grandstander, Nunito, sans-serif'; c.textAlign='center'; c.textBaseline='middle';
-  c.lineWidth=8; c.strokeStyle='#FFF8EA'; c.strokeText('z',32,34); c.fillStyle='#5B4436'; c.fillText('z',32,34); return new THREE.CanvasTexture(cv); })();
+const zTex=canvasTex(64,64,c=>{ c.font='800 48px Grandstander, Nunito, sans-serif'; c.textAlign='center'; c.textBaseline='middle';
+  c.lineWidth=8; c.strokeStyle='#FFF8EA'; c.strokeText('z',32,34); c.fillStyle='#5B4436'; c.fillText('z',32,34); });
 function snore(h){ const s=new THREE.Sprite(new THREE.SpriteMaterial({map:zTex,transparent:true,depthWrite:false})); s.position.copy(h.position).add(new THREE.Vector3(.15,.45,0)); s.scale.setScalar(.01); fx.add(s);
   const x0=s.position.x; tween(1800,(e,k)=>{ s.position.y+=.004; s.position.x=x0+Math.sin(k*5)*.08; s.scale.setScalar(.12+k*.18); s.material.opacity=1-k; },kill(s)); }
 function react(name,ms=900){ const h=segMeshes[0]; if(!h||!h.userData.face) return; applyExpr(h,name); reactT=ms/1000; }
 function applyExpr(g,name){ const F=g.userData.face; if(!F) return; g.userData.expr=name;
-  const open=[true,true], eyeY=[1,1], eyeS=1; let mouth='smile', tongue=false, pupilY=0;
+  const open=[true,true], eyeY=[1,1]; let mouth='smile', tongue=false, pupilY=0;
   if(name==='grin') mouth='grin';
   if(name==='joy'){ open[0]=open[1]=false; mouth='grin'; }
   if(name==='wink'){ open[0]=false; tongue=true; }
@@ -963,7 +962,7 @@ function buildHat(id){ const h=new THREE.Group();
     for(const [x,y,z] of [[.03,.16,-.02],[-.02,.22,.04]]){ const sp=new THREE.Mesh(sph(.018,8,6),m('beetleSpot')); sp.position.set(x,y,z); h.add(sp); } }
   h.traverse(o=>{ if(o.isMesh&&o.material!==lineMat) o.castShadow=true; });
   return h; }
-let hatId='none'; try{ hatId=localStorage.getItem('squirm-hat')||'none'; }catch(e){}
+let hatId=store.get('squirm-hat')||'none';
 const chapterCleared=k=>{ const ch=CHAPTERS[k]; if(!ch) return false; for(let i=ch.from;i<=ch.to;i++) if(!isCleared(i)) return false; return true; };
 const hatUnlocked=h=>h[2]<0||chapterCleared(h[2]);
 function dressHat(g){ const slot=g&&g.userData.hatSlot; if(!slot) return; slot.clear();
@@ -972,7 +971,7 @@ function dressHat(g){ const slot=g&&g.userData.hatSlot; if(!slot) return; slot.c
 const WORM_COLS=[['Blossom',0xFFB3C8,0xFFB0C6,0],['Mint',0x7FD9B0,0x74D3A6,15],['Butter',0xFFE08A,0xFFDA7A,45],['Lavender',0xCDB8F5,0xC5AEF2,90],['Sky',0xA9D8F5,0x9FD2F2,150]];
 const starTotal=()=>LEVELS.reduce((a,l)=>a+(progress.stars[l.name]||0),0);
 const coloursUnlocked=()=>WORM_COLS.filter(c=>starTotal()>=c[3]).length;
-let wormCol=0; try{ wormCol=Math.max(0,Math.min(WORM_COLS.length-1,parseInt(localStorage.getItem('squirm-colour')||'0',10)||0)); }catch(e){}
+let wormCol=Math.max(0,Math.min(WORM_COLS.length-1,parseInt(store.get('squirm-colour')||'0',10)||0));
 function applyWormColour(){ if(wormCol>=coloursUnlocked()) wormCol=0; const c=WORM_COLS[wormCol]; COL_A.setHex(c[1]); m('head').color.setHex(c[2]); }
 const tubePool=[], capPool=[];
 function tubeGeo(geo,pts,rads,cols,extra){
@@ -1273,11 +1272,10 @@ function restart(){ if(!L) return; clearHint(); tweens.length=0; clearDying(); a
 // ---------- hints ----------
 let hintsUsed=0, hintMesh=null, hintBusy=false;
 function solveFrom(s0,cap=350000,ms=2500){ const until=performance.now()+ms;
-  const key=s=>s.segs.map(p=>p[0]+','+p[1]).join(';')+'|'+s.grid.map(r=>r.join('')).join('')+'|'+s.keys+(s.raining?'r':'')+'|'+(s.snails||[]).map(n=>n.x+','+n.y+','+n.dx+','+n.dy).join(';')+'|'+(s.beetles||[]).map(b=>b.x+','+b.y).sort().join(';');
-  const seen=new Set([key(s0)]); let q=[[s0,null]];
+  const seen=new Set([stateKey(s0)]); let q=[[s0,null]];
   while(q.length){ const nq=[];
     for(const [s,first] of q){ for(const d of ['N','S','W','E']){ const r=step(s,d); if(r.blocked) continue; const f=first||d;
-        if(r.state.status==='won') return f; const k=key(r.state); if(seen.has(k)) continue; seen.add(k); if(seen.size>cap||((seen.size&1023)===0&&performance.now()>until)) return undefined; nq.push([r.state,f]); } }
+        if(r.state.status==='won') return f; const k=stateKey(r.state); if(seen.has(k)) continue; seen.add(k); if(seen.size>cap||((seen.size&1023)===0&&performance.now()>until)) return undefined; nq.push([r.state,f]); } }
     q=nq; }
   return null; }
 function clearHint(){ if(hintMesh){ removeObj(hintMesh); hintMesh=null; } }
@@ -1321,9 +1319,9 @@ function tabIntro(name){ const pg=$('tab'+name[0].toUpperCase()+name.slice(1));
   if(name==='badges'){ stagger([pg.querySelector('.panel')],'rise'); stagger(qa(pg,'.badge-card'),'rise',90,35,8); } }
 
 // ---------- resume an unfinished patch after reload ----------
-function saveResume(){ try{ localStorage.setItem('squirm-resume-'+mode,JSON.stringify({li,name:mode==='garden'?LEVELS[li].name:null,diff:endlessDiff,def:mode==='endless'?L:null,hints:hintsUsed,states:history.concat([state]).slice(-120)})); }catch(e){} }
-function clearResume(){ try{ localStorage.removeItem('squirm-resume-'+mode); }catch(e){} }
-function readResume(m){ try{ return JSON.parse(localStorage.getItem('squirm-resume-'+m)||'null'); }catch(e){ return null; } }
+function saveResume(){ store.set('squirm-resume-'+mode,JSON.stringify({li,name:mode==='garden'?LEVELS[li].name:null,diff:endlessDiff,def:mode==='endless'?L:null,hints:hintsUsed,states:history.concat([state]).slice(-120)})); }
+function clearResume(){ store.del('squirm-resume-'+mode); }
+function readResume(m){ return store.json('squirm-resume-'+m); }
 function tryResume(){ try{ const r=readResume(mode); if(!r||!r.states||!r.states.length) return false; if(mode==='garden'&&r.name!==LEVELS[li].name) return false; if(mode==='endless'&&(!r.def||r.def.seed!==L.seed)) return false;
     const sts=r.states; const last=sts[sts.length-1]; if(last.status!=='play'||sts.length<2) return false;
     state=last; history=sts.slice(0,-1); hintsUsed=r.hints||0;
@@ -1488,12 +1486,11 @@ const FEATURES=[['flags','Flags'],['buttons','Flower buttons'],['leaves','Wet le
 const ADJ=['Clover','Mossy','Sunny','Dewy','Puddle','Bramble','Tulip','Daisy','Mint','Fern','Pebble','Willow','Honey','Petal','Thistle','Bluebell','Acorn','Buttercup'];
 const NOUN=['Corner','Patch','Hollow','Nook','Lane','Bend','Meadow','Path','Dell','Knoll','Row','Glade'];
 function analyzeCapped(Ld,cap){
-  const key=s=>s.segs.map(p=>p[0]+','+p[1]).join(';')+'|'+s.grid.map(r=>r.join('')).join('')+'|'+s.keys+(s.raining?'r':'')+'|'+(s.snails||[]).map(n=>n.x+','+n.y+','+n.dx+','+n.dy).join(';')+'|'+(s.beetles||[]).map(b=>b.x+','+b.y).sort().join(';');
-  const s0=initState(Ld), id=new Map([[key(s0),0]]), states=[s0], edges=[[]], par=[-1], pd=[''], wins=[]; let best=-1;
+  const s0=initState(Ld), id=new Map([[stateKey(s0),0]]), states=[s0], edges=[[]], par=[-1], pd=[''], wins=[]; let best=-1;
   for(let i=0;i<states.length;i++){ if(states.length>cap) return null; const s=states[i];
     for(const d of ['N','S','W','E']){ const r=step(s,d); if(r.blocked) continue;
       if(r.state.status==='won'){ wins.push(i); if(best<0) best=i*4+'NSWE'.indexOf(d); continue; }
-      const k=key(r.state); let j=id.get(k); if(j===undefined){ j=states.length; id.set(k,j); states.push(r.state); edges.push([]); par.push(i); pd.push(d); } edges[i].push(j); } }
+      const k=stateKey(r.state); let j=id.get(k); if(j===undefined){ j=states.length; id.set(k,j); states.push(r.state); edges.push([]); par.push(i); pd.push(d); } edges[i].push(j); } }
   if(best<0) return {par:0};
   let i=Math.floor(best/4), sol='NSWE'[best%4]; while(i>0){ sol=pd[i]+sol; i=par[i]; }
   const rev=states.map(()=>[]); edges.forEach((es,i)=>es.forEach(j=>rev[j].push(i)));
@@ -1590,21 +1587,20 @@ const DAILY_OPTS={flags:true,fruit:true,keys:true,dry:true,portals:true};
 progress.daily=Object.assign({streak:0,best:0,last:null,results:{}},progress.daily||{});
 async function startDaily(){ if(generating) return; generating=true; hideAll(); show('genOv'); $('genText').textContent="Growing today's patch...";
   const k=todayKey(); let seed=0; for(const ch of 'daily'+k) seed=(seed*31+ch.charCodeAt(0))|0;
-  let def=null; try{ const c=JSON.parse(localStorage.getItem('squirm-daily-patch')||'null'); if(c&&c.daily===k) def=c; }catch(e){}
-  if(!def){ def=await generateEndless('medium',{...DAILY_OPTS},seed,30); def.daily=k; try{ localStorage.setItem('squirm-daily-patch',JSON.stringify(def)); }catch(e){} } def.name="Today's patch"; def.hint='The same patch for every gardener today.';
+  let def=store.json('squirm-daily-patch'); if(!def||def.daily!==k) def=null;
+  if(!def){ def=await generateEndless('medium',{...DAILY_OPTS},seed,30); def.daily=k; store.set('squirm-daily-patch',JSON.stringify(def)); } def.name="Today's patch"; def.hint='The same patch for every gardener today.';
   hide('genOv'); generating=false; mode='endless'; startLevel(def,true); enterGame(); }
 let generating=false, prefetch=null;
 const optsKey=()=>endlessDiff+JSON.stringify(endlessOpts);
 function startPrefetch(){ const k=optsKey(); const seed=(Math.random()*2**31)|0; prefetch={k,p:generateEndless(endlessDiff,{...endlessOpts},seed)}; }
 async function newEndless(){ if(generating) return; generating=true; hideAll(); clearResume();
-  try{ localStorage.setItem('squirm-endless-opts',JSON.stringify({opts:endlessOpts,diff:endlessDiff})); }catch(e){}
+  store.set('squirm-endless-opts',JSON.stringify({opts:endlessOpts,diff:endlessDiff}));
   let def; if(prefetch&&prefetch.k===optsKey()){ const p=prefetch.p; prefetch=null; show('genOv'); def=await p; }
   else { prefetch=null; show('genOv'); $('genText').textContent=endlessDiff==='hard'?'Hard patches take a moment to grow...':'Planting seeds...'; def=await generateEndless(endlessDiff,{...endlessOpts},(Math.random()*2**31)|0); }
   hide('genOv'); generating=false;
   mode='endless'; startLevel(def,true); saveResume(); enterGame(); }
 function continueEndless(){ const r=readResume('endless'); if(r&&r.def&&r.diff&&!r.def.daily){ endlessDiff=r.diff; mode='endless'; hideAll(); startLevel(r.def,false); enterGame(); return true; } return false; }
 
-// ---------- home ----------
 // ---------- native back button: a small stack of layers mirrored in browser history ----------
 const layers=[]; let ignorePop=0;
 function pushLayer(n){ layers.push(n); try{ window.history.pushState({squirm:layers.length},''); }catch(e){} }
@@ -1630,7 +1626,7 @@ window.addEventListener('popstate',()=>{ if(ignorePop>0){ ignorePop--; return; }
 // ---------- home ----------
 function showHome(quiet){ if(updateReady){ location.reload(); return; } document.title='Squirm'; const was=curTab; showTab('play',true); renderHome(); show('homeOv');
   if(quiet) return; if(was==='play') tabIntro('play'); stagger(document.querySelectorAll('.home-top .star-pill,.home-top .round:not([hidden])'),'enter',0,50); stagger(document.querySelectorAll('.tabbar .tab'),'rise',150,40); }
-// ---------- home tabs: Play, Garden (patch list), Meadow (endless), Me (wardrobe and badges) ----------
+// ---------- home tabs: Play, Garden (patch list), Meadow (endless), Me (wardrobe), Badges ----------
 let curTab='play';
 const TAB_RENDER={garden:()=>renderLevelList(),meadow:()=>renderEndless(),me:()=>renderWardrobe(),badges:()=>renderBadges()};
 function showTab(name,fromBack){ const prev=curTab; curTab=name;
@@ -1657,20 +1653,20 @@ function renderHome(){
   else { $('playTitle').textContent=started?'Continue':'Play'; $('playSub').textContent=`Patch ${ni+1} · ${LEVELS[ni].name}`; }
   renderMute(); renderHaptic();
   // what the page shows before the game has loaded next time (see the boot script in shell.html)
-  try{ localStorage.setItem('squirm-boot',JSON.stringify({stars:$('homeStars').innerHTML,title:$('playTitle').textContent,sub:$('playSub').textContent,daily:$('dailySub').textContent,done:!!dr,day:new Date().toDateString()})); }catch(e){}
+  store.set('squirm-boot',JSON.stringify({stars:$('homeStars').innerHTML,title:$('playTitle').textContent,sub:$('playSub').textContent,daily:$('dailySub').textContent,done:!!dr,day:new Date().toDateString()}));
 }
 function renderWardrobe(){ renderSwatches();
   $('hatGrid').innerHTML=HATS.map(h=>{ const ok=hatUnlocked(h), ch=CHAPTERS[h[2]];
     return `<button data-h="${h[0]}" class="hat ${h[0]===hatId?'on':''} ${ok?'':'locked'}" aria-pressed="${h[0]===hatId}"><span class="hat-ico" aria-hidden="true">${ok?hatArt(h[0]):art('lock',28)}</span><b>${h[1]}</b><small>${ok?(h[0]===hatId?'Wearing':'Tap to wear'):`Finish ${ch?ch.name:'a chapter'}`}</small></button>`; }).join('');
   $('hatGrid').querySelectorAll('button').forEach(b=>b.onclick=()=>{ const h=HATS.find(x=>x[0]===b.dataset.h);
     if(!hatUnlocked(h)){ nope(b,`Finish every patch in ${CHAPTERS[h[2]].name} to earn the ${h[1].toLowerCase()}.`,2800); return; }
-    hatId=h[0]; try{ localStorage.setItem('squirm-hat',hatId); }catch(e){} dressHat(hHead); dressHat(segMeshes[0]); if(hHead) homeReact(hatId==='none'?'wow':'joy'); renderWardrobe(); settle($('hatGrid').querySelector('.hat.on')); }); }
+    hatId=h[0]; store.set('squirm-hat',hatId); dressHat(hHead); dressHat(segMeshes[0]); if(hHead) homeReact(hatId==='none'?'wow':'joy'); renderWardrobe(); settle($('hatGrid').querySelector('.hat.on')); }); }
 function renderSwatches(){ const have=coloursUnlocked();
   $('swatches').innerHTML=WORM_COLS.map((c,i)=>{ const locked=i>=have, hex='#'+c[1].toString(16).padStart(6,'0');
     return `<button data-i="${i}" class="${i===wormCol?'on':''} ${locked?'locked':''}" style="--sw:${hex}" aria-pressed="${i===wormCol}" aria-label="${c[0]} worm${locked?`, unlocks at ${c[3]} stars`:''}">${locked?art('lock',16):''}</button>`; }).join('');
   $('swatches').querySelectorAll('button').forEach(b=>b.onclick=()=>{ const i=+b.dataset.i, c=WORM_COLS[i];
     if(i>=coloursUnlocked()){ nope(b,`${c[0]} unlocks at ${c[3]} stars. You have ${starTotal()}.`,2600); return; }
-    wormCol=i; try{ localStorage.setItem('squirm-colour',String(i)); }catch(e){} applyWormColour(); if(hHead) homeReact('joy'); renderWardrobe(); settle($('swatches').querySelector('button.on')); }); }
+    wormCol=i; store.set('squirm-colour',String(i)); applyWormColour(); if(hHead) homeReact('joy'); renderWardrobe(); settle($('swatches').querySelector('button.on')); }); }
 const DIFF_ICON={easy:art('sprout',32),medium:art('tulip',32),hard:art('tree',32)};
 // short names for the mechanic tiles; the full name goes in the label
 const FEAT_SHORT={flags:'Flags',buttons:'Flowers',leaves:'Leaves',fruit:'Fruit',keys:'Keys',portals:'Tunnels',dry:'Dry',rain:'Rain',rivers:'Rivers',snails:'Snails',beetles:'Beetles'};
@@ -1719,10 +1715,10 @@ $('homeEndlessCont').onclick=()=>{ continueEndless(); };
 $('homeSound').onclick=()=>toggleMute($('homeSound'));
 // colour theme: follow the system, or force light or dark
 const THEMES=['auto','light','dark'];
-let theme='auto'; try{ theme=localStorage.getItem('squirm-theme')||'auto'; }catch(e){} if(!THEMES.includes(theme)) theme='auto';
+let theme=store.get('squirm-theme')||'auto'; if(!THEMES.includes(theme)) theme='auto';
 function applyTheme(){ if(theme==='auto') delete document.documentElement.dataset.theme; else document.documentElement.dataset.theme=theme;
   $('setTheme').querySelectorAll('button').forEach(b=>{ const on=b.dataset.t===theme; b.classList.toggle('on',on); b.setAttribute('aria-checked',String(on)); }); }
-$('setTheme').querySelectorAll('button').forEach(b=>b.onclick=()=>{ theme=b.dataset.t; try{ localStorage.setItem('squirm-theme',theme); }catch(e){} applyTheme(); settle(b); });
+$('setTheme').querySelectorAll('button').forEach(b=>b.onclick=()=>{ theme=b.dataset.t; store.set('squirm-theme',theme); applyTheme(); settle(b); });
 applyTheme();
 
 // ---------- settings: toggles, save backup, start over ----------
@@ -1740,11 +1736,11 @@ $('settingsBtn').onclick=()=>{ ensureAudio(); renderSettings(); setPage('main');
 $('setClose').onclick=()=>{ hide('setOv'); popLayer('settings'); renderHome(); };
 $('setSound').onclick=()=>{ toggleMute(); renderSettings(); };
 $('setHaptic').onclick=()=>{ $('hapticBtn').onclick(); renderSettings(); };
-$('setMusicVol').oninput=e=>{ musicVol=e.target.value/100; try{ localStorage.setItem('squirm-music-vol',String(musicVol)); }catch(err){} ensureAudio(); musicTick(); };
-$('setMusic').onclick=()=>{ musicOn=!musicOn; try{ localStorage.setItem('squirm-music',musicOn?'1':'0'); }catch(e){} ensureAudio(); sfx(musicOn?'on':'off'); renderSettings(); if(musicOn&&muted) toast('Turn sound on to hear the music.',2400); };
+$('setMusicVol').oninput=e=>{ musicVol=e.target.value/100; store.set('squirm-music-vol',String(musicVol)); ensureAudio(); musicTick(); };
+$('setMusic').onclick=()=>{ musicOn=!musicOn; store.set('squirm-music',musicOn?'1':'0'); ensureAudio(); sfx(musicOn?'on':'off'); renderSettings(); if(musicOn&&muted) toast('Turn sound on to hear the music.',2400); };
 // a save code is every squirm- key (except throwaway ones) as base64 JSON with a version prefix
 const SAVE_PREFIX='SQUIRM1:', SAVE_SKIP=['squirm-quality','squirm-offline-told','squirm-daily-patch','squirm-remind','squirm-boot'];
-function saveCode(){ const d={}; try{ for(const k of Object.keys(localStorage)) if(k.startsWith('squirm-')&&!SAVE_SKIP.includes(k)) d[k]=localStorage.getItem(k); }catch(e){}
+function saveCode(){ const d={}; for(const k of store.keys()) if(!SAVE_SKIP.includes(k)) d[k]=store.get(k);
   return SAVE_PREFIX+btoa(unescape(encodeURIComponent(JSON.stringify(d)))); }
 function readSaveCode(code){ code=String(code||'').trim(); if(!code.startsWith(SAVE_PREFIX)) return null;
   try{ const d=JSON.parse(decodeURIComponent(escape(atob(code.slice(SAVE_PREFIX.length))))); if(!d||typeof d!=='object'||!d['squirm-progress']) return null;
@@ -1809,7 +1805,7 @@ function renderBadges(){ const n=Object.keys(progress.badges).length;
 // ---------- secret reset ----------
 function askReset(){ sfx('stuck'); show('resetOv'); pushLayer('reset'); }
 $('resetNo').onclick=()=>{ hide('resetOv'); popLayer('reset'); if(hHead) applyExpr(hHead,'joy'); };
-$('resetYes').onclick=()=>{ try{ Object.keys(localStorage).filter(k=>k.startsWith('squirm-')).forEach(k=>localStorage.removeItem(k)); }catch(e){}
+$('resetYes').onclick=()=>{ store.keys().forEach(k=>store.del(k));
   buzz([40,60,40]); location.reload(); };
 
 // ---------- the worm on the home screen: just the head, full of personality ----------
@@ -1859,21 +1855,21 @@ const MECH={
   leaves:{t:'Wet leaves',d:'Dewy leaves are slippery. Crawl onto one and you slide along until you reach dry grass or bump into something.',k:/i/,i:art('wetleaf',40)},
   rivers:{t:'Rivers and bridges',d:'Water blocks the way. Bridges only go along their planks, and a crank swings every bridge you are not standing on.',k:/[~=|L]/,i:art('bridge',40)},
 };
-let seenMech={}; try{ seenMech=JSON.parse(localStorage.getItem('squirm-seen')||'{}'); }catch(e){}
+let seenMech=store.json('squirm-seen')||{};
 let introDone=null;
 function newMechanics(){ const m=L.map.join(''); return Object.keys(MECH).filter(k=>!seenMech[k]&&MECH[k].k.test(m)); }
 function showIntro(list,done){ $('introBody').innerHTML=`<h2>${list.length===1?'Something new':'New in this patch'}</h2>`+list.map(k=>`<div class="intro-item"><span class="ico">${MECH[k].i}</span><div><b>${MECH[k].t}</b><span>${MECH[k].d}</span></div></div>`).join('');
-  list.forEach(k=>seenMech[k]=1); try{ localStorage.setItem('squirm-seen',JSON.stringify(seenMech)); }catch(e){}
+  list.forEach(k=>seenMech[k]=1); store.set('squirm-seen',JSON.stringify(seenMech));
   introDone=done; show('introOv'); pushLayer('intro'); sfx('ready'); }
 function closeIntro(fromBack){ hide('introOv'); if(!fromBack) popLayer('intro'); const d=introDone; introDone=null; if(d) d(); }
 $('introOk').onclick=()=>closeIntro(false);
 
 // ---------- first-time tutorial ----------
-function maybeTutorial(){ let done=false; try{ done=localStorage.getItem('squirm-tutorial')==='1'; }catch(e){} if(done||mode!=='garden'||li!==0||history.length) return false; $('tutorial').classList.add('show'); return true; }
-function dismissTutorial(){ const t=$('tutorial'); if(!t.classList.contains('show')) return; t.classList.remove('show'); try{ localStorage.setItem('squirm-tutorial','1'); }catch(e){} }
+function maybeTutorial(){ if(store.get('squirm-tutorial')==='1'||mode!=='garden'||li!==0||history.length) return false; $('tutorial').classList.add('show'); return true; }
+function dismissTutorial(){ const t=$('tutorial'); if(!t.classList.contains('show')) return; t.classList.remove('show'); store.set('squirm-tutorial','1'); }
 
 // ---------- levels ----------
-function loadLevel(i,withHint=true){ mode='garden'; li=i; startLevel(LEVELS[i],withHint); try{ localStorage.setItem('squirm-current-name',LEVELS[i].name); }catch(e){} }
+function loadLevel(i,withHint=true){ mode='garden'; li=i; startLevel(LEVELS[i],withHint); store.set('squirm-current-name',LEVELS[i].name); }
 let nudged=false, playT=0;
 const playTime=()=>{ const s=Math.round(playT); return s<60?`${s}s`:`${Math.floor(s/60)}m ${String(s%60).padStart(2,'0')}s`; };
 function startLevel(def,withHint=true){ nudged=false; playT=0;
@@ -2057,12 +2053,12 @@ $('winShare').onclick=async()=>{ try{ if(navigator.share){ await navigator.share
 $('winReplay').onclick=()=>{ hideAll(); popLayer('win'); if(mode==='garden') loadLevel(li,false); else startLevel(L,false); };
 $('winNext').onclick=()=>{ hideAll(); if(L.daily){ popLayer('game'); showHome(); return; }
   if(mode==='garden'&&li===LEVELS.length-1&&allCleared()){ swapLayers(layers.includes('game')?'game':'win','finale'); showHome(true); showFinale(false); return; } popLayer('win'); if(mode==='garden') loadLevel(li===LEVELS.length-1?0:li+1); else newEndless(); };
-function toggleMute(el){ ensureAudio(); muted=!muted; if(el) settle(el); try{ localStorage.setItem('squirm-muted',muted?'1':'0'); }catch(e){} renderMute(); if(state) syncWeather(false); sfx(muted?'off':'on'); }
+function toggleMute(el){ ensureAudio(); muted=!muted; if(el) settle(el); store.set('squirm-muted',muted?'1':'0'); renderMute(); if(state) syncWeather(false); sfx(muted?'off':'on'); }
 $('muteBtn').onclick=()=>toggleMute($('muteBtn'));
 renderMute();
 function renderHaptic(){ const b=$('hapticBtn'); b.setAttribute('aria-pressed',String(hapticsOn)); b.setAttribute('aria-label',hapticsOn?'Turn vibration off':'Turn vibration on');
   b.innerHTML='<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round"><rect x="7.5" y="4" width="9" height="16" rx="2.5"/>'+(hapticsOn?'<path d="M4 9v6M20 9v6M1.5 10.5v3M22.5 10.5v3"/>':'<path d="M3 3l18 18"/>')+'</svg>'; }
-$('hapticBtn').onclick=()=>{ hapticsOn=!hapticsOn; try{ localStorage.setItem('squirm-haptics',hapticsOn?'1':'0'); }catch(e){} renderHaptic(); sfx(hapticsOn?'on':'off'); };
+$('hapticBtn').onclick=()=>{ hapticsOn=!hapticsOn; store.set('squirm-haptics',hapticsOn?'1':'0'); renderHaptic(); sfx(hapticsOn?'on':'off'); };
 renderHaptic();
 
 // ---------- loop ----------
@@ -2073,7 +2069,7 @@ function watchSpeed(ms){ if(ms>250) return; sampleT+=ms; if(ms>40) slowT+=ms; if
   if(sampleT<4000) return; const slow=slowT/sampleT>.5, fast=fastT/sampleT>.9; sampleT=slowT=fastT=0;
   if(slow&&quality>0) setQuality(quality-1);
   else if(fast&&quality<2&&!raisedOnce){ raisedOnce=true; setQuality(quality+1); } }
-function setQuality(q){ quality=q; try{ localStorage.setItem('squirm-quality',String(quality)); }catch(e){}
+function setQuality(q){ quality=q; store.set('squirm-quality',String(quality));
   renderer.setPixelRatio(pixelRatio()); sun.shadow.mapSize.setScalar(quality===2?2048:1024); if(sun.shadow.map){ sun.shadow.map.dispose(); sun.shadow.map=null; } fitCamera(false); }
 function frame(now){
   const dt=Math.min(50,now-last); last=now; idleT+=dt/1000;
@@ -2158,7 +2154,7 @@ if('serviceWorker' in navigator && /^https?:$/.test(location.protocol)){
     if(!controlled){ controlled=true; return; } // first install taking over, same version as this page
     if(updateReady) return; updateReady=true;
     if(calmMoment()) location.reload(); else toast('New patches arrived. They load when you head home.',4000); });
-  navigator.serviceWorker.ready.then(()=>{ let told=false; try{ told=localStorage.getItem('squirm-offline-told')==='1'; localStorage.setItem('squirm-offline-told','1'); }catch(e){}
+  navigator.serviceWorker.ready.then(()=>{ const told=store.get('squirm-offline-told')==='1'; store.set('squirm-offline-told','1');
     if(!told&&!hadWorker) setTimeout(()=>toast('Squirm is saved on this device. It plays offline too.',3200),1500); });
   window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>{ reg=r; }).catch(()=>{}));
   document.addEventListener('visibilitychange',()=>{ if(!document.hidden) check(); });
@@ -2167,7 +2163,7 @@ if('serviceWorker' in navigator && /^https?:$/.test(location.protocol)){
 // No server, so no push. Where the browser supports it (Chrome on Android, installed), the service
 // worker is woken now and then by periodic background sync and shows a notification if today's
 // daily patch is still waiting. Elsewhere, if the app can badge its icon, it does that instead.
-let remind={on:false,hour:9}; try{ Object.assign(remind,JSON.parse(localStorage.getItem('squirm-remind')||'{}')); }catch(e){}
+let remind=Object.assign({on:false,hour:9},store.json('squirm-remind'));
 const remindKind=()=>{ if(!('Notification' in window)||!('serviceWorker' in navigator)||!/^https?:$/.test(location.protocol)) return 'none';
   if('PeriodicSyncManager' in window) return 'full'; return navigator.setAppBadge?'badge':'none'; };
 function updateAppBadge(){ if(!navigator.setAppBadge) return;
@@ -2176,7 +2172,7 @@ function updateAppBadge(){ if(!navigator.setAppBadge) return;
 async function shareRemindState(){ updateAppBadge(); if(!('caches' in window)) return;
   try{ const c=await caches.open('squirm-state'), old=await c.match('reminder'), prev=old?await old.json():{};
     await c.put('reminder',new Response(JSON.stringify({...prev,on:remind.on,hour:remind.hour,done:progress.daily.last,streak:progress.daily.streak}),{headers:{'content-type':'application/json'}})); }catch(e){} }
-function saveRemind(){ try{ localStorage.setItem('squirm-remind',JSON.stringify(remind)); }catch(e){} shareRemindState(); renderRemind(); }
+function saveRemind(){ store.set('squirm-remind',JSON.stringify(remind)); shareRemindState(); renderRemind(); }
 function renderRemind(){ const k=remindKind(), on=remind.on&&k!=='none';
   $('setRemind').setAttribute('aria-checked',String(on)); $('setRemind').disabled=k==='none';
   $('remindWhen').hidden=k!=='full'||!on;
