@@ -461,7 +461,9 @@ function numberTex(n){ return canvasTex(128,128,g=>{
   g.fillStyle='#FFF8EA'; g.beginPath(); g.arc(64,64,52,0,Math.PI*2); g.fill(); g.lineWidth=7; g.strokeStyle='#5B4436'; g.stroke();
   g.fillStyle='#5B4436'; g.font='800 70px Grandstander, Nunito, sans-serif'; g.textAlign='center'; g.textBaseline='middle'; g.fillText(String(n),64,70);
   }); }
-function faceCamera(o){ const yaw=(typeof camYaw==='number'?camYaw:0)*Math.PI/180; if(o.userData.faceCam){ o.rotation.y=yaw; if(o.userData.lean){ o.rotation.order='YXZ'; o.rotation.x=o.userData.lean; } } if(o.userData.signs) o.userData.signs.forEach(s=>{ s.rotation.y=yaw-o.rotation.y; s.position.set(-Math.sin(yaw)*.36+Math.cos(yaw)*.26,0,-Math.cos(yaw)*.36-Math.sin(yaw)*.26); }); }
+function faceCamera(o){ const yaw=(typeof camYaw==='number'?camYaw:0)*Math.PI/180;
+  if(o.userData.faceCam){ o.rotation.y=yaw; if(o.userData.lean){ o.rotation.order='YXZ'; o.rotation.x=o.userData.lean; } }
+  if(o.userData.signs) o.userData.signs.forEach(s=>{ s.rotation.y=yaw-o.rotation.y; s.position.set(-Math.sin(yaw)*.36+Math.cos(yaw)*.26,0,-Math.cos(yaw)*.36-Math.sin(yaw)*.26); }); }
 // the soil heaped around a tunnel: a low torus whose thickness wobbles, so it reads as dug-up earth
 function moundGeo(seed){ const R=.32, g=new THREE.TorusGeometry(R,.095,10,40), pa=g.attributes.position, v=new THREE.Vector3();
   for(let i=0;i<pa.count;i++){ v.fromBufferAttribute(pa,i); const u=Math.atan2(v.y,v.x), cx=Math.cos(u)*R, cy=Math.sin(u)*R;
@@ -1436,6 +1438,8 @@ function statTip(k){ const par=curPar(), len=state.segs.length, fruit=/[+-]/.tes
   return `The burrow fits a worm of ${state.exitLen}. You are ${len}.`+(fruit?(len<state.exitLen?' A peach makes you longer.':' A mushroom makes you shorter.'):''); }
 document.querySelector('.hud-stats').addEventListener('keydown',e=>{ if((e.key==='Enter'||e.key===' ')&&e.target.closest('.stat')){ e.preventDefault(); e.target.click(); } });
 document.querySelector('.hud-stats').addEventListener('click',e=>{ const st=e.target.closest('.stat'); if(!st||!state) return; toast(statTip(st.dataset.tip||'moves'),3400); });
+// one HUD tile: tip picks its statTip, v is the value row and k the caption under it; tappable unless tap is false
+const hudTile=(tip,cls,label,v,k,tap=true)=>`<span${tap?' role="button" tabindex="0"':''} class="stat${cls?' '+cls:''}" data-tip="${tip}" aria-label="${label}"><span class="v">${v}</span><span class="k">${k}</span></span>`;
 let shownStars=3;
 function updateHUD(silent){
   $('lvlNum').style.fontSize=String(mode==='garden'?li+1:0).length>2?'16px':''; $('lvlNum').textContent= mode==='garden' ? li+1 : L.daily ? new Date().getDate() : (progress.endless[endlessDiff].cleared+1); $('lvlName').textContent=L.name;
@@ -1446,14 +1450,15 @@ function updateHUD(silent){
   if(mv.innerHTML!==mvHtml){ mv.innerHTML=mvHtml; if(!silent){ if(now<shownStars) animOnce(mv,'lost'); else pulse(mv); } }
   shownStars=now;
   mv.setAttribute('aria-label',`${state.moves} ${state.moves===1?'move':'moves'}, par ${curPar()}, on track for ${now} ${now===1?'star':'stars'}`); mv.classList.toggle('over',state.moves>curPar());
-  const chips=[];
-  const flagsTotal=L.map.join('').split('C').length-1;
-  if(flagsTotal){ const left=countChar(state,'C'); chips.push(`<span role="button" tabindex="0" class="stat ${left===0?'done':''}" data-tip="flags" aria-label="Flags ${flagsTotal-left} of ${flagsTotal}"><span class="v">${sticker(ICON.flag)}<b>${flagsTotal-left}</b><small>/${flagsTotal}</small></span><span class="k">${left?'Flags':'All flags'}</span></span>`); }
-  if(L.map.join('').includes('K')) chips.push(`<span class="stat" data-tip="keys" aria-label="${state.keys} ${state.keys===1?'key':'keys'}"><span class="v">${sticker(ICON.key)}<b>${state.keys}</b></span><span class="k">${state.keys===1?'Key':'Keys'}</span></span>`);
-  if(L.map.join('').includes('H')){ const op=hedgesOpen(state); chips.push(`<span role="button" tabindex="0" class="stat ${op?'done':''}" data-tip="hedges" aria-label="Hedges ${op?'open':'closed'}"><span class="v">${sticker(ICON.hedge)}<small>${op?'Open':'Shut'}</small></span><span class="k">Hedges</span></span>`); }
-  if(L.map.join('').includes('R')) chips.push(`<span role="button" tabindex="0" class="stat wx" data-tip="weather" aria-label="${state.raining?'Raining':'Sunny'}"><span class="v">${sticker(state.raining?ICON.rain:ICON.sun)}</span><span class="k">${state.raining?'Rainy':'Sunny'}</span></span>`);
+  const chips=[], map=L.map.join(''), flagsTotal=map.split('C').length-1;
+  if(flagsTotal){ const left=countChar(state,'C');
+    chips.push(hudTile('flags',left===0&&'done',`Flags ${flagsTotal-left} of ${flagsTotal}`,`${sticker(ICON.flag)}<b>${flagsTotal-left}</b><small>/${flagsTotal}</small>`,left?'Flags':'All flags')); }
+  if(map.includes('K')) chips.push(hudTile('keys','',`${state.keys} ${state.keys===1?'key':'keys'}`,`${sticker(ICON.key)}<b>${state.keys}</b>`,state.keys===1?'Key':'Keys',false));
+  if(map.includes('H')){ const op=hedgesOpen(state); chips.push(hudTile('hedges',op&&'done',`Hedges ${op?'open':'closed'}`,`${sticker(ICON.hedge)}<small>${op?'Open':'Shut'}</small>`,'Hedges')); }
+  if(map.includes('R')) chips.push(hudTile('weather','wx',state.raining?'Raining':'Sunny',sticker(state.raining?ICON.rain:ICON.sun),state.raining?'Rainy':'Sunny'));
   const ok=state.segs.length===state.exitLen;
-  chips.push(`<span role="button" tabindex="0" class="stat ${ok?'done':''}" data-tip="length" aria-label="Length ${state.segs.length}, burrow fits ${state.exitLen}"><span class="v">${sticker(ICON.worm)}<b>${state.segs.length}</b><span class="to" aria-hidden="true">${ok?'=':'&rarr;'}</span><b>${state.exitLen}</b></span><span class="k">${ok?'Fits!':'Length'}</span></span>`);
+  chips.push(hudTile('length',ok&&'done',`Length ${state.segs.length}, burrow fits ${state.exitLen}`,
+    `${sticker(ICON.worm)}<b>${state.segs.length}</b><span class="to" aria-hidden="true">${ok?'=':'&rarr;'}</span><b>${state.exitLen}</b>`,ok?'Fits!':'Length'));
   const html=chips.join(''); if($('chips').innerHTML!==html){ const prev=[...$('chips').children], old=prev.map(c=>c.textContent), wasDone=prev.map(c=>c.classList.contains('done')); $('chips').innerHTML=html;
     if(!silent) [...$('chips').children].forEach((c,i)=>{ if(c.classList.contains('done')&&!wasDone[i]) animOnce(c,'cheer'); else if(old[i]!==c.textContent) pulse(c); }); }
   for(const [id,off] of [['undoBtn',!history.length],['restartBtn',state.moves===0]]){ const b=$(id); if(b.disabled&&!off&&!silent) animOnce(b,'pop'); b.disabled=off; }
@@ -1498,14 +1503,14 @@ function analyzeCapped(Ld,cap){
   return {par:sol.length, sol, states:states.length, good:good.size};
 }
 function genCandidate(r,diff,o){
-  const ri=n=>Math.floor(r()*n), pick=a=>a[ri(a.length)];
+  const ri=n=>Math.floor(r()*n), pick=a=>a[ri(a.length)], D4=[[1,0],[-1,0],[0,1],[0,-1]];
   const cfg={easy:{w:[5,6],h:[5,7],fill:.5,len:3,flags:1,dry:.14,cap:12000},medium:{w:[6,7],h:[6,8],fill:.56,len:3,flags:2,dry:.2,cap:25000},hard:{w:[7,8],h:[7,9],fill:.5,len:r()<.6?4:3,flags:2,dry:.3,cap:12000}}[diff];
   if(o.size){ cfg.w=o.size.w; cfg.h=o.size.h; } if(o.fill) cfg.fill=o.fill; if(o.dryRate!=null) cfg.dry=o.dryRate;
   const W=cfg.w[0]+ri(cfg.w[1]-cfg.w[0]+1), H=cfg.h[0]+ri(cfg.h[1]-cfg.h[0]+1);
   const g=Array.from({length:H},()=>Array(W).fill(' ')); const target=Math.floor(W*H*cfg.fill); let cnt=0;
   const walkers=[[W>>1,H>>1],[W>>1,H>>1],[ri(W),ri(H)]];
   for(let t=0;t<4000&&cnt<target;t++){ const w=walkers[t%walkers.length]; if(g[w[1]][w[0]]===' '){ g[w[1]][w[0]]='.'; cnt++; }
-    const d=pick([[1,0],[-1,0],[0,1],[0,-1]]); const nx=w[0]+d[0], ny=w[1]+d[1]; if(nx>=0&&ny>=0&&nx<W&&ny<H){ w[0]=nx; w[1]=ny; } }
+    const d=pick(D4); const nx=w[0]+d[0], ny=w[1]+d[1]; if(nx>=0&&ny>=0&&nx<W&&ny<H){ w[0]=nx; w[1]=ny; } }
   const at=(x,y)=>(x<0||y<0||x>=W||y>=H)?' ':g[y][x];
   if(o.rivers){ const vert=r()<.5; const N=vert?W:H, M=vert?H:W; const idx=1+ri(N-2);
     for(let k=0;k<M;k++){ if(vert) g[k][idx]='~'; else g[idx][k]='~'; }
@@ -1514,17 +1519,17 @@ function genCandidate(r,diff,o){
     for(let i=0;i<nb;i++){ const k=spots.splice(ri(spots.length),1)[0]; const ch=r()<.5?'=':'|'; if(vert) g[k][idx]=ch; else g[idx][k]=ch; } }
   const floor=()=>{ const f=[]; for(let y=0;y<H;y++) for(let x=0;x<W;x++) if(g[y][x]==='.') f.push([x,y]); return f; };
   // worm in a straight line
-  let worm=null; for(let t=0;t<120&&!worm;t++){ const f=floor(); if(!f.length) return null; const s=pick(f), d=pick([[1,0],[-1,0],[0,1],[0,-1]]);
+  let worm=null; for(let t=0;t<120&&!worm;t++){ const f=floor(); if(!f.length) return null; const s=pick(f), d=pick(D4);
     const segs=[]; for(let i=0;i<cfg.len;i++){ const x=s[0]+d[0]*i, y=s[1]+d[1]*i; if(at(x,y)!=='.') break; segs.push([x,y]); } if(segs.length===cfg.len) worm=segs; }
   if(!worm) return null; const used=new Set(worm.map(p=>p+''));
   // exit far from the head
   const dist={}; const q=[worm[0]]; dist[worm[0]+'']=0;
-  while(q.length){ const c=q.shift(); for(const d of [[1,0],[-1,0],[0,1],[0,-1]]){ const n=[c[0]+d[0],c[1]+d[1]], ch=at(n[0],n[1]); if(ch===' '||ch==='~'||dist[n+'']!==undefined) continue; dist[n+'']=dist[c+'']+1; q.push(n); } }
+  while(q.length){ const c=q.shift(); for(const d of D4){ const n=[c[0]+d[0],c[1]+d[1]], ch=at(n[0],n[1]); if(ch===' '||ch==='~'||dist[n+'']!==undefined) continue; dist[n+'']=dist[c+'']+1; q.push(n); } }
   const reach=floor().filter(p=>dist[p+'']!==undefined&&!used.has(p+'')).sort((a,b)=>dist[b+'']-dist[a+'']);
   if(reach.length<6) return null; const ex=reach[ri(Math.max(1,Math.floor(reach.length*.2)))]; g[ex[1]][ex[0]]='E'; used.add(ex+'');
   const free=(filter)=>{ const f=floor().filter(p=>!used.has(p+'')&&(!filter||filter(p))); if(!f.length) return null; const p=pick(f); used.add(p+''); return p; };
   const put=(c,filter)=>{ const p=free(filter); if(p) g[p[1]][p[0]]=c; return p; };
-  const corridor=p=>{ let n=0; for(const d of [[1,0],[-1,0],[0,1],[0,-1]]){ const ch=at(p[0]+d[0],p[1]+d[1]); if(ch!==' '&&ch!=='~') n++; } return n===2; };
+  const corridor=p=>{ let n=0; for(const d of D4){ const ch=at(p[0]+d[0],p[1]+d[1]); if(ch!==' '&&ch!=='~') n++; } return n===2; };
   const notNearHead=p=>Math.abs(p[0]-worm[0][0])+Math.abs(p[1]-worm[0][1])>1;
   let exitLen=cfg.len;
   if(o.flags) for(let i=0;i<(diff==='easy'?1:cfg.flags);i++) put('C',notNearHead);
@@ -1535,7 +1540,7 @@ function genCandidate(r,diff,o){
   if(o.buttons){ for(let k=0;k<(diff==='hard'?2:1);k++){ const h=put('H',p=>corridor(p)&&notNearHead(p)); if(!h){ if(k) break; return null; }
       if(!k&&!put('B',p=>{ const d=Math.abs(p[0]-h[0])+Math.abs(p[1]-h[1]); return d>=2&&d<=cfg.len+1&&notNearHead(p); })) return null; } }
   if(o.leaves){ let made=0;
-    for(let t=0;t<30&&made<(diff==='easy'?1:2);t++){ const f=floor().filter(p=>!used.has(p+'')); if(!f.length) break; const p=pick(f), d=pick([[1,0],[-1,0],[0,1],[0,-1]]); const run=[];
+    for(let t=0;t<30&&made<(diff==='easy'?1:2);t++){ const f=floor().filter(p=>!used.has(p+'')); if(!f.length) break; const p=pick(f), d=pick(D4); const run=[];
       for(let k=0;k<5;k++){ const q=[p[0]+d[0]*k,p[1]+d[1]*k]; if(at(q[0],q[1])!=='.'||used.has(q+'')) break; run.push(q); }
       if(run.length<2) continue; run.slice(0,2+ri(Math.min(3,run.length-1))).forEach(q=>{ g[q[1]][q[0]]='i'; used.add(q+''); }); made++; }
     if(!made) return null; }
@@ -1550,14 +1555,20 @@ function genCandidate(r,diff,o){
   // beetles sit on grass where at least one push is possible: something to stand on behind them, grass ahead
   if(o.beetles){ const n=diff==='hard'?2:diff==='medium'?1+ri(2):1; let placed=0;
     for(let t=0;t<60&&placed<n;t++){ const f=floor().filter(p=>!used.has(p+'')&&Math.abs(p[0]-worm[0][0])+Math.abs(p[1]-worm[0][1])>1); if(!f.length) break; const p=pick(f);
-      const pushable=[[1,0],[-1,0],[0,1],[0,-1]].some(([dx,dy])=>{ const bk=at(p[0]-dx,p[1]-dy); return bk!==' '&&bk!=='~'&&at(p[0]+dx,p[1]+dy)==='.'; });
+      const pushable=D4.some(([dx,dy])=>{ const bk=at(p[0]-dx,p[1]-dy); return bk!==' '&&bk!=='~'&&at(p[0]+dx,p[1]+dy)==='.'; });
       if(!pushable) continue; g[p[1]][p[0]]='O'; used.add(p+''); placed++; }
     if(!placed) return null; }
   return {name:pick(ADJ)+' '+pick(NOUN), exitLen, worm, map:g.map(row=>row.join('')), rain:false};
 }
+// which optional mechanics a solution actually needs, so the generator can prefer patches that use what was asked for
 function usage(Ld,sol){ let s=initState(Ld); const u=new Set();
-  for(const d of sol){ const r=step(s,d); const ev=r.ev||{}; if(ev.slide) u.add('leaves'); if(ev.pushed||(ev.slide&&ev.slide.some(x=>x.ev.pushed))) u.add('beetles'); const hd=r.state&&r.state.segs[0]; if(hd&&tileAt(s,hd[0],hd[1])==='H') u.add('buttons'); if(ev.portal) u.add('portals'); if(ev.rain!==undefined) u.add('rain'); if(ev.swung&&ev.swung.length) u.add('rivers');
-    if(ev.eaten==='+'||ev.eaten==='-') u.add('fruit'); const h0=r.state&&r.state.segs[0]; if(h0&&r.state.snails&&r.state.snails.some(n=>Math.abs(n.x-h0[0])+Math.abs(n.y-h0[1])<=1)) u.add('snails'); if(ev.eaten==='G') u.add('keys'); if(ev.crumbled&&ev.crumbled.length) u.add('dry'); s=r.state; } return u; }
+  for(const d of sol){ const r=step(s,d), ev=r.ev||{}, h=r.state&&r.state.segs[0];
+    if(ev.slide) u.add('leaves'); if(ev.pushed||(ev.slide&&ev.slide.some(x=>x.ev.pushed))) u.add('beetles');
+    if(h&&tileAt(s,h[0],h[1])==='H') u.add('buttons'); if(ev.portal) u.add('portals'); if(ev.rain!==undefined) u.add('rain');
+    if(ev.swung&&ev.swung.length) u.add('rivers'); if(ev.eaten==='+'||ev.eaten==='-') u.add('fruit'); if(ev.eaten==='G') u.add('keys');
+    if(h&&r.state.snails&&r.state.snails.some(n=>Math.abs(n.x-h[0])+Math.abs(n.y-h[1])<=1)) u.add('snails');
+    if(ev.crumbled&&ev.crumbled.length) u.add('dry'); s=r.state; }
+  return u; }
 async function generateEndless(diff,o,seed,fixedTries){
   const r=rng(seed); const budget={easy:1400,medium:2600,hard:4800}[diff]; const t0=performance.now(); let best=null, bestScore=-1e9, n=0;
   const enabled=['fruit','keys','portals','dry','rain','rivers','snails','buttons','leaves','beetles'].filter(k=>o[k]); const needUse=Math.min(enabled.length,diff==='easy'?1:2);
