@@ -1,3 +1,7 @@
+// Breadth-first solver for one level: shortest solution (par), reachable state count, and how many
+// of those states can still win. Used by verify-levels.js, curate.js and the generator tests.
+// usage: node tools/analyze.js [levels.js]   prints par, states, winnable % and a solution per level
+//        (default: src/levels.js; any module exporting a LEVELS-style array works)
 const {initState, step} = require('../src/logic');
 const key = s => s.segs.map(p=>p.join(',')).join(';')+'|'+s.grid.map(r=>r.join('')).join('/')+'|'+s.keys+'|'+(s.raining?1:0)+'|'+(s.snails||[]).map(n=>n.x+','+n.y+','+n.dx+','+n.dy).join(';')+'|'+(s.beetles||[]).map(b=>b.x+','+b.y).sort().join(';');
 function analyze(L){
@@ -15,4 +19,4 @@ function analyze(L){
   return {states:states.length, good:good.size, par:best&&best.len, sol:best&&best.p};
 }
 module.exports=analyze;
-if(require.main===module){ const LV=require(process.argv[2]||'../src/levels'); LV.forEach((L,i)=>{const a=analyze(L); console.log(i+1,L.name,'par',a.par,'states',a.states,'winnable',(100*a.good/a.states).toFixed(0)+'%',a.sol);}); }
+if(require.main===module){ const LV=require(process.argv[2]?require('path').resolve(process.argv[2]):'../src/levels'); LV.forEach((L,i)=>{const a=analyze(L); console.log(i+1,L.name,'par',a.par,'states',a.states,'winnable',(100*a.good/a.states).toFixed(0)+'%',a.sol);}); }
