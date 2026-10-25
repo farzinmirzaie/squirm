@@ -49,6 +49,7 @@
   --sticker:#FFF8EA; --sticker-edge:#E7CFA8;
   /* accents and fixed colours: use these instead of writing colours inline */
   --berry-dark:#C95C73; --on-accent:#fff; --soil:#9A6A4C; --deep:#5B4436; --petal:#F7B3C5; --lilac:#B79CF2;
+  /* tints back stickers, so in dark mode they dim but stay light enough for the brown outlines */
   --tint-berry:#FFE3EC; --tint-honey:#FFF1C4; --tint-leaf:#DDF1C9;
   --scrim:rgba(70,50,35,.35); --shine:rgba(255,255,255,.35);
   /* the soft top-light on raised pieces: --glaze on paper, --glaze-accent on leaf, honey and berry */
@@ -65,11 +66,13 @@
   :root:not([data-theme="light"]){
     --scene-mix:24%;
     --ink:#FBEFDD; --ink-soft:#D9C2A8; --paper:#4A372D; --paper-2:#5A4436; --edge:#6D5444; --shadow:rgba(0,0,0,.35); --done:#4F6B3F; --title:#FFB4C6; --gloss:rgba(255,255,255,.1); --sticker-edge:#C9AE8A; --deep:#2A1E17;
+    --tint-berry:#E6C3CD; --tint-honey:#E8D6A4; --tint-leaf:#C3D8AE;
   }
 }
 :root[data-theme="dark"]{
   --scene-mix:24%;
   --ink:#FBEFDD; --ink-soft:#D9C2A8; --paper:#4A372D; --paper-2:#5A4436; --edge:#6D5444; --shadow:rgba(0,0,0,.35); --done:#4F6B3F; --title:#FFB4C6; --gloss:rgba(255,255,255,.1); --sticker-edge:#C9AE8A; --deep:#2A1E17;
+    --tint-berry:#E6C3CD; --tint-honey:#E8D6A4; --tint-leaf:#C3D8AE;
 }
 /* players who ask for more contrast get darker secondary text and stronger edges */
 @media (prefers-contrast: more){

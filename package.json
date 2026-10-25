@@ -10,7 +10,7 @@
   },
   "homepage": "https://farzinmirzaie.github.io/squirm/",
   "engines": {
-    "node": ">=20"
+    "node": ">=22"
   },
   "scripts": {
     "build": "node tools/build.js",

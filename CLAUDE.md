@@ -48,7 +48,7 @@ npm run analyze      # par, state count, winnable % and a solution for every lev
 npm run curate -- …  # generate candidate levels (see the add-levels skill)
 ```
 
-Node 20+ (CI uses `.nvmrc`, 22). Every tool starts with a usage comment; read it before running one.
+Node 22+ (CI uses `.nvmrc`). Every tool starts with a usage comment; read it before running one.
 The smoke test needs Playwright's Chromium (`npx playwright install chromium`); with a global
 Playwright instead, prefix `NODE_PATH=$(npm root -g)`.
 

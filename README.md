@@ -65,7 +65,7 @@ New things arrive chapter by chapter:
 
 ## Develop
 
-Requires Node 20 or newer (CI uses the version in [`.nvmrc`](.nvmrc)).
+Requires Node 22 or newer (CI uses the version in [`.nvmrc`](.nvmrc)).
 
 ```
 npm install          # three.js and the two fonts, which are self-hosted in the build
