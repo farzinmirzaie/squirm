@@ -110,9 +110,9 @@ Touch these, in order:
 
 1. Rules in `src/logic.js`: `advance` / `step` (and `cloneState` if it adds state). `step` must never
    mutate the state it's given (there's a test). Add tests to `test/logic.test.js`.
-2. Solver keys: `stateKey` in `logic.js` (used by `solveFrom` and `analyzeCapped` in `game.js`) **and**
-   the separate `key` in `tools/analyze.js`, which still builds its own string. Anything that tells two
-   states apart goes in both; derived state (like hedges) goes in neither.
+2. Solver key: `stateKey` in `logic.js`, the one key used by `solveFrom` and `analyzeCapped` in
+   `game.js` and by `tools/analyze.js`. Anything that tells two states apart goes in it; derived state
+   (like hedges) doesn't.
 3. Rendering in `game.js`: `makeTile` / `makeItem` or a sync/update function, `disposeTree` keep lists
    for any new shared geometry, material or texture, and a HUD chip via `hudTile` if it needs one.
 4. Intro dialog: `MECH` entry (title, text, char regex, `ART` picture; add the sticker to `ART`).
@@ -382,8 +382,8 @@ Sections are listed in the table of contents at the top of the file; each starts
   from `logic.js` and `levels.js`, replaces the `/*__...__*/` slots and `__BUILD__` in `shell.html`, and
   syntax-checks only the first bare `<script>` (the game). Give any other inline script an attribute
   (`id="theme"`, `id="boot"`), and keep the exports on one line.
-- **Two solver keys:** `stateKey` (game) and the `key` in `tools/analyze.js` (verify, curate, tests) are
-  separate; a new piece of state missing from either makes par or hints wrong.
+- **One solver key:** `stateKey` in `logic.js` feeds the hint solver, the generator and
+  `tools/analyze.js` (verify, curate, tests); a new piece of state missing from it makes par and hints wrong.
 - **Service worker in dev:** a served build installs `sw.js`, which can serve a stale copy after you
   rebuild. `tools/serve.js` sends `no-cache` and the worker updates itself, but a hard reload or a fresh
   browser context is the quick fix.
