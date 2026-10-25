@@ -187,7 +187,7 @@ button:focus-visible{outline:3px solid var(--honey);outline-offset:2px}
 /* win */
 .note{font-size:14px;margin-top:-4px}
 .newbest{display:inline-block;margin:-6px 0 10px;padding:4px 10px;border-radius:999px;background:var(--honey);color:var(--deep);font-weight:800;font-size:13px}
-.share{width:100%;margin:-4px 0 12px}
+.share-row{margin:-4px 0 12px}.share-row .btn{flex:1}
 .gen{max-width:300px}
 .petals{position:fixed;inset:0;pointer-events:none;z-index:6;overflow:hidden}
 .petals i{position:absolute;top:-20px;width:12px;height:9px;border-radius:60% 40% 60% 40%;animation:fall 2.6s ease-in forwards}
@@ -230,6 +230,15 @@ h1{margin:0;font:800 21px/1.2 var(--fd);white-space:nowrap;overflow:hidden;text-
 #toast.show{opacity:1;transform:none;pointer-events:auto;cursor:pointer}
 #toast .ic{width:32px;height:32px}#toast .ic svg{width:23px;height:23px}
 #toast .msg{min-width:0}
+/* photo mode: the HUD steps aside, a bar with back, snap and pose takes its place */
+#app{transition:opacity var(--dur) var(--ease-out)}
+body.photo #app{opacity:0;pointer-events:none}
+.photo-bar{position:fixed;left:0;right:0;bottom:max(18px,calc(10px + env(safe-area-inset-bottom,0px)));z-index:6;display:flex;justify-content:center;align-items:center;gap:22px}
+.photo-bar[hidden]{display:none}
+.snap{width:78px;height:78px;border-radius:50%;padding:0;cursor:pointer;display:grid;place-items:center;background:var(--honey) var(--glaze-accent);border:4px solid var(--honey-dark);box-shadow:0 5px 0 var(--honey-dark),0 10px 24px var(--shadow)}
+.snap:active{transform:translateY(5px);box-shadow:0 0 0 var(--honey-dark)}
+#flash{position:fixed;inset:0;z-index:8;background:var(--on-accent);opacity:0;pointer-events:none}
+#flash.go{animation:flash var(--dur-slow) var(--ease-out)}
 /* controls: chunky round game buttons */
 .bottom{display:flex;flex-direction:column}
 nav{display:flex;justify-content:center;align-items:flex-end;gap:16px}
@@ -300,6 +309,17 @@ nav{display:flex;justify-content:center;align-items:flex-end;gap:16px}
 .daily-ico .cal{width:34px;height:36px;border-radius:10px;background:var(--on-accent);border:2px solid var(--deep);border-top:8px solid var(--berry);display:grid;place-items:center;font:800 16px/1 var(--fd);color:var(--deep)}
 #dailyBtn.done .daily-ico{background:var(--done)}
 .week{display:flex;gap:6px;margin-top:3px}
+/* what's new: shown once after an update, dismissable; the About page keeps the log */
+.news{display:flex;align-items:flex-start;gap:14px;padding:14px 12px 14px 16px;text-align:left}
+.news[hidden]{display:none}
+.news-ico{background:var(--tint-honey)}
+.news .bt{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px}
+.news b{font:800 18px/1.1 var(--fd)}
+.news ul,.news-log ul{margin:0;padding:0 0 0 18px;display:flex;flex-direction:column;gap:4px;font:700 14px/1.3 var(--fb);color:var(--ink-soft)}
+.news li::marker,.news-log li::marker{color:var(--honey-dark)}
+.news .icon-btn{flex:none;width:34px;height:34px;border-width:2px}
+.news-log{display:flex;flex-direction:column;gap:12px}
+.news-log b{display:block;margin-bottom:4px;font:800 14px/1.2 var(--fd);color:var(--ink)}
 .week i{width:10px;height:10px;border-radius:50%;background:var(--paper-2);border:2px solid var(--edge)}
 .week i.on{background:var(--berry);border-color:var(--berry-dark)}
 .week i.today{outline:2px solid var(--honey);outline-offset:1px}
@@ -469,9 +489,9 @@ nav{display:flex;justify-content:center;align-items:flex-end;gap:16px}
 
 /* ==== 9. UI feedback: one press style per family, one selection pop, one error shake, one dialog motion ==== */
 /* press: controls that stand on a ledge sink onto it, flat ones squish. Pressing is quick, letting go springs back. */
-.btn,.round,.disc,.play,.big,.set-link,.pick .go,.hat,.b-tile,.diff,.node,.mech,.seg button,.swatches button,.stat,.icon-btn,.link,.tab svg{
+.btn,.round,.disc,.play,.big,.set-link,.pick .go,.snap,.hat,.b-tile,.diff,.node,.mech,.seg button,.swatches button,.stat,.icon-btn,.link,.tab svg{
   transition:transform var(--dur) var(--ease-pop),scale var(--dur) var(--ease-pop),box-shadow var(--dur) var(--ease-pop),background-color var(--dur-fast),border-color var(--dur-fast)}
-.btn:active,.round:active,.gbtn:active .disc,.play:active,.big:active,.set-link:active,.pick .go:active,.hat:active,.b-tile:active,.diff:active,.node:active,
+.btn:active,.round:active,.snap:active,.gbtn:active .disc,.play:active,.big:active,.set-link:active,.pick .go:active,.hat:active,.b-tile:active,.diff:active,.node:active,
 .mech:active,.seg button:active,.swatches button:active,.stat:active,.icon-btn:active,.link:active,.switch:active,.tab:active svg{transition-duration:var(--dur-fast);transition-timing-function:var(--ease-out)}
 .hat:active,.b-tile:active{transform:translateY(3px);box-shadow:0 0 0 var(--edge)}
 .b-tile.on:active{box-shadow:0 0 0 var(--honey-dark)}
@@ -503,6 +523,7 @@ nav .enter,.rise{animation:navIn var(--dur-slow) var(--ease-pop) var(--d,0ms) bo
 #winNext{animation:beckon 1.8s ease-in-out 1.4s infinite}
 /* keyframes; animations that must stack on an element's own transform use the individual scale / translate properties */
 @keyframes pop{from{transform:scale(.85) rotate(-2deg);opacity:0}to{transform:none;opacity:1}}
+@keyframes flash{0%{opacity:.85}100%{opacity:0}}
 @keyframes popin{0%{scale:.86}60%{scale:1.07}100%{scale:1}}
 @keyframes nope{20%,60%{translate:-6px 0}40%,80%{translate:6px 0}}
 @keyframes hudIn{from{opacity:0;translate:0 -16px;scale:.92}}
@@ -543,11 +564,11 @@ nav .enter,.rise{animation:navIn var(--dur-slow) var(--ease-pop) var(--d,0ms) bo
 
 /* ==== 11. Reduced motion: every animation and transition above stops ==== */
 @media (prefers-reduced-motion: reduce){
-  .dialog,.ov.show:not(.home),.ov.show.out,.ov.out .dialog,.pop,.enter,.rise,.nope,.spin,.pick.swap,.set-page.fwd,.set-page.back,#winNext,
+  .dialog,.ov.show:not(.home),.ov.show.out,.ov.out .dialog,.pop,.enter,.rise,.nope,#flash.go,.spin,.pick.swap,.set-page.fwd,.set-page.back,#winNext,
   .tab.on.pop svg,.stat.cheer,.stat.cheer .ic,.stat.lost .mini,.gbtn.pop .disc,.gbtn.hint .disc svg,#hintBtn.busy svg,
   #tutorial .hand,.brand span,.node.cur::after{animation:none}
   .star{animation:none;transform:none}
-  .btn,.round,.disc,.play,.big,.set-link,.pick .go,.hat,.b-tile,.b-progress i,.b-medal>.art,.diff,.node,.mech,.seg button,.swatches button,.stat,.icon-btn,.link,.tab svg,.switch,.switch i,.mech .mi,#toast{transition:none}
+  .btn,.round,.disc,.play,.big,.set-link,.pick .go,.snap,.hat,.b-tile,.b-progress i,.b-medal>.art,.diff,.node,.mech,.seg button,.swatches button,.stat,.icon-btn,.link,.tab svg,.switch,.switch i,.mech .mi,#toast,#app{transition:none}
   .diff.on:not(:active){transform:none}
   .petals{display:none}
 }
@@ -584,12 +605,18 @@ nav .enter,.rise{animation:navIn var(--dur-slow) var(--ease-pop) var(--d,0ms) bo
 
 <div id="toast" class="card" role="status"></div>
 
+<div id="photoBar" class="photo-bar" hidden>
+  <button class="round" id="photoBack" aria-label="Back to your result"><svg class="ui-ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></svg></button>
+  <button class="snap" id="photoSnap" data-sfx="none" aria-label="Take a photo"><span data-art="camera" data-size="34"></span></button>
+  <button class="round" id="photoPose" aria-label="Strike a pose"><span data-art="sparkles" data-size="24"></span></button>
+</div>
+<div id="flash" aria-hidden="true"></div>
 <div class="ov" id="winOv"><div role="dialog" aria-modal="true" aria-labelledby="winTitle" class="dialog card">
   <svg width="64" height="64" viewBox="0 0 52 52" aria-hidden="true"><g style="fill:var(--petal);stroke:var(--outline)" stroke-width="2">
     <circle cx="26" cy="11" r="10"/><circle cx="40.3" cy="21.4" r="10"/><circle cx="34.8" cy="38.2" r="10"/><circle cx="17.2" cy="38.2" r="10"/><circle cx="11.7" cy="21.4" r="10"/></g>
     <circle cx="26" cy="26" r="13" style="fill:var(--honey);stroke:var(--outline)" stroke-width="2"/><circle cx="21.5" cy="24" r="2" style="fill:var(--outline)"/><circle cx="30.5" cy="24" r="2" style="fill:var(--outline)"/><path d="M21 29q5 4 10 0" style="stroke:var(--outline)" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
   <h2 id="winTitle">Snug as a bug!</h2><p id="winText"></p><div id="winMedal"></div>
-  <button class="btn share" id="winShare" hidden>Share result</button>
+  <div class="row share-row"><button class="btn" id="winPhoto"><span data-art="camera" data-size="22"></span> Photo</button><button class="btn" id="winShare" hidden>Share result</button></div>
   <div class="row"><button class="btn" id="winReplay">Replay</button><button class="btn primary" id="winNext">Next patch</button></div>
 </div></div>
 
@@ -623,6 +650,11 @@ nav .enter,.rise{animation:navIn var(--dur-slow) var(--ease-pop) var(--d,0ms) bo
     <span class="mode-ico daily-ico" aria-hidden="true"><span class="cal" id="dailyDay">11</span></span>
     <span class="bt"><b>Daily patch</b><small id="dailySub">One patch for everyone today</small><span class="week" id="dailyWeek" aria-hidden="true"></span></span><span class="go" aria-hidden="true"><svg class="ui-ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 5.5L16 12l-6.5 6.5"/></svg></span>
   </button>
+        <div class="card news" id="newsCard" hidden>
+          <span class="mode-ico news-ico" aria-hidden="true" data-art="sparkles" data-size="30"></span>
+          <div class="bt"><b id="newsTitle">New in the garden</b><ul id="newsList"></ul></div>
+          <button class="icon-btn" id="newsClose" aria-label="Got it, hide what's new"><svg class="ui-ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></svg></button>
+        </div>
       </div>
     </section>
     <section class="tab-page fade-scroll" id="tabGarden" aria-labelledby="lvTitle" hidden>
@@ -712,6 +744,8 @@ nav .enter,.rise{animation:navIn var(--dur-slow) var(--ease-pop) var(--d,0ms) bo
   <div class="set-page" data-p="about" data-title="About" hidden>
     <p class="set-note">Squirm is a cozy garden puzzle about a worm who just wants to get home. It plays offline and keeps your progress on this device.</p>
     <p class="set-note">Made with three.js. Fonts: Grandstander and Nunito.</p>
+    <p class="label">What's new</p>
+    <div class="news-log" id="newsLog"></div>
     <p class="version">__BUILD__</p>
   </div>
 </div></div>

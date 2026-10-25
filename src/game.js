@@ -109,6 +109,7 @@ const SFX={
   stuck:()=>{ tone(392,.18,{type:'triangle',vol:.1}); tone(330,.3,{type:'triangle',vol:.1,delay:.16}); },
   badge:()=>{ [659,784,988,1318].forEach((f,i)=>tone(f,.22,{type:'triangle',vol:.09,delay:i*.08})); tone(1568,.5,{vol:.06,delay:.34}); },
   undo:()=>{ tone(520,.09,{type:'triangle',vol:.1,slide:.7}); },
+  shutter:()=>{ noise(.05,{freq:3200,vol:.14,q:.7}); tone(1900,.035,{type:'square',vol:.025,delay:.01}); noise(.07,{freq:1300,vol:.11,q:1,delay:.08}); },
   tap:()=>{ tone(880,.05,{type:'triangle',vol:.07,slide:1.2}); },
   // toggles: a little rise for on, a little fall for off
   on:()=>{ tone(700,.06,{type:'triangle',vol:.07,slide:1.3}); tone(1050,.09,{vol:.05,delay:.05}); },
@@ -1119,6 +1120,9 @@ function updateHead(dt){
     h.userData.face.eyes.forEach(e=>e.scale.set(1,.22,1)); zT-=dt/1000; if(zT<0&&!reduceMotion){ zT=1.3; snore(h); } return; }
   if(lookPhase==='sleep'){ lookPhase='off'; applyExpr(h,'smile'); }
   if(reactT>0){ reactT-=dt/1000; if(reactT<=0 && lookPhase!=='look') applyExpr(h,'smile'); }
+  if(photoOn){ const k=1-Math.exp(-dt/1000*5); endAct(h);
+    h.rotation.y=angLerp(h.rotation.y,Math.atan2(camera.position.x-h.position.x,camera.position.z-h.position.z),k);
+    h.userData.body.rotation.x+=(-.4-h.userData.body.rotation.x)*k; blinkEyes(h,dt); return; }
   const idleNow=!animating && state.status==='play' && idleT-lastMoveT>LOOK_DELAY && reactT<=0;
   if(!idleNow){ if(lookPhase==='look'||act) applyExpr(h,'smile'); endAct(h); lookPhase='off'; phaseT=0; if(idleT-lastMoveT<1) yawned=false; }
   else { phaseT+=dt/1000;
@@ -1145,9 +1149,10 @@ function updateHead(dt){
     if(act.k==='yawn'){ tilt=-.42*bell; h.userData.face.mouths.o.scale.set(1+.4*bell,1+1.1*bell,1); }
     if(p>=1){ endAct(h); applyExpr(h,'smile'); } }
   h.userData.body.rotation.x+=(tilt-h.userData.body.rotation.x)*(act?1-Math.exp(-dt/1000*6):k);
-  blinkT-=dt/1000; let bl=1; if(blinkT<0){ bl=Math.max(.08,Math.abs(blinkT+.07)/.07); if(blinkT<-.14){ blinkT = Math.random()<.25 ? .18 : 1.8+Math.random()*2.5; } }
-  h.userData.face.eyes.forEach(e=>{ const s=e.userData.baseS||1; e.scale.set(s,s*(e.userData.baseY||1)*bl,s); });
+  blinkEyes(h,dt);
 }
+function blinkEyes(h,dt){ blinkT-=dt/1000; let bl=1; if(blinkT<0){ bl=Math.max(.08,Math.abs(blinkT+.07)/.07); if(blinkT<-.14){ blinkT = Math.random()<.25 ? .18 : 1.8+Math.random()*2.5; } }
+  h.userData.face.eyes.forEach(e=>{ const s=e.userData.baseS||1; e.scale.set(s,s*(e.userData.baseY||1)*bl,s); }); }
 function newExpression(h){ let e; do{ e=EXPRS[Math.floor(Math.random()*EXPRS.length)]; }while(e===lastExpr); lastExpr=e; applyExpr(h,e);
   const b=h.userData.body; tween(320,(x,k)=>{ const s=1+Math.sin(k*Math.PI)*.08; b.scale.set(s,1/s,s); },()=>b.scale.set(1,1,1)); }
 
@@ -1161,7 +1166,7 @@ const ease=k=>k<.5?2*k*k:1-Math.pow(-2*k+2,2)/2;
 // ---------- moves ----------
 function canMove(){ return ['N','S','W','E'].some(d=>!step(state,d).blocked); }
 function tryMove(dir){
-  if(!dir||anyOverlay()) return;
+  if(!dir||anyOverlay()||photoOn) return;
   if(animating){ if(queue.length<6) queue.push(dir); return; }
   const r=step(state,dir);
   if(r.blocked){ if(r.blocked==='over') return; queue.length=0; sfx('bump'); lastMoveT=idleT; react('oops',650);
@@ -1303,8 +1308,45 @@ function onWin(){ shareText=''; newBest=false; chapterDone=null; const coloursBe
   $('winMedal').innerHTML = `<div class="stars">${[0,1,2].map(i=>STAR(i<st,i)).join('')}</div>` + (hintsUsed?`<p class="note">You used ${hintsUsed} ${hintsUsed===1?'hint':'hints'}. Solve it on your own for 3 stars.</p>`:'') + extra;
   for(let i=0;i<st;i++) setTimeout(()=>buzz(12),200+i*180);
   if(!reduceMotion) for(let i=0;i<st;i++) tone([784,988,1318][i],.25,{vol:.1,delay:.2+i*.18});
+  photoInfo={title:mode==='garden'?`${li+1}. ${LEVELS[li].name}`:L.daily?"Today's patch":'A meadow patch',st};
   $('winShare').hidden=!shareText; petals(); show('winOv'); pushLayer('win');
 }
+// ---------- photo mode ----------
+// from the win dialog: the HUD steps aside, the worm pops its head out of the burrow and looks at you, and
+// Snap saves (or shares) the garden with a little caption. Back returns to the win dialog.
+let photoOn=false, photoInfo=null;
+const photoFrame=()=>({top:Math.max(24,window.innerHeight*.06),bot:window.innerHeight-130});
+function enterPhoto(){ if(photoOn) return; photoOn=true; hide('winOv'); pushLayer('photo'); document.body.classList.add('photo'); $('photoBar').hidden=false; glideCamera(photoFrame());
+  stagger(qa($('photoBar'),'button'),'rise',120,60);
+  const ex=state.segs[0], at=wp(ex[0],ex[1],0), h=segMeshes[0]; wormG.visible=true;
+  segMeshes.forEach((sg,i)=>{ sg.position.copy(at).setY(-.3-i*.05); sg.scale.setScalar(i<3?1:.02); });
+  if(h){ h.scale.setScalar(1); applyExpr(h,'joy'); reactT=1e6; tween(650,(e,k)=>{ const b=1-Math.pow(1-k,3); h.position.y=-.3+(.5+Math.sin(k*Math.PI)*.08)*b; }); } }
+function exitPhoto(){ if(!photoOn) return; photoOn=false; document.body.classList.remove('photo'); $('photoBar').hidden=true; reactT=0; glideCamera(); show('winOv'); }
+function posePhoto(){ const h=segMeshes[0]; if(!h) return; newExpression(h); reactT=1e6; }
+async function snapPhoto(){ renderer.render(scene,camera); const src=renderer.domElement, W=src.width, H=src.height;
+  const c=document.createElement('canvas'); c.width=W; c.height=H; const g=c.getContext('2d'); g.drawImage(src,0,0);
+  // caption: a cream plaque with the patch and its stars, and the game's name
+  const css=getComputedStyle(document.documentElement), tok=k=>css.getPropertyValue(k).trim()||'#000', u=Math.min(W,H)/390;
+  const title=photoInfo?photoInfo.title:'Squirm', st=photoInfo?photoInfo.st:0; if(!g.roundRect) g.roundRect=g.rect;
+  g.font=`800 ${Math.round(17*u)}px Grandstander, sans-serif`; const tw=g.measureText(title).width;
+  const pw=Math.max(tw,64*u)+32*u, ph=64*u, px=16*u, py=H-ph-18*u, r=18*u;
+  g.fillStyle='rgba(91,68,54,.22)'; g.beginPath(); g.roundRect(px,py+4*u,pw,ph,r); g.fill();
+  g.fillStyle='#FFF8EA'; g.strokeStyle='#E7CFA8'; g.lineWidth=3*u; g.beginPath(); g.roundRect(px,py,pw,ph,r); g.fill(); g.stroke();
+  g.fillStyle='#5B4436'; g.textBaseline='alphabetic'; g.fillText(title,px+16*u,py+27*u);
+  const star=new Path2D('M12 2.8l2.8 5.8 6.3.9-4.6 4.4 1.1 6.3L12 17.2l-5.6 3 1.1-6.3L2.9 9.5l6.3-.9z');
+  for(let i=0;i<3;i++){ g.save(); g.translate(px+14*u+i*21*u,py+33*u); g.scale(.85*u,.85*u); g.fillStyle=i<st?'#F5C14E':'#E7CFA8'; g.fill(star); g.lineWidth=1.6; g.strokeStyle='#5B4436'; g.stroke(star); g.restore(); }
+  g.font=`800 ${Math.round(13*u)}px Grandstander, sans-serif`; g.textAlign='right'; g.fillStyle='rgba(255,248,234,.92)'; g.strokeStyle='rgba(91,68,54,.55)'; g.lineWidth=4*u;
+  g.strokeText('Squirm',W-16*u,H-20*u); g.fillText('Squirm',W-16*u,H-20*u);
+  sfx('shutter'); buzz(18); if(!reduceMotion) animOnce($('flash'),'go');
+  const blob=await new Promise(r=>c.toBlob(r,'image/png')); if(!blob){ toast('That photo didn\'t work. Try again?'); return; }
+  const file=new File([blob],`squirm-${title.replace(/^\d+\.\s*/,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')||'garden'}.png`,{type:'image/png'});
+  try{ if(navigator.canShare&&navigator.canShare({files:[file]})){ await navigator.share({files:[file]}); return; } }catch(e){ if(e&&e.name==='AbortError') return; }
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=file.name; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(a.href),4000); toast('Photo saved to your downloads.'); }
+$('winPhoto').onclick=enterPhoto;
+$('photoBack').onclick=()=>window.history.back();
+$('photoSnap').onclick=snapPhoto;
+$('photoPose').onclick=posePhoto;
 function undo(){
   if(!history.length) return; bumpStat('undos'); checkBadges(null); save(); tweens.length=0; animating=0; queue.length=0; slideSteps.length=0; sfx('undo'); lastMoveT=idleT;
   clearDying(); clearHint(); const cur=state; state=history.pop(); syncBoard(false); syncWeather(false); syncSnails(false); snapBeetles(); syncHedges(false); updateHUD(true); saveResume();
@@ -1396,6 +1438,7 @@ const ART={
   bell:'<path d="M12 3.3v1.6"/><path d="M6.2 16.6V11a5.8 5.8 0 0 1 11.6 0v5.6l1.6 1.6H4.6z" fill="#F5C14E"/><path d="M10 20.2a2 2 0 0 0 4 0"/>',
   sprout:'<path d="M12 20.5v-8"/><path d="M12 12.5c-.4-4-3.4-6.2-8-6.2 0 4.5 3 7 8 6.2z" fill="#8CC673"/><path d="M12 10.7c.4-3.6 3-5.7 7.6-5.7 0 4-2.8 6.3-7.6 5.7z" fill="#78B65C"/><path d="M7.5 20.5h9"/>',
   info:'<circle cx="12" cy="12" r="8.6" fill="#9FD2F2"/><path d="M12 11v5.6"/><path d="M12 7.6v.1" stroke-width="2.6"/>',
+  camera:'<path d="M8.4 7.4l1.5-2.6h4.2l1.5 2.6" fill="#F6E2B0"/><rect x="3" y="7.2" width="18" height="12.8" rx="3.4" fill="#A9D8F5"/><circle cx="12" cy="13.6" r="3.9" fill="#FFF8EA"/><circle cx="12" cy="13.6" r="1.6" fill="#5B4436" stroke="none"/><circle cx="17.6" cy="10.1" r=".85" fill="#F27DA2" stroke="none"/>',
   dice:'<rect x="4" y="4" width="16" height="16" rx="4.2" fill="#F7A8C4"/><g fill="#5B4436" stroke="none"><circle cx="8.6" cy="8.6" r="1.35"/><circle cx="15.4" cy="15.4" r="1.35"/><circle cx="12" cy="12" r="1.35"/><circle cx="15.4" cy="8.6" r="1.35"/><circle cx="8.6" cy="15.4" r="1.35"/></g>',
   lock:'<path d="M8 10.5V8.2a4 4 0 0 1 8 0v2.3"/><rect x="5" y="10.5" width="14" height="10" rx="3" fill="#F5C14E"/><path d="M12 14.6v2.2"/>',
   // difficulty
@@ -1688,8 +1731,23 @@ window.addEventListener('popstate',()=>{ if(ignorePop>0){ ignorePop--; return; }
   else if(top==='settings') hide('setOv');
   else if(top==='setpage') setPage('main','back');
   else if(top==='tab') showTab('play',true);
+  else if(top==='photo') exitPhoto();
   else if(top==='win'){ hide('winOv'); if(layers.includes('game')) popLayer('game'); showHome(); }
   else if(top==='game'){ hideAll(); showHome(); } });
+
+// ---------- what's new ----------
+// newest first: [id (a date), title, lines]. Returning players see the newest entry once on the Play tab,
+// new players never do (squirm-news holds the last id seen); Settings > About lists them all.
+const NEWS=[
+  ['2026-10-25','New in the garden',['Worm patterns: stripes, spots, a soft fade and a rainbow tail, in the wardrobe.','A new badges book, with your progress on every badge.','Snap a photo of your garden after you finish a patch.']],
+  ['2026-10-24','Beetle bumps',['Chapter 16: push beetles around, even onto flower buttons.','A new hat to earn: the beetle horn.']],
+  ['2026-10-20','A bigger garden',['Two new chapters, Garden party and Grand bloom.','A finale for when the whole garden is grown.']]];
+function renderNews(){ const seen=store.get('squirm-news'), n=NEWS[0], returning=LEVELS.some((l,i)=>isCleared(i))||Object.keys(progress.daily.results).length>0;
+  if(!returning&&seen!==n[0]){ store.set('squirm-news',n[0]); }
+  const show=returning&&seen!==n[0]; $('newsCard').hidden=!show;
+  if(show){ $('newsTitle').textContent=n[1]; $('newsList').innerHTML=n[2].map(x=>`<li>${x}</li>`).join(''); }
+  $('newsLog').innerHTML=NEWS.map(e=>`<div><b>${e[1]}</b><ul>${e[2].map(x=>`<li>${x}</li>`).join('')}</ul></div>`).join(''); }
+$('newsClose').onclick=()=>{ store.set('squirm-news',NEWS[0][0]); $('newsCard').hidden=true; };
 
 // ---------- home ----------
 function showHome(quiet){ if(updateReady){ location.reload(); return; } document.title='Squirm'; const was=curTab; showTab('play',true); renderHome(); show('homeOv');
@@ -1719,7 +1777,7 @@ function renderHome(){
   const ni=nextGardenIndex(), started=LEVELS.some((l,i)=>isCleared(i));
   if(allCleared()){ const t=shineable().length; $('playTitle').textContent='Garden grown!'; $('playSub').textContent=t?`${t} ${t===1?'patch':'patches'} to shine up · what's next`:"All 3 stars · see what's next"; }
   else { $('playTitle').textContent=started?'Continue':'Play'; $('playSub').textContent=`Patch ${ni+1} · ${LEVELS[ni].name}`; }
-  renderMute(); renderHaptic();
+  renderMute(); renderHaptic(); renderNews();
   // what the page shows before the game has loaded next time (see the boot script in shell.html)
   store.set('squirm-boot',JSON.stringify({stars:$('homeStars').innerHTML,title:$('playTitle').textContent,sub:$('playSub').textContent,daily:$('dailySub').textContent,done:!!dr,day:new Date().toDateString()}));
 }
@@ -2086,11 +2144,13 @@ function measure(yaw,d,pts,W,H){ camera.clearViewOffset(); camera.aspect=W/H; ca
 function fitFor(yaw,pts,W,H,availW,availH){ let lo=2, hi=120;
   for(let i=0;i<28;i++){ const mid=(lo+hi)/2, b=measure(yaw,mid,pts,W,H); if(b.x1-b.x0<=availW && b.y1-b.y0<=availH) hi=mid; else lo=mid; }
   return hi; }
-function fitCamera(refit){
+// frame the board between the HUD's header and nav, or between `frame.top` and `frame.bot` (photo mode)
+function fitCamera(refit,frame){
   const W=window.innerWidth, H=window.innerHeight; renderer.setSize(W,H,false);
   if(!state) return;
-  const top=document.querySelector('header').getBoundingClientRect().bottom+6;
-  const bot=document.querySelector('nav').getBoundingClientRect().top-6;
+  if(!frame&&photoOn) frame=photoFrame();
+  const top=frame?frame.top:document.querySelector('header').getBoundingClientRect().bottom+6;
+  const bot=frame?frame.bot:document.querySelector('nav').getBoundingClientRect().top-6;
   const availW=W-16, availH=Math.max(120,bot-top); const pts=boardCorners();
   if(refit!==false){ const a=fitFor(TILT,pts,W,H,availW,availH), b=fitFor(90+TILT,pts,W,H,availW,availH); camYaw = b<a*0.95 ? 90+TILT : TILT; }
   const d=fitFor(camYaw,pts,W,H,availW,availH); const bb=measure(camYaw,d,pts,W,H);
@@ -2100,6 +2160,10 @@ function fitCamera(refit){
   for(const row of cells) for(const c of row) if(c.item) faceCamera(c.item);
   if(refit!==false) placeTrees();
 }
+// move the camera to a new framing over a moment instead of jumping (basePos is where the frame loop puts it)
+function glideCamera(frame){ const W=window.innerWidth, H=window.innerHeight, p0=basePos.clone(), v=camera.view, o0=v&&v.enabled?[v.offsetX,v.offsetY]:[0,0];
+  fitCamera(false,frame); if(reduceMotion) return; const p1=basePos.clone(), o1=[camera.view.offsetX,camera.view.offsetY]; basePos.copy(p0);
+  tween(700,(e,k)=>{ const t=ease(k); basePos.lerpVectors(p0,p1,t); camera.setViewOffset(W,H,o0[0]+(o1[0]-o0[0])*t,o0[1]+(o1[1]-o0[1])*t,W,H); camera.updateProjectionMatrix(); }); }
 let resizeQueued=false;
 window.addEventListener('resize',()=>{ if(resizeQueued) return; resizeQueued=true; requestAnimationFrame(()=>{ resizeQueued=false; fitCamera(); }); });
 
@@ -2150,6 +2214,7 @@ function tapMove(e){
 }
 const KEYMAP={ArrowUp:[0,-1],KeyW:[0,-1],ArrowDown:[0,1],KeyS:[0,1],ArrowLeft:[-1,0],KeyA:[-1,0],ArrowRight:[1,0],KeyD:[1,0]};
 window.addEventListener('keydown',e=>{ if(e.ctrlKey||e.metaKey||e.altKey||(e.target&&/^(TEXTAREA|INPUT)$/.test(e.target.tagName))) return; ensureAudio();
+  if(photoOn){ if(e.code==='Escape') window.history.back(); else if(e.code==='Enter'||e.code==='Space'){ e.preventDefault(); snapPhoto(); } else if(e.code==='KeyP') posePhoto(); return; }
   if((e.code==='Enter'||e.code==='Space') && isOpen('winOv')){ e.preventDefault(); $('winNext').click(); return; }
   if(e.code==='KeyR' && isOpen('winOv')){ e.preventDefault(); $('winReplay').click(); return; }
   if(e.code==='Enter' && calmMoment() && curTab==='play' && (document.activeElement===document.body||!document.activeElement)){ e.preventDefault(); $('homePlay').click(); return; }

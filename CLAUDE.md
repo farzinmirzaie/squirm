@@ -248,6 +248,16 @@ Sections are listed in the table of contents at the top of the file; each starts
   saved in `squirm-pattern`; `colorAt` draws stripes, fade and rainbow as tube vertex colours, and Spots
   are drawn per pixel by `tubeMat`'s shader from the tube's `pg` attribute (`spotsU`). `patArt` draws the
   wardrobe preview in the current colour.
+- **What's new:** `NEWS` (newest first: date id, title, lines). Returning players see the newest entry
+  once as a card on the Play tab (`renderNews`; `squirm-news` holds the last id seen, new players never
+  see it); Settings > About lists them all. When you ship something players will notice, add an entry
+  on top with today's date, in the same cozy voice.
+- **Photo mode:** the win dialog's Photo button (`enterPhoto` / `exitPhoto`, a `photo` layer). The HUD
+  fades out (`body.photo`), the camera glides to a full-screen framing (`glideCamera(photoFrame())`), and
+  the worm pops its head out of the burrow and looks at the camera (`updateHead` has a `photoOn` branch;
+  Pose calls `newExpression`). `snapPhoto` renders a frame, draws it on a 2D canvas with a caption plaque
+  (patch and stars, from `photoInfo` set in `onWin`) and the name, then shares the PNG where the browser
+  can share files and downloads it otherwise. Keys: Space/Enter snap, P pose, Esc back.
 - **Settings and backups:** the home gear opens `setOv`, a short list whose rows open sub-pages
   (`setPage`, each pushing a `setpage` layer): Sound & music, Reminders, Look, Your garden (save code
   backup and restore) and About. A save code is `SQUIRM1:` + base64 JSON of every `squirm-` key except
