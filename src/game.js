@@ -1,4 +1,20 @@
 (function(){
+// Squirm's game code: rendering, input, UI, audio, the endless generator and the hint solver, in one IIFE
+// that tools/build.js joins into index.html after logic.js and levels.js. Sections, in order (each starts
+// with a "// ---------- name" line):
+//   saved data (store) · DOM helpers · three setup (renderer, toon materials, outlines) · audio · music
+//   state · geometry helpers · garden scenery · scenery batching · little garden visitors
+//   tiles and items · snails · beetles · weather · worm (body, head, wardrobe, idle acts) · tweens · moves
+//   hints (solveFrom) · UI feedback · resume · sticker icons · HUD · toasts and dialogs
+//   endless meadow (genCandidate, analyzeCapped, generateEndless; daily patch) · native back button
+//   home · home tabs · the whole garden (finale) · settings · badges · secret reset · home worm
+//   first time you meet a mechanic · first-time tutorial · levels (startLevel, garden map) · camera
+//   input · buttons · loop · unexpected errors · offline play and install · daily reminder · boot
+// Text other files rely on: tools/load-generator.js runs everything from the endless meadow divider up
+// to the todayKey definition (plus the one-line rng) in Node, so that stretch must not touch the page
+// beyond $(), and neither marker may appear earlier in this file; tools/build.js --debug inserts
+// window.__squirm just before the final closing of this IIFE.
+// Inside this IIFE `history` is the undo stack; the browser's is always window.history.
 
 const motionQuery = window.matchMedia ? matchMedia('(prefers-reduced-motion: reduce)') : null;
 let reduceMotion = !!(motionQuery && motionQuery.matches);
@@ -23,6 +39,9 @@ const C = {
   burrow:0x3A2A22, mound:0xB07B57, ready:0x8EDB72, line:0x5B4436,
   portal:{ '1':0x7FCFEA, '2':0xC69CF7, '3':0xFFB877, '4':0x9BE39B }
 };
+// ---------- DOM helpers ----------
+const $=id=>document.getElementById(id);
+const qa=(root,sel)=>[...root.querySelectorAll(sel)];
 // ---------- three setup ----------
 const canvas=document.getElementById('c'), stage=document.getElementById('stage');
 let renderer;
@@ -1297,19 +1316,19 @@ function showHint(){
   },60);
 }
 function screenWord(d){ const v=screenVec(DIRS[d]); return Math.abs(v.x)>Math.abs(v.y) ? (v.x>0?'E':'W') : (v.y>0?'S':'N'); }
+// ---------- UI feedback: pops, shakes and staggered entrances ----------
 function pulse(el){ el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop'); }
 function animOnce(el,cls){ el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls); const end=e=>{ if(e.target!==el) return; el.classList.remove(cls); el.removeEventListener('animationend',end); }; el.addEventListener('animationend',end); }
 // selection (seg buttons, difficulty, hats, colours, map stones): the newly chosen one pops into place; the press itself plays 'tap'
 const settle=el=>{ if(el) animOnce(el,'pop'); };
 // a blocked action (locked stone, hat or colour, a code that won't load, reminders that can't be set): one shake, one bump, one toast
 function nope(el,msg,ms=2600){ if(el) animOnce(el,'nope'); sfx('bump'); if(msg) toast(msg,ms); }
-// a new patch: the HUD pieces drop in one after another, the buttons rise from below
 // staggered entrance: 'enter' drops in from above, 'rise' comes up from below; long lists cap the delay
 function stagger(els,cls='rise',d0=0,step=45,max=12){ if(reduceMotion) return;
   [...els].filter(el=>el&&!el.hidden).forEach((el,i)=>{ el.style.setProperty('--d',(d0+Math.min(i,max)*step)+'ms'); el.classList.remove('pop'); animOnce(el,cls); }); }
+// a new patch: the HUD pieces drop in one after another, the buttons rise from below
 function hudIntro(){ stagger([document.querySelector('.plaque'),$('muteBtn'),document.querySelector('.hud-stats'),...document.querySelectorAll('.hud-stats .stat')],'enter');
   stagger(document.querySelectorAll('nav .gbtn'),'enter',120,55); }
-const qa=(root,sel)=>[...root.querySelectorAll(sel)];
 // what comes in, in order, when a home tab opens
 function tabIntro(name){ const pg=$('tab'+name[0].toUpperCase()+name.slice(1));
   if(name==='play'){ stagger([$('slotPlay'),document.querySelector('.brand'),document.querySelector('.tagline'),$('homePlay'),$('dailyBtn')],'rise',0,60); return; }
@@ -1329,8 +1348,6 @@ function tryResume(){ try{ const r=readResume(mode); if(!r||!r.states||!r.states
     state=last; history=sts.slice(0,-1); hintsUsed=r.hints||0;
     syncBoard(false); snapWorm(); syncWeather(false); syncSnails(false); snapBeetles(); syncHedges(false); updateHUD(true); return true; }catch(e){ return false; } }
 
-// ---------- HUD ----------
-const $=id=>document.getElementById(id);
 // ---------- sticker icons: one hand-drawn style for every picture in the UI ----------
 // 24-unit grid, brown outline with round caps and joins, pastel fills from the garden palette.
 // art(name,size) scales the outline so it looks the same weight at every size.
@@ -1426,6 +1443,7 @@ const UI_ICON={
   chev:'<svg class="ui-ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 5.5L16 12l-6.5 6.5"/></svg>',
   check:'<svg class="ui-ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5.5 12.5l4.2 4.2 8.8-9.2"/></svg>'};
 const sticker=svg=>`<span class="ic" aria-hidden="true">${svg}</span>`;
+// ---------- HUD ----------
 function hudSub(){ if(mode==='garden'){ const ch=CHAPTERS.find(c=>li>=c.from&&li<=c.to); return ch?`${ch.name} · ${li-ch.from+1} of ${ch.to-ch.from+1}`:''; }
   if(L.daily) return 'Daily patch'; const k=progress.endless[endlessDiff].streak; return 'Endless · '+DIFF_NAME[endlessDiff]+(k?` · streak ${k}`:''); }
 function statTip(k){ const par=curPar(), len=state.segs.length, fruit=/[+-]/.test(state.grid.map(r=>r.join('')).join(''));
@@ -1467,6 +1485,7 @@ function updateHUD(silent){
   wasReady=ready;
   for(const row of cells) for(const c of row) if(c.item&&c.item.userData.rim){ c.item.userData.rim.material = ready? m('ready') : toon(C.mound); c.item.userData.ready=ready; if(c.item.userData.signBoard) c.item.userData.signBoard.material = ready? m('ready') : m('plank'); }
 }
+// ---------- toasts and dialogs ----------
 let toastTimer=0;
 $('toast').addEventListener('click',()=>$('toast').classList.remove('show'));
 function toast(msg,ms=2600){ const t=$('toast'), bar=document.body.classList.contains('at-home')?document.querySelector('.tabbar'):document.querySelector('#app nav');
@@ -1732,7 +1751,7 @@ function applyTheme(){ if(theme==='auto') delete document.documentElement.datase
 $('setTheme').querySelectorAll('button').forEach(b=>b.onclick=()=>{ theme=b.dataset.t; store.set('squirm-theme',theme); applyTheme(); settle(b); });
 applyTheme();
 
-// ---------- settings: toggles, save backup, start over ----------
+// ---------- settings: pages, toggles, theme, save code backup and restore ----------
 function renderSettings(){ $('setMusic').setAttribute('aria-checked',String(musicOn)); $('setMusicVol').value=Math.round(musicVol*100); $('setMusicVol').disabled=!musicOn; $('setSound').setAttribute('aria-checked',String(!muted)); $('setHaptic').setAttribute('aria-checked',String(hapticsOn)); applyTheme();
   $('saveCode').hidden=true; $('saveCode').value=''; $('saveLoad').textContent='Restore'; renderRemind(); }
 function setPage(p,dir){ document.querySelectorAll('#setOv .set-page').forEach(el=>{ el.hidden=el.dataset.p!==p; el.classList.remove('fwd','back'); if(!el.hidden&&dir){ void el.offsetWidth; el.classList.add(dir); } });
@@ -1879,7 +1898,7 @@ $('introOk').onclick=()=>closeIntro(false);
 function maybeTutorial(){ if(store.get('squirm-tutorial')==='1'||mode!=='garden'||li!==0||history.length) return false; $('tutorial').classList.add('show'); return true; }
 function dismissTutorial(){ const t=$('tutorial'); if(!t.classList.contains('show')) return; t.classList.remove('show'); store.set('squirm-tutorial','1'); }
 
-// ---------- levels ----------
+// ---------- levels: starting a patch, and the garden map ----------
 function loadLevel(i,withHint=true){ mode='garden'; li=i; startLevel(LEVELS[i],withHint); store.set('squirm-current-name',LEVELS[i].name); }
 let nudged=false, playT=0;
 const playTime=()=>{ const s=Math.round(playT); return s<60?`${s}s`:`${Math.floor(s/60)}m ${String(s%60).padStart(2,'0')}s`; };
