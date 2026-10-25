@@ -1012,7 +1012,7 @@ const PATTERNS=[['plain','Plain','',()=>true],
 const patternsUnlocked=()=>PATTERNS.filter(p=>p[3]()).map(p=>p[0]);
 let wormPat=store.get('squirm-pattern')||'plain';
 const patOn=()=>PATTERNS.some(p=>p[0]===wormPat&&p[3]())?wormPat:'plain';
-function applyWormColour(){ curPat=patOn(); spotsU.value=curPat==='spots'?1:0; if(wormCol>=coloursUnlocked()) wormCol=0; const c=WORM_COLS[wormCol]; COL_A.setHex(c[1]); m('head').color.setHex(c[2]); }
+function applyWormColour(){ curPat=patOn(); spotsU.value=curPat==='spots'?1:0; if(wormCol>=coloursUnlocked()) wormCol=0; const c=WORM_COLS[wormCol]; COL_A.setHex(c[1]); m('head').color.setHex(c[2]); buildHomeBody(); }
 const tubePool=[], capPool=[];
 function tubeGeo(geo,pts,rads,cols,extra,gs){
   const S=pts.length, RS=20, verts=S*RS;
@@ -1316,12 +1316,12 @@ function onWin(){ shareText=''; newBest=false; chapterDone=null; const coloursBe
 // Snap saves (or shares) the garden with a little caption. Back returns to the win dialog.
 let photoOn=false, photoInfo=null;
 const photoFrame=()=>({top:Math.max(24,window.innerHeight*.06),bot:window.innerHeight-130});
-function enterPhoto(){ if(photoOn) return; photoOn=true; hide('winOv'); pushLayer('photo'); document.body.classList.add('photo'); $('photoBar').hidden=false; glideCamera(photoFrame());
+function enterPhoto(){ if(photoOn) return; photoOn=true; orbit=null; ptrs.clear(); $('photoReset').hidden=true; setTimeout(()=>{ if(photoOn) toast('Drag to look around. Pinch or scroll to zoom.',3000); },700); hide('winOv'); pushLayer('photo'); document.body.classList.add('photo'); $('photoBar').hidden=false; glideCamera(photoFrame());
   stagger(qa($('photoBar'),'button'),'rise',120,60);
   const ex=state.segs[0], at=wp(ex[0],ex[1],0), h=segMeshes[0]; wormG.visible=true;
   segMeshes.forEach((sg,i)=>{ sg.position.copy(at).setY(-.3-i*.05); sg.scale.setScalar(i<3?1:.02); });
   if(h){ h.scale.setScalar(1); applyExpr(h,'joy'); reactT=1e6; tween(650,(e,k)=>{ const b=1-Math.pow(1-k,3); h.position.y=-.3+(.5+Math.sin(k*Math.PI)*.08)*b; }); } }
-function exitPhoto(){ if(!photoOn) return; photoOn=false; document.body.classList.remove('photo'); $('photoBar').hidden=true; reactT=0; glideCamera(); show('winOv'); }
+function exitPhoto(){ if(!photoOn) return; photoOn=false; orbit=null; ptrs.clear(); document.body.classList.remove('photo'); $('photoBar').hidden=true; reactT=0; glideCamera(); show('winOv'); }
 function posePhoto(){ const h=segMeshes[0]; if(!h) return; newExpression(h); reactT=1e6; }
 async function snapPhoto(){ renderer.render(scene,camera); const src=renderer.domElement, W=src.width, H=src.height;
   const c=document.createElement('canvas'); c.width=W; c.height=H; const g=c.getContext('2d'); g.drawImage(src,0,0);
@@ -1343,6 +1343,21 @@ async function snapPhoto(){ renderer.render(scene,camera); const src=renderer.do
   try{ if(navigator.canShare&&navigator.canShare({files:[file]})){ await navigator.share({files:[file]}); return; } }catch(e){ if(e&&e.name==='AbortError') return; }
   const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=file.name; document.body.appendChild(a); a.click(); a.remove();
   setTimeout(()=>URL.revokeObjectURL(a.href),4000); toast('Photo saved to your downloads.'); }
+// free camera: drag to orbit around the board, pinch or scroll to zoom, within limits that keep the garden in view
+let orbit=null; const ptrs=new Map();
+function orbitStart(){ if(!orbit){ const p=basePos, d=p.length(); orbit={yaw:Math.atan2(p.x,p.z),pitch:Math.asin(p.y/d),d,d0:d}; } }
+function orbitApply(){ const o=orbit; o.pitch=Math.max(.42,Math.min(1.45,o.pitch)); o.d=Math.max(o.d0*.45,Math.min(o.d0*1.35,o.d));
+  basePos.set(Math.sin(o.yaw)*Math.cos(o.pitch),Math.sin(o.pitch),Math.cos(o.yaw)*Math.cos(o.pitch)).multiplyScalar(o.d);
+  camera.position.copy(basePos); camera.lookAt(0,0,0); for(const row of cells) for(const c of row) if(c.item) faceCamera(c.item); $('photoReset').hidden=false; }
+stage.addEventListener('pointerdown',e=>{ if(!photoOn) return; orbitStart(); ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY}); try{ stage.setPointerCapture(e.pointerId); }catch(x){} });
+stage.addEventListener('pointermove',e=>{ if(!photoOn||!ptrs.has(e.pointerId)) return; const prev=ptrs.get(e.pointerId), now={x:e.clientX,y:e.clientY};
+  if(ptrs.size===1){ orbit.yaw-=(now.x-prev.x)*.006; orbit.pitch+=(now.y-prev.y)*.004; }
+  else { const [a,b]=[...ptrs.values()], other=a===prev?b:a, d0=Math.hypot(prev.x-other.x,prev.y-other.y), d1=Math.hypot(now.x-other.x,now.y-other.y); if(d0>0&&d1>0) orbit.d*=d0/d1; }
+  ptrs.set(e.pointerId,now); orbitApply(); });
+['pointerup','pointercancel'].forEach(ev=>stage.addEventListener(ev,e=>ptrs.delete(e.pointerId)));
+stage.addEventListener('wheel',e=>{ if(!photoOn) return; e.preventDefault(); orbitStart(); orbit.d*=Math.exp(e.deltaY*.0012); orbitApply(); },{passive:false});
+function resetView(){ orbit=null; ptrs.clear(); $('photoReset').hidden=true; glideCamera(photoFrame()); }
+$('photoReset').onclick=resetView;
 $('winPhoto').onclick=enterPhoto;
 $('photoBack').onclick=()=>window.history.back();
 $('photoSnap').onclick=snapPhoto;
@@ -1416,7 +1431,7 @@ function tabIntro(name){ const pg=$('tab'+name[0].toUpperCase()+name.slice(1));
     // the list scrolls to the current patch first, then the rows in view come in
     setTimeout(()=>{ const box=$('lvGrid').getBoundingClientRect(); stagger(qa($('lvGrid'),'.ch-banner,.node,.peek').filter(r=>{ const b=r.getBoundingClientRect(); return b.bottom>box.top&&b.top<box.bottom; }),'rise',0,35); },40); return; }
   if(name==='meadow') { stagger([pg.querySelector('.panel'),...qa(pg,'.m-stat'),...qa(pg,'.diff')],'rise',0,40); stagger(qa(pg,'.mech'),'rise',260,22,10); stagger(qa(pg,'.m-go .btn'),'rise',420,60); return; }
-  if(name==='me'){ stagger([$('slotMe'),pg.querySelector('.panel')],'rise',0,60); stagger(qa(pg,'.hat-grid button'),'rise',140,22,14); stagger(qa(pg,'.pat-grid button'),'rise',300,30); stagger(qa(pg,'.swatches button'),'rise',360,40); return; }
+  if(name==='me'){ stagger([$('slotMe'),pg.querySelector('.panel')],'rise',0,60); stagger(qa(pg,'#wardGrid button'),'rise',140,22,12); return; }
   if(name==='badges'){ stagger([pg.querySelector('.panel')],'rise'); stagger(qa(pg,'.b-tile'),'rise',90,30,12); stagger([$('badgeDetail')],'rise',260); } }
 
 // ---------- resume an unfinished patch after reload ----------
@@ -1739,7 +1754,7 @@ window.addEventListener('popstate',()=>{ if(ignorePop>0){ ignorePop--; return; }
 // newest first: [id (a date), title, lines]. Returning players see the newest entry once on the Play tab,
 // new players never do (squirm-news holds the last id seen); Settings > About lists them all.
 const NEWS=[
-  ['2026-10-25','New in the garden',['Worm patterns: stripes, spots, a soft fade and a rainbow tail, in the wardrobe.','A new badges book, with your progress on every badge.','Snap a photo of your garden after you finish a patch.']],
+  ['2026-10-25','New in the garden',['Worm patterns: stripes, spots, a soft fade and a rainbow tail, in the wardrobe.','A new badges book, with your progress on every badge.','Snap a photo of your garden after you finish a patch, from any angle you like.','A new wardrobe that shows off your whole worm.']],
   ['2026-10-24','Beetle bumps',['Chapter 16: push beetles around, even onto flower buttons.','A new hat to earn: the beetle horn.']],
   ['2026-10-20','A bigger garden',['Two new chapters, Garden party and Grand bloom.','A finale for when the whole garden is grown.']]];
 function renderNews(){ const seen=store.get('squirm-news'), n=NEWS[0], returning=LEVELS.some((l,i)=>isCleared(i))||Object.keys(progress.daily.results).length>0;
@@ -1760,7 +1775,7 @@ function showTab(name,fromBack){ const prev=curTab; curTab=name;
   document.querySelectorAll('.tabbar .tab').forEach(b=>{ const on=b.dataset.tab===name; b.classList.toggle('on',on); b.setAttribute('aria-current',on?'page':'false'); });
   const pg=$('tab'+name[0].toUpperCase()+name.slice(1)); pg.scrollTop=0;
   // one worm, two homes: it sits on the Play tab and above the wardrobe on the Me tab
-  const slot=name==='me'?$('slotMe'):$('slotPlay'); if(homeCanvas.parentNode!==slot) slot.appendChild(homeCanvas);
+  const slot=name==='me'?$('slotMe'):$('slotPlay'); if(homeCanvas.parentNode!==slot) slot.appendChild(homeCanvas); homeStage(name==='me');
   if(TAB_RENDER[name]) TAB_RENDER[name]();
   if(prev!==name){ tabIntro(name); const tb=document.querySelector(`.tabbar .tab[data-tab="${name}"]`); if(tb) animOnce(tb,'pop'); }
   // the back button returns to Play from the other tabs
@@ -1781,32 +1796,41 @@ function renderHome(){
   // what the page shows before the game has loaded next time (see the boot script in shell.html)
   store.set('squirm-boot',JSON.stringify({stars:$('homeStars').innerHTML,title:$('playTitle').textContent,sub:$('playSub').textContent,daily:$('dailySub').textContent,done:!!dr,day:new Date().toDateString()}));
 }
-function renderWardrobe(){ renderSwatches(); renderPatterns();
-  $('hatGrid').innerHTML=HATS.map(h=>{ const ok=hatUnlocked(h), ch=CHAPTERS[h[2]];
-    return `<button data-h="${h[0]}" class="hat ${h[0]===hatId?'on':''} ${ok?'':'locked'}" aria-pressed="${h[0]===hatId}"><span class="hat-ico" aria-hidden="true">${ok?hatArt(h[0]):art('lock',28)}</span><b>${h[1]}</b><small>${ok?(h[0]===hatId?'Wearing':'Tap to wear'):`Finish ${ch?ch.name:'a chapter'}`}</small></button>`; }).join('');
-  $('hatGrid').querySelectorAll('button').forEach(b=>b.onclick=()=>{ const h=HATS.find(x=>x[0]===b.dataset.h);
-    if(!hatUnlocked(h)){ nope(b,`Finish every patch in ${CHAPTERS[h[2]].name} to earn the ${h[1].toLowerCase()}.`,2800); return; }
-    hatId=h[0]; store.set('squirm-hat',hatId); dressHat(hHead); dressHat(segMeshes[0]); if(hHead) homeReact(hatId==='none'?'wow':'joy'); renderWardrobe(); settle($('hatGrid').querySelector('.hat.on')); }); }
 // a little sticker worm in the current colour wearing a pattern, for the wardrobe
-function patArt(id,size=40){ const c=WORM_COLS[wormCol], hex=n=>'#'+n.toString(16).padStart(6,'0'), body=hex(c[1]), path='M3.5 15.5c2.2-4.4 5.3-4.4 7.5 0s5.3 4.4 7.5 0';
+function patArt(id,size=40,col=wormCol){ const c=WORM_COLS[col], hex=n=>'#'+n.toString(16).padStart(6,'0'), body=hex(c[1]), path='M3.5 15.5c2.2-4.4 5.3-4.4 7.5 0s5.3 4.4 7.5 0';
   const over={stripes:`<path d="${path}" stroke="#fff" stroke-opacity=".55" stroke-width="5" stroke-linecap="butt" stroke-dasharray="1.6 2.4" stroke-dashoffset="-6"/>`,
     spots:`<g fill="#fff" fill-opacity=".6" stroke="none"><circle cx="6.4" cy="13.6" r="1.1"/><circle cx="9.6" cy="13" r="1.1"/><circle cx="13" cy="17.4" r="1.1"/><circle cx="16.6" cy="17.6" r="1.1"/></g>`,
-    fade:`<path d="${path}" stroke="url(#pf${size})" stroke-width="5"/>`,
-    rainbow:`<path d="${path}" stroke="url(#pr${size})" stroke-width="5"/>`}[id]||'';
-  return `<svg class="art" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><defs><linearGradient id="pf${size}" x1="0" x2="1"><stop offset="0" stop-color="#fff" stop-opacity=".6"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient><linearGradient id="pr${size}" x1="0" x2="1">${['#CDB8F5','#A9D8F5','#7FD9B0','#FFE08A','#FFB3C8'].map((k,i)=>`<stop offset="${(i*.13).toFixed(2)}" stop-color="${k}"/>`).join('')}<stop offset=".62" stop-color="${body}" stop-opacity="0"/></linearGradient></defs>
+    fade:`<path d="${path}" stroke="url(#pf${size}-${col})" stroke-width="5"/>`,
+    rainbow:`<path d="${path}" stroke="url(#pr${size}-${col})" stroke-width="5"/>`}[id]||'';
+  return `<svg class="art" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><defs><linearGradient id="pf${size}-${col}" x1="0" x2="1"><stop offset="0" stop-color="#fff" stop-opacity=".6"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient><linearGradient id="pr${size}-${col}" x1="0" x2="1">${['#CDB8F5','#A9D8F5','#7FD9B0','#FFE08A','#FFB3C8'].map((k,i)=>`<stop offset="${(i*.13).toFixed(2)}" stop-color="${k}"/>`).join('')}<stop offset=".62" stop-color="${body}" stop-opacity="0"/></linearGradient></defs>
     <path d="${path}" stroke="#5B4436" stroke-width="7.4"/><path d="${path}" stroke="${body}" stroke-width="5"/>${over}<g stroke="none"><circle cx="20.2" cy="10.6" r="3.6" fill="#5B4436"/><circle cx="20.2" cy="10.6" r="2.5" fill="${hex(c[2])}"/><circle cx="21" cy="9.9" r=".7" fill="#5B4436"/></g></svg>`; }
-function renderPatterns(){ const have=patternsUnlocked();
-  $('patGrid').innerHTML=PATTERNS.map(p=>{ const ok=have.includes(p[0]), on=ok&&p[0]===patOn();
-    return `<button data-p="${p[0]}" class="hat ${on?'on':''} ${ok?'':'locked'}" aria-pressed="${on}"><span class="hat-ico" aria-hidden="true">${ok?patArt(p[0]):art('lock',28)}</span><b>${p[1]}</b><small>${ok?(on?'Wearing':'Tap to wear'):p[2]}</small></button>`; }).join('');
-  $('patGrid').querySelectorAll('button').forEach(b=>b.onclick=()=>{ const p=PATTERNS.find(x=>x[0]===b.dataset.p);
-    if(!p[3]()){ nope(b,`${p[1]}: ${p[2].charAt(0).toLowerCase()+p[2].slice(1)} to earn it.`,2800); return; }
-    wormPat=p[0]; store.set('squirm-pattern',wormPat); applyWormColour(); if(hHead) homeReact('joy'); renderWardrobe(); settle($('patGrid').querySelector('.hat.on')); }); }
-function renderSwatches(){ const have=coloursUnlocked();
-  $('swatches').innerHTML=WORM_COLS.map((c,i)=>{ const locked=i>=have, hex='#'+c[1].toString(16).padStart(6,'0');
-    return `<button data-i="${i}" class="${i===wormCol?'on':''} ${locked?'locked':''}" style="--sw:${hex}" aria-pressed="${i===wormCol}" aria-label="${c[0]} worm${locked?`, unlocks at ${c[3]} stars`:''}">${locked?art('lock',16):''}</button>`; }).join('');
-  $('swatches').querySelectorAll('button').forEach(b=>b.onclick=()=>{ const i=+b.dataset.i, c=WORM_COLS[i];
-    if(i>=coloursUnlocked()){ nope(b,`${c[0]} unlocks at ${c[3]} stars. You have ${starTotal()}.`,2600); return; }
-    wormCol=i; store.set('squirm-colour',String(i)); applyWormColour(); if(hHead) homeReact('joy'); renderWardrobe(); settle($('swatches').querySelector('button.on')); }); }
+// ---------- wardrobe (Me tab) ----------
+// the worm on its stage shows the whole outfit; Hats / Colours / Patterns switch one grid of tiles
+let wardTab='hats';
+const tile=(key,val,on,ok,ico,name,note)=>`<button data-${key}="${val}" class="hat ${on?'on':''} ${ok?'':'locked'}" aria-pressed="${on}"><span class="hat-ico" aria-hidden="true">${ok?ico:art('lock',28)}</span><b>${name}</b><small>${ok?(on?'Wearing':'Tap to wear'):note}</small></button>`;
+function outfitChanged(el){ if(hHead) homeReact('joy'); renderWardrobe(); const on=$('wardGrid').querySelector('.hat.on'); if(on) settle(on); }
+function wearHat(id){ hatId=id; store.set('squirm-hat',hatId); dressHat(hHead); dressHat(segMeshes[0]); }
+function wearColour(i){ wormCol=i; store.set('squirm-colour',String(i)); applyWormColour(); }
+function wearPattern(id){ wormPat=id; store.set('squirm-pattern',wormPat); applyWormColour(); }
+function renderWardrobe(){ const hats=HATS.filter(hatUnlocked), cols=coloursUnlocked(), pats=patternsUnlocked(), hat=HATS.find(h=>h[0]===hatId)||HATS[0];
+  $('outfitLine').textContent=[hat[0]==='none'?'No hat':hat[1],WORM_COLS[wormCol][0],PATTERNS.find(x=>x[0]===patOn())[1]].join(' · ');
+  const n={hats:[hats.length-1,HATS.length-1],colours:[cols,WORM_COLS.length],patterns:[pats.length,PATTERNS.length]};
+  qa($('wardSeg'),'button').forEach(b=>{ const on=b.dataset.w===wardTab, c=n[b.dataset.w]; b.classList.toggle('on',on); b.setAttribute('aria-selected',String(on)); b.querySelector('small').textContent=`${c[0]} of ${c[1]}`; });
+  const g=$('wardGrid'); g.className=`hat-grid fade-scroll ward-${wardTab}`;
+  if(wardTab==='hats') g.innerHTML=HATS.map(h=>tile('h',h[0],h[0]===hatId,hatUnlocked(h),hatArt(h[0]),h[1],`Finish ${CHAPTERS[h[2]]?CHAPTERS[h[2]].name:'a chapter'}`)).join('');
+  else if(wardTab==='colours') g.innerHTML=WORM_COLS.map((c,i)=>tile('c',i,i===wormCol,i<cols,patArt(patOn(),46,i),c[0],`${c[3]} stars`)).join('');
+  else g.innerHTML=PATTERNS.map(p=>tile('p',p[0],p[0]===patOn(),pats.includes(p[0]),patArt(p[0],46),p[1],p[2])).join('');
+  qa(g,'button').forEach(b=>b.onclick=()=>{
+    if(b.dataset.h){ const h=HATS.find(x=>x[0]===b.dataset.h); if(!hatUnlocked(h)){ nope(b,`Finish every patch in ${CHAPTERS[h[2]].name} to earn the ${h[1].toLowerCase()}.`,2800); return; } wearHat(h[0]); }
+    else if(b.dataset.c!=null){ const i=+b.dataset.c, c=WORM_COLS[i]; if(i>=coloursUnlocked()){ nope(b,`${c[0]} unlocks at ${c[3]} stars. You have ${starTotal()}.`,2600); return; } wearColour(i); }
+    else { const p=PATTERNS.find(x=>x[0]===b.dataset.p); if(!p[3]()){ nope(b,`${p[1]}: ${p[2].charAt(0).toLowerCase()+p[2].slice(1)} to earn it.`,2800); return; } wearPattern(p[0]); }
+    outfitChanged(); }); }
+qa($('wardSeg'),'button').forEach(b=>b.onclick=()=>{ if(wardTab===b.dataset.w) return; wardTab=b.dataset.w; renderWardrobe(); $('wardGrid').scrollTop=0; settle(b);
+  stagger(qa($('wardGrid'),'button'),'rise',0,22,12); });
+// a random outfit from what's unlocked, different from the current one where possible
+$('dressRandom').onclick=()=>{ const pick=(a,cur)=>{ const o=a.filter(x=>x!==cur); return (o.length?o:a)[Math.floor(Math.random()*(o.length||a.length))]; };
+  wearHat(pick(HATS.filter(hatUnlocked).map(h=>h[0]),hatId)); wearColour(pick([...Array(coloursUnlocked()).keys()],wormCol)); wearPattern(pick(patternsUnlocked(),patOn()));
+  if(hHead) homeReact('wow'); renderWardrobe(); };
 const DIFF_ICON={easy:art('sprout',32),medium:art('tulip',32),hard:art('tree',32)};
 // short names for the mechanic tiles; the full name goes in the label
 const FEAT_SHORT={flags:'Flags',buttons:'Flowers',leaves:'Leaves',fruit:'Fruit',keys:'Keys',portals:'Tunnels',dry:'Dry',rain:'Rain',rivers:'Rivers',snails:'Snails',beetles:'Beetles'};
@@ -1988,14 +2012,22 @@ $('resetYes').onclick=()=>{ store.keys().forEach(k=>store.del(k));
   buzz([40,60,40]); location.reload(); };
 
 // ---------- the worm on the home screen: just the head, full of personality ----------
-const homeCanvas=$('homeWorm'); let homeR=null, hScene, hCam, hHead, hExprT=0, hBlink=2, hReactT=0;
+const homeCanvas=$('homeWorm'); let homeR=null, hScene, hCam, hRig, hBody=null, hHead, hExprT=0, hBlink=2, hReactT=0;
 function initHomeWorm(){ try{ homeR=new THREE.WebGLRenderer({canvas:homeCanvas,antialias:true,alpha:true}); }catch(e){ return; }
   homeR.setPixelRatio(Math.min(window.devicePixelRatio||1,3)); homeR.setSize(220,200,false);
   hScene=new THREE.Scene(); hScene.add(new THREE.HemisphereLight(0xfffaf0,0xb7d79a,.32)); hScene.add(new THREE.AmbientLight(0xfff4e2,.2));
   const d=new THREE.DirectionalLight(0xfff1dc,.6); d.position.set(-2,4,3); hScene.add(d);
   // framed with headroom above the worm so tall hats (top hat, umbrella) fit
   hCam=new THREE.PerspectiveCamera(24,220/200,.1,50); hCam.position.set(0,.5,4.66); hCam.lookAt(0,.63,0);
-  hHead=makeSeg(0,hScene); hHead.position.set(0,.34,0); hHead.scale.setScalar(1.45); applyExpr(hHead,'grin');
+  hRig=new THREE.Group(); hScene.add(hRig);
+  hHead=makeSeg(0,hRig); hHead.position.set(0,.34,0); hHead.scale.setScalar(1.45); applyExpr(hHead,'grin');
+  // on the Me tab the worm shows its whole body, curled on the ground beside it, so colour and pattern show
+  hBody=new THREE.Group(); hBody.visible=false; hRig.add(hBody);
+  const tb=new THREE.Mesh(new THREE.BufferGeometry(),tubeMat), tl=new THREE.Mesh(new THREE.BufferGeometry(),lineMat), tip=new THREE.Mesh(sph(1,20,14),capMat.clone()), to=new THREE.Mesh(tip.geometry,lineMat);
+  tip.add(to); hBody.add(tb,tl,tip); hBody.userData={tb,tl,tip,to};
+  const sh=new THREE.Mesh(new THREE.CircleGeometry(1,40),new THREE.MeshBasicMaterial({color:0x5B4436,transparent:true,opacity:.16,depthWrite:false}));
+  sh.rotation.x=-Math.PI/2; sh.scale.set(1.15,.55,1); sh.position.set(.35,-.43,.15); hBody.add(sh);
+  buildHomeBody();
   // tap: a happy reaction. Hold for 3 seconds: the secret reset (the worm gets more and more worried)
   let holdT=null, holdStart=0, held=false;
   const endHold=()=>{ clearInterval(holdT); holdT=null; if(hHead) hHead.userData.shake=0; };
@@ -2009,6 +2041,18 @@ function initHomeWorm(){ try{ homeR=new THREE.WebGLRenderer({canvas:homeCanvas,a
   homeCanvas.addEventListener('contextmenu',e=>e.preventDefault());
   homeCanvas.addEventListener('keydown',e=>{ if(e.key!=='Enter'&&e.key!==' ') return; e.preventDefault(); ensureAudio(); homeReact(EXPRS[Math.floor(Math.random()*EXPRS.length)]); sfx('grow'); });
 }
+// the curl: from the neck behind the head, down to the ground and round to a tail in front
+function buildHomeBody(){ if(!hBody) return; const {tb,tl,tip,to}=hBody.userData;
+  const pts=[[0,.22,-.18],[.12,-.14,-.3],[.5,-.3,-.28],[.9,-.3,-.05],[1.02,-.31,.32],[.78,-.33,.6],[.5,-.36,.66]].map(p=>new THREE.Vector3(...p));
+  // about one game segment per unit of length, like in a patch, so stripes and spots keep their size
+  const curve=new THREE.CatmullRomCurve3(pts,false,'centripetal'), S=60, len=curve.getLength(), n=1+len, sp=[], rr=[], cc=[], gs=curPat==='spots'?[]:null;
+  for(let j=0;j<S;j++){ const u=j/(S-1), g=.5+u*len; sp.push(curve.getPoint(u)); rr.push(.33*(1-.55*u*u)*(1+.04*Math.cos(g*4*Math.PI))); cc.push(colorAt(g,n)); if(gs) gs.push(g); }
+  tubeGeo(tb.geometry,sp,rr,cc,0,gs); tubeGeo(tl.geometry,sp,rr.map(r=>r+.035),null,0);
+  const end=sp[S-1], r=rr[S-1]; tip.position.copy(end); tip.scale.setScalar(r); to.scale.setScalar(1+.035/r); tip.material.color.copy(cc[S-1]); }
+// the Play tab shows the head alone; the Me tab a wider stage with the whole worm
+function homeStage(me){ if(!homeR) return; const w=me?320:220, h=me?250:200; homeR.setSize(w,h,false); hCam.aspect=w/h;
+  if(me){ hCam.position.set(.32,2.1,5.5); hCam.lookAt(.32,.22,.1); hRig.position.set(-.42,0,0); } else { hCam.position.set(0,.5,4.66); hCam.lookAt(0,.63,0); hRig.position.set(0,0,0); }
+  hCam.updateProjectionMatrix(); hBody.visible=me; }
 function homeReact(e){ if(!hHead) return; applyExpr(hHead,e); hReactT=1.4; hExprT=0; const b=hHead.userData.body;
   tween(380,(x,k)=>{ const s=1+Math.sin(k*Math.PI)*.14; b.scale.set(s,1/s,s); b.position.y=Math.sin(k*Math.PI)*.12; },()=>{ b.scale.set(1,1,1); b.position.y=0; }); }
 function renderHomeWorm(dt){ if(!homeR) return; const t=idleT;
@@ -2163,7 +2207,7 @@ function fitCamera(refit,frame){
 // move the camera to a new framing over a moment instead of jumping (basePos is where the frame loop puts it)
 function glideCamera(frame){ const W=window.innerWidth, H=window.innerHeight, p0=basePos.clone(), v=camera.view, o0=v&&v.enabled?[v.offsetX,v.offsetY]:[0,0];
   fitCamera(false,frame); if(reduceMotion) return; const p1=basePos.clone(), o1=[camera.view.offsetX,camera.view.offsetY]; basePos.copy(p0);
-  tween(700,(e,k)=>{ const t=ease(k); basePos.lerpVectors(p0,p1,t); camera.setViewOffset(W,H,o0[0]+(o1[0]-o0[0])*t,o0[1]+(o1[1]-o0[1])*t,W,H); camera.updateProjectionMatrix(); }); }
+  tween(700,(e,k)=>{ const t=ease(k); basePos.lerpVectors(p0,p1,t); camera.position.copy(basePos); camera.lookAt(0,0,0); camera.setViewOffset(W,H,o0[0]+(o1[0]-o0[0])*t,o0[1]+(o1[1]-o0[1])*t,W,H); camera.updateProjectionMatrix(); }); }
 let resizeQueued=false;
 window.addEventListener('resize',()=>{ if(resizeQueued) return; resizeQueued=true; requestAnimationFrame(()=>{ resizeQueued=false; fitCamera(); }); });
 
@@ -2214,7 +2258,7 @@ function tapMove(e){
 }
 const KEYMAP={ArrowUp:[0,-1],KeyW:[0,-1],ArrowDown:[0,1],KeyS:[0,1],ArrowLeft:[-1,0],KeyA:[-1,0],ArrowRight:[1,0],KeyD:[1,0]};
 window.addEventListener('keydown',e=>{ if(e.ctrlKey||e.metaKey||e.altKey||(e.target&&/^(TEXTAREA|INPUT)$/.test(e.target.tagName))) return; ensureAudio();
-  if(photoOn){ if(e.code==='Escape') window.history.back(); else if(e.code==='Enter'||e.code==='Space'){ e.preventDefault(); snapPhoto(); } else if(e.code==='KeyP') posePhoto(); return; }
+  if(photoOn){ if(e.code==='Escape') window.history.back(); else if(e.code==='Enter'||e.code==='Space'){ e.preventDefault(); snapPhoto(); } else if(e.code==='KeyP') posePhoto(); else if(e.code==='KeyR') resetView(); return; }
   if((e.code==='Enter'||e.code==='Space') && isOpen('winOv')){ e.preventDefault(); $('winNext').click(); return; }
   if(e.code==='KeyR' && isOpen('winOv')){ e.preventDefault(); $('winReplay').click(); return; }
   if(e.code==='Enter' && calmMoment() && curTab==='play' && (document.activeElement===document.body||!document.activeElement)){ e.preventDefault(); $('homePlay').click(); return; }
@@ -2287,7 +2331,7 @@ function frame(now){
   if(!nudged && state && state.status==='play' && state.moves>0 && idleT-lastMoveT>45 && !anyOverlay() && !document.body.classList.contains('at-home')){
     nudged=true; toast('Stuck? Tap the bulb for a hint.',3200); pulse($('hintBtn')); }
   if(segMeshes[0]){ const hp=segMeshes[0].position; camTgt.set(THREE.MathUtils.clamp(hp.x*.06,-.35,.35),0,THREE.MathUtils.clamp(hp.z*.06,-.35,.35)); if(reduceMotion) camTgt.set(0,0,0);
-    camOff.lerp(camTgt,1-Math.exp(-dt/1000*1.6)); camera.position.copy(basePos).add(camOff); }
+    if(photoOn) camTgt.set(0,0,0); camOff.lerp(camTgt,1-Math.exp(-dt/1000*1.6)); camera.position.copy(basePos).add(camOff); }
   if(!reduceMotion){ fxTimer-=dt;
     if(fxTimer<0){ fxTimer=90;
       for(const row of cells) for(const c of row){ const u=c.item&&c.item.userData; if(u&&c.item.userData.kind==='K'&&Math.random()<.08) sparkle(c.item.position); }

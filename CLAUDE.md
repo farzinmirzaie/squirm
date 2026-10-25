@@ -229,7 +229,10 @@ Sections are listed in the table of contents at the top of the file; each starts
   `renderLevelList` draws one scene per chapter with its patches as stepping stones on a winding SVG
   path; closed chapters fold into a small card; tapping a stone picks it (`pickPatch`) and shows its card
   with a `drawThumb` preview; tapping again plays), Meadow (endless setup), Me (wardrobe) and Badges. The
-  home worm's canvas moves between Play and Me. Leaving Play pushes a `tab` layer, so back returns to
+  home worm's canvas moves between Play and Me; `homeStage(me)` widens it on Me and shows `hBody`, a
+  curled body built by `buildHomeBody` (rebuilt on every colour or pattern change) so the outfit shows.
+  The wardrobe switches one grid between Hats / Colours / Patterns (`wardTab`), shows the outfit line,
+  and has a Surprise outfit button; `wearHat` / `wearColour` / `wearPattern` save and apply. Leaving Play pushes a `tab` layer, so back returns to
   Play; opening a patch from a tab replaces that layer with `game`.
 - **Endless meadow and daily:** `genCandidate` + `analyzeCapped` + difficulty scoring in
   `generateEndless`. The daily patch (`startDaily`) uses a date seed, `DAILY_OPTS` and a fixed number of
@@ -255,7 +258,8 @@ Sections are listed in the table of contents at the top of the file; each starts
 - **Photo mode:** the win dialog's Photo button (`enterPhoto` / `exitPhoto`, a `photo` layer). The HUD
   fades out (`body.photo`), the camera glides to a full-screen framing (`glideCamera(photoFrame())`), and
   the worm pops its head out of the burrow and looks at the camera (`updateHead` has a `photoOn` branch;
-  Pose calls `newExpression`). `snapPhoto` renders a frame, draws it on a 2D canvas with a caption plaque
+  Pose calls `newExpression`). Free camera: drag orbits around the board's centre (`orbit`, pitch
+  and zoom clamped), pinch or wheel zooms, Reset view (`resetView`, also R) glides back. `snapPhoto` renders a frame, draws it on a 2D canvas with a caption plaque
   (patch and stars, from `photoInfo` set in `onWin`) and the name, then shares the PNG where the browser
   can share files and downloads it otherwise. Keys: Space/Enter snap, P pose, Esc back.
 - **Settings and backups:** the home gear opens `setOv`, a short list whose rows open sub-pages
