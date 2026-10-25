@@ -159,7 +159,8 @@ button:focus-visible{outline:3px solid var(--honey);outline-offset:2px}
   box-shadow:inset 0 0 0 5px var(--paper),inset 0 0 0 7px var(--paper-2),0 6px 0 var(--edge),0 18px 40px var(--shadow);
   max-height:100%;overflow:auto;overscroll-behavior:contain;touch-action:pan-y}
 .dialog h2{margin:6px 0 8px;font:800 30px/1.1 var(--fd);color:var(--title);text-shadow:0 3px 0 var(--edge)}
-.dialog p{margin:0 0 16px;color:var(--ink-soft);font-size:16px;line-height:1.45;font-weight:700}
+/* :where keeps this a default that any class on a dialog paragraph overrides */
+:where(.dialog) p{margin:0 0 16px;color:var(--ink-soft);font-size:16px;line-height:1.45;font-weight:700}
 .dialog .stat-row{margin:-2px 0 14px}
 /* sheets: left-aligned dialogs and home panels built from labelled rows */
 .sheet{display:flex;flex-direction:column;gap:12px;text-align:left}
@@ -177,7 +178,7 @@ button:focus-visible{outline:3px solid var(--honey);outline-offset:2px}
 #introBody .intro-item:last-child{margin-bottom:4px}
 #introOk{width:100%}
 /* win */
-.note{font-size:14px!important;margin-top:-4px!important}
+.note{font-size:14px;margin-top:-4px}
 .newbest{display:inline-block;margin:-6px 0 10px;padding:4px 10px;border-radius:999px;background:var(--honey);color:var(--deep);font-weight:800;font-size:13px}
 .share{width:100%;margin:-4px 0 12px}
 .gen{max-width:300px}
@@ -313,6 +314,7 @@ nav{display:flex;justify-content:center;align-items:flex-end;gap:16px}
 .ch-banner .cnt svg{width:18px;height:18px}
 .ch-banner .done{color:var(--leaf-dark);display:grid}
 .ch-banner .done .ui-ic{width:16px;height:16px}
+.ch-banner .new{margin-left:6px;padding:3px 7px;border-radius:999px;background:var(--berry);color:var(--on-accent);font:800 11px/1 var(--fb);text-transform:uppercase;letter-spacing:.06em;vertical-align:2px}
 .trail{position:relative}
 .trail > svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none}
 .trail .road{fill:none;stroke:color-mix(in srgb,var(--edge) 60%,var(--soil));stroke-opacity:.4;stroke-width:18;stroke-linecap:round;vector-effect:non-scaling-stroke}
@@ -423,7 +425,7 @@ nav{display:flex;justify-content:center;align-items:flex-end;gap:16px}
 .set-row.vol{margin-top:-4px;font-size:15px;color:var(--ink-soft)}
 #setMusicVol{width:150px;accent-color:var(--leaf);touch-action:pan-x}
 #setMusicVol:disabled{opacity:.4}
-.set-note{margin:-4px 0 0!important;font-size:14px!important;text-align:left}
+.set-note{margin:-4px 0 0;font-size:14px;text-align:left}
 #saveCode{width:100%;resize:none;border-radius:18px;border:3px solid var(--edge);background:var(--paper-2);color:var(--ink);font:700 13px/1.3 ui-monospace,Menlo,monospace;padding:10px;user-select:text;-webkit-user-select:text;touch-action:auto}
 .version{margin:-4px 0 0;text-align:center;font-size:12px;font-weight:700;color:var(--ink-soft);opacity:.75}
 
