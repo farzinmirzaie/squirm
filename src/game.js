@@ -951,12 +951,13 @@ function shapedLens(mk,fr,lens,scale){ const g=new THREE.Group(), o=mk();
   const inner=new THREE.Path(mk().getPoints(30).map(p=>p.multiplyScalar(.72)).reverse()); o.holes.push(inner);
   const f=new THREE.Mesh(new THREE.ExtrudeGeometry(o,{depth:.12,bevelEnabled:false,curveSegments:16}),fr); f.scale.setScalar(scale); g.add(f);
   const l=new THREE.Mesh(new THREE.ShapeGeometry(new THREE.Shape(mk().getPoints(30).map(p=>p.multiplyScalar(.74))),24),lens); l.scale.setScalar(scale); l.position.z=.004; g.add(l); return g; }
-function buildExtra(id){ const g=new THREE.Group(), EY=.14, EZ=.365;
+function buildExtra(id){ // frames sit in front of the eyes even when they widen (wow) or the head turns: eye front + outline is ~.39
+  const g=new THREE.Group(), EY=.14, EZ=.41;
   // a thin rod from point a to point b
   const bar=(a,b,r,mat)=>{ const d=new THREE.Vector3().subVectors(b,a), c=new THREE.Mesh(new THREE.CylinderGeometry(r,r,d.length(),8),mat); c.position.copy(a).addScaledVector(d,.5); c.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),d.normalize()); return c; };
   // the arms start at the frame's outer edge (x = ox) and run back to the side of the head
   const arms=(mat,ox,z)=>{ for(const s of [-1,1]) g.add(bar(new THREE.Vector3(s*ox,EY,z),new THREE.Vector3(s*.325,EY+.03,0),.014,mat)); };
-  if(id==='glasses'||id==='shades'){ const sh=id==='shades', z=sh?EZ+.03:EZ, rad=sh?.13:.12;
+  if(id==='glasses'||id==='shades'){ const sh=id==='shades', z=sh?EZ+.01:EZ, rad=sh?.13:.12;
     for(const s of [-1,1]){ const r=new THREE.Mesh(new THREE.TorusGeometry(rad,.019,10,30),m('frame')); r.position.set(s*.13,EY,z); g.add(r);
       if(sh){ const l=new THREE.Mesh(new THREE.CircleGeometry(rad,28),m('lensDark')); l.position.set(s*.13,EY,z-.004); g.add(l);
         const hl=new THREE.Mesh(new THREE.CircleGeometry(.025,12),new THREE.MeshBasicMaterial({color:0xffffff})); hl.position.set(s*.13-.05,EY+.05,z+.002); hl.scale.set(1.6,.6,1); hl.rotation.z=.5; g.add(hl); } }
