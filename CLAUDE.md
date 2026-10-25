@@ -239,7 +239,10 @@ Sections are listed in the table of contents at the top of the file; each starts
   below 3 stars via `shineable`, badges left, the meadow, today's daily). The home Play card turns into
   "Garden grown!" and opens it too, and the map ends with a card about more patches coming.
 - **Rewards:** `BADGES` (id, icon, name, description, test) are checked after every win and after moves
-  that bump a counter in `progress.stats`; earned ones live in `progress.badges`. `HATS` (one per
+  that bump a counter in `progress.stats`; earned ones live in `progress.badges` (with a timestamp, not
+  shown). A test written as `counted(()=>[have,need])` also reports progress, which the Badges tab shows.
+  The tab groups badges by `BADGE_GROUPS` (add new badges to one; ungrouped ones land in the last), with an All / Earned / To find
+  filter and a detail card for the tapped badge (`renderBadges`, `renderBadgeDetail`). `HATS` (one per
   chapter) unlock by finishing it, are built once (`buildHat`) and cloned into the head's `hatSlot`.
   `WORM_COLS` unlock with stars. `PATTERNS` (id, name, how to earn, test) unlock with milestones and are
   saved in `squirm-pattern`; `colorAt` draws stripes, fade and rainbow as tube vertex colours, and Spots
@@ -325,6 +328,11 @@ Sections are listed in the table of contents at the top of the file; each starts
 - Scales: display text 12/14/16/18/21/26/30/52px, body text 11/12/13/14/15/16px, icon glyphs
   16/20/24px; corner radius 10/14/18/22/26px, `999px` for pills, `50%` for circles; borders 2px (small
   inner pieces) or 3px (cards, buttons, tiles); gaps 2/4/6/8/10/12/14/16px.
+- Scrolling areas use `.fade-scroll` (every home tab page, the garden map, the badges list): content
+  fades out at an edge only while there's more to scroll that way, growing with that distance, so
+  nothing is cut off sharply. `fadeScroll(el)` wires it up (done at boot for every `.fade-scroll` in the
+  markup; call it for ones you create later); `data-fade` / `data-fade-top` set the size in px. It sets
+  `--fade-t` / `--fade-b` on the element: never reuse a token name there, children inherit it.
 - `:where(.dialog) p` is a zero-specificity default for dialog paragraphs, so a class on a paragraph
   wins without `!important`. Prefer low-specificity defaults like that over overrides.
 - Respect `prefers-reduced-motion`: every animation and transition is listed in the single reduced-motion

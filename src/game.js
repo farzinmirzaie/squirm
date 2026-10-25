@@ -1345,6 +1345,16 @@ function showHint(){
 }
 function screenWord(d){ const v=screenVec(DIRS[d]); return Math.abs(v.x)>Math.abs(v.y) ? (v.x>0?'E':'W') : (v.y>0?'S':'N'); }
 // ---------- UI feedback: pops, shakes and staggered entrances ----------
+// scroll fades: a .fade-scroll fades its content out at an edge only while there's more to scroll that way, and the
+// fade grows with that distance, so nothing is cut off sharply and nothing fades at the very top or end.
+// data-fade (px, default 24) sets the size, data-fade-top overrides the top (e.g. under sticky headers).
+// Scrolling, resizing and new content update it on their own (el.fadeUpdate() forces it).
+function fadeScroll(el){ if(el.fadeUpdate) return el.fadeUpdate;
+  const top=+(el.dataset.fadeTop||el.dataset.fade||24), bot=+(el.dataset.fade||24);
+  const upd=el.fadeUpdate=()=>{ const t=el.scrollTop, rest=el.scrollHeight-el.clientHeight-t;
+    el.style.setProperty('--fade-t',Math.max(0,Math.min(t,top))+'px'); el.style.setProperty('--fade-b',Math.max(0,Math.min(rest,bot))+'px'); };
+  el.addEventListener('scroll',upd,{passive:true}); if(window.ResizeObserver) new ResizeObserver(upd).observe(el);
+  new MutationObserver(()=>requestAnimationFrame(upd)).observe(el,{childList:true,subtree:true}); upd(); return upd; }
 function pulse(el){ el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop'); }
 function animOnce(el,cls){ el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls); const end=e=>{ if(e.target!==el) return; el.classList.remove(cls); el.removeEventListener('animationend',end); }; el.addEventListener('animationend',end); }
 // selection (seg buttons, difficulty, hats, colours, map stones): the newly chosen one pops into place; the press itself plays 'tap'
@@ -1365,7 +1375,7 @@ function tabIntro(name){ const pg=$('tab'+name[0].toUpperCase()+name.slice(1));
     setTimeout(()=>{ const box=$('lvGrid').getBoundingClientRect(); stagger(qa($('lvGrid'),'.ch-banner,.node,.peek').filter(r=>{ const b=r.getBoundingClientRect(); return b.bottom>box.top&&b.top<box.bottom; }),'rise',0,35); },40); return; }
   if(name==='meadow') { stagger([pg.querySelector('.panel'),...qa(pg,'.m-stat'),...qa(pg,'.diff')],'rise',0,40); stagger(qa(pg,'.mech'),'rise',260,22,10); stagger(qa(pg,'.m-go .btn'),'rise',420,60); return; }
   if(name==='me'){ stagger([$('slotMe'),pg.querySelector('.panel')],'rise',0,60); stagger(qa(pg,'.hat-grid button'),'rise',140,22,14); stagger(qa(pg,'.pat-grid button'),'rise',300,30); stagger(qa(pg,'.swatches button'),'rise',360,40); return; }
-  if(name==='badges'){ stagger([pg.querySelector('.panel')],'rise'); stagger(qa(pg,'.badge-card'),'rise',90,35,8); } }
+  if(name==='badges'){ stagger([pg.querySelector('.panel')],'rise'); stagger(qa(pg,'.b-tile'),'rise',90,30,12); stagger([$('badgeDetail')],'rise',260); } }
 
 // ---------- resume an unfinished patch after reload ----------
 function saveResume(){ store.set('squirm-resume-'+mode,JSON.stringify({li,name:mode==='garden'?LEVELS[li].name:null,diff:endlessDiff,def:mode==='endless'?L:null,hints:hintsUsed,states:history.concat([state]).slice(-120)})); }
@@ -1828,52 +1838,90 @@ $('saveLoad').onclick=()=>{ const t=$('saveCode');
 // ---------- badges: small goals, checked after wins and after moves that bump a counter ----------
 progress.badges=progress.badges||{}; progress.stats=Object.assign({slides:0,hedges:0,fruit:0},progress.stats||{}); progress.clean=progress.clean||{};
 const anyChapter=f=>CHAPTERS.some(ch=>{ for(let i=ch.from;i<=ch.to;i++) if(!f(i)) return false; return true; });
+// a badge test that also reports progress: [have, need], shown on the badges screen
+const counted=f=>Object.assign(()=>{ const [a,b]=f(); return a>=b; },{prog:f});
 const BADGES=[
   ['first','sprout','First wiggle','Finish your first patch.',c=>(c&&c.won)||LEVELS.some((l,i)=>isCleared(i))],
   ['par','target','Right on par','Finish a patch in par moves or fewer.',c=>c&&c.won&&c.mv<=c.par],
   ['chapter','book','Chapter done','Finish every patch in a chapter.',()=>anyChapter(isCleared)],
   ['clean','bulb','All by myself','Finish a whole chapter without using a hint.',()=>anyChapter(i=>progress.clean[LEVELS[i].name])],
-  ['stars50','star','Star gazer','Collect 50 stars in the garden.',()=>starTotal()>=50],
-  ['stars150','stars','Constellation','Collect 150 stars in the garden.',()=>starTotal()>=150],
-  ['garden','house','The whole garden','Finish every garden patch.',()=>LEVELS.every((l,i)=>isCleared(i))],
+  ['stars50','star','Star gazer','Collect 50 stars in the garden.',counted(()=>[starTotal(),50])],
+  ['stars150','stars','Constellation','Collect 150 stars in the garden.',counted(()=>[starTotal(),150])],
+  ['garden','house','The whole garden','Finish every garden patch.',counted(()=>[LEVELS.filter((l,i)=>isCleared(i)).length,LEVELS.length])],
   ['daily','calendar','Early bird','Finish a daily patch.',()=>Object.keys(progress.daily.results).length>0],
-  ['streak7','week','Week of wiggles','Keep a seven day daily streak.',()=>progress.daily.best>=7],
-  ['meadow','wheat','Meadow wanderer','Clear ten endless patches.',()=>['easy','medium','hard'].reduce((a,d)=>a+progress.endless[d].cleared,0)>=10],
+  ['streak7','week','Week of wiggles','Keep a seven day daily streak.',counted(()=>[progress.daily.best,7])],
+  ['meadow','wheat','Meadow wanderer','Clear ten endless patches.',counted(()=>[['easy','medium','hard'].reduce((a,d)=>a+progress.endless[d].cleared,0),10])],
   ['brave','shield','Brave little worm','Clear a hard endless patch.',()=>progress.endless.hard.cleared>0],
-  ['slides','wetleaf','Slip and slide','Slide across 50 wet leaves.',()=>progress.stats.slides>=50],
-  ['hedges','hedge','Green thumb','Open hedges 20 times.',()=>progress.stats.hedges>=20],
-  ['pushes','beetle','Heave-ho','Push beetles 25 times.',()=>progress.stats.pushes>=25],
-  ['snacks','peach','Snack attack','Eat 30 peaches and mushrooms.',()=>progress.stats.fruit>=30],
+  ['slides','wetleaf','Slip and slide','Slide across 50 wet leaves.',counted(()=>[progress.stats.slides,50])],
+  ['hedges','hedge','Green thumb','Open hedges 20 times.',counted(()=>[progress.stats.hedges,20])],
+  ['pushes','beetle','Heave-ho','Push beetles 25 times.',counted(()=>[progress.stats.pushes,25])],
+  ['snacks','peach','Snack attack','Eat 30 peaches and mushrooms.',counted(()=>[progress.stats.fruit,30])],
   ['owl','moon','Night owl','Finish a patch between 10 pm and 5 am.',c=>c&&c.won&&(c.hour>=22||c.hour<5)],
   ['quick','bolt','Quick crawl','Finish a patch with a par of 10 or more in under 30 seconds.',c=>c&&c.won&&c.par>=10&&c.secs<30],
-  ['flags','flag','Flag collector','Touch 100 flags.',()=>progress.stats.flags>=100],
-  ['tunnels','tunnel','Burrow buddy','Travel through tunnels 25 times.',()=>progress.stats.tunnels>=25],
-  ['gates','key','Key keeper','Open 15 gates.',()=>progress.stats.gates>=15],
-  ['crumbs','crack','Crumbly ground','Watch 50 dry patches sink.',()=>progress.stats.crumbles>=50],
-  ['rain','rain','Rain dancer','Start the rain 10 times.',()=>progress.stats.rains>=10],
-  ['bridges','bridge','Bridge keeper','Swing bridges 15 times.',()=>progress.stats.swings>=15],
-  ['moves','steps','Long crawl','Crawl 1,000 moves.',()=>progress.stats.moves>=1000],
-  ['undos','rewind','Second thoughts','Take back 100 moves.',()=>progress.stats.undos>=100],
-  ['taps','heart','Best friends','Say hi to the worm 20 times.',()=>progress.stats.taps>=20],
-  ['nap','zzz','Nap time','Let the worm doze off mid-patch.',()=>progress.stats.naps>=1],
-  ['sage','owl','Puzzle sage','Finish 20 patches without a hint.',()=>Object.keys(progress.clean).length>=20],
-  ['shiny','sparkles','Shining garden','Get three stars on 30 patches.',()=>LEVELS.filter(l=>progress.stars[l.name]===3).length>=30],
-  ['chapters','blossom','Seasoned gardener','Finish seven chapters.',()=>CHAPTERS.filter((ch,k)=>chapterCleared(k)).length>=7],
-  ['month','month','Month of wiggles','Keep a 30 day daily streak.',()=>progress.daily.best>=30],
-  ['fearless','mountain','Fearless','Clear ten hard endless patches.',()=>progress.endless.hard.cleared>=10],
-  ['dressup','hat-tophat','Dress-up box','Unlock five hats.',()=>HATS.filter(h=>h[2]>=0&&hatUnlocked(h)).length>=5],
-  ['rainbow','rainbow','Rainbow worm','Unlock every worm colour.',()=>coloursUnlocked()===WORM_COLS.length],
-  ['patterns','worm','Dressed to wiggle','Unlock every worm pattern.',()=>patternsUnlocked().length===PATTERNS.length]];
+  ['flags','flag','Flag collector','Touch 100 flags.',counted(()=>[progress.stats.flags,100])],
+  ['tunnels','tunnel','Burrow buddy','Travel through tunnels 25 times.',counted(()=>[progress.stats.tunnels,25])],
+  ['gates','key','Key keeper','Open 15 gates.',counted(()=>[progress.stats.gates,15])],
+  ['crumbs','crack','Crumbly ground','Watch 50 dry patches sink.',counted(()=>[progress.stats.crumbles,50])],
+  ['rain','rain','Rain dancer','Start the rain 10 times.',counted(()=>[progress.stats.rains,10])],
+  ['bridges','bridge','Bridge keeper','Swing bridges 15 times.',counted(()=>[progress.stats.swings,15])],
+  ['moves','steps','Long crawl','Crawl 1,000 moves.',counted(()=>[progress.stats.moves,1000])],
+  ['undos','rewind','Second thoughts','Take back 100 moves.',counted(()=>[progress.stats.undos,100])],
+  ['taps','heart','Best friends','Say hi to the worm 20 times.',counted(()=>[progress.stats.taps,20])],
+  ['nap','zzz','Nap time','Let the worm doze off mid-patch.',counted(()=>[progress.stats.naps,1])],
+  ['sage','owl','Puzzle sage','Finish 20 patches without a hint.',counted(()=>[Object.keys(progress.clean).length,20])],
+  ['shiny','sparkles','Shining garden','Get three stars on 30 patches.',counted(()=>[LEVELS.filter(l=>progress.stars[l.name]===3).length,30])],
+  ['chapters','blossom','Seasoned gardener','Finish seven chapters.',counted(()=>[CHAPTERS.filter((ch,k)=>chapterCleared(k)).length,7])],
+  ['month','month','Month of wiggles','Keep a 30 day daily streak.',counted(()=>[progress.daily.best,30])],
+  ['fearless','mountain','Fearless','Clear ten hard endless patches.',counted(()=>[progress.endless.hard.cleared,10])],
+  ['dressup','hat-tophat','Dress-up box','Unlock five hats.',counted(()=>[HATS.filter(h=>h[2]>=0&&hatUnlocked(h)).length,5])],
+  ['rainbow','rainbow','Rainbow worm','Unlock every worm colour.',counted(()=>[coloursUnlocked(),WORM_COLS.length])],
+  ['patterns','worm','Dressed to wiggle','Unlock every worm pattern.',counted(()=>[patternsUnlocked().length,PATTERNS.length])]];
 // returns the badges earned just now; quiet ones (earned before badges existed) don't celebrate
 function checkBadges(ctx,quiet){ const got=[];
   for(const b of BADGES){ if(progress.badges[b[0]]) continue; let ok=false; try{ ok=!!b[4](ctx); }catch(e){} if(ok){ progress.badges[b[0]]=Date.now(); got.push(b); } }
   if(got.length){ save(); if(!quiet) setTimeout(()=>{ sfx('badge'); toast(`Badge earned: ${got[0][2].replace(/&[^;]+;/g,'')}${got.length>1?` and ${got.length-1} more`:''}!`,3200); },ctx&&ctx.won?1400:200); }
   return got; }
 function bumpStat(k,n=1){ progress.stats[k]=(progress.stats[k]||0)+n; }
+// badges screen: a filter, groups of sticker tiles in a fading scroller, and a card for the picked badge
+const BADGE_GROUPS=[['Garden journey',['first','par','chapter','clean','sage','stars50','stars150','shiny','chapters','garden']],
+  ['Daily and meadow',['daily','streak7','month','meadow','brave','fearless']],
+  ['Garden helpers',['flags','snacks','crumbs','gates','tunnels','rain','bridges','slides','hedges','pushes']],
+  ['Just for fun',['moves','undos','taps','nap','owl','quick','dressup','rainbow','patterns']]];
+// a badge left out of every group still shows, in the last one
+{ const seen=new Set(BADGE_GROUPS.flatMap(g=>g[1])); BADGE_GROUPS[BADGE_GROUPS.length-1][1].push(...BADGES.map(b=>b[0]).filter(id=>!seen.has(id))); }
+let badgeFilter='all', badgeSel=null;
+const badgeById=id=>BADGES.find(b=>b[0]===id);
+// [have, need] for a counted badge that isn't earned yet and has more than one step, else null
+const badgeProg=b=>{ if(progress.badges[b[0]]||!b[4].prog) return null; const [a,n]=b[4].prog(); return n>1?[Math.min(a||0,n),n]:null; };
+const pct=([a,n])=>(100*a/n).toFixed(1)+'%';
+// the badge to show first: the closest one to earning, else the first not earned, else the first
+function nearestBadge(){ let best=null, br=-1;
+  for(const b of BADGES){ const p=badgeProg(b); if(p&&p[0]/p[1]>br){ br=p[0]/p[1]; best=b; } }
+  return (best||BADGES.find(b=>!progress.badges[b[0]])||BADGES[0])[0]; }
+function badgeTile(b){ const t=!!progress.badges[b[0]], p=badgeProg(b);
+  return `<button class="b-tile ${t?'on':''} ${b[0]===badgeSel?'sel':''}" data-b="${b[0]}" aria-pressed="${b[0]===badgeSel}" aria-label="${b[2]}${t?', earned':''}">`
+    +`<span class="b-medal" aria-hidden="true">${art(b[1],34)}${t?'':`<span class="b-lock">${art('lock',14)}</span>`}</span><b>${b[2]}</b>`
+    +`<span class="b-bar ${p?'':'none'}" style="--p:${p?pct(p):'0%'}" aria-hidden="true"></span></button>`; }
+function renderBadgeDetail(anim){ const b=badgeById(badgeSel), t=!!progress.badges[b[0]], p=badgeProg(b), d=$('badgeDetail');
+  d.classList.toggle('on',t);
+  d.innerHTML=`<span class="b-medal" aria-hidden="true">${art(b[1],38)}${t?'':`<span class="b-lock">${art('lock',14)}</span>`}</span><span class="pt"><b>${b[2]}</b><small>${b[3]}</small>`
+    +(t?`<small class="b-state got">${UI_ICON.check} Earned</small>`:p?`<small class="b-state"><span class="b-bar" style="--p:${pct(p)}"></span>${p[0].toLocaleString()} of ${p[1].toLocaleString()}</small>`:`<small class="b-state">Not yet</small>`)+`</span>`;
+  if(anim) animOnce(d,'swap'); }
 function renderBadges(){ const n=Object.keys(progress.badges).length;
   $('badgeCount').textContent=`${n} of ${BADGES.length} earned`;
-  $('badgeGrid').innerHTML=BADGES.map(b=>{ const t=progress.badges[b[0]];
-    return `<div class="badge-card ${t?'on':''}"><span class="medal" aria-hidden="true">${t?art(b[1],32):art('lock',28)}</span><span><b>${b[2]}</b><small>${b[3]}${t?` <i>${new Date(t).toLocaleDateString(undefined,{month:'short',day:'numeric'})}</i>`:''}</small></span></div>`; }).join(''); }
+  $('badgeBar').firstElementChild.style.setProperty('--p',(100*n/BADGES.length).toFixed(1)+'%');
+  qa($('badgeFilter'),'button').forEach(b=>{ const on=b.dataset.f===badgeFilter; b.classList.toggle('on',on); b.setAttribute('aria-checked',String(on)); });
+  const show=b=>badgeFilter==='all'||(badgeFilter==='earned')===!!progress.badges[b[0]];
+  if(!badgeSel||!badgeById(badgeSel)) badgeSel=nearestBadge();
+  const html=BADGE_GROUPS.map(([title,ids])=>{ const list=ids.map(badgeById).filter(show); if(!list.length) return '';
+    const got=ids.filter(id=>progress.badges[id]).length;
+    return `<section class="b-group" aria-label="${title}"><p class="label">${title}<span>${got} of ${ids.length}</span></p><div class="b-tiles">${list.map(badgeTile).join('')}</div></section>`; }).join('');
+  const g=$('badgeGrid'); g.innerHTML=html||`<p class="b-empty">${badgeFilter==='earned'?'No badges yet. Finish a patch to earn your first one.':'You found every badge. What a garden!'}</p>`;
+  qa(g,'.b-tile').forEach(el=>el.onclick=()=>{ if(badgeSel===el.dataset.b) return; badgeSel=el.dataset.b;
+    qa(g,'.b-tile').forEach(x=>{ const on=x===el; x.classList.toggle('sel',on); x.setAttribute('aria-pressed',String(on)); }); settle(el); renderBadgeDetail(true); });
+  renderBadgeDetail(); }
+qa($('badgeFilter'),'button').forEach(b=>b.onclick=()=>{ if(badgeFilter===b.dataset.f) return; badgeFilter=b.dataset.f; renderBadges(); $('badgeGrid').scrollTop=0; settle(b);
+  stagger(qa($('badgeGrid'),'.b-tile'),'rise',0,25,12); });
 
 // ---------- secret reset ----------
 function askReset(){ sfx('stuck'); show('resetOv'); pushLayer('reset'); }
@@ -2276,6 +2324,7 @@ window.addEventListener('appinstalled',()=>{ installEvt=null; $('installBtn').hi
 $('installBtn').onclick=async()=>{ const e=installEvt; if(!e) return; installEvt=null; $('installBtn').hidden=true; try{ await e.prompt(); }catch(err){} };
 
 // ---------- boot ----------
+qa(document,'.fade-scroll').forEach(fadeScroll);
 document.querySelectorAll('[data-art]').forEach(e=>e.insertAdjacentHTML('afterbegin',art(e.dataset.art,+e.dataset.size||24)));
 // upload the shared effect textures once up front: otherwise each one is first sent to the GPU
 // whenever its effect first happens (a random sparkle, a snore), which shows up as a tiny hitch

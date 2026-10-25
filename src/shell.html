@@ -142,6 +142,10 @@ button:focus-visible{outline:3px solid var(--honey);outline-offset:2px}
 .panel-head h2{margin:0;font:800 26px/1.1 var(--fd);color:var(--title);text-shadow:0 3px 0 var(--edge)}
 .panel-head .total{margin:0}
 /* segmented picker (reminder time, theme) */
+.fade-scroll{overflow-y:auto;overscroll-behavior:contain;touch-action:pan-y;
+  /* fades content out at an edge only while there's more to scroll that way; fadeScroll() in game.js sets the sizes */
+  -webkit-mask-image:linear-gradient(180deg,transparent,#000 var(--fade-t,0px),#000 calc(100% - var(--fade-b,0px)),transparent);
+  mask-image:linear-gradient(180deg,transparent,#000 var(--fade-t,0px),#000 calc(100% - var(--fade-b,0px)),transparent)}
 .seg{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;padding:4px;border-radius:18px;background:var(--paper-2);border:2px solid var(--edge)}
 .seg button{border:0;border-radius:14px;background:transparent;color:var(--ink);padding:8px 4px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;min-height:52px}
 .seg b{font:800 16px/1 var(--fd)}
@@ -302,8 +306,7 @@ nav{display:flex;justify-content:center;align-items:flex-end;gap:16px}
 /* -- Garden: each chapter is a little scene, its patches stepping stones along a path -- */
 #tabGarden .panel{flex:1;min-height:0}
 .list{display:grid;gap:8px;margin:4px 0 16px;max-height:56vh;overflow:auto;text-align:left;touch-action:pan-y;padding:2px}
-#tabGarden .list{flex:1;min-height:0;max-height:none;margin:0;
-  -webkit-mask-image:linear-gradient(180deg,transparent,#000 16px,#000 calc(100% - 28px),transparent);mask-image:linear-gradient(180deg,transparent,#000 16px,#000 calc(100% - 28px),transparent)}
+#tabGarden .list{flex:1;min-height:0;max-height:none;margin:0}
 .map{display:flex;flex-direction:column;gap:14px;padding:2px 2px 18px}
 .scene{--mixed:color-mix(in srgb,var(--scene) var(--scene-mix,55%),var(--paper));position:relative;border-radius:22px;background:var(--mixed);border:2px solid var(--edge)}
 .scene.later{filter:saturate(.55)}
@@ -403,15 +406,35 @@ nav{display:flex;justify-content:center;align-items:flex-end;gap:16px}
 .swatches button.on{transform:scale(1.15);box-shadow:0 0 0 3px var(--outline),0 3px 0 3px var(--outline)}
 .swatches button.locked{filter:saturate(.35);opacity:.75}
 /* -- Badges -- */
-.badge-grid{display:grid;gap:8px;margin:0}
-.badge-card{display:flex;gap:12px;align-items:center;padding:8px 12px 8px 8px;border-radius:18px;border:3px solid var(--edge);background:var(--paper-2);opacity:.7}
-.badge-card.on{opacity:1;background:var(--paper);border-color:var(--honey);box-shadow:0 3px 0 var(--honey-dark)}
-.badge-card .medal{flex:none;width:46px;height:46px;border-radius:50%;display:grid;place-items:center;font-size:24px;background:var(--sticker);border:3px solid var(--sticker-edge)}
-.badge-card.on .medal{background:var(--tint-honey);border-color:var(--honey-dark)}
-.badge-card:not(.on) .medal{filter:grayscale(1)}
-.badge-card b{display:block;font:800 16px/1.2 var(--fd)}
-.badge-card small{font-weight:700;font-size:13px;color:var(--ink-soft);line-height:1.3}
-.badge-card i{font-style:normal;color:var(--leaf-dark);white-space:nowrap}
+.seg-sm button{min-height:0;padding:8px 4px}
+/* -- Badges: a progress bar, a filter, groups of sticker tiles in a fading scroller and the picked badge's card -- */
+#tabBadges .panel{flex:1;min-height:0}
+.b-progress{flex:none;height:14px;margin-top:-10px;border-radius:999px;background:var(--paper-2);border:2px solid var(--edge);overflow:hidden}
+.b-progress i{display:block;height:100%;width:var(--p,0%);border-radius:999px;background:var(--honey) var(--glaze-accent);transition:width var(--dur-slow) var(--ease-out)}
+.b-scroll{flex:1;min-height:0;margin:0 -8px;padding:4px 8px 10px}
+.b-group+.b-group{margin-top:16px}
+.b-group .label{display:flex;justify-content:space-between;margin:0 2px 8px}
+.b-tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.b-tile{display:flex;flex-direction:column;align-items:center;gap:6px;padding:10px 4px 9px;border-radius:18px;border:3px solid var(--edge);background:var(--paper-2);color:var(--ink);font:inherit;cursor:pointer;box-shadow:0 3px 0 var(--edge)}
+.b-tile b{flex:1;display:flex;align-items:center;font:800 12px/1.15 var(--fd);text-align:center}
+.b-tile.on{background:var(--paper);border-color:var(--honey);box-shadow:0 3px 0 var(--honey-dark)}
+.b-tile.sel{outline:3px solid var(--berry);outline-offset:1px}
+.b-medal{position:relative;flex:none;width:54px;height:54px;border-radius:50%;display:grid;place-items:center;background:var(--sticker);border:3px solid var(--sticker-edge)}
+.on>.b-medal{background:var(--tint-honey);border-color:var(--honey-dark)}
+.b-medal>.art:first-child{transition:filter var(--dur)}
+:not(.on)>.b-medal>.art:first-child{filter:grayscale(1);opacity:.5}
+.b-lock{position:absolute;right:-6px;bottom:-5px;width:24px;height:24px;border-radius:50%;display:grid;place-items:center;background:var(--sticker);border:2px solid var(--sticker-edge)}
+.b-bar{flex:none;width:72%;height:6px;border-radius:999px;background:var(--edge);overflow:hidden}
+.b-bar::after{content:"";display:block;height:100%;width:var(--p,0%);border-radius:999px;background:var(--honey)}
+.b-empty{margin:28px 12px;text-align:center;font-weight:700;color:var(--ink-soft)}
+.b-detail{margin-top:0}
+.b-detail .b-medal{width:60px;height:60px}
+.b-detail .pt small{display:block;font:700 13px/1.3 var(--fb)}
+.b-detail .pt .b-state{display:flex;align-items:center;gap:8px;color:var(--ink)}
+.b-detail .b-state .b-bar{width:96px}
+.b-bar.none{visibility:hidden}
+.b-detail .b-state.got{color:var(--leaf-dark)}
+.b-detail .b-state .ui-ic{width:14px;height:14px}
 
 /* ==== 7. Settings: a short list whose rows open sub-pages ==== */
 #setOv .dialog{overflow-x:hidden}
@@ -446,11 +469,12 @@ nav{display:flex;justify-content:center;align-items:flex-end;gap:16px}
 
 /* ==== 9. UI feedback: one press style per family, one selection pop, one error shake, one dialog motion ==== */
 /* press: controls that stand on a ledge sink onto it, flat ones squish. Pressing is quick, letting go springs back. */
-.btn,.round,.disc,.play,.big,.set-link,.pick .go,.hat,.diff,.node,.mech,.seg button,.swatches button,.stat,.icon-btn,.link,.tab svg{
+.btn,.round,.disc,.play,.big,.set-link,.pick .go,.hat,.b-tile,.diff,.node,.mech,.seg button,.swatches button,.stat,.icon-btn,.link,.tab svg{
   transition:transform var(--dur) var(--ease-pop),scale var(--dur) var(--ease-pop),box-shadow var(--dur) var(--ease-pop),background-color var(--dur-fast),border-color var(--dur-fast)}
-.btn:active,.round:active,.gbtn:active .disc,.play:active,.big:active,.set-link:active,.pick .go:active,.hat:active,.diff:active,.node:active,
+.btn:active,.round:active,.gbtn:active .disc,.play:active,.big:active,.set-link:active,.pick .go:active,.hat:active,.b-tile:active,.diff:active,.node:active,
 .mech:active,.seg button:active,.swatches button:active,.stat:active,.icon-btn:active,.link:active,.switch:active,.tab:active svg{transition-duration:var(--dur-fast);transition-timing-function:var(--ease-out)}
-.hat:active{transform:translateY(3px);box-shadow:0 0 0 var(--edge)}
+.hat:active,.b-tile:active{transform:translateY(3px);box-shadow:0 0 0 var(--edge)}
+.b-tile.on:active{box-shadow:0 0 0 var(--honey-dark)}
 .hat.on:active{box-shadow:0 0 0 var(--leaf)}
 .diff:active{transform:translateY(3px);box-shadow:0 0 0 var(--acc)}
 .mech:active,.seg button:active,.swatches button:active,.stat:active,.icon-btn:active,.link:active,.switch:active{scale:.94}
@@ -523,7 +547,7 @@ nav .enter,.rise{animation:navIn var(--dur-slow) var(--ease-pop) var(--d,0ms) bo
   .tab.on.pop svg,.stat.cheer,.stat.cheer .ic,.stat.lost .mini,.gbtn.pop .disc,.gbtn.hint .disc svg,#hintBtn.busy svg,
   #tutorial .hand,.brand span,.node.cur::after{animation:none}
   .star{animation:none;transform:none}
-  .btn,.round,.disc,.play,.big,.set-link,.pick .go,.hat,.diff,.node,.mech,.seg button,.swatches button,.stat,.icon-btn,.link,.tab svg,.switch,.switch i,.mech .mi,#toast{transition:none}
+  .btn,.round,.disc,.play,.big,.set-link,.pick .go,.hat,.b-tile,.b-progress i,.b-medal>.art,.diff,.node,.mech,.seg button,.swatches button,.stat,.icon-btn,.link,.tab svg,.switch,.switch i,.mech .mi,#toast{transition:none}
   .diff.on:not(:active){transform:none}
   .petals{display:none}
 }
@@ -587,7 +611,7 @@ nav .enter,.rise{animation:navIn var(--dur-slow) var(--ease-pop) var(--d,0ms) bo
     <span class="home-top-tools"><button class="round" id="homeSound"></button><button class="round" id="installBtn" aria-label="Install Squirm as an app" hidden><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7 10l5 5 5-5"/><path d="M5 19h14"/></svg></button><button class="round" id="settingsBtn" aria-label="Settings" title="Settings"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.8v2.4M12 18.8v2.4M2.8 12h2.4M18.8 12h2.4M5.5 5.5l1.7 1.7M16.8 16.8l1.7 1.7M5.5 18.5l1.7-1.7M16.8 7.2l1.7-1.7"/><circle cx="12" cy="12" r="6.6"/></svg></button></span>
   </div>
   <div class="tab-pages">
-    <section class="tab-page" id="tabPlay" aria-label="Play">
+    <section class="tab-page fade-scroll" id="tabPlay" aria-label="Play">
       <div class="home-inner">
         <div class="logo">
           <div class="worm-slot" id="slotPlay"><canvas id="homeWorm" width="220" height="200" role="button" tabindex="0" aria-label="The worm. Tap to say hi"></canvas></div>
@@ -601,14 +625,14 @@ nav .enter,.rise{animation:navIn var(--dur-slow) var(--ease-pop) var(--d,0ms) bo
   </button>
       </div>
     </section>
-    <section class="tab-page" id="tabGarden" aria-labelledby="lvTitle" hidden>
+    <section class="tab-page fade-scroll" id="tabGarden" aria-labelledby="lvTitle" hidden>
       <div class="panel card">
         <div class="panel-head"><h2 id="lvTitle">Garden patches</h2><span class="total" id="lvTotal"></span></div>
-        <div class="list map" id="lvGrid"></div>
+        <div class="list map fade-scroll" id="lvGrid" data-fade-top="10"></div>
         <div class="pick" id="lvPick" aria-live="polite"></div>
       </div>
     </section>
-    <section class="tab-page" id="tabMeadow" aria-labelledby="endlessTitle" hidden>
+    <section class="tab-page fade-scroll" id="tabMeadow" aria-labelledby="endlessTitle" hidden>
       <div class="panel card sheet meadow">
         <div class="panel-head"><h2 id="endlessTitle">Endless meadow</h2><span class="sub-note">Fresh patches, grown just for you</span></div>
         <div class="m-stats" id="eStats"></div>
@@ -619,7 +643,7 @@ nav .enter,.rise{animation:navIn var(--dur-slow) var(--ease-pop) var(--d,0ms) bo
         <div class="row m-go"><button class="btn" id="homeEndlessCont" hidden>Resume</button><button class="btn primary" id="endlessGo"><span data-art="sprout" data-size="22"></span> Grow a patch</button></div>
       </div>
     </section>
-    <section class="tab-page" id="tabMe" aria-label="Me" hidden>
+    <section class="tab-page fade-scroll" id="tabMe" aria-label="Me" hidden>
       <div class="worm-slot" id="slotMe"></div>
       <div class="panel card sheet">
         <div class="panel-head"><h2>Wardrobe</h2></div>
@@ -631,10 +655,13 @@ nav .enter,.rise{animation:navIn var(--dur-slow) var(--ease-pop) var(--d,0ms) bo
         <div class="hat-grid pat-grid" id="patGrid" role="group" aria-label="Worm pattern"></div>
       </div>
     </section>
-    <section class="tab-page" id="tabBadges" aria-label="Badges" hidden>
-      <div class="panel card sheet">
+    <section class="tab-page fade-scroll" id="tabBadges" aria-label="Badges" hidden>
+      <div class="panel card">
         <div class="panel-head"><h2>Badges</h2><span class="total" id="badgeCount"></span></div>
-        <div class="badge-grid" id="badgeGrid"></div>
+        <div class="b-progress" id="badgeBar" aria-hidden="true"><i></i></div>
+        <div class="seg seg-sm" id="badgeFilter" role="radiogroup" aria-label="Show badges"><button role="radio" data-f="all"><b>All</b></button><button role="radio" data-f="earned"><b>Earned</b></button><button role="radio" data-f="todo"><b>To find</b></button></div>
+        <div class="fade-scroll b-scroll" id="badgeGrid"></div>
+        <div class="pick b-detail" id="badgeDetail" aria-live="polite"></div>
       </div>
     </section>
   </div>
