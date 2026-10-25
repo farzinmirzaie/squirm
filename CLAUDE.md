@@ -252,6 +252,8 @@ map thumbnails, and `introAt` in `tools/verify-levels.js`.
   `shell.html` write `<span data-art="name" data-size="28"></span>` and boot fills it in. Controls
   (chevrons, back, close, check, the HUD buttons) are monoline `currentColor` SVGs (`UI_ICON`, class
   `ui-ic`) with a stroke that renders about 2.5px. Add new pictures to `ART` rather than inlining SVG.
+  The mechanic intros and Meadow tiles (`MECH[k].i`) use `ART` too, so each object has one drawing
+  everywhere, coloured like its 3D model (the mushroom is lilac like the board's, the red one is the hat).
 - Respect `prefers-reduced-motion`.
 - Wrap `localStorage` access in try/catch.
 - Keep the mobile performance budget in mind. Scenery is the first thing to trim.

@@ -92,7 +92,7 @@ h1{margin:0;font:800 21px/1.2 var(--fd);white-space:nowrap;overflow:hidden;text-
 .stat .k{font:800 11px/1 var(--fb);color:var(--ink-soft);text-transform:uppercase;letter-spacing:.06em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
 .stat small{font:800 13px/1 var(--fb);color:var(--ink-soft)}
 .stat .to{font-size:14px;color:var(--ink-soft);margin:0 -1px}
-.stat .ic{width:24px;height:24px}.stat .ic svg{width:16px;height:16px}
+.stat .ic{width:24px;height:24px}.stat .ic svg{width:19px;height:19px}
 .stat.done{background:var(--done);border-color:var(--leaf)}
 .stat.done .k{color:var(--ink)}
 .stat.moves{flex-grow:1.4}
@@ -101,12 +101,12 @@ h1{margin:0;font:800 21px/1.2 var(--fd);white-space:nowrap;overflow:hidden;text-
 .stat .par{font:800 11px/1 var(--fb);color:var(--ink-soft);text-transform:uppercase;letter-spacing:.06em}
 .stat .k.mv{display:flex;align-items:center;gap:6px}
 .ic{flex:none;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;background:var(--sticker);border:2px solid var(--sticker-edge)}
-.ic svg{width:17px;height:17px}
+.ic svg{width:19px;height:19px}
 /* the toast floats above the game buttons, the home tab bar and any open dialog (toast() sets --toast-y) */
 #toast{position:fixed;left:0;right:0;bottom:var(--toast-y,120px);z-index:7;width:max-content;margin:0 auto;max-width:min(calc(100% - 32px),420px);padding:9px 16px 9px 9px;display:flex;gap:10px;align-items:center;border-radius:22px;
   font-weight:800;font-size:15px;line-height:1.35;opacity:0;transform:translateY(10px) scale(.96);transition:opacity var(--dur-fast) var(--ease-out),transform var(--dur) var(--ease-pop);pointer-events:none}
 #toast.show{opacity:1;transform:none}
-#toast .ic{width:32px;height:32px}
+#toast .ic{width:32px;height:32px}#toast .ic svg{width:23px;height:23px}
 #toast .msg{min-width:0}
 /* ---- controls: chunky round game buttons ---- */
 .bottom{display:flex;flex-direction:column}
@@ -474,7 +474,7 @@ button:disabled{cursor:default}
 @keyframes dlgOut{to{opacity:0;transform:scale(.94)}}
 /* ---- short screens (phones in landscape): one compact HUD row, smaller controls ---- */
 /* narrow phones with many goals: tighter tiles */
-@media (max-width:400px){ .hud-stats{gap:4px;padding:4px} .stat{padding:6px 2px 5px;font-size:16px} .stat .v{gap:4px} .stat .ic{width:22px;height:22px} .stat .ic svg{width:15px;height:15px} .stat.moves b{font-size:18px} .stat .k{font-size:11px;letter-spacing:.03em} .stat .mini i{width:9px;height:9px} }
+@media (max-width:400px){ .hud-stats{gap:4px;padding:4px} .stat{padding:6px 2px 5px;font-size:16px} .stat .v{gap:4px} .stat .ic{width:22px;height:22px} .stat .ic svg{width:17px;height:17px} .stat.moves b{font-size:18px} .stat .k{font-size:11px;letter-spacing:.03em} .stat .mini i{width:9px;height:9px} }
 @media (max-height:520px){
   #app{max-width:none;padding:6px 12px 8px}
   header.hud{flex-direction:row;flex-wrap:wrap;align-items:center;gap:6px}
