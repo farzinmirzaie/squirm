@@ -1272,6 +1272,7 @@ function animateMove(prev,ev,dir,sliding){
   const d=DIRS[dir]; headDir=[d[0],d[1]];
   sfx(ev.portal?'portal':sliding?'slide':'move',state.moves);
   if(sliding) bumpStat('slides'); if(ev.eaten==='+'||ev.eaten==='-') bumpStat('fruit');
+  { const t=ev.eaten&&sayFor(ev.eaten); if(t&&!sliding) wormSays(t,1400); }
   if(ev.eaten==='C') bumpStat('flags'); if(ev.eaten==='G') bumpStat('gates'); if(ev.portal) bumpStat('tunnels'); if(ev.rain===true) bumpStat('rains');
   if(ev.swung&&ev.swung.length) bumpStat('swings'); if(ev.crumbled&&ev.crumbled.length) bumpStat('crumbles',ev.crumbled.length);
   syncBoard(true); syncWeather(true); syncHedges(true); if(ev.snails) syncSnails(true,ev);
@@ -1342,20 +1343,19 @@ let winHats=[];
 function onWin(){ shareText=''; newBest=false; chapterDone=null; const coloursBefore=coloursUnlocked(), patsBefore=patternsUnlocked(); winHats=HATS.filter(hatUnlocked).map(h=>h[0]);
   const par=curPar(), mv=state.moves; const st=starsFor(mv,par,hintsUsed>0); clearResume();
   const titles=['Snug as a bug!','Home sweet burrow!','Wiggle well done!','Cozy and curled up!'];
-  let extra='';
+  const gifts=[], gift=(ico,t,sub,hot)=>gifts.push({ico,t,sub,hot});
   if(mode==='garden'){
     const nm=LEVELS[li].name, best=progress.best[nm]; if(best!=null&&mv<best) newBest=true; if(best==null||mv<best) progress.best[nm]=mv;
     const ch=CHAPTERS.find(c=>li>=c.from&&li<=c.to); const wasDone=ch&&best!=null; if(ch && best==null){ let all=true; for(let i=ch.from;i<=ch.to;i++) if(i!==li&&!isCleared(i)) all=false; if(all) chapterDone=ch.name; }
     progress.stars[nm]=Math.max(progress.stars[nm]||0,st);
     const last=li===LEVELS.length-1;
     $('winTitle').textContent = last ? 'The whole garden!' : chapterDone ? 'Chapter complete!' : titles[li%titles.length];
-    if(chapterDone) extra=`<div class="stat-row"><span class="pill">${ICON.leaf} ${chapterDone} finished</span></div>`;
-    if(!chapterDone && ch){ let left=0; for(let i=ch.from;i<=ch.to;i++) if(i!==li&&!isCleared(i)) left++; if(left) extra=`<div class="stat-row"><span class="pill">${ICON.leaf} ${left} more in ${ch.name}</span></div>`; }
-    if(newBest) extra+='<span class="newbest">New best</span>';
+    if(chapterDone){ const h=HATS.find(x=>x[2]===CHAPTERS.indexOf(ch)); gift(h?hatArt(h[0],28):art('book',26),`${chapterDone} finished`,'The whole chapter is grown',true); }
+    if(!chapterDone && ch){ let left=0; for(let i=ch.from;i<=ch.to;i++) if(i!==li&&!isCleared(i)) left++; if(left) gift(art('sprout',26),`${left} more in ${ch.name}`,`Patch ${li-ch.from+1} of ${ch.to-ch.from+1} grown`); }
     // 5. say so when the next patch opens a new chapter
     const nextCh=!last&&CHAPTERS.find(c=>c.from===li+1);
     $('winNext').textContent = last&&allCleared() ? "What's next?" : last ? 'Back to patch 1' : nextCh ? 'Next chapter' : 'Next patch';
-    if(nextCh) extra+=`<div class="stat-row"><span class="pill unlock">Next up: ${nextCh.name}</span></div>`;
+    if(nextCh) gift(art('flag',26),`Next up: ${nextCh.name}`,'A new chapter opens');
     shareText=shareLine(`patch ${li+1} (${nm})`,mv,par,st);
   } else if(L.daily){
     const D=progress.daily, k=L.daily, prev=D.results[k];
@@ -1364,30 +1364,36 @@ function onWin(){ shareText=''; newBest=false; chapterDone=null; const coloursBe
     if(!prev||mv<prev.moves) D.results[k]={moves:mv,stars:Math.max(st,prev?prev.stars:0)};
     const old=new Date(); old.setDate(old.getDate()-90); const ok=dateKey(old); for(const d in D.results) if(d<ok) delete D.results[d];
     $('winTitle').textContent="Today's patch, done!"; $('winNext').textContent='Back home'; shareRemindState();
-    extra=`<div class="stat-row"><span class="pill">Daily streak ${D.streak}</span><span class="pill">Best ${D.best}</span></div>`;
+    gift(art('flame',26),`${D.streak} day streak`,`Your best is ${D.best}. See you tomorrow!`,D.streak>1);
     shareText=shareLine(`daily patch ${k}`,mv,par,st);
   } else {
     const e=progress.endless[endlessDiff]; e.cleared++; e.streak++; e.best=Math.max(e.best,e.streak); e.stars+=st;
     $('winTitle').textContent = titles[e.cleared%titles.length];
     $('winNext').textContent = 'Grow another'; setTimeout(startPrefetch,900);
     shareText=shareLine(`${DIFF_NAME[endlessDiff].toLowerCase()} endless patch, streak ${e.streak}`,mv,par,st);
-    extra=`<div class="stat-row"><span class="pill">${DIFF_NAME[endlessDiff]}: ${e.cleared} cleared</span><span class="pill">Streak ${e.streak}</span></div>`;
+    gift(art(DIFF_ICON_KEY[endlessDiff],26),`${DIFF_NAME[endlessDiff]} streak ${e.streak}`,`${e.cleared} cleared, best streak ${e.best}`,e.streak>1&&e.streak===e.best);
   }
   if(mode==='garden'&&!hintsUsed) progress.clean[LEVELS[li].name]=true;
   save(); askPersist();
   const hatsBefore=winHats;
   const earned=checkBadges({won:true,mv,par,secs:playT,hour:new Date().getHours(),undos:undosHere,hinted:hintsUsed>0});
-  if(earned.length) extra+=`<div class="stat-row">${earned.map(b=>`<span class="pill unlock">${art(b[1],18)} ${b[2]}</span>`).join('')}</div>`;
+  earned.forEach(b=>gift(art(b[1],26),b[2],'New badge',true));
   const newHat=HATS.find(h=>h[0]!=='none'&&hatUnlocked(h)&&!hatsBefore.includes(h[0]));
-  if(newHat) extra+=`<div class="stat-row"><span class="pill unlock">New hat: ${newHat[1]}</span></div>`;
-  const newPat=patternsUnlocked().find(x=>!patsBefore.includes(x)); if(newPat){ const p=PATTERNS.find(x=>x[0]===newPat); extra+=`<div class="stat-row"><span class="pill unlock">New worm pattern: ${p[1]}</span></div>`; }
-  if(coloursUnlocked()>coloursBefore){ const c=WORM_COLS[coloursUnlocked()-1]; extra+=`<div class="stat-row"><span class="pill unlock">New worm colour: ${c[0]}</span></div>`; }
-  $('winText').textContent = (mv<=par ? `${mv} moves. Right on par.` : `${mv} moves. Par is ${par}, so there's a shorter way.`)+` Time: ${playTime()}.`;
-  $('winMedal').innerHTML = `<div class="stars">${[0,1,2].map(i=>STAR(i<st,i)).join('')}</div>` + (hintsUsed?`<p class="note">You used ${hintsUsed} ${hintsUsed===1?'hint':'hints'}. Solve it on your own for 3 stars.</p>`:'') + extra;
+  if(newHat) gift(hatArt(newHat[0],28),newHat[1],'New hat for your wardrobe',true);
+  const newPat=patternsUnlocked().find(x=>!patsBefore.includes(x)); if(newPat){ const p=PATTERNS.find(x=>x[0]===newPat); gift(patArt(p[0],30),p[1],'New worm pattern',true); }
+  if(coloursUnlocked()>coloursBefore){ const ci=coloursUnlocked()-1; gift(patArt(patOn(),30,ci),WORM_COLS[ci][0],'New worm colour',true); }
+  $('winStars').innerHTML=[0,1,2].map(i=>STAR(i<st,i)).join('');
+  $('winSub').textContent = hintsUsed ? `You used ${hintsUsed} ${hintsUsed===1?'hint':'hints'}. Solve it on your own for 3 stars.` : mv<=par ? 'Right on par. Lovely crawling!' : `There's a shorter way, in ${par} moves.`;
+  $('winStats').innerHTML=`<span class="${mv<=par?'good':''}">${mv}<small>moves</small>${newBest?'<em>New best</em>':''}</span><span>${par}<small>par</small></span><span>${playTime()}<small>time</small></span>`;
+  // the rewards first, then progress notes
+  gifts.sort((a,b)=>(b.hot?1:0)-(a.hot?1:0));
+  $('winGifts').innerHTML=gifts.map(g=>`<div class="gift ${g.hot?'hot':''}"><span class="gi" aria-hidden="true">${g.ico}</span><span><b>${g.t}</b><small>${g.sub}</small></span></div>`).join('');
+  $('winGifts').scrollTop=0;
   for(let i=0;i<st;i++) setTimeout(()=>buzz(12),200+i*180);
   if(!reduceMotion) for(let i=0;i<st;i++) tone([784,988,1318][i],.25,{vol:.1,delay:.2+i*.18});
   photoInfo={title:mode==='garden'?`${li+1}. ${LEVELS[li].name}`:L.daily?"Today's patch":'A meadow patch',st};
   $('winShare').hidden=!shareText; petals(); show('winOv'); pushLayer('win');
+  stagger([$('winStats'),...qa($('winGifts'),'.gift'),$('winNext'),document.querySelector('.win-acts')],'rise',380,70,8);
 }
 // ---------- photo mode ----------
 // from the win dialog: the HUD steps aside, the worm pops its head out of the burrow and looks at you, and
@@ -1482,7 +1488,7 @@ function clearHint(){ if(hintMesh){ removeObj(hintMesh); hintMesh=null; } }
 function showHint(){
   if(animating&&!hintBusy){ setTimeout(showHint,250); return; }
   if(hintBusy||anyOverlay()||state.status!=='play') return; hintBusy=true; $('hintBtn').classList.add('busy');
-  toast('Thinking about it...',1500);
+  wormSays('Hmm, let me think...',1600);
   setTimeout(()=>{ const d=solveFrom(state); hintBusy=false; $('hintBtn').classList.remove('busy');
     if(d===null){ sfx('stuck'); toast('No way to win from here. Undo a few moves and try again.',3600); pulse($('undoBtn')); return; }
     if(d===undefined){ sfx('stuck'); toast('This one is too tangled to work out from here. Try restarting.',3200); return; }
@@ -1491,7 +1497,7 @@ function showHint(){
     const cone=new THREE.Mesh(new THREE.ConeGeometry(.13,.26,20),am); cone.rotation.x=Math.PI; outline(cone,.02); hintMesh.add(cone);
     const ring=new THREE.Mesh(new THREE.TorusGeometry(.3,.04,10,32),new THREE.MeshBasicMaterial({color:0xFFD866,transparent:true,opacity:.9})); ring.rotation.x=-Math.PI/2; ring.position.y=-.82; hintMesh.add(ring);
     hintMesh.position.copy(wp(tx,ty,.85)); fx.add(hintMesh);
-    headDir=[dd[0],dd[1]]; lastMoveT=idleT; sfx('ready'); toast(`Try crawling ${({N:'up',S:'down',W:'left',E:'right'})[screenWord(d)]}.`,2600);
+    headDir=[dd[0],dd[1]]; lastMoveT=idleT; sfx('ready'); wormSays(`Let's try ${({N:'up',S:'down',W:'left',E:'right'})[screenWord(d)]}!`,2600);
   },60);
 }
 function screenWord(d){ const v=screenVec(DIRS[d]); return Math.abs(v.x)>Math.abs(v.y) ? (v.x>0?'E':'W') : (v.y>0?'S':'N'); }
@@ -1859,7 +1865,7 @@ window.addEventListener('popstate',()=>{ if(ignorePop>0){ ignorePop--; return; }
 // newest first: [id (a date), title, lines]. Returning players see the newest entry once on the Play tab,
 // new players never do (squirm-news holds the last id seen); Settings > About lists them all.
 const NEWS=[
-  ['2026-10-25','New in the garden',['16 new badges to earn, and a few of them are really tough.','New hats, colours and patterns, plus glasses, shades and a fancy mustache to wear.','A tidier settings page, with a battery saver option.','A new badges book, with your progress on every badge.','Snap a photo of your garden after you finish a patch, from any angle you like.','Fresh looks for the home screen, the garden map and the meadow, and a new wardrobe that shows off your whole worm.']],
+  ['2026-10-25','New in the garden',['16 new badges to earn, and a few of them are really tough.','New hats, colours and patterns, plus glasses, shades and a fancy mustache to wear.','A tidier settings page, with a battery saver option.','A brighter win card, and your worm now chats while you play.','A new badges book, with your progress on every badge.','Snap a photo of your garden after you finish a patch, from any angle you like.','Fresh looks for the home screen, the garden map and the meadow, and a new wardrobe that shows off your whole worm.']],
   ['2026-10-24','Beetle bumps',['Chapter 16: push beetles around, even onto flower buttons.','A new hat to earn: the beetle horn.']],
   ['2026-10-20','A bigger garden',['Two new chapters, Garden party and Grand bloom.','A finale for when the whole garden is grown.']]];
 function renderNews(){ const seen=store.get('squirm-news'), n=NEWS[0], returning=LEVELS.some((l,i)=>isCleared(i))||Object.keys(progress.daily.results).length>0;
@@ -2115,7 +2121,8 @@ const BADGES=[
 // returns the badges earned just now; quiet ones (earned before badges existed) don't celebrate
 function checkBadges(ctx,quiet){ const got=[];
   for(const b of BADGES){ if(progress.badges[b[0]]) continue; let ok=false; try{ ok=!!b[4](ctx); }catch(e){} if(ok){ progress.badges[b[0]]=Date.now(); got.push(b); } }
-  if(got.length){ save(); if(!quiet) setTimeout(()=>{ sfx('badge'); toast(`Badge earned: ${got[0][2].replace(/&[^;]+;/g,'')}${got.length>1?` and ${got.length-1} more`:''}!`,3200); },ctx&&ctx.won?1400:200); }
+  if(got.length){ save(); // after a win the win card lists them, so only the jingle plays
+    if(!quiet) setTimeout(()=>{ sfx('badge'); if(!(ctx&&ctx.won)) toast(`Badge earned: ${got[0][2].replace(/&[^;]+;/g,'')}${got.length>1?` and ${got.length-1} more`:''}!`,3200); },ctx&&ctx.won?1400:200); }
   return got; }
 function bumpStat(k,n=1){ progress.stats[k]=(progress.stats[k]||0)+n; }
 // badges screen: a filter, groups of sticker tiles in a fading scroller, and a card for the picked badge
@@ -2237,11 +2244,34 @@ const MECH={
 let seenMech=store.json('squirm-seen')||{};
 let introDone=null;
 function newMechanics(){ const m=L.map.join(''); return Object.keys(MECH).filter(k=>!seenMech[k]&&MECH[k].k.test(m)); }
-function showIntro(list,done){ $('introBody').innerHTML=`<h2>${list.length===1?'Something new':'New in this patch'}</h2>`+list.map(k=>`<div class="intro-item"><span class="ico">${MECH[k].i}</span><div><b>${MECH[k].t}</b><span>${MECH[k].d}</span></div></div>`).join('');
+// one card per mechanic: a big bobbing sticker, its name and what it does; Next pages through, the last says Let's go
+let introList=[], introI=0;
+const INTRO_TINT=['--tint-leaf','--tint-honey','--tint-berry'];
+function renderIntro(anim){ const k=introList[introI], n=introList.length, b=$('introBody');
+  b.innerHTML=`<p class="label">${n===1?'Something new':`New in this patch · ${introI+1} of ${n}`}</p>`
+    +`<div class="intro-art" style="--tint:var(${INTRO_TINT[(Object.keys(MECH).indexOf(k))%3]})"><span class="ia">${MECH[k].i.replace('width="40" height="40"','width="64" height="64"').replace(/stroke-width="[\d.]+"/,'stroke-width="1.5"')}</span><i></i><i></i><i></i></div>`
+    +`<h2 id="introTitle">${MECH[k].t}</h2><p class="desc">${MECH[k].d}</p>`;
+  $('introDots').innerHTML=n>1?introList.map((x,i)=>`<i class="${i===introI?'on':''}"></i>`).join(''):'';
+  $('introOk').textContent=introI<n-1?'Next':"Let's go!";
+  if(anim&&!reduceMotion) animOnce(b,'swap'); }
+function showIntro(list,done){ introList=list; introI=0; renderIntro(false);
   list.forEach(k=>seenMech[k]=1); store.set('squirm-seen',JSON.stringify(seenMech));
   introDone=done; show('introOv'); pushLayer('intro'); sfx('ready'); }
+function introNext(){ if(introI<introList.length-1){ introI++; renderIntro(true); sfx('ready'); } else closeIntro(false); }
+// ---------- the worm talks ----------
+// a speech bubble that follows the worm's head during play: little reactions and hints
+let gSayT=0;
+function wormSays(t,ms=2000){ const el=$('wormSayG'); if(!state||anyOverlay()||photoOn) return; el.textContent=t; el.hidden=false; gSayT=ms/1000; placeSay(); animOnce(el,'say'); }
+function placeSay(){ const el=$('wormSayG'), h=segMeshes[0]; if(el.hidden) return;
+  if(!h||anyOverlay()||photoOn||document.body.classList.contains('at-home')){ el.hidden=true; gSayT=0; return; }
+  const v=h.position.clone(); v.y+=.45; v.project(camera); const W=window.innerWidth, H=window.innerHeight, x=(v.x+1)/2*W, y=(1-v.y)/2*H;
+  const w=el.offsetWidth, left=x+30+w>W-8; el.classList.toggle('left',left);
+  el.style.transform=`translate(${Math.round(Math.max(8,left?x-30-w:x+30))}px,${Math.round(Math.max(8,y-el.offsetHeight/2))}px)`; }
+const SAY={ '+':['Yum!','Peachy!','Nom nom!'], '-':['Whoa, smaller!','Shrinking!'], C:['Got it!','A flag!','Tagged!'], K:['A key!','Ooh, shiny!'], G:['Open sesame!'] };
+let sayN=0;
+const sayFor=k=>{ const a=SAY[k]; return a?a[sayN++%a.length]:null; };
 function closeIntro(fromBack){ hide('introOv'); if(!fromBack) popLayer('intro'); const d=introDone; introDone=null; if(d) d(); }
-$('introOk').onclick=()=>closeIntro(false);
+$('introOk').onclick=introNext;
 
 // ---------- first-time tutorial ----------
 function maybeTutorial(){ if(store.get('squirm-tutorial')==='1'||mode!=='garden'||li!==0||history.length) return false; $('tutorial').classList.add('show'); return true; }
@@ -2252,7 +2282,7 @@ function loadLevel(i,withHint=true){ mode='garden'; li=i; startLevel(LEVELS[i],w
 let nudged=false, playT=0;
 const playTime=()=>{ const s=Math.round(playT); return s<60?`${s}s`:`${Math.floor(s/60)}m ${String(s%60).padStart(2,'0')}s`; };
 function startLevel(def,withHint=true){ nudged=false; playT=0;
-  L=def; state=initState(L); history=[]; queue.length=0; slideSteps.length=0; wasReady=false; hintsUsed=0; undosHere=0; clearHint();
+  L=def; state=initState(L); history=[]; queue.length=0; slideSteps.length=0; wasReady=false; hintsUsed=0; undosHere=0; clearHint(); $('wormSayG').hidden=true; gSayT=0;
   buildBoard(); snapWorm(); fitCamera(); updateHUD(true); hudIntro(); lastMoveT=idleT;
   const resumed=tryResume(); if(!resumed) clearResume();
   introAnim();
@@ -2429,7 +2459,7 @@ window.addEventListener('keydown',e=>{ if(e.ctrlKey||e.metaKey||e.altKey||(e.tar
   if((e.code==='Enter'||e.code==='Space') && isOpen('winOv')){ e.preventDefault(); $('winNext').click(); return; }
   if(e.code==='KeyR' && isOpen('winOv')){ e.preventDefault(); $('winReplay').click(); return; }
   if(e.code==='Enter' && calmMoment() && curTab==='play' && (document.activeElement===document.body||!document.activeElement)){ e.preventDefault(); $('homePlay').click(); return; }
-  if((e.code==='Enter'||e.code==='Space') && isOpen('introOv')){ e.preventDefault(); closeIntro(false); return; }
+  if((e.code==='Enter'||e.code==='Space'||e.code==='ArrowRight') && isOpen('introOv')){ e.preventDefault(); introNext(); return; }
   if(KEYMAP[e.code] && !anyOverlay()){ e.preventDefault(); tryMove(dirFromScreen(...KEYMAP[e.code])); }
   else if((e.code==='KeyZ'||e.code==='Backspace'||e.code==='KeyU') && !anyOverlay()){ e.preventDefault(); undo(); }
   else if(e.code==='KeyR' && !anyOverlay()) restart();
@@ -2496,7 +2526,7 @@ function frame(now){
   if(!reduceMotion && state) for(let y=0;y<state.h;y++) for(let x=0;x<state.w;x++){ const c=cells[y]&&cells[y][x]; if(!c||c.ch!=='x'||!c.tile) continue;
     const on=state.status==='play'&&occupied(x,y); c.tile.rotation.z=on?Math.sin(idleT*31+x*3+y)*.012:0; c.tile.rotation.x=on?Math.cos(idleT*27+x+y*2)*.012:0; }
   if(!nudged && state && state.status==='play' && state.moves>0 && idleT-lastMoveT>45 && !anyOverlay() && !document.body.classList.contains('at-home')){
-    nudged=true; toast('Stuck? Tap the bulb for a hint.',3200); pulse($('hintBtn')); }
+    nudged=true; wormSays('Stuck? The bulb has ideas.',3200); pulse($('hintBtn')); }
   if(segMeshes[0]){ const hp=segMeshes[0].position; camTgt.set(THREE.MathUtils.clamp(hp.x*.06,-.35,.35),0,THREE.MathUtils.clamp(hp.z*.06,-.35,.35)); if(reduceMotion) camTgt.set(0,0,0);
     if(photoOn) camTgt.set(0,0,0); camOff.lerp(camTgt,1-Math.exp(-dt/1000*1.6)); camera.position.copy(basePos).add(camOff); }
   if(!reduceMotion){ fxTimer-=dt;
@@ -2520,6 +2550,7 @@ function frame(now){
     for(const gl of f.glints){ const t=(idleT*.7+gl.userData.ph)%3, k=t<.6?Math.sin(t/.6*Math.PI):0; gl.visible=k>.02; gl.scale.set(k,.45*k,1); } }
   if(document.body.classList.contains('at-home')) renderHomeWorm(dt);
   updateHead(dt);
+  if(gSayT>0){ gSayT-=dt/1000; if(gSayT<=0) $('wormSayG').hidden=true; else placeSay(); }
   updateRain(dt); ambient(dt); updateCritters(dt);
   updateWorm();
   // behind menus the garden is blurred, so a third of the frames is plenty

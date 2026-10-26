@@ -267,6 +267,15 @@ Sections are listed in the table of contents at the top of the file; each starts
   once as a card on the Play tab (`renderNews`; `squirm-news` holds the last id seen, new players never
   see it); Settings > About lists them all. When you ship something players will notice, add an entry
   on top with today's date, in the same cozy voice.
+- **Win card** (`onWin`): big stars, a line about par or hints, Moves / Par / Time tiles (`New best` tag),
+  then `gifts`: rows for what was earned (badges, hats, colours, patterns: `hot`, honey) and progress
+  notes (chapter, streaks, next chapter), in a `.fade-scroll`. Next is the big button; Replay, Photo and
+  Share sit under it. Badges earned by a win only play their jingle; the card lists them.
+- **The worm talks in play:** `wormSays(text,ms)` shows a bubble (`#wormSayG`) that `placeSay` keeps next to
+  the head every frame; snacks, flags, keys and gates get a word (`SAY`), and hints speak through it.
+  Rule explanations and blocked moves stay as toasts.
+- **Meeting a mechanic:** `showIntro(list,done)` pages through one illustrated card per mechanic
+  (`renderIntro`, a bobbing `MECH` sticker in a tinted circle, dots, Next / Let's go).
 - **Photo mode:** the win dialog's Photo button (`enterPhoto` / `exitPhoto`, a `photo` layer). The HUD
   fades out (`body.photo`), the camera glides to a full-screen framing (`glideCamera(photoFrame())`), and
   the worm pops its head out of the burrow and looks at the camera (`updateHead` has a `photoOn` branch;
