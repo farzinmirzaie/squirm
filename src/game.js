@@ -938,6 +938,11 @@ const EXTRAS=[['none','Nothing','',()=>true],
   ['glasses','Round glasses','Earn 10 badges',()=>Object.keys(progress.badges).length>=10],
   ['tash','Fancy mustache','Say hi 50 times',()=>(progress.stats.taps||0)>=50],
   ['walrus','Bushy mustache','Crawl 5,000 moves',()=>(progress.stats.moves||0)>=5000],
+  ['freckles','Freckles','Eat 50 snacks',()=>(progress.stats.fruit||0)>=50],
+  ['nose','Button nose','Snap 3 photos',()=>(progress.stats.photos||0)>=3],
+  ['flower','Flower clip','Finish 5 chapters',()=>CHAPTERS.filter((ch,k)=>chapterCleared(k)).length>=5],
+  ['bowtie','Bow tie','3 stars on 20 patches',()=>LEVELS.filter(l=>progress.stars[l.name]===3).length>=20],
+  ['scarf','Cozy scarf','Finish 20 daily patches',()=>(progress.stats.dailies||0)>=20],
   ['shades','Sunglasses','Clear 10 meadow patches',()=>['easy','medium','hard'].reduce((a,d)=>a+progress.endless[d].cleared,0)>=10],
   ['hearts','Heart glasses','Collect 200 stars',()=>starTotal()>=200],
   ['monocle','Monocle','50 patches, no hints',()=>Object.keys(progress.clean).length>=50],
@@ -970,6 +975,19 @@ function buildExtra(id){ // frames sit in front of the eyes even when they widen
     const br=new THREE.Mesh(new THREE.CylinderGeometry(.012,.012,.07,8),fr); br.rotation.z=Math.PI/2; br.position.set(0,EY+.02,EZ+.005); g.add(br); arms(fr,.135+sc*.95,EZ); }
   else if(id==='monocle'){ const r=new THREE.Mesh(new THREE.TorusGeometry(.125,.02,10,30),m('monocle')); r.position.set(-.13,EY,EZ+.005); g.add(r);
     for(let i=0;i<6;i++){ const t=i/5, c=new THREE.Mesh(sph(.014,8,6),m('monocle')); c.position.set(-.13-.12-.05*Math.sin(t*2.6),EY-.04-t*.26,EZ-.04-t*.06); g.add(c); } }
+  else if(id==='freckles'){ const R=HEAD_R+.004;
+    for(const s of [-1,1]) for(const [x,y] of [[.17,.02],[.21,.04],[.2,-.005],[.24,.015]]){ const xx=s*x, z=Math.sqrt(R*R-xx*xx-y*y), d=new THREE.Mesh(sph(.013,8,6),m('cowboyBand')); d.position.set(xx,y,z); d.scale.z=.4; d.lookAt(xx*3,y*3,z*3); g.add(d); } }
+  else if(id==='nose'){ const n=new THREE.Mesh(sph(.055,18,14),m('bowDark')); n.position.set(0,.035,HEAD_R+.01); outline(n,.01); g.add(n);
+    const hl=new THREE.Mesh(sph(.015,8,6),new THREE.MeshBasicMaterial({color:0xffffff})); hl.position.set(-.018,.055,HEAD_R+.058); g.add(hl); }
+  else if(id==='flower'){ const f=new THREE.Group(); f.position.set(.24,.2,.2); f.lookAt(.24*3,.2*3,.2*3+.4); f.scale.setScalar(1.45); g.add(f);
+    for(let k=0;k<5;k++){ const a=k/5*Math.PI*2, pt=new THREE.Mesh(sph(.05,12,8),m('petalB')); pt.position.set(Math.cos(a)*.055,Math.sin(a)*.055,0); pt.scale.z=.5; outline(pt,.008); f.add(pt); }
+    const c=new THREE.Mesh(sph(.035,12,8),m('crown')); c.position.z=.02; f.add(c); }
+  else if(id==='bowtie'){ const b=new THREE.Group(); b.position.set(0,-.3,.2); b.rotation.x=.5; g.add(b);
+    for(const s of [-1,1]){ const w=new THREE.Mesh(new THREE.ConeGeometry(.075,.13,16),m('wizard')); w.rotation.z=s*Math.PI/2; w.position.x=s*.07; w.scale.z=.55; outline(w,.008); b.add(w); }
+    const k=new THREE.Mesh(sph(.035,12,8),m('wizard')); k.scale.z=.7; outline(k,.008); b.add(k); }
+  else if(id==='scarf'){ const sc=new THREE.Mesh(new THREE.TorusGeometry(.25,.075,12,28),m('beanie')); sc.position.set(0,-.24,0); sc.rotation.x=Math.PI/2-.35; sc.scale.set(1,1,.8); outline(sc,.01); g.add(sc);
+    const tail=new THREE.Mesh(new THREE.BoxGeometry(.11,.22,.05),m('beanie')); tail.position.set(.15,-.36,.2); tail.rotation.set(.3,0,.25); outline(tail,.01); g.add(tail);
+    for(const yy of [-.31,-.4]){ const st=new THREE.Mesh(new THREE.BoxGeometry(.115,.022,.055),m('partyB')); st.position.set(.15+(yy+.36)*-.25,yy+.05,.2); st.rotation.set(.3,0,.25); g.add(st); } }
   else if(id==='tash'||id==='walrus'){ const half=id==='tash'
       ?[[0,.1],[.2,.17],[.45,.11],[.68,.02],[.86,.06],[.97,.22],[.93,.37],[.82,.4],[.78,.31],[.85,.24],[.8,.13],[.66,-.04],[.45,-.17],[.2,-.17],[0,-.06]]
       :[[0,.15],[.3,.2],[.6,.13],[.8,-.04],[.79,-.22],[.64,-.3],[.52,-.21],[.38,-.32],[.24,-.22],[.11,-.32],[0,-.22]];
@@ -1512,7 +1530,9 @@ function fadeScroll(el){ if(el.fadeUpdate) return el.fadeUpdate;
   const upd=el.fadeUpdate=()=>{ const t=x?el.scrollLeft:el.scrollTop, rest=(x?el.scrollWidth-el.clientWidth:el.scrollHeight-el.clientHeight)-t;
     el.style.setProperty('--fade-t',Math.max(0,Math.min(t,top))+'px'); el.style.setProperty('--fade-b',Math.max(0,Math.min(rest,bot))+'px'); };
   el.addEventListener('scroll',upd,{passive:true}); if(window.ResizeObserver) new ResizeObserver(upd).observe(el);
-  new MutationObserver(()=>requestAnimationFrame(upd)).observe(el,{childList:true,subtree:true}); upd(); return upd; }
+  new MutationObserver(()=>requestAnimationFrame(upd)).observe(el,{childList:true,subtree:true});
+  // children that slide in stick out while they move, so measure again once they settle
+  el.addEventListener('animationend',upd); el.addEventListener('transitionend',upd); upd(); return upd; }
 function pulse(el){ el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop'); }
 function animOnce(el,cls){ el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls); const end=e=>{ if(e.target!==el) return; el.classList.remove(cls); el.removeEventListener('animationend',end); }; el.addEventListener('animationend',end); }
 // selection (seg buttons, difficulty, hats, colours, map stones): the newly chosen one pops into place; the press itself plays 'tap'
@@ -1565,6 +1585,11 @@ const ART={
   'extra-stars':'<path d="M7.30 7.80L8.71 10.86L12.06 11.25L9.58 13.54L10.24 16.85L7.30 15.20L4.36 16.85L5.02 13.54L2.54 11.25L5.89 10.86z" fill="#F5C14E"/><path d="M16.70 7.80L18.11 10.86L21.46 11.25L18.98 13.54L19.64 16.85L16.70 15.20L13.76 16.85L14.42 13.54L11.94 11.25L15.29 10.86z" fill="#F5C14E"/>',
   'extra-monocle':'<circle cx="14.4" cy="10.8" r="5" fill="#EAF8FF"/><circle cx="14.4" cy="10.8" r="3.7" stroke="#E0B04A" stroke-width="1.2"/><path d="M14.4 15.8c0 2.6-1.6 4.2-4.4 4.8" stroke-dasharray="1.1 1.7"/>',
   'extra-walrus':'<path d="M12 9.4c-2.6-1-6.2-.9-7.9 1.1-1 1.2-1.3 3-1 4.7.5.8 1.4.6 1.8-.2.3.9 1.2 1.2 1.9.5.3.9 1.3 1.1 1.9.3.4.9 1.4.9 1.9 0 .4.8 1.4.8 1.4.1.4.7 1.4.7 1.8-.1.6.8 1.6.6 1.9-.3.7.7 1.6.4 1.9-.5.6.8 1.5.6 1.8-.2.3-1.7 0-3.5-1-4.7-1.7-2-5.3-2.1-7.9-1.1z" fill="#6B4A35"/>',
+  'extra-freckles':'<circle cx="12" cy="12" r="8.6" fill="#FFB0C6"/><g fill="#8A5A36" stroke="none"><circle cx="7.4" cy="12.6" r=".9"/><circle cx="9.2" cy="14.2" r=".9"/><circle cx="6.8" cy="15" r=".8"/><circle cx="16.6" cy="12.6" r=".9"/><circle cx="14.8" cy="14.2" r=".9"/><circle cx="17.2" cy="15" r=".8"/></g>',
+  'extra-nose':'<circle cx="12" cy="12" r="6.4" fill="#E36A8C"/><circle cx="10" cy="9.8" r="1.4" fill="#fff" stroke="none"/>',
+  'extra-flower':'<g fill="#F7A8C4"><circle cx="12" cy="6.4" r="3.6"/><circle cx="17.4" cy="10.3" r="3.6"/><circle cx="15.3" cy="16.6" r="3.6"/><circle cx="8.7" cy="16.6" r="3.6"/><circle cx="6.6" cy="10.3" r="3.6"/></g><circle cx="12" cy="12" r="3" fill="#F5C14E"/>',
+  'extra-bowtie':'<path d="M12 12L3.8 7.2v9.6zM12 12l8.2-4.8v9.6z" fill="#8E7BE0"/><rect x="9.8" y="9.8" width="4.4" height="4.4" rx="1.6" fill="#8E7BE0"/>',
+  'extra-scarf':'<path d="M4 9.6c2.4 2.2 13.6 2.2 16 0l.4 3.6c-2.6 2.4-14.2 2.4-16.8 0z" fill="#8FD0B0"/><path d="M13.6 13.4l-1.2 7.4 4.2.6 1-7.8z" fill="#8FD0B0"/><path d="M12.8 17.6l4 .6M12.5 19.4l4 .6" stroke="#FFF1A8" stroke-width="1.3"/>',
   'extra-tash':'<path d="M12 11.6c-1.6-1.6-4.6-1.8-6.4-.2-1 .9-2.2 1-3 .2.2 2.6 2.6 4.4 5.4 4.1 1.8-.2 3.2-1.2 4-2.4.8 1.2 2.2 2.2 4 2.4 2.8.3 5.2-1.5 5.4-4.1-.8.8-2 .7-3-.2-1.8-1.6-4.8-1.4-6.4.2z" fill="#6B4A35"/>',
   dice:'<rect x="4" y="4" width="16" height="16" rx="4.2" fill="#F7A8C4"/><g fill="#5B4436" stroke="none"><circle cx="8.6" cy="8.6" r="1.35"/><circle cx="15.4" cy="15.4" r="1.35"/><circle cx="12" cy="12" r="1.35"/><circle cx="15.4" cy="8.6" r="1.35"/><circle cx="8.6" cy="15.4" r="1.35"/></g>',
   lock:'<path d="M8 10.5V8.2a4 4 0 0 1 8 0v2.3"/><rect x="5" y="10.5" width="14" height="10" rx="3" fill="#F5C14E"/><path d="M12 14.6v2.2"/>',
@@ -1865,7 +1890,7 @@ window.addEventListener('popstate',()=>{ if(ignorePop>0){ ignorePop--; return; }
 // newest first: [id (a date), title, lines]. Returning players see the newest entry once on the Play tab,
 // new players never do (squirm-news holds the last id seen); Settings > About lists them all.
 const NEWS=[
-  ['2026-10-25','New in the garden',['16 new badges to earn, and a few of them are really tough.','New hats, colours and patterns, plus glasses, shades and a fancy mustache to wear.','A tidier settings page, with a battery saver option.','A brighter win card, and your worm now chats while you play.','A new badges book, with your progress on every badge.','Snap a photo of your garden after you finish a patch, from any angle you like.','Fresh looks for the home screen, the garden map and the meadow, and a new wardrobe that shows off your whole worm.']],
+  ['2026-10-25','New in the garden',['16 new badges to earn, and a few of them are really tough.','New hats, colours and patterns, plus glasses, shades, a scarf, a bow tie and more to wear.','A tidier settings page, with a battery saver option.','A brighter win card, and your worm now chats while you play.','A new badges book, with your progress on every badge.','Snap a photo of your garden after you finish a patch, from any angle you like.','Fresh looks for the home screen, the garden map and the meadow, and a new wardrobe that shows off your whole worm.']],
   ['2026-10-24','Beetle bumps',['Chapter 16: push beetles around, even onto flower buttons.','A new hat to earn: the beetle horn.']],
   ['2026-10-20','A bigger garden',['Two new chapters, Garden party and Grand bloom.','A finale for when the whole garden is grown.']]];
 function renderNews(){ const seen=store.get('squirm-news'), n=NEWS[0], returning=LEVELS.some((l,i)=>isCleared(i))||Object.keys(progress.daily.results).length>0;
@@ -2269,7 +2294,8 @@ function placeSay(){ const el=$('wormSayG'), h=segMeshes[0]; if(el.hidden) retur
   el.style.transform=`translate(${Math.round(Math.max(8,left?x-30-w:x+30))}px,${Math.round(Math.max(8,y-el.offsetHeight/2))}px)`; }
 const SAY={ '+':['Yum!','Peachy!','Nom nom!'], '-':['Whoa, smaller!','Shrinking!'], C:['Got it!','A flag!','Tagged!'], K:['A key!','Ooh, shiny!'], G:['Open sesame!'] };
 let sayN=0;
-const sayFor=k=>{ const a=SAY[k]; return a?a[sayN++%a.length]:null; };
+let sayLast=-99;
+const sayFor=k=>{ const a=SAY[k]; if(!a||idleT-sayLast<40||Math.random()>.25) return null; sayLast=idleT; return a[sayN++%a.length]; };
 function closeIntro(fromBack){ hide('introOv'); if(!fromBack) popLayer('intro'); const d=introDone; introDone=null; if(d) d(); }
 $('introOk').onclick=introNext;
 

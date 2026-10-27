@@ -272,7 +272,8 @@ Sections are listed in the table of contents at the top of the file; each starts
   notes (chapter, streaks, next chapter), in a `.fade-scroll`. Next is the big button; Replay, Photo and
   Share sit under it. Badges earned by a win only play their jingle; the card lists them.
 - **The worm talks in play:** `wormSays(text,ms)` shows a bubble (`#wormSayG`) that `placeSay` keeps next to
-  the head every frame; snacks, flags, keys and gates get a word (`SAY`), and hints speak through it.
+  the head every frame; snacks, flags, keys and gates sometimes get a word (`SAY`, via `sayFor`: 1 in 4, at most every 40 s, so
+  it stays rare), while hints and the stuck nudge always speak through it.
   Rule explanations and blocked moves stay as toasts.
 - **Meeting a mechanic:** `showIntro(list,done)` pages through one illustrated card per mechanic
   (`renderIntro`, a bobbing `MECH` sticker in a tinted circle, dots, Next / Let's go).
@@ -373,7 +374,8 @@ Sections are listed in the table of contents at the top of the file; each starts
   for a sideways scroller like the chapter strip): content
   fades out at an edge only while there's more to scroll that way, growing with that distance, so
   nothing is cut off sharply. `fadeScroll(el)` wires it up (done at boot for every `.fade-scroll` in the
-  markup; call it for ones you create later); `data-fade` / `data-fade-top` set the size in px. It sets
+  markup; call it for ones you create later; it re-measures on scroll, resize, new content and when
+  children finish animating); `data-fade` / `data-fade-top` set the size in px. It sets
   `--fade-t` / `--fade-b` on the element: never reuse a token name there, children inherit it.
 - `:where(.dialog) p` is a zero-specificity default for dialog paragraphs, so a class on a paragraph
   wins without `!important`. Prefer low-specificity defaults like that over overrides.
