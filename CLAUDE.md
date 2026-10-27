@@ -258,7 +258,9 @@ Sections are listed in the table of contents at the top of the file; each starts
   (glasses, shades, a mustache, ...: [id, name, how to earn, test]) work the same way through `buildExtra`
   into the head's `accSlot`, saved in `squirm-extra`; every new hat or extra needs a sticker in `ART`
   (`hat-<id>` / `extra-<id>`).
-  `WORM_COLS` unlock with stars. `PATTERNS` (id, name, how to earn, test) unlock with milestones and are
+  `WORM_COLS` ([name, body, head, stars, cheek]) unlock with stars; keep head and body the same hex (the
+  toon head and the vertex-coloured body render a hex identically, so any difference shows at the neck), and
+  the cheek is a blush picked per colour (`cheekMat`). `PATTERNS` (id, name, how to earn, test) unlock with milestones and are
   saved in `squirm-pattern`. `colorAt(g,n)` gives the tints that run along the body (fade, sunset, rainbow)
   as tube vertex colours; anything with an edge (the body-ring groove, stripes, bands, spots, glitter) is
   drawn per pixel by `tubeMat`'s shader (`patU` / `PAT_ID`) from the tube's `pg` attribute: place along
