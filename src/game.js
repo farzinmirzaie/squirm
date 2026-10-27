@@ -33,7 +33,7 @@ const C = {
   head:0xFFB3C8, riverWater:0x8CCFEA, plank:0xD9A56E, plankDark:0xB98352, leafBig:0x7CC95F, water:0x9ED6EF, mud:0x8A5E43, cloud:0xFFFFFF, rainCloud:0xAEBBD2, eye:0xFFFFFF, pupil:0x3B2A22, cheek:0xFF6F96,
   peach:0xFFA27C, leaf:0x6CC97A, cap:0xB79CF2, stem:0xFFF1DE, key:0xF7C64F, gateWood:0xC88A55,
   flag:0xF27DA2, flagDone:0x79C95F, pole:0xB98A62,
-  mushRed:0xF07A6A, topHat:0x4E3F5C, rainHat:0xFFD04A, brolly:0x9FD2F2, bowDark:0xE36A8C,
+  mushRed:0xF07A6A, topHat:0x4E3F5C, rainHat:0xFFD04A, brolly:0x9FD2F2, bowDark:0xE36A8C, bowKnot:0xC24E72,
   straw:0xF3D18A, strawDark:0xD9B166, acornCap:0x8A5A36, acornNut:0xC98E52, partyA:0x9FD2F2, partyB:0xFFF1A8, crown:0xF5C14E, beret:0xB79CF2, beanie:0x8FD0B0, beanieRib:0x6FB894, beetle:0x7C8CF0, beetleDark:0x5566C8, beetleHead:0x3E3F84, beetleSpot:0xB5C0FA, beetleLeg:0x3A2F5E, sunPetal:0xFFD34D, sunCore:0x7A4E2E,
   wetLeaf:0x8EE0B4, leafVein:0x5DBA8A, dew:0xEAF8FF, hedge:0x5FA64F, hedgeDark:0x4E8F40, petalB:0xF7A8C4,
   burrow:0x3A2A22, mound:0xB07B57, ready:0x8EDB72, line:0x5B4436,
@@ -1031,13 +1031,25 @@ function buildHat(id){ const h=new THREE.Group();
   if(id==='chef'){ const band=new THREE.Mesh(new THREE.CylinderGeometry(.19,.2,.13,24),m('chef')); band.position.y=.05; outline(band,.012); h.add(band);
     for(const [x,y,z,r] of [[0,.24,0,.15],[.12,.19,.03,.12],[-.12,.19,.03,.12],[0,.19,-.11,.12],[0,.2,.11,.11]]){ const p=new THREE.Mesh(sph(r,18,14),m('chef')); p.position.set(x,y,z); outline(p,.012); h.add(p); } return h; }
   if(id==='wizard'){ const brim=new THREE.Mesh(new THREE.CylinderGeometry(.31,.33,.03,28),m('wizard')); outline(brim,.012); h.add(brim);
-    const cone=new THREE.Mesh(new THREE.ConeGeometry(.19,.52,26),m('wizard')); cone.position.set(.02,.27,0); cone.rotation.z=-.16; outline(cone,.012); h.add(cone);
-    const band=new THREE.Mesh(new THREE.CylinderGeometry(.188,.19,.05,24),m('crown')); band.position.y=.04; h.add(band);
-    for(const [x,y,z,s] of [[.1,.2,.12,.05],[-.07,.33,.08,.04],[.04,.12,.17,.035]]){ const st=new THREE.Mesh(new THREE.OctahedronGeometry(s),m('crown')); st.position.set(x,y,z); st.rotation.set(.4,.6,0); h.add(st); } return h; }
-  if(id==='cowboy'){ const brim=new THREE.Mesh(new THREE.CylinderGeometry(.38,.38,.03,30),m('cowboy')); brim.scale.z=.82; outline(brim,.012); h.add(brim);
-    const top=new THREE.Mesh(new THREE.CylinderGeometry(.16,.2,.2,24),m('cowboy')); top.position.y=.11; outline(top,.012); h.add(top);
-    const dent=new THREE.Mesh(sph(.07,12,8),m('cowboyBand')); dent.position.set(0,.2,0); dent.scale.set(1.6,.25,.6); h.add(dent);
-    const band=new THREE.Mesh(new THREE.CylinderGeometry(.196,.2,.04,24),m('cowboyBand')); band.position.y=.03; h.add(band); return h; }
+    // a tall cone whose tip flops over to one side: the bend grows with height, so the base stays round on the band
+    const H=.54, bend=t=>[.15*t*t*t,-.035*t*t*t, -.06*t*t*t], cg=new THREE.ConeGeometry(.19,H,26,10), cp=cg.attributes.position;
+    for(let k=0;k<cp.count;k++){ const t=cp.getY(k)/H+.5, b=bend(t); cp.setXYZ(k,cp.getX(k)+b[0],cp.getY(k)+b[1],cp.getZ(k)+b[2]); }
+    cg.computeVertexNormals(); const cone=new THREE.Mesh(cg,m('wizard')); cone.position.y=H/2+.01; outline(cone,.012); h.add(cone);
+    const band=new THREE.Mesh(new THREE.CylinderGeometry(.186,.192,.055,26),m('crown')); band.position.y=.04; outline(band,.008); h.add(band);
+    // little gold stars stuck on the cone, facing out
+    const sg=new THREE.ExtrudeGeometry(SHAPE_STAR(),{depth:.25,bevelEnabled:false}); sg.translate(0,0,-.125);
+    for(const [t,a,s] of [[.3,.35,.05],[.55,-.5,.04],[.16,-.95,.035],[.42,1.25,.035]]){ const r=.19*(1-t), b=bend(t), nx=Math.sin(a), nz=Math.cos(a);
+      const st=new THREE.Mesh(sg,m('crown')); st.position.set(nx*r+b[0],.01+t*H+b[1],nz*r+b[2]); st.lookAt(st.position.x+nx,st.position.y+.33,st.position.z+nz); st.scale.setScalar(s); outline(st,.005); h.add(st); }
+    return h; }
+  if(id==='cowboy'){ // a wide brim curling up at the sides, a pinched crown with a crease on top
+    const prof=[[.15,.016],[.15,-.016],[.36,-.016],[.386,0],[.36,.016],[.15,.016]].map(([x,y])=>new THREE.Vector2(x,y)), bg=new THREE.LatheGeometry(prof,40), bp=bg.attributes.position;
+    for(let k=0;k<bp.count;k++){ const x=bp.getX(k), z=bp.getZ(k)*.84, sx=Math.max(0,Math.abs(x)-.17), sz=Math.max(0,Math.abs(z)-.2); bp.setXYZ(k,x,bp.getY(k)+2.6*sx*sx-.6*sz*sz,z); }
+    bg.computeVertexNormals(); const brim=new THREE.Mesh(bg,m('cowboy')); outline(brim,.01); h.add(brim);
+    const tg=new THREE.CylinderGeometry(.155,.195,.21,24,2), tp=tg.attributes.position;
+    for(let k=0;k<tp.count;k++){ let x=tp.getX(k), y=tp.getY(k), z=tp.getZ(k); const t=y/.21+.5;
+      if(t>.99){ y-=.045*Math.max(0,1-(x/.16)*(x/.16)); } x*=1-.22*t*Math.max(0,z/.17); tp.setXYZ(k,x,y,z); }
+    tg.computeVertexNormals(); const top=new THREE.Mesh(tg,m('cowboy')); top.position.y=.115; outline(top,.012); h.add(top);
+    const band=new THREE.Mesh(new THREE.CylinderGeometry(.19,.196,.045,24),m('cowboyBand')); band.position.y=.04; h.add(band); return h; }
   if(id==='phones'){ const arc=new THREE.Mesh(new THREE.TorusGeometry(.36,.035,10,30,Math.PI),m('phonesBand')); arc.position.y=-.22; outline(arc,.01); h.add(arc);
     for(const sx of [-1,1]){ const cup=new THREE.Mesh(new THREE.CylinderGeometry(.12,.12,.09,22),m('phones')); cup.rotation.z=Math.PI/2; cup.position.set(sx*.37,-.24,0); outline(cup,.012); h.add(cup);
       const pad=new THREE.Mesh(new THREE.CylinderGeometry(.085,.085,.03,18),m('phonesBand')); pad.rotation.z=Math.PI/2; pad.position.set(sx*.43,-.24,0); h.add(pad); } return h; }
@@ -1049,9 +1061,20 @@ function buildHat(id){ const h=new THREE.Group();
     const top=new THREE.Mesh(new THREE.CylinderGeometry(.16,.19,.16,22),m('straw')); top.position.y=.09; outline(top,.012); h.add(top);
     const band=new THREE.Mesh(new THREE.CylinderGeometry(.195,.195,.045,22),m('petalB')); band.position.y=.04; h.add(band);
     const fl=new THREE.Mesh(sph(.04,10,8),m('partyB')); fl.position.set(.17,.06,.08); h.add(fl); }
-  else if(id==='leaf'){ const lf=new THREE.Mesh(sph(.32,18,10),m('leafBig')); lf.scale.set(1,.2,.72); lf.position.y=.1; lf.rotation.z=.25; outline(lf,.012); h.add(lf);
-    const vein=new THREE.Mesh(new THREE.BoxGeometry(.5,.012,.022),m('leafVein')); vein.position.y=.165; vein.rotation.z=.25; h.add(vein);
-    const st=new THREE.Mesh(new THREE.CylinderGeometry(.012,.015,.12,6),m('stem')); st.position.set(-.33,.03,0); st.rotation.z=1.1; h.add(st); }
+  else if(id==='leaf'){ // a big pointed leaf laid over the head: it bends down the sides, its tip curls up, a stalk curls at the back
+    const L=.39, W=.23, R=.48, cy=.098-R, lg=new THREE.SphereGeometry(1,32,10), lp=lg.attributes.position;
+    // a point on the bent leaf: x along it, z across it, lifted by d off the middle sheet
+    const leafAt=(x,z,d)=>{ const ax=x/R, az=z/R, n=new THREE.Vector3(Math.sin(ax)*Math.cos(az),Math.cos(ax)*Math.cos(az),Math.sin(az));
+      return n.multiplyScalar(R+d).add(new THREE.Vector3(0,cy+.06*Math.pow(Math.max(0,x/L),3),0)); };
+    for(let k=0;k<lp.count;k++){ const u=lp.getX(k), v=lp.getZ(k), p=leafAt(u*L,v*W*Math.pow(Math.max(0,1-u*u),.4),lp.getY(k)*.022); lp.setXYZ(k,p.x,p.y,p.z); }
+    lg.computeVertexNormals(); const lf=new THREE.Mesh(lg,m('leafBig')); outline(lf,.01,.4); h.add(lf);
+    const rib=[], st=[]; for(let k=0;k<=10;k++){ const x=-L*.92+k/10*L*1.75; rib.push(leafAt(x,0,.02)); }
+    const vein=new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(rib),16,.009,5,false),m('leafVein')); h.add(vein);
+    for(const sd of [-1,1]) for(const x0 of [-.16,0,.15]){ const pts=[]; for(let k=0;k<=3;k++){ const t=k/3; pts.push(leafAt(x0+t*.09,sd*t*W*.55*(1-Math.abs(x0)/L*.6),.016)); }
+      h.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts),4,.006,4,false),m('leafVein'))); }
+    const s0=leafAt(-L*.95,0,0); for(let k=0;k<=5;k++){ const t=k/5; st.push(new THREE.Vector3(s0.x-.07*t-.02*Math.sin(t*3),s0.y-.01+.09*t*t,s0.z)); }
+    const stalk=new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(st),8,.016,6,false),m('stem')); h.add(stalk);
+    h.rotation.y=-.5; }
   else if(id==='acorn'){ const cap=new THREE.Mesh(new THREE.SphereGeometry(.24,22,12,0,Math.PI*2,0,Math.PI/2),m('acornCap')); cap.scale.y=.7; outline(cap,.012); h.add(cap);
     for(let i=0;i<10;i++){ const a=i/10*Math.PI*2; const d=new THREE.Mesh(sph(.025,6,5),m('acornNut')); d.position.set(Math.cos(a)*.17,.1,Math.sin(a)*.17); h.add(d); }
     const nub=new THREE.Mesh(new THREE.CylinderGeometry(.018,.025,.08,8),m('acornCap')); nub.position.y=.2; h.add(nub); }
@@ -1062,6 +1085,7 @@ function buildHat(id){ const h=new THREE.Group();
     const nub=new THREE.Mesh(sph(.035,10,8),m('beret')); nub.position.set(.05,.11,0); h.add(nub);
     const dew=new THREE.Mesh(sph(.04,10,8),m('dew')); dew.position.set(-.13,.07,.12); h.add(dew); }
   else if(id==='mush'){ const cap=new THREE.Mesh(new THREE.SphereGeometry(.26,24,12,0,Math.PI*2,0,Math.PI/2),m('mushRed')); cap.scale.y=.75; outline(cap,.012); h.add(cap);
+    const gills=new THREE.Mesh(new THREE.TorusGeometry(.235,.028,8,28),m('stem')); gills.rotation.x=Math.PI/2; gills.scale.z=.6; gills.position.y=.002; h.add(gills);
     [[0,.17,.06],[.13,.1,.15],[-.12,.11,.14],[.02,.08,.22],[-.2,.06,.04],[.2,.06,.02]].forEach(p=>{ const d=new THREE.Mesh(sph(.035,8,6),m('stem')); d.position.set(...p); d.scale.y=.4; d.lookAt(p[0]*3,p[1]*3,p[2]*3); h.add(d); }); }
   else if(id==='tophat'){ const brim=new THREE.Mesh(new THREE.CylinderGeometry(.27,.27,.03,26),m('topHat')); outline(brim,.012); h.add(brim);
     const top=new THREE.Mesh(new THREE.CylinderGeometry(.17,.17,.3,24),m('topHat')); top.position.y=.16; outline(top,.012); h.add(top);
@@ -1079,9 +1103,11 @@ function buildHat(id){ const h=new THREE.Group();
     for(let i=0;i<8;i++){ const a=i/8*Math.PI*2, x=Math.sin(a)*.27, z=Math.cos(a)*.27, sp=new THREE.Mesh(new THREE.CylinderGeometry(.006,.006,.3,4),m('pole'));
       sp.position.set(x/2,.365,z/2); sp.lookAt(x,.315,z); sp.rotateX(Math.PI/2); h.add(sp); }
     const tip=new THREE.Mesh(sph(.02,8,6),m('pole')); tip.position.y=.46; h.add(tip); }
-  else if(id==='bow'){ const g=new THREE.Group(); g.position.set(.14,.05,0); g.rotation.z=-.4; h.add(g);
-    for(const sd of [-1,1]){ const loop=new THREE.Mesh(sph(.09,14,10),m('petalB')); loop.scale.set(1.2,.8,.5); loop.position.x=sd*.1; outline(loop,.01); g.add(loop); }
-    const knot=new THREE.Mesh(sph(.045,10,8),m('bowDark')); g.add(knot); }
+  else if(id==='bow'){ // a ribbon bow perched on the top of the head, off to one side, in a deeper pink than any worm
+    const g=new THREE.Group(); g.position.set(.17,.065,.03); g.rotation.set(-.15,-.3,-.5); h.add(g);
+    for(const sd of [-1,1]){ const loop=new THREE.Mesh(sph(.1,16,12),m('bowDark')); loop.scale.set(1.25,.85,.55); loop.position.x=sd*.105; loop.rotation.z=-sd*.25; outline(loop,.01); g.add(loop);
+      const tail=new THREE.Mesh(sph(.05,10,8),m('bowDark')); tail.scale.set(.55,1.3,.35); tail.position.set(sd*.04,-.085,.015); tail.rotation.z=sd*.45; outline(tail,.008); g.add(tail); }
+    const knot=new THREE.Mesh(sph(.05,12,10),m('bowKnot')); knot.scale.set(1,1,.75); knot.position.z=.02; outline(knot,.008); g.add(knot); }
   else if(id==='gold'){ // an open ring, so both of its sides are drawn: the back of the band shows through the top
     const gm2=MC.crownBand||(MC.crownBand=toon(C.crown,{side:THREE.DoubleSide}));
     const band=new THREE.Mesh(new THREE.CylinderGeometry(.19,.2,.09,24,1,true),gm2); band.position.y=.04; outline(band,.01); h.add(band);
@@ -1092,12 +1118,12 @@ function buildHat(id){ const h=new THREE.Group();
     const rib=new THREE.Mesh(new THREE.TorusGeometry(.245,.05,8,28),m('beanieRib')); rib.rotation.x=Math.PI/2; rib.position.y=-.01; outline(rib,.01); h.add(rib);
     for(let i=0;i<14;i++){ const a=i/14*Math.PI*2, k=new THREE.Mesh(new THREE.BoxGeometry(.012,.07,.02),m('beanie')); k.position.set(Math.cos(a)*.29,-.01,Math.sin(a)*.29); k.rotation.y=-a; h.add(k); }
     const pom=new THREE.Mesh(sph(.075,14,10),m('dew')); pom.position.y=.25; outline(pom,.01); h.add(pom); }
-  else if(id==='sunflower'){ // one big bloom tucked on top, tipped toward the camera, with a leaf
-    const g=new THREE.Group(); g.position.set(.04,.06,.02); g.rotation.set(-.55,0,-.15); h.add(g);
+  else if(id==='sunflower'){ // one big bloom tucked on top, tipped toward the front, two leaves peeking out from under it
+    const g=new THREE.Group(); g.position.set(.04,.08,.01); g.rotation.set(.3,0,-.15); g.scale.setScalar(1.12); h.add(g);
+    for(const a of [2.2,3.9]){ const lf=new THREE.Mesh(sph(.07,12,8),m('leaf')); lf.scale.set(.55,.16,1.35); lf.position.set(Math.sin(a)*.2,-.025,Math.cos(a)*.2); lf.rotation.y=a; outline(lf,.008); g.add(lf); }
     for(let i=0;i<12;i++){ const a=i/12*Math.PI*2, pt=new THREE.Mesh(sph(.06,10,8),m('sunPetal')); pt.scale.set(.55,.22,1.25); pt.position.set(Math.sin(a)*.13,0,Math.cos(a)*.13); pt.rotation.y=a; outline(pt,.008); g.add(pt); }
     const core=new THREE.Mesh(sph(.085,16,10),m('sunCore')); core.scale.y=.45; core.position.y=.015; outline(core,.008); g.add(core);
-    for(let i=0;i<7;i++){ const a=i/7*Math.PI*2, d=new THREE.Mesh(sph(.012,6,4),m('acornNut')); d.position.set(Math.sin(a)*.045,.05,Math.cos(a)*.045); g.add(d); }
-    const lf=new THREE.Mesh(sph(.07,12,8),m('leaf')); lf.scale.set(.5,.18,1.3); lf.position.set(-.16,.0,-.08); lf.rotation.y=.9; outline(lf,.008); h.add(lf); }
+    for(let i=0;i<7;i++){ const a=i/7*Math.PI*2, d=new THREE.Mesh(sph(.012,6,4),m('acornNut')); d.position.set(Math.sin(a)*.045,.05,Math.cos(a)*.045); g.add(d); } }
   else if(id==='horn'){ // a headband hugging the head side to side, with a curved beetle horn on top
     const band=new THREE.Mesh(new THREE.TorusGeometry(.355,.03,8,30,Math.PI-.7),m('beetleDark')); band.rotation.z=.35; band.position.y=-.27; h.add(band);
     const pts=[]; for(let k=0;k<=8;k++){ const t=k/8, a=t*1.4; pts.push(new THREE.Vector3(0,.06+Math.sin(a)*.2,-.06+(1-Math.cos(a))*.2)); }
@@ -1701,10 +1727,10 @@ const ART={
   'hat-party':'<path d="M12 2.8l6.2 16.4H5.8z" fill="#9FD2F2"/><path d="M8.4 12.4l6.6-2.2M7 16.4l9.8-3.4" stroke="#FFF1A8" stroke-width="1.8"/><path d="M12 2.8l6.2 16.4H5.8z"/><circle cx="12" cy="3.4" r="2" fill="#F7A8C4"/>',
   'hat-brolly':'<path d="M2.8 12a9.2 8 0 0 1 18.4 0c-1.5-1.1-3-1.1-4.6 0-1.5-1.1-3-1.1-4.6 0-1.5-1.1-3-1.1-4.6 0-1.5-1.1-3-1.1-4.6 0z" fill="#9FD2F2"/><path d="M12 12v6.6a2 2 0 0 1-4 0"/><path d="M12 4v-1"/>',
   'hat-beret':'<ellipse cx="12" cy="13.4" rx="9" ry="5.2" fill="#B79CF2"/><path d="M5 15.6c2 1.4 4.4 2 7 2s5-.6 7-2"/><circle cx="12" cy="7.2" r="1.4" fill="#B79CF2"/><path d="M16.6 12.6a1.4 1.4 0 0 0 2.8 0c0-.9-1.4-2.6-1.4-2.6s-1.4 1.7-1.4 2.6z" fill="#EAF8FF" stroke-width="1.2"/>',
-  'hat-bow':'<path d="M12 12L4.6 7.4v9.2zM12 12l7.4-4.6v9.2z" fill="#F7A8C4"/><circle cx="12" cy="12" r="2.3" fill="#E36A8C"/>',
+  'hat-bow':'<path d="M11.2 13l-2.4 6.2 2.3-.8 1 1.9zM12.8 13l2.4 6.2-2.3-.8-1 1.9z" fill="#E36A8C" stroke-width="1.2"/><path d="M12 12L4.6 7.4v9.2zM12 12l7.4-4.6v9.2z" fill="#E36A8C"/><circle cx="12" cy="12" r="2.3" fill="#C24E72"/>',
   'hat-gold':'<path d="M4.2 17.2L3.2 8l5 4 3.8-6.2L15.8 12l5-4-1 9.2z" fill="#F5C14E"/><path d="M4.2 17.2h15.6v2.6H4.2z" fill="#F5C14E"/><circle cx="12" cy="18.5" r="1.1" fill="#F7A8C4"/><circle cx="7.6" cy="18.5" r="1" fill="#9FD2F2"/><circle cx="16.4" cy="18.5" r="1" fill="#9FD2F2"/>',
   'hat-beanie':'<path d="M5 15.4a7 7 0 0 1 14 0z" fill="#8FD0B0"/><rect x="4" y="14.6" width="16" height="4.4" rx="1.8" fill="#6FB894"/><path d="M8 15.4v2.8M12 15.4v2.8M16 15.4v2.8" stroke-width="1.2"/><circle cx="12" cy="6.4" r="2.4" fill="#FFF8EA"/>',
-  'hat-sunflower':'<g fill="#FFD34D"><ellipse cx="12" cy="5.6" rx="2" ry="3"/><ellipse cx="12" cy="18.4" rx="2" ry="3"/><ellipse cx="5.6" cy="12" rx="3" ry="2"/><ellipse cx="18.4" cy="12" rx="3" ry="2"/><ellipse cx="7.5" cy="7.5" rx="2" ry="3" transform="rotate(-45 7.5 7.5)"/><ellipse cx="16.5" cy="16.5" rx="2" ry="3" transform="rotate(-45 16.5 16.5)"/><ellipse cx="16.5" cy="7.5" rx="2" ry="3" transform="rotate(45 16.5 7.5)"/><ellipse cx="7.5" cy="16.5" rx="2" ry="3" transform="rotate(45 7.5 16.5)"/></g><circle cx="12" cy="12" r="3.6" fill="#7A4E2E"/>',
+  'hat-sunflower':'<g fill="#6CC97A" stroke-width="1.2"><ellipse cx="4" cy="4.6" rx="3.4" ry="1.6" transform="rotate(40 4 4.6)"/><ellipse cx="20" cy="4.6" rx="3.4" ry="1.6" transform="rotate(-40 20 4.6)"/></g><g fill="#FFD34D"><ellipse cx="12" cy="5.6" rx="2" ry="3"/><ellipse cx="12" cy="18.4" rx="2" ry="3"/><ellipse cx="5.6" cy="12" rx="3" ry="2"/><ellipse cx="18.4" cy="12" rx="3" ry="2"/><ellipse cx="7.5" cy="7.5" rx="2" ry="3" transform="rotate(-45 7.5 7.5)"/><ellipse cx="16.5" cy="16.5" rx="2" ry="3" transform="rotate(-45 16.5 16.5)"/><ellipse cx="16.5" cy="7.5" rx="2" ry="3" transform="rotate(45 16.5 7.5)"/><ellipse cx="7.5" cy="16.5" rx="2" ry="3" transform="rotate(45 7.5 16.5)"/></g><circle cx="12" cy="12" r="3.6" fill="#7A4E2E"/>',
   'hat-horn':'<path d="M4 20a8 8 0 0 1 16 0" stroke-width="2.6"/><path d="M8.2 14.2c-.2-4.8 2.4-8.8 8-11.2-1 3.8-1 7.4 0 11.2z" fill="#7C8CF0"/><circle cx="12.2" cy="10" r=".85" fill="#B5C0FA" stroke="none"/><circle cx="13.6" cy="7" r=".7" fill="#B5C0FA" stroke="none"/>'
 };
 const art=(n,size=24)=>`<svg class="art" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="#5B4436" stroke-width="${Math.max(1.3,Math.min(2.6,1.9*24/size)).toFixed(2)}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ART[n]||''}</svg>`;
