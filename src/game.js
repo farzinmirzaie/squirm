@@ -962,8 +962,10 @@ function buildExtra(id){ // frames sit in front of the eyes even when they widen
   const g=new THREE.Group(), EY=.14, EZ=.41;
   // a thin rod from point a to point b
   const bar=(a,b,r,mat)=>{ const d=new THREE.Vector3().subVectors(b,a), c=new THREE.Mesh(new THREE.CylinderGeometry(r,r,d.length(),8),mat); c.position.copy(a).addScaledVector(d,.5); c.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),d.normalize()); return c; };
-  // the arms start at the frame's outer edge (x = ox) and run back to the side of the head
-  const arms=(mat,ox,z)=>{ for(const s of [-1,1]) g.add(bar(new THREE.Vector3(s*ox,EY,z),new THREE.Vector3(s*.325,EY+.03,0),.014,mat)); };
+  // the arms start at the frame's outer edge (x = ox), run back just off the side of the head and bend into it
+  // there, like over an ear: a straight arm to the back would graze the round head and show through in dashes
+  const arms=(mat,ox,z)=>{ for(const s of [-1,1]){ const k=new THREE.Vector3(s*.32,EY+.01,.1);
+    g.add(bar(new THREE.Vector3(s*ox,EY,z),k,.014,mat)); g.add(bar(k,new THREE.Vector3(s*.24,EY+.02,-.12),.014,mat)); g.add(new THREE.Mesh(sph(.014,8,6),mat).translateOnAxis(k.clone().normalize(),k.length())); } };
   if(id==='glasses'||id==='shades'){ const sh=id==='shades', z=sh?EZ+.01:EZ, rad=sh?.13:.12;
     for(const s of [-1,1]){ const r=new THREE.Mesh(new THREE.TorusGeometry(rad,.019,10,30),m('frame')); r.position.set(s*.13,EY,z); g.add(r);
       if(sh){ const l=new THREE.Mesh(new THREE.CircleGeometry(rad,28),m('lensDark')); l.position.set(s*.13,EY,z-.004); g.add(l);
@@ -974,28 +976,41 @@ function buildExtra(id){ // frames sit in front of the eyes even when they widen
     for(const s of [-1,1]){ const l=shapedLens(mk,fr,lens,sc); l.position.set(s*.135,EY,EZ-.01); l.rotation.z=s*-.08; g.add(l); }
     const br=new THREE.Mesh(new THREE.CylinderGeometry(.012,.012,.07,8),fr); br.rotation.z=Math.PI/2; br.position.set(0,EY+.02,EZ+.005); g.add(br); arms(fr,.135+sc*.95,EZ); }
   else if(id==='monocle'){ const r=new THREE.Mesh(new THREE.TorusGeometry(.125,.02,10,30),m('monocle')); r.position.set(-.13,EY,EZ+.005); g.add(r);
-    for(let i=0;i<6;i++){ const t=i/5, c=new THREE.Mesh(sph(.014,8,6),m('monocle')); c.position.set(-.13-.12-.05*Math.sin(t*2.6),EY-.04-t*.26,EZ-.04-t*.06); g.add(c); } }
+    // a little chain from the rim, sagging over the cheek to a clip on the side of the head (never off in the air)
+    const ca=new THREE.Vector3(-.235,EY-.06,EZ-.01), cc=new THREE.Vector3(-.28,-.18,.37), cb=new THREE.Vector3(-.27,-.13,.17), chain=new THREE.QuadraticBezierCurve3(ca,cc,cb);
+    for(let i=0;i<9;i++){ const c=new THREE.Mesh(sph(.014,8,6),m('monocle')); c.position.copy(chain.getPoint(i/8)); g.add(c); }
+    const clip=new THREE.Mesh(sph(.026,10,8),m('monocle')); clip.position.copy(cb); clip.scale.set(.55,1,1); outline(clip,.008); g.add(clip); }
   else if(id==='freckles'){ const R=HEAD_R+.004;
-    for(const s of [-1,1]) for(const [x,y] of [[.17,.02],[.21,.04],[.2,-.005],[.24,.015]]){ const xx=s*x, z=Math.sqrt(R*R-xx*xx-y*y), d=new THREE.Mesh(sph(.013,8,6),m('cowboyBand')); d.position.set(xx,y,z); d.scale.z=.4; d.lookAt(xx*3,y*3,z*3); g.add(d); } }
+    for(const s of [-1,1]) for(const [x,y] of [[.17,.02],[.21,.04],[.2,-.005],[.24,.015]]){ const xx=s*x, z=Math.sqrt(R*R-xx*xx-y*y), d=new THREE.Mesh(sph(.014,8,6),m('tash')); d.position.set(xx,y,z); d.scale.z=.4; d.lookAt(xx*3,y*3,z*3); g.add(d); } }
   else if(id==='nose'){ const n=new THREE.Mesh(sph(.055,18,14),m('bowDark')); n.position.set(0,.035,HEAD_R+.01); outline(n,.01); g.add(n);
     const hl=new THREE.Mesh(sph(.015,8,6),new THREE.MeshBasicMaterial({color:0xffffff})); hl.position.set(-.018,.055,HEAD_R+.058); g.add(hl); }
-  else if(id==='flower'){ const f=new THREE.Group(); f.position.set(.24,.2,.2); f.lookAt(.24*3,.2*3,.2*3+.4); f.scale.setScalar(1.45); g.add(f);
-    for(let k=0;k<5;k++){ const a=k/5*Math.PI*2, pt=new THREE.Mesh(sph(.05,12,8),m('petalB')); pt.position.set(Math.cos(a)*.055,Math.sin(a)*.055,0); pt.scale.z=.5; outline(pt,.008); f.add(pt); }
+  else if(id==='flower'){ // clipped on the left, off the top where most hats sit and away from the ribbon bow on the right
+    const f=new THREE.Group(), fp=new THREE.Vector3(-.29,.17,.12).setLength(HEAD_R+.012); f.position.copy(fp); f.lookAt(fp.x*3,fp.y*3,fp.z*3+.3); f.scale.setScalar(1.25); g.add(f);
+    for(let k=0;k<5;k++){ const a=k/5*Math.PI*2, pt=new THREE.Mesh(sph(.05,12,8),m('chef')); pt.position.set(Math.cos(a)*.055,Math.sin(a)*.055,0); pt.scale.z=.5; outline(pt,.008); f.add(pt); }
     const c=new THREE.Mesh(sph(.035,12,8),m('crown')); c.position.z=.02; f.add(c); }
   else if(id==='bowtie'){ const b=new THREE.Group(); b.position.set(0,-.3,.2); b.rotation.x=.5; g.add(b);
-    for(const s of [-1,1]){ const w=new THREE.Mesh(new THREE.ConeGeometry(.075,.13,16),m('wizard')); w.rotation.z=s*Math.PI/2; w.position.x=s*.07; w.scale.z=.55; outline(w,.008); b.add(w); }
-    const k=new THREE.Mesh(sph(.035,12,8),m('wizard')); k.scale.z=.7; outline(k,.008); b.add(k); }
-  else if(id==='scarf'){ const sc=new THREE.Mesh(new THREE.TorusGeometry(.25,.075,12,28),m('beanie')); sc.position.set(0,-.24,0); sc.rotation.x=Math.PI/2-.35; sc.scale.set(1,1,.8); outline(sc,.01); g.add(sc);
-    const tail=new THREE.Mesh(new THREE.BoxGeometry(.11,.22,.05),m('beanie')); tail.position.set(.15,-.36,.2); tail.rotation.set(.3,0,.25); outline(tail,.01); g.add(tail);
-    for(const yy of [-.31,-.4]){ const st=new THREE.Mesh(new THREE.BoxGeometry(.115,.022,.055),m('partyB')); st.position.set(.15+(yy+.36)*-.25,yy+.05,.2); st.rotation.set(.3,0,.25); g.add(st); } }
+    for(const s of [-1,1]){ const w=new THREE.Mesh(new THREE.ConeGeometry(.075,.13,16),m('bowDark')); w.rotation.z=s*Math.PI/2; w.position.x=s*.07; w.scale.z=.55; outline(w,.008); b.add(w); }
+    const k=new THREE.Mesh(sph(.035,12,8),m('heartFrame')); k.scale.z=.7; outline(k,.008); b.add(k); }
+  else if(id==='scarf'){ // a soft roll slanting round the bottom of the head: under the chin in front, up over the neck behind
+    // (so it shows from the tilted game camera too), with cream stripes, a knot at the side and two short tails
+    const R=.33, tube=.066, ring=new THREE.Group(); ring.position.set(0,-.1,-.07); ring.rotation.x=-.93; ring.scale.x=.92; g.add(ring);
+    const roll=new THREE.Mesh(new THREE.TorusGeometry(R,tube,12,36),m('mushRed')); ring.add(roll);
+    ring.add(new THREE.Mesh(new THREE.TorusGeometry(R,tube+.012,10,36),lineMat));
+    const band=new THREE.TorusGeometry(tube+.003,.014,6,16);
+    for(let k=0;k<8;k++){ const a=(k+.5)/8*Math.PI*2, st=new THREE.Mesh(band,m('partyB')); st.position.set(R*Math.cos(a),R*Math.sin(a),0);
+      st.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,1),new THREE.Vector3(-Math.sin(a),Math.cos(a),0)); ring.add(st); }
+    const kp=new THREE.Vector3(.215,-.245,.18), knot=new THREE.Mesh(sph(.068,14,10),m('mushRed')); knot.position.copy(kp); knot.scale.set(1,.85,.8); outline(knot,.01); g.add(knot);
+    for(const [dx,dy,dz,rz,rx] of [[.075,-.065,0,.9,.15],[.025,-.075,.06,.35,-.35]]){ const t=new THREE.Mesh(sph(.05,14,10),m('mushRed')); t.position.set(kp.x+dx,kp.y+dy,kp.z+dz); t.rotation.set(rx,0,rz); t.scale.set(1,2,.5); outline(t,.01); g.add(t);
+      const tip=new THREE.Mesh(sph(.05,12,8),m('partyB')); tip.position.y=-.036; tip.scale.set(.88,.2,1.08); t.add(tip); } }
   else if(id==='tash'||id==='walrus'){ const half=id==='tash'
       ?[[0,.1],[.2,.17],[.45,.11],[.68,.02],[.86,.06],[.97,.22],[.93,.37],[.82,.4],[.78,.31],[.85,.24],[.8,.13],[.66,-.04],[.45,-.17],[.2,-.17],[0,-.06]]
       :[[0,.15],[.3,.2],[.6,.13],[.8,-.04],[.79,-.22],[.64,-.3],[.52,-.21],[.38,-.32],[.24,-.22],[.11,-.32],[0,-.22]];
     const pts=[...half,...half.slice(1,-1).reverse().map(([x,y])=>[-x,y])].map(([x,y])=>new THREE.Vector2(x,y)), sh=new THREE.Shape();
     sh.moveTo(pts[0].x,pts[0].y); sh.splineThru([...pts.slice(1),pts[0]]);
-    const geo=new THREE.ExtrudeGeometry(sh,{depth:.22,bevelEnabled:true,bevelSize:.05,bevelThickness:.05,bevelSegments:2,curveSegments:24}), w=id==='tash'?.17:.19;
-    geo.scale(w,w,w); const pos=geo.getAttribute('position'); for(let i=0;i<pos.count;i++){ const x=pos.getX(i); pos.setZ(i,pos.getZ(i)-x*x*1.5); } geo.computeVertexNormals();
-    const t=new THREE.Mesh(geo,m('tash')); t.position.set(0,id==='tash'?-.005:-.01,.322); t.rotation.x=-.22; outline(t,.008); g.add(t); }
+    // sized and raised to sit between the eyes and the mouth, clear of every mouth (the wow/yawn 'o' tops out at y -.026)
+    const geo=new THREE.ExtrudeGeometry(sh,{depth:.22,bevelEnabled:true,bevelSize:.05,bevelThickness:.05,bevelSegments:2,curveSegments:24}), w=id==='tash'?.17:.18;
+    geo.scale(w,id==='tash'?w:w*.78,w); const pos=geo.getAttribute('position'); for(let i=0;i<pos.count;i++){ const x=pos.getX(i); pos.setZ(i,pos.getZ(i)-x*x*1.5); } geo.computeVertexNormals();
+    const t=new THREE.Mesh(geo,m('tash')); t.position.set(0,id==='tash'?.008:.026,.322); t.rotation.x=-.22; outline(t,.008); g.add(t); }
   return g; }
 function dressExtra(g){ const slot=g&&g.userData.accSlot; if(!slot) return; slot.clear(); const id=extraOn(); if(id==='none') return;
   if(!extraProto[id]) extraProto[id]=buildExtra(id); slot.add(extraProto[id].clone()); }
@@ -1584,13 +1599,13 @@ const ART={
   'extra-hearts':'<path d="M7.4 17.4l-3.9-3.9c-1.4-1.4-1.2-3.6.4-4.4 1.3-.7 2.7-.2 3.5.9.8-1.1 2.2-1.6 3.5-.9 1.6.8 1.8 3 .4 4.4z" fill="#F27DA2"/><path d="M16.6 17.4l-3.9-3.9c-1.4-1.4-1.2-3.6.4-4.4 1.3-.7 2.7-.2 3.5.9.8-1.1 2.2-1.6 3.5-.9 1.6.8 1.8 3 .4 4.4z" fill="#F27DA2"/><path d="M11.1 11.6h1.8"/>',
   'extra-stars':'<path d="M7.30 7.80L8.71 10.86L12.06 11.25L9.58 13.54L10.24 16.85L7.30 15.20L4.36 16.85L5.02 13.54L2.54 11.25L5.89 10.86z" fill="#F5C14E"/><path d="M16.70 7.80L18.11 10.86L21.46 11.25L18.98 13.54L19.64 16.85L16.70 15.20L13.76 16.85L14.42 13.54L11.94 11.25L15.29 10.86z" fill="#F5C14E"/>',
   'extra-monocle':'<circle cx="14.4" cy="10.8" r="5" fill="#EAF8FF"/><circle cx="14.4" cy="10.8" r="3.7" stroke="#E0B04A" stroke-width="1.2"/><path d="M14.4 15.8c0 2.6-1.6 4.2-4.4 4.8" stroke-dasharray="1.1 1.7"/>',
-  'extra-walrus':'<path d="M12 9.4c-2.6-1-6.2-.9-7.9 1.1-1 1.2-1.3 3-1 4.7.5.8 1.4.6 1.8-.2.3.9 1.2 1.2 1.9.5.3.9 1.3 1.1 1.9.3.4.9 1.4.9 1.9 0 .4.8 1.4.8 1.4.1.4.7 1.4.7 1.8-.1.6.8 1.6.6 1.9-.3.7.7 1.6.4 1.9-.5.6.8 1.5.6 1.8-.2.3-1.7 0-3.5-1-4.7-1.7-2-5.3-2.1-7.9-1.1z" fill="#6B4A35"/>',
-  'extra-freckles':'<circle cx="12" cy="12" r="8.6" fill="#FFB0C6"/><g fill="#8A5A36" stroke="none"><circle cx="7.4" cy="12.6" r=".9"/><circle cx="9.2" cy="14.2" r=".9"/><circle cx="6.8" cy="15" r=".8"/><circle cx="16.6" cy="12.6" r=".9"/><circle cx="14.8" cy="14.2" r=".9"/><circle cx="17.2" cy="15" r=".8"/></g>',
+  'extra-walrus':'<path d="M12 9.4c-2.6-1-6.2-.9-7.9 1.1-1 1.2-1.3 3-1 4.7.5.8 1.4.6 1.8-.2.3.9 1.2 1.2 1.9.5.3.9 1.3 1.1 1.9.3.4.9 1.4.9 1.9 0 .4.8 1.4.8 1.4.1.4.7 1.4.7 1.8-.1.6.8 1.6.6 1.9-.3.7.7 1.6.4 1.9-.5.6.8 1.5.6 1.8-.2.3-1.7 0-3.5-1-4.7-1.7-2-5.3-2.1-7.9-1.1z" fill="#6B4A35"/><path d="M5.6 11.4c1.8-1 4-1.1 5.4-.5M13 10.9c1.4-.6 3.6-.5 5.4.5" stroke="#B08560" stroke-width="1.1"/>',
+  'extra-freckles':'<circle cx="12" cy="12" r="8.6" fill="#FFB0C6"/><g fill="#6B4A35" stroke="none"><circle cx="7.4" cy="12.6" r=".9"/><circle cx="9.2" cy="14.2" r=".9"/><circle cx="6.8" cy="15" r=".8"/><circle cx="16.6" cy="12.6" r=".9"/><circle cx="14.8" cy="14.2" r=".9"/><circle cx="17.2" cy="15" r=".8"/></g>',
   'extra-nose':'<circle cx="12" cy="12" r="6.4" fill="#E36A8C"/><circle cx="10" cy="9.8" r="1.4" fill="#fff" stroke="none"/>',
-  'extra-flower':'<g fill="#F7A8C4"><circle cx="12" cy="6.4" r="3.6"/><circle cx="17.4" cy="10.3" r="3.6"/><circle cx="15.3" cy="16.6" r="3.6"/><circle cx="8.7" cy="16.6" r="3.6"/><circle cx="6.6" cy="10.3" r="3.6"/></g><circle cx="12" cy="12" r="3" fill="#F5C14E"/>',
-  'extra-bowtie':'<path d="M12 12L3.8 7.2v9.6zM12 12l8.2-4.8v9.6z" fill="#8E7BE0"/><rect x="9.8" y="9.8" width="4.4" height="4.4" rx="1.6" fill="#8E7BE0"/>',
-  'extra-scarf':'<path d="M4 9.6c2.4 2.2 13.6 2.2 16 0l.4 3.6c-2.6 2.4-14.2 2.4-16.8 0z" fill="#8FD0B0"/><path d="M13.6 13.4l-1.2 7.4 4.2.6 1-7.8z" fill="#8FD0B0"/><path d="M12.8 17.6l4 .6M12.5 19.4l4 .6" stroke="#FFF1A8" stroke-width="1.3"/>',
-  'extra-tash':'<path d="M12 11.6c-1.6-1.6-4.6-1.8-6.4-.2-1 .9-2.2 1-3 .2.2 2.6 2.6 4.4 5.4 4.1 1.8-.2 3.2-1.2 4-2.4.8 1.2 2.2 2.2 4 2.4 2.8.3 5.2-1.5 5.4-4.1-.8.8-2 .7-3-.2-1.8-1.6-4.8-1.4-6.4.2z" fill="#6B4A35"/>',
+  'extra-flower':'<g fill="#FFFBF2"><circle cx="12" cy="6.4" r="3.6"/><circle cx="17.4" cy="10.3" r="3.6"/><circle cx="15.3" cy="16.6" r="3.6"/><circle cx="8.7" cy="16.6" r="3.6"/><circle cx="6.6" cy="10.3" r="3.6"/></g><circle cx="12" cy="12" r="3" fill="#F5C14E"/>',
+  'extra-bowtie':'<path d="M12 12L3.8 7.2v9.6zM12 12l8.2-4.8v9.6z" fill="#E36A8C"/><rect x="9.8" y="9.8" width="4.4" height="4.4" rx="1.6" fill="#F27DA2"/>',
+  'extra-scarf':'<path d="M3.6 9.4c3 3.2 13.8 3.2 16.8 0l.6 3.4c-3.4 3.8-14.6 3.8-18 0z" fill="#F07A6A"/><path d="M7 11.6l-.5 3.3M12 12.4v3.4M17 11.6l.5 3.3" stroke="#FFF1A8" stroke-width="1.3"/><path d="M15.4 14.6l-1.6 5.6 2.8.9 1.2-5.8zM17.4 14.4l1.6 5.4 2.6-1.1-2-5.2z" fill="#F07A6A"/><circle cx="16.4" cy="14.4" r="2" fill="#F07A6A"/>',
+  'extra-tash':'<path d="M12 11.6c-1.6-1.6-4.6-1.8-6.4-.2-1 .9-2.2 1-3 .2.2 2.6 2.6 4.4 5.4 4.1 1.8-.2 3.2-1.2 4-2.4.8 1.2 2.2 2.2 4 2.4 2.8.3 5.2-1.5 5.4-4.1-.8.8-2 .7-3-.2-1.8-1.6-4.8-1.4-6.4.2z" fill="#6B4A35"/><path d="M6.6 12.5c1.3-.6 2.8-.5 4 .3M13.4 12.8c1.2-.8 2.7-.9 4-.3" stroke="#B08560" stroke-width="1.1"/>',
   dice:'<rect x="4" y="4" width="16" height="16" rx="4.2" fill="#F7A8C4"/><g fill="#5B4436" stroke="none"><circle cx="8.6" cy="8.6" r="1.35"/><circle cx="15.4" cy="15.4" r="1.35"/><circle cx="12" cy="12" r="1.35"/><circle cx="15.4" cy="8.6" r="1.35"/><circle cx="8.6" cy="15.4" r="1.35"/></g>',
   lock:'<path d="M8 10.5V8.2a4 4 0 0 1 8 0v2.3"/><rect x="5" y="10.5" width="14" height="10" rx="3" fill="#F5C14E"/><path d="M12 14.6v2.2"/>',
   // difficulty
