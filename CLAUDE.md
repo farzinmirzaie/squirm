@@ -259,10 +259,12 @@ Sections are listed in the table of contents at the top of the file; each starts
   into the head's `accSlot`, saved in `squirm-extra`; every new hat or extra needs a sticker in `ART`
   (`hat-<id>` / `extra-<id>`).
   `WORM_COLS` unlock with stars. `PATTERNS` (id, name, how to earn, test) unlock with milestones and are
-  saved in `squirm-pattern`; `colorAt` draws stripes, fade and rainbow as tube vertex colours, and Spots
-  and Glitter
-  are drawn per pixel by `tubeMat`'s shader from the tube's `pg` attribute (`spotsU`, `glitterU`). `patArt` draws the
-  wardrobe preview in the current colour.
+  saved in `squirm-pattern`. `colorAt(g,n)` gives the tints that run along the body (fade, sunset, rainbow)
+  as tube vertex colours; anything with an edge (the body-ring groove, stripes, bands, spots, glitter) is
+  drawn per pixel by `tubeMat`'s shader (`patU` / `PAT_ID`) from the tube's `pg` attribute: place along
+  the worm `g` (one unit per segment, continued down the tail tip and through tunnel dives) and the ring
+  direction scaled by the radius, so patterns keep their size and shape on the stage and in a patch.
+  `patArt` draws the wardrobe preview in the current colour, its sunset and rainbow sampled from `colorAt`.
 - **What's new:** `NEWS` (newest first: date id, title, lines). Returning players see the newest entry
   once as a card on the Play tab (`renderNews`; `squirm-news` holds the last id seen, new players never
   see it); Settings > About lists them all. When you ship something players will notice, add an entry
