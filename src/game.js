@@ -911,17 +911,25 @@ function snapWorm(){
 }
 let tailExtras=[];
 const tubeMat=new THREE.MeshToonMaterial({color:0xffffff,vertexColors:true,gradientMap:gradTex});
-// the Spots pattern is drawn per pixel from 'pg' (place along the worm, ring angle as cos/sin): round pale spots on
-// the back, alternating left and right of the spine, two to a segment, none on the neck
-const spotsU={value:0}, glitterU={value:0};
-tubeMat.onBeforeCompile=sh=>{ sh.uniforms.uSpots=spotsU; sh.uniforms.uGlitter=glitterU;
+// patterns with edges are drawn per pixel from 'pg' (place along the worm, then the ring direction scaled by the
+// radius), so they stay crisp and keep their size on the stage and in a patch, at any length: the soft groove
+// between body rings (every pattern), Stripes, Bands, Spots (round pale spots on the back, alternating left and
+// right of the spine, two to a segment) and Glitter (specks a fixed size in the world, a whole number of them
+// around the body so there's no seam). fwidth(g) is about one pixel on the body, for edges that don't shimmer
+const patU={value:0}, PAT_ID={stripes:1,spots:2,bands:3,glitter:4};
+tubeMat.extensions={derivatives:true};
+tubeMat.onBeforeCompile=sh=>{ sh.uniforms.uPat=patU;
   sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nattribute vec3 pg; varying vec3 vPg;').replace('#include <begin_vertex>','#include <begin_vertex>\nvPg=pg;');
-  sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nuniform float uSpots; uniform float uGlitter; varying vec3 vPg;').replace('#include <color_fragment>',`#include <color_fragment>
-    if(uSpots>.5 && vPg.x>.6){ float k=floor(vPg.x*2.+.5), side=mod(k,2.)>.5?.7:-.7, a=atan(vPg.z,vPg.y)-1.5708-side;
-      a=abs(mod(a+3.14159,6.28318)-3.14159); float d=length(vec2((vPg.x-k*.5)*1.3,a*.26));
-      diffuseColor.rgb=mix(diffuseColor.rgb,vec3(1.),.6*(1.-smoothstep(.1,.115,d))); }
-    if(uGlitter>.5 && vPg.x>.5){ vec2 c=vec2(vPg.x*9.,atan(vPg.z,vPg.y)*3.2), id=floor(c), fr=fract(c)-.5; float h=fract(sin(dot(id,vec2(12.9898,78.233)))*43758.5453);
-      if(h>.55){ vec2 o=vec2(fract(h*7.31),fract(h*13.7))-.5; float d=length(fr-o*.5); diffuseColor.rgb=mix(diffuseColor.rgb,vec3(1.),.9*(1.-smoothstep(.07,.12,d))); } }`); };
+  sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nuniform float uPat; varying vec3 vPg;').replace('#include <color_fragment>',`#include <color_fragment>
+    float g=vPg.x, r=max(length(vPg.yz),.001), an=atan(vPg.z,vPg.y), px=max(fwidth(g),.0005), q=abs(fract(g*2.+.5)-.5)*.5, m=abs(.25-q);
+    if(g>.4) diffuseColor.rgb*=1.-.07*(1.-smoothstep(0.,.05+px,q));
+    if(g>.55 && uPat>.5 && uPat<1.5) diffuseColor.rgb=mix(diffuseColor.rgb,vec3(1.),.5*(1.-smoothstep(.085-.012-px,.085+.012+px,m)));
+    if(g>.55 && uPat>2.5 && uPat<3.5) diffuseColor.rgb*=1.-.18*(1.-smoothstep(.026-px,.026+px,m));
+    if(uPat>1.5 && uPat<2.5){ float k=floor(g*2.+.5); if(k>1.5){ float a=an-1.5708-(mod(k,2.)>.5?.7:-.7); a=abs(mod(a+3.14159,6.28318)-3.14159);
+      float d=length(vec2(g-k*.5,a*r)), R=.36*r; diffuseColor.rgb=mix(diffuseColor.rgb,vec3(1.),.6*(1.-smoothstep(R-px,R+px,d))); } }
+    if(uPat>3.5){ vec2 c=vec2(g*8.,an*1.909859), id=floor(c), fr=fract(c)-.5; float h=fract(sin(dot(id,vec2(12.9898,78.233)))*43758.5453);
+      if(id.x>3.5 && h>.55){ vec2 o=vec2(fract(h*7.31),fract(h*13.7))-.5, cs=vec2(.125,r*.5236); float R=min(.016+.008*fract(h*3.7),.3*cs.y), d=length((fr-o*.4)*cs);
+        diffuseColor.rgb=mix(diffuseColor.rgb,vec3(1.),.9*(1.-smoothstep(R-px,R+px,d))); } }`); };
 const capMat=new THREE.MeshToonMaterial({color:0xffffff,gradientMap:gradTex});
 const COL_A=new THREE.Color(0xFFB3C8), tmpC=new THREE.Color();
 // worm colours, earned with garden stars: [name, body, head, stars needed]
@@ -1109,7 +1117,7 @@ const WORM_COLS=[['Blossom',0xFFB3C8,0xFFB0C6,0],['Mint',0x7FD9B0,0x74D3A6,15],[
 const starTotal=()=>LEVELS.reduce((a,l)=>a+(progress.stars[l.name]||0),0);
 const coloursUnlocked=()=>WORM_COLS.filter(c=>starTotal()>=c[3]).length;
 let wormCol=Math.max(0,Math.min(WORM_COLS.length-1,parseInt(store.get('squirm-colour')||'0',10)||0));
-// worm patterns, earned with milestones: [id, name, how to earn, test]. Drawn by colorAt (and tubeGeo for spots)
+// worm patterns, earned with milestones: [id, name, how to earn, test]. Drawn by colorAt and tubeMat's shader
 const PATTERNS=[['plain','Plain','',()=>true],
   ['stripes','Stripes','Earn 5 badges',()=>Object.keys(progress.badges).length>=5],
   ['spots','Spots','3 day daily streak',()=>progress.daily.best>=3],
@@ -1121,7 +1129,7 @@ const PATTERNS=[['plain','Plain','',()=>true],
 const patternsUnlocked=()=>PATTERNS.filter(p=>p[3]()).map(p=>p[0]);
 let wormPat=store.get('squirm-pattern')||'plain';
 const patOn=()=>PATTERNS.some(p=>p[0]===wormPat&&p[3]())?wormPat:'plain';
-function applyWormColour(){ curPat=patOn(); spotsU.value=curPat==='spots'?1:0; glitterU.value=curPat==='glitter'?1:0; if(wormCol>=coloursUnlocked()) wormCol=0; const c=WORM_COLS[wormCol]; COL_A.setHex(c[1]); m('head').color.setHex(c[2]); buildHomeBody(); }
+function applyWormColour(){ curPat=patOn(); patU.value=PAT_ID[curPat]||0; if(wormCol>=coloursUnlocked()) wormCol=0; const c=WORM_COLS[wormCol]; COL_A.setHex(c[1]); m('head').color.setHex(c[2]); buildHomeBody(); }
 const tubePool=[], capPool=[];
 function tubeGeo(geo,pts,rads,cols,extra,gs){
   const S=pts.length, RS=20, verts=S*RS;
@@ -1135,33 +1143,42 @@ function tubeGeo(geo,pts,rads,cols,extra,gs){
     geo.setIndex(idx); pos=geo.getAttribute('position');
   }
   const nor=geo.getAttribute('normal'), col=geo.getAttribute('color'), pg=geo.getAttribute('pg');
-  const up=new THREE.Vector3(0,1,0), T=new THREE.Vector3(), side=new THREE.Vector3(), U=new THREE.Vector3();
+  const up=new THREE.Vector3(0,1,0), T=new THREE.Vector3(), side=new THREE.Vector3(), prev=new THREE.Vector3(1,0,0), U=new THREE.Vector3();
   for(let j=0;j<S;j++){
     const p=pts[j]; if(j<S-1) T.subVectors(pts[j+1],p); else T.subVectors(p,pts[j-1]); T.normalize();
-    side.crossVectors(T,up); if(side.lengthSq()<1e-4) side.set(1,0,0); side.normalize(); U.crossVectors(side,T).normalize();
+    side.crossVectors(T,up); if(side.lengthSq()<1e-4) side.copy(prev); side.normalize(); prev.copy(side); U.crossVectors(side,T).normalize();
     const r=rads[j]+extra;
     for(let k=0;k<RS;k++){ const an=k/RS*Math.PI*2, ca=Math.cos(an), sa=Math.sin(an); const i=(j*RS+k)*3;
       const nx=side.x*ca+U.x*sa, ny=side.y*ca+U.y*sa, nz=side.z*ca+U.z*sa;
       pos.array[i]=p.x+nx*r; pos.array[i+1]=p.y+ny*r; pos.array[i+2]=p.z+nz*r;
       nor.array[i]=nx; nor.array[i+1]=ny; nor.array[i+2]=nz;
       if(cols){ col.array[i]=cols[j].r; col.array[i+1]=cols[j].g; col.array[i+2]=cols[j].b; }
-      if(gs){ pg.array[i]=gs[j]; pg.array[i+1]=ca; pg.array[i+2]=sa; } }
+      if(gs){ pg.array[i]=gs[j]; pg.array[i+1]=ca*r; pg.array[i+2]=sa*r; } }
   }
   pos.needsUpdate=true; nor.needsUpdate=true; col.needsUpdate=true; if(gs) pg.needsUpdate=true; geo.computeBoundingSphere();
 }
 function getTube(i){ if(!tubePool[i]){ const body=new THREE.Mesh(new THREE.BufferGeometry(),tubeMat), line=new THREE.Mesh(new THREE.BufferGeometry(),lineMat);
     body.castShadow=true; body.frustumCulled=false; line.frustumCulled=false; wormG.add(body,line); tubePool[i]={body,line}; } return tubePool[i]; }
 function getCap(i){ if(!capPool[i]){ const c=new THREE.Mesh(sph(1,24,16),capMat.clone()); c.castShadow=true; const o=new THREE.Mesh(c.geometry,lineMat); c.add(o); c.userData.o=o; wormG.add(c); capPool[i]=c; } return capPool[i]; }
-const WHITE=new THREE.Color(0xffffff), SUNSET=new THREE.Color(0xFF9A7A), RAINBOW=[0xFFB3C8,0xFFE08A,0x7FD9B0,0xA9D8F5,0xCDB8F5].map(c=>new THREE.Color(c));
+const WHITE=new THREE.Color(0xffffff), SUNSET=new THREE.Color(0xFF9A7A), SUNROSE=new THREE.Color(0xFF8FA8), RAINBOW=[0xFFB3C8,0xFFE08A,0x7FD9B0,0xA9D8F5,0xCDB8F5].map(c=>new THREE.Color(c));
 let curPat='plain';
-function colorAt(g,n){ tmpC.copy(COL_A); const f=(g*2)%1;
-  if(curPat==='stripes' && g>.55 && f>.45 && f<.8) tmpC.lerp(WHITE,.5);
-  else if(curPat==='fade' && n>1) tmpC.lerp(WHITE,.6*Math.min(1,g/(n-1)));
-  else if(curPat==='sunset' && n>1) tmpC.lerp(SUNSET,.75*Math.min(1,g/(n-1)));
-  else if(curPat==='bands' && g>.55 && f>.4 && f<.5) tmpC.multiplyScalar(.8);
-  else if(curPat==='rainbow' && n>1 && g>(n-1)*.4){ const u=g*2, a=RAINBOW[Math.floor(u)%5], b=RAINBOW[(Math.floor(u)+1)%5], t=Math.min(1,(g-(n-1)*.4)*1.5);
-    tmpC.lerp(a.clone().lerp(b,u%1),t); }
-  if(g>.4 && f<.14) tmpC.multiplyScalar(.93+.07*(f/.14)); return tmpC.clone(); }
+// a tint that turns round the colour wheel the short way, so Sunset on Mint or Sky glows instead of going muddy;
+// a little paler and softer on the way, so the colours in between stay pastel. hk: how far the hue turns
+const hsA={}, hsB={};
+function hueMix(c,to,k,hk=k){ c.getHSL(hsA); to.getHSL(hsB); let dh=hsB.h-hsA.h; dh-=Math.round(dh); const w=Math.sin(Math.PI*hk)*Math.min(1,Math.abs(dh)*4);
+  return c.setHSL((hsA.h+dh*hk+1)%1,(hsA.s+(hsB.s-hsA.s)*k)*(1-.45*w),hsA.l+(hsB.l-hsA.l)*k+.05*w); }
+// the rainbow starts at the band nearest the body colour, so it grows out of the body without a grey blend
+function rainbowFrom(base){ let b=0, bd=9; RAINBOW.forEach((c,i)=>{ const d=(c.r-base.r)**2+(c.g-base.g)**2+(c.b-base.b)**2; if(d<bd){ bd=d; b=i; } }); return b; }
+// sunset ends in coral, or in rose on a body that is already coral-ish (Peach, Cocoa) so it still shows
+function sunsetTo(base){ base.getHSL(hsA); SUNSET.getHSL(hsB); const dh=Math.abs(hsA.h-hsB.h); return Math.min(dh,1-dh)<.05?SUNROSE:SUNSET; }
+// body colour at place g (0 head, n-1 tail tip) as vertex colours: the tints that run along the body. Edges
+// (rings, stripes, bands, spots, glitter) are drawn per pixel by tubeMat
+function colorAt(g,n,pat=curPat,base=COL_A){ const c=base.clone(); if(n<=1) return c; const t=Math.min(1,Math.max(0,g/(n-1)));
+  if(pat==='fade') c.lerp(WHITE,.6*t);
+  else if(pat==='sunset') hueMix(c,sunsetTo(base),.75*t,t);
+  else if(pat==='rainbow'){ const g0=(n-1)*.4; if(g>g0){ const u=(g-g0)*2, k=rainbowFrom(base)+Math.floor(u);
+    c.lerp(tmpC.copy(RAINBOW[k%5]).lerp(RAINBOW[(k+1)%5],u%1),Math.min(1,(g-g0)*1.5)); } }
+  return c; }
 let crawlK=-1;
 function radAt(g,n,anchors){ const i=Math.min(Math.floor(g),anchors.length-2), f=g-i;
   const sc=anchors[Math.max(0,i)].scale.x*(1-f)+anchors[Math.min(i+1,anchors.length-1)].scale.x*f;
@@ -1176,37 +1193,40 @@ function updateWorm(){
   if(wormG.visible && n){
     const idle = !animating && state.status==='play' && !reduceMotion;
     const P=anchors.map((a,i)=>{ const v=a.position.clone(); if(idle) v.y+=Math.sin(idleT*3-i*.8)*.02; return v; });
+    // the length the tints are spread over follows a growing or shrinking tail, so fade, sunset and rainbow glide
+    const nP=anchors.reduce((a,s,i)=>a+(i?Math.min(1,s.scale.x):1),0);
     let chains=[], cur=[0];
     for(let i=1;i<n;i++){ if(P[i].distanceTo(P[i-1])>1.3){ chains.push(cur); cur=[i]; } else cur.push(i); }
     chains.push(cur);
     const segs=state.segs;
     for(const ch of chains){
-      // control points with their position along the worm; ends next to a portal dive into it
-      let pts=ch.map(i=>P[i]), G=ch.map(i=>i), diveFront=false, diveBack=false;
+      // control points with their position along the worm (G for the radius, Gp for the pattern, which keeps
+      // running through a dive and down the tail tip so spots and glitter never stretch); ends next to a portal dive into it
+      let pts=ch.map(i=>P[i]), G=ch.map(i=>i), Gp=G.slice(), diveFront=false, diveBack=false;
       const f=ch[0], l=ch[ch.length-1];
       // round the bends: each inner anchor is pulled a little toward its neighbours, so a corner or a U-turn
       // curves wider than the body is thick instead of pinching into a crease on its inside
       if(pts.length>=3) pts=pts.map((p,j)=>{ if(j===0||j===pts.length-1) return p; const a=pts[j-1], b=pts[j+1];
         return p.clone().set(p.x+((a.x+b.x)/2-p.x)*CORNER,p.y,p.z+((a.z+b.z)/2-p.z)*CORNER); });
       if(f>0 && f<segs.length && portalAt(segs[f-1])){ const q=partner(state,segs[f-1][0],segs[f-1][1]);
-        if(q && Math.abs(q[0]-segs[f][0])+Math.abs(q[1]-segs[f][1])===1){ pts=[wp(q[0],q[1],-.3),wp(q[0],q[1],.12),...pts]; G=[f,f,...G]; diveFront=true; } }
-      if(l>0 && l<segs.length-1 && l+1<n && portalAt(segs[l]) && P[l+1].distanceTo(P[l])>1.3){ pts=[...pts,wp(segs[l][0],segs[l][1],-.3)]; G=[...G,l]; diveBack=true; }
+        if(q && Math.abs(q[0]-segs[f][0])+Math.abs(q[1]-segs[f][1])===1){ pts=[wp(q[0],q[1],-.3),wp(q[0],q[1],.12),...pts]; G=[f,f,...G]; Gp=[f-.9,f-.6,...Gp]; diveFront=true; } }
+      if(l>0 && l<segs.length-1 && l+1<n && portalAt(segs[l]) && P[l+1].distanceTo(P[l])>1.3){ pts=[...pts,wp(segs[l][0],segs[l][1],-.3)]; G=[...G,l]; Gp=[...Gp,l+.4]; diveBack=true; }
       // the tail tapers to a soft point a little past the last anchor, resting on the ground
       let tipP=null, tipR=0; const tip=l===n-1 && !diveBack && ch.length>=2;
       if(tip){ const a=P[l], b=P[l-1], dx=a.x-b.x, dz=a.z-b.z, dl=Math.hypot(dx,dz)||1, rl=radAt(l,n,anchors);
-        tipR=rl*TIP_K; tipP=new THREE.Vector3(a.x+dx/dl*TIP_LEN*anchors[l].scale.x,a.y-(rl-tipR),a.z+dz/dl*TIP_LEN*anchors[l].scale.x); pts=[...pts,tipP]; G=[...G,l]; }
+        tipR=rl*TIP_K; tipP=new THREE.Vector3(a.x+dx/dl*TIP_LEN*anchors[l].scale.x,a.y-(rl-tipR),a.z+dz/dl*TIP_LEN*anchors[l].scale.x); pts=[...pts,tipP]; G=[...G,l]; Gp=[...Gp,l+tipP.distanceTo(a)]; }
       if(pts.length>=2){
         // the neck starts low inside the head: its top stays under a hat's brim and its sides behind the cheeks
         if(ch[0]===0 && !diveFront) pts[0]=pts[0].clone().setY(pts[0].y-.08);
         const curve=new THREE.CatmullRomCurve3(pts,false,'centripetal');
-        const S=(pts.length-1)*9+1, sp=[], rr=[], cc=[], gs=curPat==='spots'||curPat==='glitter'?[]:null;
+        const S=(pts.length-1)*9+1, sp=[], rr=[], cc=[], gs=[];
         for(let j=0;j<S;j++){ const u=j/(S-1); sp.push(curve.getPoint(u)); const fi=u*(pts.length-1), i0=Math.floor(Math.min(fi,pts.length-1.0001)), t=fi-i0;
-          const gg=G[i0]*(1-t)+G[i0+1]*t; rr.push(radAt(gg,n,anchors)*(tip&&i0===pts.length-2?1-(1-TIP_K)*t*t:1)); cc.push(colorAt(gg,n)); if(gs) gs.push(gg); }
+          const gg=G[i0]*(1-t)+G[i0+1]*t, gp=Gp[i0]*(1-t)+Gp[i0+1]*t; rr.push(radAt(gg,n,anchors)*(tip&&i0===pts.length-2?1-(1-TIP_K)*t*t:1)); cc.push(colorAt(gp,nP)); gs.push(gp); }
         const tb=getTube(ti++); tb.body.visible=tb.line.visible=true; tubeGeo(tb.body.geometry,sp,rr,cc,0,gs); tubeGeo(tb.line.geometry,sp,rr.map(r=>r+.03*Math.min(1,r/.15)),null,0);
       }
       const ends=[]; if(!diveFront && f!==0) ends.push(f); if(!diveBack && (l!==f || ch.length===1) && l!==0) ends.push(l);
       for(const end of ends){ const c=getCap(ci++); const atTip=tip&&end===l, r=atTip?Math.max(.001,tipR):Math.max(.001,radAt(Math.min(end,n-1),n,anchors));
-        c.visible=true; c.position.copy(atTip?tipP:P[end]); c.scale.setScalar(r); c.userData.o.scale.setScalar(1+.03*Math.min(1,r/.15)/r); c.material.color.copy(colorAt(end,n)); }
+        c.visible=true; c.position.copy(atTip?tipP:P[end]); c.scale.setScalar(r); c.userData.o.scale.setScalar(1+.03*Math.min(1,r/.15)/r); c.material.color.copy(colorAt(atTip?Gp[Gp.length-1]:end,nP)); }
     }
   }
   for(let i=ti;i<tubePool.length;i++){ tubePool[i].body.visible=tubePool[i].line.visible=false; }
@@ -1953,8 +1973,10 @@ function renderHome(){
   // what the page shows before the game has loaded next time (see the boot script in shell.html)
   store.set('squirm-boot',JSON.stringify({stars:$('homeStars').innerHTML,title:$('playTitle').textContent,sub:$('playSub').textContent,daily:$('dailySub').textContent,done:!!dr,day:new Date().toDateString()}));
 }
-// a little sticker worm in the current colour wearing a pattern, for the wardrobe
+// a little sticker worm in the current colour wearing a pattern, for the wardrobe. Sunset and rainbow take their
+// colours from colorAt, so the sticker shows the same tint the worm gets
 function patArt(id,size=40,col=wormCol){ const c=WORM_COLS[col], hex=n=>'#'+n.toString(16).padStart(6,'0'), body=hex(c[1]), path='M3.5 15.5c2.2-4.4 5.3-4.4 7.5 0s5.3 4.4 7.5 0';
+  const base=new THREE.Color(c[1]), sun=[0,.25,.5].map(o=>`<stop offset="${o}" stop-color="#${colorAt(4*(1-o/.75),5,'sunset',base).getHexString()}"/>`).join(''), r0=rainbowFrom(base);
   const over={stripes:`<path d="${path}" stroke="#fff" stroke-opacity=".55" stroke-width="5" stroke-linecap="butt" stroke-dasharray="1.6 2.4" stroke-dashoffset="-6"/>`,
     spots:`<g fill="#fff" fill-opacity=".6" stroke="none"><circle cx="6.4" cy="13.6" r="1.1"/><circle cx="9.6" cy="13" r="1.1"/><circle cx="13" cy="17.4" r="1.1"/><circle cx="16.6" cy="17.6" r="1.1"/></g>`,
     fade:`<path d="${path}" stroke="url(#pf${size}-${col})" stroke-width="5"/>`,
@@ -1962,7 +1984,7 @@ function patArt(id,size=40,col=wormCol){ const c=WORM_COLS[col], hex=n=>'#'+n.to
     bands:`<path d="${path}" stroke="#5B4436" stroke-opacity=".3" stroke-width="5" stroke-linecap="butt" stroke-dasharray=".9 3.1" stroke-dashoffset="-5"/>`,
     sunset:`<path d="${path}" stroke="url(#ps${size}-${col})" stroke-width="5"/>`,
     glitter:`<g fill="#fff" stroke="none"><circle cx="5.6" cy="14.2" r=".75"/><circle cx="8.6" cy="11.9" r=".55"/><circle cx="11.2" cy="15.4" r=".7"/><circle cx="13.8" cy="18.2" r=".55"/><circle cx="16.4" cy="17" r=".75"/></g>`}[id]||'';
-  return `<svg class="art" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><defs><linearGradient id="pf${size}-${col}" x1="0" x2="1"><stop offset="0" stop-color="#fff" stop-opacity=".6"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient><linearGradient id="ps${size}-${col}" x1="0" x2="1"><stop offset="0" stop-color="#FF9A7A"/><stop offset=".7" stop-color="${body}" stop-opacity="0"/></linearGradient><linearGradient id="pr${size}-${col}" x1="0" x2="1">${['#CDB8F5','#A9D8F5','#7FD9B0','#FFE08A','#FFB3C8'].map((k,i)=>`<stop offset="${(i*.13).toFixed(2)}" stop-color="${k}"/>`).join('')}<stop offset=".62" stop-color="${body}" stop-opacity="0"/></linearGradient></defs>
+  return `<svg class="art" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><defs><linearGradient id="pf${size}-${col}" x1="0" x2="1"><stop offset="0" stop-color="#fff" stop-opacity=".6"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient><linearGradient id="ps${size}-${col}" x1="0" x2="1">${sun}<stop offset=".75" stop-color="${body}" stop-opacity="0"/></linearGradient><linearGradient id="pr${size}-${col}" x1="0" x2="1">${[4,3,2,1,0].map((k,i)=>`<stop offset="${(i*.13).toFixed(2)}" stop-color="#${RAINBOW[(r0+k)%5].getHexString()}"/>`).join('')}<stop offset=".62" stop-color="${body}" stop-opacity="0"/></linearGradient></defs>
     <path d="${path}" stroke="#5B4436" stroke-width="7.4"/><path d="${path}" stroke="${body}" stroke-width="5"/>${over}<g stroke="none"><circle cx="20.2" cy="10.6" r="3.6" fill="#5B4436"/><circle cx="20.2" cy="10.6" r="2.5" fill="${hex(c[2])}"/><circle cx="21" cy="9.9" r=".7" fill="#5B4436"/></g></svg>`; }
 // ---------- wardrobe (Me tab) ----------
 // the worm on its stage shows the whole outfit; Hats / Colours / Patterns switch one grid of tiles
@@ -2246,8 +2268,8 @@ function initHomeWorm(){ try{ homeR=new THREE.WebGLRenderer({canvas:homeCanvas,a
 function buildHomeBody(){ if(!hBody) return; const {tb,tl,tip,to}=hBody.userData;
   const pts=[[0,.22,-.18],[.12,-.14,-.3],[.5,-.3,-.28],[.9,-.3,-.05],[1.02,-.31,.32],[.78,-.33,.6],[.5,-.36,.66]].map(p=>new THREE.Vector3(...p));
   // about one game segment per unit of length, like in a patch, so stripes and spots keep their size
-  const curve=new THREE.CatmullRomCurve3(pts,false,'centripetal'), S=60, len=curve.getLength(), n=1+len, sp=[], rr=[], cc=[], gs=curPat==='spots'||curPat==='glitter'?[]:null;
-  for(let j=0;j<S;j++){ const u=j/(S-1), g=.5+u*len; sp.push(curve.getPoint(u)); rr.push(.33*(1-.55*u*u)*(1+.04*Math.cos(g*4*Math.PI))); cc.push(colorAt(g,n)); if(gs) gs.push(g); }
+  const curve=new THREE.CatmullRomCurve3(pts,false,'centripetal'), S=60, len=curve.getLength(), n=1+len, sp=[], rr=[], cc=[], gs=[];
+  for(let j=0;j<S;j++){ const u=j/(S-1), g=.5+u*len; sp.push(curve.getPoint(u)); rr.push(.33*(1-.55*u*u)*(1+.04*Math.cos(g*4*Math.PI))); cc.push(colorAt(g,n)); gs.push(g); }
   tubeGeo(tb.geometry,sp,rr,cc,0,gs); tubeGeo(tl.geometry,sp,rr.map(r=>r+.035),null,0);
   const end=sp[S-1], r=rr[S-1]; tip.position.copy(end); tip.scale.setScalar(r); to.scale.setScalar(1+.035/r); tip.material.color.copy(cc[S-1]); }
 // the Play tab shows the head alone; the Me tab a wider stage with the whole worm
