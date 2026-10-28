@@ -16,8 +16,9 @@ swipe controls (keyboard works too). Plain JavaScript and three.js, no framework
 
 ## Never do
 
-- **No bundler, no runtime dependencies besides three.js, no network requests at runtime.** Every 3D
-  model is built in code and every sound is synthesized with Web Audio; keep it that way.
+- **No bundler, no runtime dependencies besides three.js, no network requests at runtime** except the
+  anonymous stats pings (see "Anonymous stats"). Every 3D model is built in code and every sound is
+  synthesized with Web Audio; keep it that way.
 - **Don't upgrade three.js** (pinned at r128, `three@0.128.0`) casually: later versions change colour
   management and lighting, which shifts the whole look.
 - **Don't rename `squirm-` storage keys or shipped level names.** Progress is stored by level name and
@@ -354,6 +355,14 @@ Sections are listed in the table of contents at the top of the file; each starts
   updates when the app returns to the foreground and every 30 minutes. A new worker takes over right
   away; the page reloads into it at a calm moment (immediately on the home screen, otherwise the next
   time the player heads home). The home screen shows an install button on `beforeinstallprompt`.
+- **Anonymous stats:** the one outgoing request: GoatCounter counters via `stat(path)` (a beacon to
+  `https://<STATS_CODE>.goatcounter.com/count`), no cookies and nothing personal. Off while `STATS_CODE`
+  is empty and anywhere but https on a real host (so never in tests or local builds); players switch it
+  off in Settings > About (`squirm-stats`, device-specific, in `SAVE_SKIP` with `squirm-stats-v`). It
+  sends a visit on boot, `launch/app` or `launch/browser`, `version/<x.y.z>` once per version, `install`,
+  and on first clears `clear/<037>`, `chapter/<17>`, plus `daily` and `meadow/<difficulty>`. The service
+  worker ignores cross-origin requests, so pings never hit the cache. Keep events few, anonymous and
+  aggregate; don't add identifiers.
 - **Daily reminder:** no server, so no push. Where `PeriodicSyncManager` exists (installed Chrome on
   Android) the page registers periodic sync `squirm-daily`, and `sw.js` shows one notification a day if
   today's daily isn't done and it's past the chosen hour (quiet while the game is on screen). The worker

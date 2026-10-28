@@ -9,7 +9,7 @@
 //   endless meadow (genCandidate, analyzeCapped, generateEndless; daily patch) · native back button
 //   home · home tabs · the whole garden (finale) · settings · badges · secret reset · home worm
 //   first time you meet a mechanic · first-time tutorial · levels (startLevel, garden map) · camera
-//   input · buttons · loop · unexpected errors · offline play and install · daily reminder · boot
+//   input · buttons · loop · unexpected errors · anonymous stats · offline play and install · daily reminder · boot
 // Text other files rely on: tools/load-generator.js runs everything from the endless meadow divider up
 // to the todayKey definition (plus the one-line rng) in Node, so that stretch must not touch the page
 // beyond $(), and neither marker may appear earlier in this file; tools/build.js --debug inserts
@@ -1444,12 +1444,12 @@ function onWin(){ shareText=''; newBest=false; chapterDone=null; const coloursBe
   const titles=['Snug as a bug!','Home sweet burrow!','Wiggle well done!','Cozy and curled up!'];
   const gifts=[], gift=(ico,t,sub,hot)=>gifts.push({ico,t,sub,hot});
   if(mode==='garden'){
-    const nm=LEVELS[li].name, best=progress.best[nm]; if(best!=null&&mv<best) newBest=true; if(best==null||mv<best) progress.best[nm]=mv;
+    const nm=LEVELS[li].name, best=progress.best[nm]; if(best==null) stat('clear/'+pad3(li+1)); if(best!=null&&mv<best) newBest=true; if(best==null||mv<best) progress.best[nm]=mv;
     const ch=CHAPTERS.find(c=>li>=c.from&&li<=c.to); const wasDone=ch&&best!=null; if(ch && best==null){ let all=true; for(let i=ch.from;i<=ch.to;i++) if(i!==li&&!isCleared(i)) all=false; if(all) chapterDone=ch.name; }
     progress.stars[nm]=Math.max(progress.stars[nm]||0,st);
     const last=li===LEVELS.length-1;
     $('winTitle').textContent = last ? 'The whole garden!' : chapterDone ? 'Chapter complete!' : titles[li%titles.length];
-    if(chapterDone){ const h=HATS.find(x=>x[2]===CHAPTERS.indexOf(ch)); gift(h?hatArt(h[0],28):art('book',26),`${chapterDone} finished`,'The whole chapter is grown',true); }
+    if(chapterDone){ stat('chapter/'+String(CHAPTERS.indexOf(ch)+1).padStart(2,'0')); const h=HATS.find(x=>x[2]===CHAPTERS.indexOf(ch)); gift(h?hatArt(h[0],28):art('book',26),`${chapterDone} finished`,'The whole chapter is grown',true); }
     if(!chapterDone && ch){ let left=0; for(let i=ch.from;i<=ch.to;i++) if(i!==li&&!isCleared(i)) left++; if(left) gift(art('sprout',26),`${left} more in ${ch.name}`,`Patch ${li-ch.from+1} of ${ch.to-ch.from+1} grown`); }
     // 5. say so when the next patch opens a new chapter
     const nextCh=!last&&CHAPTERS.find(c=>c.from===li+1);
@@ -1458,7 +1458,7 @@ function onWin(){ shareText=''; newBest=false; chapterDone=null; const coloursBe
     shareText=shareLine(`patch ${li+1} (${nm})`,mv,par,st);
   } else if(L.daily){
     const D=progress.daily, k=L.daily, prev=D.results[k];
-    if(!prev){ bumpStat('dailies'); const y=new Date(); y.setDate(y.getDate()-1); const yk=dateKey(y);
+    if(!prev){ bumpStat('dailies'); stat('daily'); const y=new Date(); y.setDate(y.getDate()-1); const yk=dateKey(y);
       D.streak = D.last===yk ? D.streak+1 : 1; D.best=Math.max(D.best,D.streak); D.last=k; }
     if(!prev||mv<prev.moves) D.results[k]={moves:mv,stars:Math.max(st,prev?prev.stars:0)};
     const old=new Date(); old.setDate(old.getDate()-90); const ok=dateKey(old); for(const d in D.results) if(d<ok) delete D.results[d];
@@ -1466,7 +1466,7 @@ function onWin(){ shareText=''; newBest=false; chapterDone=null; const coloursBe
     gift(art('flame',26),`${D.streak} day streak`,`Your best is ${D.best}. See you tomorrow!`,D.streak>1);
     shareText=shareLine(`daily patch ${k}`,mv,par,st);
   } else {
-    const e=progress.endless[endlessDiff]; e.cleared++; e.streak++; e.best=Math.max(e.best,e.streak); e.stars+=st;
+    const e=progress.endless[endlessDiff]; e.cleared++; stat('meadow/'+endlessDiff); e.streak++; e.best=Math.max(e.best,e.streak); e.stars+=st;
     $('winTitle').textContent = titles[e.cleared%titles.length];
     $('winNext').textContent = 'Grow another'; setTimeout(startPrefetch,900);
     shareText=shareLine(`${DIFF_NAME[endlessDiff].toLowerCase()} endless patch, streak ${e.streak}`,mv,par,st);
@@ -2156,18 +2156,19 @@ function renderSettings(){ renderNews(); $('setMusic').setAttribute('aria-checke
   // a little summary of the garden at the top
   $('setHero').innerHTML=[[art('star',22),starTotal(),'stars'],[art('medal',22),Object.keys(progress.badges).length,'badges'],[art('sprout',22),LEVELS.filter((l,i)=>isCleared(i)).length,'patches']].map(([i,n,l])=>`<span>${i}${n}<small>${l}</small></span>`).join('');
   qa($('setGfx'),'button').forEach(b=>{ const on=b.dataset.g===gfx; b.classList.toggle('on',on); b.setAttribute('aria-checked',String(on)); }); $('setSound').setAttribute('aria-checked',String(!muted)); $('setHaptic').setAttribute('aria-checked',String(hapticsOn)); applyTheme();
-  $('saveCode').hidden=true; $('saveCode').value=''; $('saveLoad').textContent='Restore'; renderRemind(); }
+  $('statsRow').hidden=$('statsNote').hidden=!statsLive(); $('setStats').setAttribute('aria-checked',String(statsOn())); $('saveCode').hidden=true; $('saveCode').value=''; $('saveLoad').textContent='Restore'; renderRemind(); }
 $('settingsBtn').onclick=()=>{ ensureAudio(); renderSettings(); $('setScroll').scrollTop=0; const d=$('setOv').querySelector('details'); if(d) d.open=false;
   show('setOv'); pushLayer('settings'); stagger(qa($('setScroll'),':scope > *'),'rise',60,45); };
 $('setClose').onclick=()=>{ hide('setOv'); popLayer('settings'); renderHome(); };
 $('setGfx').querySelectorAll('button').forEach(b=>b.onclick=()=>{ if(gfx===b.dataset.g) return; gfx=b.dataset.g; store.set('squirm-gfx',gfx);
   if(gfx==='saver') setQuality(0); else if(gfx==='best') setQuality(2); renderSettings(); settle(b); });
 $('setSound').onclick=()=>{ toggleMute(); renderSettings(); };
+$('setStats').onclick=()=>{ const on=!statsOn(); store.set('squirm-stats',on?'1':'0'); sfx(on?'on':'off'); renderSettings(); };
 $('setHaptic').onclick=()=>{ $('hapticBtn').onclick(); renderSettings(); };
 $('setMusicVol').oninput=e=>{ musicVol=e.target.value/100; store.set('squirm-music-vol',String(musicVol)); ensureAudio(); musicTick(); };
 $('setMusic').onclick=()=>{ musicOn=!musicOn; store.set('squirm-music',musicOn?'1':'0'); ensureAudio(); sfx(musicOn?'on':'off'); renderSettings(); if(musicOn&&muted) toast('Turn sound on to hear the music.',2400); };
 // a save code is every squirm- key (except throwaway ones) as base64 JSON with a version prefix
-const SAVE_PREFIX='SQUIRM1:', SAVE_SKIP=['squirm-quality','squirm-gfx','squirm-offline-told','squirm-daily-patch','squirm-remind','squirm-boot'];
+const SAVE_PREFIX='SQUIRM1:', SAVE_SKIP=['squirm-quality','squirm-gfx','squirm-offline-told','squirm-daily-patch','squirm-remind','squirm-boot','squirm-stats','squirm-stats-v'];
 function saveCode(){ const d={}; for(const k of store.keys()) if(!SAVE_SKIP.includes(k)) d[k]=store.get(k);
   return SAVE_PREFIX+btoa(unescape(encodeURIComponent(JSON.stringify(d)))); }
 function readSaveCode(code){ code=String(code||'').trim(); if(!code.startsWith(SAVE_PREFIX)) return null;
@@ -2703,6 +2704,25 @@ const onGameError=src=>{ if(errorShown||(src&&!String(src).startsWith(location.o
 window.addEventListener('error',e=>onGameError(e.filename));
 window.addEventListener('unhandledrejection',()=>onGameError(null));
 
+// ---------- anonymous stats: a few counters on GoatCounter, no cookies, nothing personal ----------
+// The one network request the game makes on its own. Off until STATS_CODE names the GoatCounter site,
+// on the live https site only (never localhost, so not in tests), and players can switch it off in
+// Settings (squirm-stats, device-specific). A request that fails offline is simply lost.
+const STATS_CODE='';
+const statsLive=()=>!!STATS_CODE && location.protocol==='https:' && !/^(localhost|127\.|\[::1\])/.test(location.hostname);
+const statsOn=()=>statsLive() && store.get('squirm-stats')!=='0';
+// path: '/' for a visit, or an event name like 'clear/037' (events group by name on the dashboard)
+function stat(path,event=true){ if(!statsOn()||navigator.onLine===false) return;
+  const q=new URLSearchParams({p:path,t:event?path:'Squirm',r:event?'':document.referrer,s:`${screen.width},${screen.height},${devicePixelRatio||1}`,rnd:Math.random().toString(36).slice(2)});
+  if(event) q.set('e','true');
+  const url=`https://${STATS_CODE}.goatcounter.com/count?${q}`;
+  try{ if(!(navigator.sendBeacon&&navigator.sendBeacon(url))) new Image().src=url; }catch(e){} }
+const pad3=n=>String(n).padStart(3,'0');
+function statsBoot(){ stat('/',false);
+  const app=matchMedia('(display-mode: standalone)').matches||navigator.standalone===true; stat(app?'launch/app':'launch/browser');
+  const v=NEWS[0][0]; if(store.get('squirm-stats-v')!==v){ store.set('squirm-stats-v',v); stat('version/'+v); } }
+window.addEventListener('appinstalled',()=>stat('install'));
+
 // ---------- offline play and install ----------
 // A new deploy installs a new worker in the background. Installed apps are usually resumed rather
 // than relaunched, so check for one whenever the app comes back to the foreground, and reload into
@@ -2770,7 +2790,7 @@ document.querySelectorAll('[data-art]').forEach(e=>e.insertAdjacentHTML('afterbe
 // upload the shared effect textures once up front: otherwise each one is first sent to the GPU
 // whenever its effect first happens (a random sparkle, a snore), which shows up as a tiny hitch
 const warmTextures=()=>{ for(const t of [gradTex,glowTex,sparkTex,turfTex,crackTex,swirlTex,lawnTex,flowH,flowV,blobTex,zTex,slimeTex]) try{ renderer.initTexture(t); }catch(e){} };
-const start=()=>{ const i=currentGardenIndex(); warmTextures(); applyWormColour(); checkBadges(null,true); pickTod(); setInterval(pickTod,60000);
+const start=()=>{ const i=currentGardenIndex(); warmTextures(); applyWormColour(); checkBadges(null,true); pickTod(); setInterval(pickTod,60000); setTimeout(statsBoot,2000);
   mode='garden'; li=i; showHome(true);
   // the home screen is already up; the garden and the home worm are built on the next frame and fade in
   requestAnimationFrame(()=>{ startLevel(LEVELS[i],false); initHomeWorm(); requestAnimationFrame(frame);
