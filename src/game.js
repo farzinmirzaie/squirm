@@ -2718,7 +2718,7 @@ function stat(path,event=true){ if(!statsOn()||navigator.onLine===false) return;
   const url=`https://${STATS_CODE}.goatcounter.com/count?${q}`;
   try{ if(!(navigator.sendBeacon&&navigator.sendBeacon(url))) new Image().src=url; }catch(e){} }
 const pad3=n=>String(n).padStart(3,'0');
-function statsBoot(){ stat('/',false);
+function statsBoot(){ if(!statsOn()) return; stat('/',false);
   const app=matchMedia('(display-mode: standalone)').matches||navigator.standalone===true; stat(app?'launch/app':'launch/browser');
   const v=NEWS[0][0]; if(store.get('squirm-stats-v')!==v){ store.set('squirm-stats-v',v); stat('version/'+v); } }
 window.addEventListener('appinstalled',()=>stat('install'));
