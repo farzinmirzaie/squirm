@@ -1481,14 +1481,15 @@ function onWin(){ shareText=''; newBest=false; chapterDone=null; const coloursBe
 // ---------- photo mode ----------
 // from the win dialog: the HUD steps aside, the worm pops its head out of the burrow and looks at you, and
 // Snap saves (or shares) the garden with a little caption. Back returns to the win dialog.
-let photoOn=false, photoInfo=null;
+let photoOn=false, photoInfo=null, photoFrom='win';
 const photoFrame=()=>({top:Math.max(24,window.innerHeight*.06),bot:window.innerHeight-130});
-function enterPhoto(){ if(photoOn) return; photoOn=true; orbit=null; ptrs.clear(); $('photoReset').hidden=true; setTimeout(()=>{ if(photoOn) toast(matchMedia('(pointer: coarse)').matches?'Drag to look around. Pinch to zoom, two fingers to move.':'Drag to look around. Right-drag to move, scroll to zoom.',3200); },700); hide('winOv'); pushLayer('photo'); document.body.classList.add('photo'); $('photoBar').hidden=false; glideCamera(photoFrame());
+function enterPhoto(){ if(photoOn) return; photoOn=true; orbit=null; ptrs.clear(); $('photoReset').hidden=true; setTimeout(()=>{ if(photoOn) toast(matchMedia('(pointer: coarse)').matches?'Drag to look around. Pinch to zoom, two fingers to move.':'Drag to look around. Right-drag to move, scroll to zoom.',3200); },700); photoFrom=isOpen('winOv')?'win':'game'; hide('winOv'); pushLayer('photo'); document.body.classList.add('photo'); $('photoBar').hidden=false; glideCamera(photoFrame());
   stagger(qa($('photoBar'),'button'),'rise',120,60);
+  if(photoFrom==='game'){ const h=segMeshes[0]; if(h){ applyExpr(h,'joy'); reactT=1e6; } return; }
   const ex=state.segs[0], at=wp(ex[0],ex[1],0), h=segMeshes[0]; wormG.visible=true;
   segMeshes.forEach((sg,i)=>{ sg.position.copy(at).setY(-.3-i*.05); sg.scale.setScalar(i<3?1:.02); });
   if(h){ h.scale.setScalar(1); applyExpr(h,'joy'); reactT=1e6; tween(650,(e,k)=>{ const b=1-Math.pow(1-k,3); h.position.y=-.3+(.5+Math.sin(k*Math.PI)*.08)*b; }); } }
-function exitPhoto(){ if(!photoOn) return; photoOn=false; orbit=null; ptrs.clear(); document.body.classList.remove('photo'); $('photoBar').hidden=true; reactT=0; glideCamera(); show('winOv'); }
+function exitPhoto(){ if(!photoOn) return; photoOn=false; orbit=null; ptrs.clear(); document.body.classList.remove('photo'); $('photoBar').hidden=true; reactT=0; glideCamera(); if(photoFrom==='win') show('winOv'); else { const h=segMeshes[0]; if(h) applyExpr(h,'smile'); lastMoveT=idleT; } }
 function posePhoto(){ const h=segMeshes[0]; if(!h) return; newExpression(h); reactT=1e6; }
 async function snapPhoto(){ renderer.render(scene,camera); const src=renderer.domElement, W=src.width, H=src.height;
   const c=document.createElement('canvas'); c.width=W; c.height=H; const g=c.getContext('2d'); g.drawImage(src,0,0);
@@ -1541,7 +1542,9 @@ document.addEventListener('gesturestart',e=>{ if(photoOn) e.preventDefault(); })
 function photoKeyPan(code){ const d={ArrowLeft:[1,0],ArrowRight:[-1,0],ArrowUp:[0,1],ArrowDown:[0,-1]}[code]; if(!d) return false; orbitStart(); orbitPan(d[0]*40,d[1]*40); orbitApply(); return true; }
 function resetView(){ orbit=null; ptrs.clear(); $('photoReset').hidden=true; glideCamera(photoFrame()); }
 $('photoReset').onclick=resetView;
-$('winPhoto').onclick=enterPhoto;
+$('photoBtn').onclick=()=>{ if(!state||state.status!=='play'||animating||anyOverlay()) return; clearHint();
+  const st=mode==='garden'?(progress.stars[LEVELS[li].name]||0):0; photoInfo={title:mode==='garden'?`${li+1}. ${LEVELS[li].name}`:L.daily?"Today's patch":'A meadow patch',st}; enterPhoto(); };
+$('winHome').onclick=()=>window.history.back();
 $('photoBack').onclick=()=>window.history.back();
 $('photoSnap').onclick=snapPhoto;
 $('photoPose').onclick=posePhoto;
@@ -1955,7 +1958,7 @@ window.addEventListener('popstate',()=>{ if(ignorePop>0){ ignorePop--; return; }
 // newest first: [id (a date), title, lines]. Returning players see the newest entry once on the Play tab,
 // new players never do (squirm-news holds the last id seen); Settings > About lists them all.
 const NEWS=[
-  ['2026-10-25','New in the garden',['16 new badges to earn, and a few of them are really tough.','New hats, colours and patterns, plus glasses, shades, a scarf, a bow tie and more to wear.','A tidier settings page, with a battery saver option.','A brighter win card, and your worm now chats while you play.','Hats, extras, colours and patterns all got a careful polish.','A new badges book, with your progress on every badge.','Snap a photo of your garden after you finish a patch, from any angle you like.','Fresh looks for the home screen, the garden map and the meadow, and a new wardrobe that shows off your whole worm.']],
+  ['2026-10-25','New in the garden',['16 new badges to earn, and a few of them are really tough.','New hats, colours and patterns, plus glasses, shades, a scarf, a bow tie and more to wear.','A tidier settings page, with a battery saver option.','A brighter win card, and your worm now chats while you play.','Hats, extras, colours and patterns all got a careful polish.','A new badges book, with your progress on every badge.','Snap a photo of your garden any time, from any angle you like.','Fresh looks for the home screen, the garden map and the meadow, and a new wardrobe that shows off your whole worm.']],
   ['2026-10-24','Beetle bumps',['Chapter 16: push beetles around, even onto flower buttons.','A new hat to earn: the beetle horn.']],
   ['2026-10-20','A bigger garden',['Two new chapters, Garden party and Grand bloom.','A finale for when the whole garden is grown.']]];
 function renderNews(){ const seen=store.get('squirm-news'), n=NEWS[0], returning=LEVELS.some((l,i)=>isCleared(i))||Object.keys(progress.daily.results).length>0;
@@ -2557,6 +2560,7 @@ window.addEventListener('keydown',e=>{ if(e.ctrlKey||e.metaKey||e.altKey||(e.tar
   else if((e.code==='KeyZ'||e.code==='Backspace'||e.code==='KeyU') && !anyOverlay()){ e.preventDefault(); undo(); }
   else if(e.code==='KeyR' && !anyOverlay()) restart();
   else if(e.code==='KeyH' && !anyOverlay()) showHint();
+  else if(e.code==='KeyP' && !anyOverlay()) $('photoBtn').click();
   else if(e.code==='KeyM') toggleMute(anyOverlay()?null:$('muteBtn'));
   else if(e.code==='Escape'){ if(layers.length&&!generating) window.history.back(); }
 });
