@@ -2708,7 +2708,7 @@ window.addEventListener('unhandledrejection',()=>onGameError(null));
 // The one network request the game makes on its own. Off until STATS_CODE names the GoatCounter site,
 // on the live https site only (never localhost, so not in tests), and players can switch it off in
 // Settings (squirm-stats, device-specific). A request that fails offline is simply lost.
-const STATS_CODE='';
+const STATS_CODE='squirm';
 const statsLive=()=>!!STATS_CODE && location.protocol==='https:' && !/^(localhost|127\.|\[::1\])/.test(location.hostname);
 const statsOn=()=>statsLive() && store.get('squirm-stats')!=='0';
 // path: '/' for a visit, or an event name like 'clear/037' (events group by name on the dashboard)
