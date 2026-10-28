@@ -77,6 +77,7 @@ tools/load-generator.js runs the endless generator from game.js in Node (curate.
 tools/curate.js   generates candidate levels with that generator, picks a difficulty spread -> gen/ (ignored)
 test/logic.test.js      rules (22 tests, incl. unique level names and stateKey)
 test/generator.test.js  daily/endless generation (3 tests)
+test/news.test.js       What's new vs package.json version, semver order
 test/smoke.js           headless Chromium: boot, win patch 1, saved stars, GPU memory, offline reload
 .claude/skills/   add-levels, ui-check (with shoot.js, a screenshot script)
 ```
@@ -97,6 +98,19 @@ and the tools.
 All paths are relative, so the site works from any sub-path (it's served from `/squirm/` on Pages).
 
 ## Workflows
+
+### Releasing (semver)
+
+Every push that players will notice is a release:
+1. Pick the version: minor (`1.8.0` -> `1.9.0`) for anything new, patch (`1.8.1`) for fixes only; major only
+   for a big change in how the game plays.
+2. `npm version <x.y.z> --no-git-tag-version` (updates `package.json` and the lockfile).
+3. Add a `NEWS` entry on top in `game.js`: that version, today's date, a short title and a few cozy lines.
+   Don't append to an older entry: the card only comes back when the top version changes.
+   `test/news.test.js` fails if the top entry and `package.json` disagree.
+4. `npm run check`, commit, push, then tag: `git tag v<x.y.z> && git push origin v<x.y.z>`.
+
+The version shows in Settings > About (`__BUILD__`: `v<version> · <sha>`).
 
 ### Adding levels
 
@@ -269,10 +283,9 @@ Sections are listed in the table of contents at the top of the file; each starts
   the worm `g` (one unit per segment, continued down the tail tip and through tunnel dives) and the ring
   direction scaled by the radius, so patterns keep their size and shape on the stage and in a patch.
   `patArt` draws the wardrobe preview in the current colour, its sunset and rainbow sampled from `colorAt`.
-- **What's new:** `NEWS` (newest first: date id, title, lines). Returning players see the newest entry
-  once as a card on the Play tab (`renderNews`; `squirm-news` holds the last id seen, new players never
-  see it); Settings > About lists them all. When you ship something players will notice, add an entry
-  on top with today's date, in the same cozy voice.
+- **What's new:** `NEWS` (newest first: [version, date, title, lines]). Returning players see the newest
+  entry once as a card on the Play tab (`renderNews`; `squirm-news` holds the last version seen, new
+  players never see it); Settings > About lists them all with their version and date.
 - **Win card** (`onWin`): big stars, a line about par or hints, Moves / Par / Time tiles (`New best` tag),
   then `gifts`: rows for what was earned (badges, hats, colours, patterns: `hot`, honey) and progress
   notes (chapter, streaks, next chapter), in a `.fade-scroll`. Next is the big button; Replay, Home and

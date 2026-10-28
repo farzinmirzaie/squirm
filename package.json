@@ -1,6 +1,6 @@
 {
   "name": "squirm",
-  "version": "1.0.0",
+  "version": "1.8.0",
   "private": true,
   "description": "A cozy turn-based worm puzzle in a little 3D garden, built with three.js. 160 patches, endless mode, a daily patch; installable and fully offline.",
   "license": "MIT",

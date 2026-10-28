@@ -1955,17 +1955,25 @@ window.addEventListener('popstate',()=>{ if(ignorePop>0){ ignorePop--; return; }
   else if(top==='game'){ hideAll(); showHome(); } });
 
 // ---------- what's new ----------
-// newest first: [id (a date), title, lines]. Returning players see the newest entry once on the Play tab,
-// new players never do (squirm-news holds the last id seen); Settings > About lists them all.
+// newest first: [version, date, title, lines]. The top version must equal package.json's (a unit test checks).
+// Bump the version for every release players will notice (semver: minor for new things, patch for fixes) and
+// add an entry on top. Returning players see the newest entry once as a card on the Play tab, new players never
+// do (squirm-news holds the last version seen); Settings > About lists them all.
 const NEWS=[
-  ['2026-10-25','New in the garden',['16 new badges to earn, and a few of them are really tough.','New hats, colours and patterns, plus glasses, shades, a scarf, a bow tie and more to wear.','A tidier settings page, with a battery saver option.','A brighter win card, and your worm now chats while you play.','Hats, extras, colours and patterns all got a careful polish.','A new badges book, with your progress on every badge.','Snap a photo of your garden any time, from any angle you like.','Hold Undo to start a patch over.','Fresh looks for the home screen, the garden map and the meadow, and a new wardrobe that shows off your whole worm.']],
-  ['2026-10-24','Beetle bumps',['Chapter 16: push beetles around, even onto flower buttons.','A new hat to earn: the beetle horn.']],
-  ['2026-10-20','A bigger garden',['Two new chapters, Garden party and Grand bloom.','A finale for when the whole garden is grown.']]];
+  ['1.8.0','2026-10-28','Handier buttons',['Snap a photo of your garden any time, from the new Photo button.','Hold Undo to start a patch over.','The win card has a Home button now.']],
+  ['1.7.0','2026-10-27','Wardrobe polish',['Five more extras: freckles, a button nose, a flower clip, a bow tie and a cozy scarf.','Hats, extras, colours and patterns all got a careful polish.','Your worm chats a little less while you play.']],
+  ['1.6.0','2026-10-26','A chattier worm',['A brighter win card that shows everything you earned.','Your worm says a word or two while you play, and gives hints itself.','New things in a patch get their own illustrated card.']],
+  ['1.5.0','2026-10-25','New in the garden',['Worm patterns, new hats and colours, plus glasses, shades and mustaches to wear.','A new badges book, with your progress on every badge, and 16 new badges.','Snap a photo of your garden after you finish a patch, from any angle you like.','Fresh looks for the home screen, garden map, meadow, wardrobe and settings, with a battery saver option.']],
+  ['1.4.0','2026-10-24','Beetle bumps',['Chapter 16: push beetles around, even onto flower buttons.','A new hat to earn: the beetle horn.']],
+  ['1.3.0','2026-10-24','A bigger garden',['Two new chapters, Garden party and Grand bloom.','A finale for when the whole garden is grown.']],
+  ['1.2.0','2026-10-21','The garden map',['Patches are stepping stones on a winding garden map.','A ladybug and a little bird visit the garden.','Your worm stretches, wiggles and watches butterflies while you think.']],
+  ['1.1.0','2026-10-20','Badges and music',['Badges to earn and hats to wear.','Gentle music that follows the time of day.','A daily patch reminder, where your phone allows it.']]];
+const newsDate=d=>new Date(d+'T12:00').toLocaleDateString(undefined,{month:'short',day:'numeric'});
 function renderNews(){ const seen=store.get('squirm-news'), n=NEWS[0], returning=LEVELS.some((l,i)=>isCleared(i))||Object.keys(progress.daily.results).length>0;
   if(!returning&&seen!==n[0]){ store.set('squirm-news',n[0]); }
   const show=returning&&seen!==n[0]; $('newsCard').hidden=!show;
-  if(show){ $('newsTitle').textContent=n[1]; $('newsList').innerHTML=n[2].map(x=>`<li>${x}</li>`).join(''); }
-  $('newsLog').innerHTML=NEWS.map(e=>`<div><b>${e[1]}</b><ul>${e[2].map(x=>`<li>${x}</li>`).join('')}</ul></div>`).join(''); }
+  if(show){ $('newsTitle').textContent=n[2]; $('newsList').innerHTML=n[3].map(x=>`<li>${x}</li>`).join(''); }
+  $('newsLog').innerHTML=NEWS.map(e=>`<div><b>${e[2]} <small>v${e[0]} · ${newsDate(e[1])}</small></b><ul>${e[3].map(x=>`<li>${x}</li>`).join('')}</ul></div>`).join(''); }
 $('newsClose').onclick=()=>{ store.set('squirm-news',NEWS[0][0]); $('newsCard').hidden=true; };
 
 // ---------- home ----------
@@ -2124,7 +2132,7 @@ $('setTheme').querySelectorAll('button').forEach(b=>b.onclick=()=>{ theme=b.data
 applyTheme();
 
 // ---------- settings: pages, toggles, theme, save code backup and restore ----------
-function renderSettings(){ $('setMusic').setAttribute('aria-checked',String(musicOn)); $('setMusicVol').value=Math.round(musicVol*100); $('volRow').hidden=!musicOn;
+function renderSettings(){ renderNews(); $('setMusic').setAttribute('aria-checked',String(musicOn)); $('setMusicVol').value=Math.round(musicVol*100); $('volRow').hidden=!musicOn;
   // a little summary of the garden at the top
   $('setHero').innerHTML=[[art('star',22),starTotal(),'stars'],[art('medal',22),Object.keys(progress.badges).length,'badges'],[art('sprout',22),LEVELS.filter((l,i)=>isCleared(i)).length,'patches']].map(([i,n,l])=>`<span>${i}${n}<small>${l}</small></span>`).join('');
   qa($('setGfx'),'button').forEach(b=>{ const on=b.dataset.g===gfx; b.classList.toggle('on',on); b.setAttribute('aria-checked',String(on)); }); $('setSound').setAttribute('aria-checked',String(!muted)); $('setHaptic').setAttribute('aria-checked',String(hapticsOn)); applyTheme();
