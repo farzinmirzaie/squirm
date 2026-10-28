@@ -9,7 +9,7 @@ truth for agents; README.md is the public overview. Two project skills cover the
 The player steers a fixed-length worm on a grid of garden tiles, one swipe per move. The worm can't
 reverse into its own body or crawl onto soil. To finish a patch it must touch every flag and enter the
 burrow at exactly the length shown on the burrow's sign. Mechanics layer on top, one chapter at a time
-(see the level format). 160 handmade patches in 16 chapters, an endless meadow and a daily patch.
+(see the level format). 180 handmade patches in 18 chapters, an endless meadow and a daily patch.
 
 Look: soft cartoon, pastel, cozy garden, perspective camera tilted about 56 degrees. Mobile-first with
 swipe controls (keyboard works too). Plain JavaScript and three.js, no framework.
@@ -63,7 +63,7 @@ src/shell.html    page markup + all CSS (sectioned, index at the top of <style>)
                   /*__FONTS__*/ /*__LOGIC__*/ /*__LEVELS__*/ /*__GAME__*/; inline theme + boot scripts
 src/logic.js      pure rules, no DOM: parseLevel, initState, step (advance), tileAt, partner, cloneState,
                   hedgesOpen, beetleAt, stateKey
-src/levels.js     LEVELS (160) + CHAPTER_NAMES (16)
+src/levels.js     LEVELS (180) + CHAPTER_NAMES (18)
 src/game.js       everything else, one IIFE with a table of contents at the top: rendering, input, UI,
                   audio, music, endless generator, hint solver
 src/sw.js         service worker template (version and file list filled in by the build)
@@ -214,14 +214,16 @@ Touch these, in order:
 - **Pacing:** chapters are 10 levels each. A mechanic may not appear before its chapter: flags from
   level 6, fruit 11, dry 21, keys 31, tunnels 41, rain 51, rivers 61, snails 101, flower buttons 111,
   wet leaves 121, beetles 151. Chapters 8-10 mix earlier mechanics at rising difficulty, and so do 14-15
-  (14 mixes the late mechanics: snails, flower buttons and wet leaves; 15 mixes everything and ends the
+  (14 mixes the late mechanics: snails, flower buttons and wet leaves; 15 mixes everything) and 17-18
+  (17 brings beetles together with snails and the early mechanics; 18 mixes everything and ends the
   hardest). The first level of a chapter is a gentle introduction to its mechanic.
 - Difficulty rises inside a chapter. Use `par * (1 - winnable)` from `tools/analyze.js` as a rough score.
 - Names are unique (tested) and never renamed once shipped.
 
 Chapters (`CHAPTER_NAMES`): 1 First sprouts, 2 Snack time, 3 Cracked earth, 4 Garden gates, 5 Tunnels,
 6 Rainy days, 7 Riverside, 8 Overgrown, 9 Tough patches, 10 Storm season, 11 Snail trail, 12 Hedge
-garden, 13 Dewy morning, 14 Garden party, 15 Grand bloom, 16 Beetle bumps. Each has a hat (`HATS`).
+garden, 13 Dewy morning, 14 Garden party, 15 Grand bloom, 16 Beetle bumps, 17 Critter crossing, 18 Harvest
+moon. Each has a hat (`HATS`).
 
 ## Key systems in game.js
 
