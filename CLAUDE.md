@@ -108,7 +108,8 @@ Every push that players will notice is a release:
 3. Add a `NEWS` entry on top in `game.js`: that version, today's date, a short title and a few cozy lines.
    Don't append to an older entry: the card only comes back when the top version changes.
    `test/news.test.js` fails if the top entry and `package.json` disagree.
-4. `npm run check`, commit, push, then tag: `git tag v<x.y.z> && git push origin v<x.y.z>`.
+4. `npm run check`, commit and push. Tag the release (`git tag v<x.y.z> && git push origin v<x.y.z>`) where
+   your access allows it; the version in `package.json` and `NEWS` is what counts.
 
 The version shows in Settings > About (`__BUILD__`: `v<version> · <sha>`).
 
