@@ -221,7 +221,9 @@ Sections are listed in the table of contents at the top of the file; each starts
 - **Head:** expressions (`applyExpr`), blinking, an idle look-at-camera cycle, reactions, idle acts
   between looks (`startAct`: watch a butterfly, stretch, wiggle), a yawn, and asleep after 25 s.
 - **Moves and hints:** `tryMove` queues swipes and animates `step` events; `history` is the undo stack.
-  The hint solver `solveFrom` is a capped BFS over `stateKey`.
+  There's no Restart button: a tap on Undo takes back one move, holding it fills a ring (`--hold` on
+  `#undoBtn`, `HOLD_WAIT` + `HOLD_MS`) and then calls `restart()`; R still restarts. The hint solver
+  `solveFrom` is a capped BFS over `stateKey`.
 - **Layers and the back button:** a small layer stack mirrored to `window.history` (`pushLayer` /
   `popLayer` / `swapLayers`). `popLayer`'s `history.go` is async, so use `swapLayers` when replacing a
   layer right after closing another (the finale does this coming from the win dialog).

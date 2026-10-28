@@ -34,7 +34,7 @@ garden patches, touch every flag, and slip into the burrow at exactly the right 
   spots, glitter, a rainbow tail, ...) and extras like glasses, sunglasses and a fancy mustache.
 - **Photo mode** after every win: the HUD steps aside, your worm peeks out of the burrow, and you can
   save or share a snapshot of your garden.
-- **Undo, restart and hints.** A built-in solver points the way when you're stuck.
+- **Undo (hold it to start over) and hints.** A built-in solver points the way when you're stuck.
 - **Gentle generated music** and synthesized sound, haptics, light and dark themes, and reduced
   motion support.
 - **No downloads at runtime.** Every 3D model is built in code and every sound is synthesized,

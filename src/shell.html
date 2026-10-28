@@ -298,6 +298,11 @@ nav{display:flex;justify-content:center;align-items:flex-end;gap:12px}
 .gbtn:disabled .disc svg{opacity:.4}
 .gbtn:disabled .lbl{opacity:.7}
 .gbtn:focus-visible{outline:none}
+.gbtn .disc{position:relative}
+#undoBtn .disc::after{content:"";position:absolute;inset:-8px;border-radius:50%;pointer-events:none;opacity:0;
+  background:conic-gradient(var(--berry) calc(var(--hold,0)*360deg),transparent 0);
+  -webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 7px),#000 calc(100% - 6px));mask:radial-gradient(farthest-side,transparent calc(100% - 7px),#000 calc(100% - 6px))}
+#undoBtn.holding .disc::after{opacity:1}
 .gbtn:focus-visible .disc{outline:3px solid var(--honey);outline-offset:3px}
 /* the hint bulb glints now and then, and wiggles while the solver thinks */
 .gbtn.hint .disc svg{animation:glow 3.2s ease-in-out infinite}
@@ -721,10 +726,9 @@ nav .enter,.rise{animation:navIn var(--dur-slow) var(--ease-pop) var(--d,0ms) bo
   <div class="bottom">
     <nav>
       <button id="levelsBtn" class="gbtn" title="Home (Esc)"><span class="disc"><svg width="28" height="28" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.15" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-5h4v5"/></svg></span><span class="lbl">Home</span></button>
-      <button id="undoBtn" class="gbtn" data-sfx="none" title="Undo (Z, hold to rewind)"><span class="disc"><svg width="28" height="28" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.15" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg></span><span class="lbl">Undo</span></button>
+      <button id="undoBtn" class="gbtn" data-sfx="none" title="Undo (Z). Hold to start over (R)"><span class="disc"><svg width="28" height="28" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.15" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg></span><span class="lbl">Undo</span></button>
       <button id="hintBtn" class="gbtn hint" data-sfx="none" title="Hint (H)"><span class="disc"><svg width="30" height="30" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z" style="fill:var(--sticker)"/></svg></span><span class="lbl">Hint</span></button>
       <button id="photoBtn" class="gbtn" title="Photo (P)"><span class="disc"><svg width="28" height="28" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.15" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8.5h3l1.6-2.5h6.8L17 8.5h3a1 1 0 0 1 1 1V18a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9.5a1 1 0 0 1 1-1z"/><circle cx="12" cy="13.5" r="3.4"/></svg></span><span class="lbl">Photo</span></button>
-      <button id="restartBtn" class="gbtn" title="Restart (R)"><span class="disc"><svg width="28" height="28" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.15" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg></span><span class="lbl">Restart</span></button>
       <button id="skipBtn" class="gbtn" hidden><span class="disc"><svg width="28" height="28" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.15" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5l8 7-8 7z" fill="currentColor"/><path d="M18 5v14"/></svg></span><span class="lbl">Skip</span></button>
     </nav>
   </div>

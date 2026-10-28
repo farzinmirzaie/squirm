@@ -1394,7 +1394,7 @@ function animateMove(prev,ev,dir,sliding){
     updateHUD(); if(state.status!=='won'&&checkBadges(null).length===0) save();
     if(state.status==='won') return winSeq();
     if(ev.exitNote) toast(ev.exitNote==='flags'?'The burrow opens once every flag is touched.':`This burrow fits a length of ${state.exitLen}. You're ${state.segs.length}.`);
-    else if(!canMove()){ queue.length=0; sfx('stuck'); pulse($('undoBtn')); toast('No way forward from here. Undo or restart.',3600); }
+    else if(!canMove()){ queue.length=0; sfx('stuck'); pulse($('undoBtn')); toast('No way forward from here. Undo, or hold Undo to start over.',3600); }
     if(queue.length) tryMove(queue.shift());
   });
 }
@@ -1577,7 +1577,7 @@ function showHint(){
   wormSays('Hmm, let me think...',1600);
   setTimeout(()=>{ const d=solveFrom(state); hintBusy=false; $('hintBtn').classList.remove('busy');
     if(d===null){ sfx('stuck'); toast('No way to win from here. Undo a few moves and try again.',3600); pulse($('undoBtn')); return; }
-    if(d===undefined){ sfx('stuck'); toast('This one is too tangled to work out from here. Try restarting.',3200); return; }
+    if(d===undefined){ sfx('stuck'); toast('This one is too tangled to work out from here. Hold Undo to start over.',3200); return; }
     hintsUsed++; saveResume(); clearHint(); const h=state.segs[0], dd=DIRS[d], tx=h[0]+dd[0], ty=h[1]+dd[1];
     hintMesh=new THREE.Group(); const am=m('key');
     const cone=new THREE.Mesh(new THREE.ConeGeometry(.13,.26,20),am); cone.rotation.x=Math.PI; outline(cone,.02); hintMesh.add(cone);
@@ -1780,7 +1780,7 @@ function updateHUD(silent){
     `${sticker(ICON.worm)}<b>${state.segs.length}</b><span class="to" aria-hidden="true">${ok?'=':'&rarr;'}</span><b>${state.exitLen}</b>`,ok?'Fits!':'Length'));
   const html=chips.join(''); if($('chips').innerHTML!==html){ const prev=[...$('chips').children], old=prev.map(c=>c.textContent), wasDone=prev.map(c=>c.classList.contains('done')); $('chips').innerHTML=html;
     if(!silent) [...$('chips').children].forEach((c,i)=>{ if(c.classList.contains('done')&&!wasDone[i]) animOnce(c,'cheer'); else if(old[i]!==c.textContent) pulse(c); }); }
-  for(const [id,off] of [['undoBtn',!history.length],['restartBtn',state.moves===0]]){ const b=$(id); if(b.disabled&&!off&&!silent) animOnce(b,'pop'); b.disabled=off; }
+  for(const [id,off] of [['undoBtn',!history.length&&state.moves===0]]){ const b=$(id); if(b.disabled&&!off&&!silent) animOnce(b,'pop'); b.disabled=off; }
   const ready = countChar(state,'C')===0 && ok;
   if(ready && !wasReady && !silent && state.status==='play'){ sfx('ready'); glanceT=1.4; }
   wasReady=ready;
@@ -1958,7 +1958,7 @@ window.addEventListener('popstate',()=>{ if(ignorePop>0){ ignorePop--; return; }
 // newest first: [id (a date), title, lines]. Returning players see the newest entry once on the Play tab,
 // new players never do (squirm-news holds the last id seen); Settings > About lists them all.
 const NEWS=[
-  ['2026-10-25','New in the garden',['16 new badges to earn, and a few of them are really tough.','New hats, colours and patterns, plus glasses, shades, a scarf, a bow tie and more to wear.','A tidier settings page, with a battery saver option.','A brighter win card, and your worm now chats while you play.','Hats, extras, colours and patterns all got a careful polish.','A new badges book, with your progress on every badge.','Snap a photo of your garden any time, from any angle you like.','Fresh looks for the home screen, the garden map and the meadow, and a new wardrobe that shows off your whole worm.']],
+  ['2026-10-25','New in the garden',['16 new badges to earn, and a few of them are really tough.','New hats, colours and patterns, plus glasses, shades, a scarf, a bow tie and more to wear.','A tidier settings page, with a battery saver option.','A brighter win card, and your worm now chats while you play.','Hats, extras, colours and patterns all got a careful polish.','A new badges book, with your progress on every badge.','Snap a photo of your garden any time, from any angle you like.','Hold Undo to start a patch over.','Fresh looks for the home screen, the garden map and the meadow, and a new wardrobe that shows off your whole worm.']],
   ['2026-10-24','Beetle bumps',['Chapter 16: push beetles around, even onto flower buttons.','A new hat to earn: the beetle horn.']],
   ['2026-10-20','A bigger garden',['Two new chapters, Garden party and Grand bloom.','A finale for when the whole garden is grown.']]];
 function renderNews(){ const seen=store.get('squirm-news'), n=NEWS[0], returning=LEVELS.some((l,i)=>isCleared(i))||Object.keys(progress.daily.results).length>0;
@@ -2566,10 +2566,17 @@ window.addEventListener('keydown',e=>{ if(e.ctrlKey||e.metaKey||e.altKey||(e.tar
 });
 
 // ---------- buttons ----------
-let undoHold=null, undoHeld=false;
-$('undoBtn').addEventListener('pointerdown',()=>{ undoHeld=false; clearTimeout(undoHold); undoHold=setTimeout(function rep(){ if(!history.length) return; undoHeld=true; undo(); undoHold=setTimeout(rep,140); },450); });
-['pointerup','pointerleave','pointercancel'].forEach(ev=>$('undoBtn').addEventListener(ev,()=>clearTimeout(undoHold)));
-$('undoBtn').onclick=()=>{ if(undoHeld){ undoHeld=false; return; } undo(); }; $('hintBtn').onclick=showHint; $('tutorial').onclick=dismissTutorial; $('restartBtn').onclick=restart;
+// Undo: a tap takes back one move; holding it fills a ring around the button and then starts the patch over
+let holdRAF=0, undoHeld=false;
+const HOLD_WAIT=220, HOLD_MS=900;
+function endHold(){ cancelAnimationFrame(holdRAF); holdRAF=0; const b=$('undoBtn'); b.classList.remove('holding'); b.style.removeProperty('--hold'); }
+$('undoBtn').addEventListener('pointerdown',e=>{ if(e.button>0||!state||state.moves===0) return; undoHeld=false; endHold(); const t0=performance.now(), b=$('undoBtn');
+  const tick=now=>{ const k=(now-t0-HOLD_WAIT)/HOLD_MS; if(k>0){ b.classList.add('holding'); b.style.setProperty('--hold',Math.min(1,k).toFixed(3)); }
+    if(k>=1){ endHold(); undoHeld=true; buzz(30); restart(); return; } holdRAF=requestAnimationFrame(tick); };
+  holdRAF=requestAnimationFrame(tick); });
+['pointerup','pointerleave','pointercancel'].forEach(ev=>$('undoBtn').addEventListener(ev,endHold));
+$('undoBtn').addEventListener('contextmenu',e=>e.preventDefault());
+$('undoBtn').onclick=()=>{ if(undoHeld){ undoHeld=false; return; } undo(); }; $('hintBtn').onclick=showHint; $('tutorial').onclick=dismissTutorial; 
 $('levelsBtn').onclick=()=>{ hideAll(); popLayer('game'); showHome(); };
 $('skipBtn').onclick=()=>{ if(mode!=='endless'||animating) return; const e=progress.endless[endlessDiff]; e.streak=0; save(); clearResume(); toast('Skipped. Your streak starts over.',2000); newEndless(); };
 $('winShare').onclick=async()=>{ try{ if(navigator.share){ await navigator.share({text:shareText}); return; } }catch(e){ return; }
