@@ -80,7 +80,7 @@ test/logic.test.js      rules (25 tests, incl. unique level names and stateKey)
 test/generator.test.js  daily/endless generation (3 tests)
 test/news.test.js       What's new vs package.json version, semver order
 test/smoke.js           headless Chromium: boot, win patch 1, saved stars, GPU memory, offline reload
-.claude/skills/   add-levels, ui-check (with shoot.js, a screenshot script)
+.claude/skills/   add-levels, ui-check (with shoot.js for screenshots and look.js for 3D model close-ups)
 ```
 
 `logic.js` and `levels.js` are plain scripts in the browser and CommonJS modules in Node (a guarded
@@ -119,6 +119,37 @@ The version shows in Settings > About (`__BUILD__`: `v<version> · <sha>`).
 Use the `add-levels` skill. In short: hand-write or `curate` candidates, add them to `src/levels.js`
 (extend `CHAPTER_NAMES` for a new chapter), set `par` from `npm run analyze`, check the difficulty
 order, then `npm test`.
+
+### Adding a chapter: always think about unlockables
+
+A new chapter is never just levels. Plan what players earn along with it:
+
+- At least the chapter's hat (`HATS` entry with its chapter index, `buildHat` model, `hat-<id>` sticker) and
+  usually a badge for finishing it. Beyond that it doesn't have to be one thing per chapter: add what fits the
+  chapter's theme, which can be a hat, an extra, a worm colour (keep the last one reachable: total stars are
+  `LEVELS.length*3`), a pattern, colour options for an item (`TINTS`) or a badge, or several of them.
+- Be creative about how things unlock. Finishing a chapter or collecting stars is the plain way; better are
+  milestones that reward how people play, like dozing off, playing at tea time, coming back on different days,
+  starting over, changing outfits, wearing all three pollens in one patch, or a counter tied to the chapter's
+  mechanic. Use `progress.stats` counters (`bumpStat`) and write the "how to earn" line as a friendly hint.
+- Check that every unlock is actually reachable, shows its hint when locked, and appears on the win card when earned.
+- Then review every new model properly (next section), and update the totals in the README.
+
+### Adding or changing a 3D model: review it properly
+
+Every model (hat, extra, tile, item, critter) gets a real review before it ships. Take the time:
+
+- Look at it from every side with `node .claude/skills/ui-check/look.js <outDir> '<list>'` (front, both sides,
+  back and above, which is about the in-patch camera; `--dark` for dark mode), then in its real places: the
+  wardrobe stage (`ui-check`) and a patch.
+- Check for: parts clipping into the head, eyes, mouth, cheeks or body; parts floating off the surface; gaps;
+  outlines that are missing, doubled or ragged; pieces hidden from the usual camera (under the chin, behind the
+  head); scale next to the other items; and every colour option if it has `TINTS`. Compare it with its sticker:
+  they should be the same object in the same colours.
+- Shapes on the head follow the sphere (`HEAD_R`, the head's centre is the slot's origin for extras): put rings on
+  the sphere's surface (a circle at a distance `d` along a tilted axis has radius `sqrt(HEAD_R²-d²)`), and keep
+  clear of the face (eyes at y .14, mouth from about y -.03 down, cheeks at x ±.21).
+- Fix, re-render and look again until it is right. A model that only looks right from the front isn't finished.
 
 ### Adding a mechanic
 

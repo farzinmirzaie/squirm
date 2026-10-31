@@ -41,6 +41,10 @@ never renamed) and the character table are in CLAUDE.md under "Level format". Th
    chapter table. Totals that mention 220 patches or 22 chapters (README, manifest, package.json,
    the `<meta>` description in `shell.html`) need updating too.
 
+   **A new chapter also needs unlockables**: at least its hat and usually a badge, and often more (an extra,
+   a colour, colour options, a pattern), unlocked in creative ways. See CLAUDE.md, "Adding a chapter: always
+   think about unlockables", and review every new model with `ui-check`'s `look.js`.
+
 4. **Set par and check difficulty.** `npm run analyze` prints `index name par … states … winnable …%
    solution` per level. Copy the par. Difficulty score is `par * (1 - winnable/100)`; inside a chapter it
    should rise, so reorder if needed. To analyze only the candidates, write them to a scratch module

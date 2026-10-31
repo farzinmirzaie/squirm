@@ -1148,29 +1148,36 @@ function buildExtra(id){ // frames sit in front of the eyes even when they widen
     for(const [dx,dy,dz,rz,rx] of [[.075,-.065,0,.9,.15],[.025,-.075,.06,.35,-.35]]){ const t=new THREE.Mesh(sph(.05,14,10),m('mushRed')); t.position.set(kp.x+dx,kp.y+dy,kp.z+dz); t.rotation.set(rx,0,rz); t.scale.set(1,2,.5); outline(t,.01); g.add(t);
       const tip=new THREE.Mesh(sph(.05,12,8),m('partyB')); tip.position.y=-.036; tip.scale.set(.88,.2,1.08); t.add(tip); } }
   else if(id==='eyepatch'){ // over the right eye, its strap running up over the forehead and round the back of the head
-    const p=new THREE.Vector3(.13,.14,.36), pt=new THREE.Mesh(sph(.12,20,14),m('patch')); pt.position.copy(p); pt.scale.set(1,.9,.28); pt.lookAt(p.clone().multiplyScalar(3)); outline(pt,.01); g.add(pt);
+    const p=new THREE.Vector3(.13,.14,.34), pt=new THREE.Mesh(sph(.13,22,16),m('patch')); pt.position.copy(p); pt.scale.set(1,.95,.46); pt.lookAt(p.clone().multiplyScalar(3)); outline(pt,.01); g.add(pt);
     const on=d=>new THREE.Vector3(...d).normalize().multiplyScalar(HEAD_R+.012);
     const strap=new THREE.CatmullRomCurve3([on([.33,.37,.87]),on([.05,.62,.75]),on([-.35,.72,.5]),on([-.75,.55,.0]),on([-.45,.35,-.8])]);
     g.add(new THREE.Mesh(new THREE.TubeGeometry(strap,30,.016,6,false),m('patch')));
     const end=on([.62,.15,.77]), side=new THREE.CatmullRomCurve3([on([.4,.2,.88]),end,on([.85,.15,.45]),on([.6,.1,-.75])]); g.add(new THREE.Mesh(new THREE.TubeGeometry(side,24,.016,6,false),m('patch'))); }
   else if(id==='ladybug'){ // a ladybug resting on the right of the head, away from the flower clip and the butterfly
-    const b=new THREE.Group(), bp=new THREE.Vector3(.26,.24,.12).setLength(HEAD_R+.02); b.position.copy(bp); b.lookAt(bp.x*3,bp.y*3,bp.z*3); b.rotateZ(-.6); g.add(b);
+    const b=new THREE.Group(), bp=new THREE.Vector3(.26,.24,.12).setLength(HEAD_R+.02); b.position.copy(bp); b.lookAt(bp.x*3,bp.y*3,bp.z*3); b.rotateZ(-.6); b.scale.setScalar(1.25); g.add(b);
     const shell=new THREE.Mesh(new THREE.SphereGeometry(.07,18,12,0,Math.PI*2,0,Math.PI/2),m('ladybug')); shell.rotation.x=Math.PI/2; shell.scale.set(1,1,.7); outline(shell,.008); b.add(shell);
     const head=new THREE.Mesh(sph(.032,12,10),m('patch')); head.position.set(0,.07,.012); b.add(head);
     const line=new THREE.Mesh(new THREE.BoxGeometry(.006,.13,.01),m('patch')); line.position.z=.05; b.add(line);
     for(const [x,y] of [[-.035,.02],[.035,.02],[-.03,-.03],[.03,-.03]]){ const d=new THREE.Mesh(sph(.014,8,6),m('patch')); d.position.set(x,y,.045); d.scale.z=.4; b.add(d); }
     for(const sd of [-1,1]){ const e=new THREE.Mesh(sph(.008,6,4),m('eye')); e.position.set(sd*.013,.085,.03); b.add(e); } }
-  else if(id==='sweatband'){ // a stretchy band round the top of the head, tipped back so it sits above the eyes (hats go on top)
-    const y=.24, R=Math.sqrt(HEAD_R*HEAD_R-y*y)+.018, band=new THREE.Group(); band.position.y=y-.02; band.rotation.x=-.32; g.add(band);
-    band.add(new THREE.Mesh(new THREE.CylinderGeometry(R,R+.012,.075,30,1,true),m('sweat')));
-    band.add(new THREE.Mesh(new THREE.CylinderGeometry(R+.004,R+.016,.026,30,1,true),m('sweatStripe')));
-    for(const yy of [-.04,.04]){ const r=new THREE.Mesh(new THREE.TorusGeometry(R+.006*(yy<0?2:0),.006,6,30),lineMat); r.rotation.x=Math.PI/2; r.position.y=yy; band.add(r); } }
-  else if(id==='daisies'){ // a chain of little daisies round the bottom of the head, where the scarf sits, on a green stem
-    const R=.33, ring=new THREE.Group(); ring.position.set(0,-.1,-.07); ring.rotation.x=-.93; ring.scale.x=.92; g.add(ring);
-    ring.add(new THREE.Mesh(new THREE.TorusGeometry(R,.012,6,40),m('leaf')));
-    for(let k=0;k<9;k++){ const a=-Math.PI/2+(k-4)*.3, f=new THREE.Group(); f.position.set(Math.cos(a)*R,Math.sin(a)*R,.012); ring.add(f);
-      for(let q=0;q<6;q++){ const pt=new THREE.Mesh(sph(.024,8,6),m('daisy')); const b=q/6*Math.PI*2; pt.position.set(Math.cos(b)*.026,Math.sin(b)*.026,0); pt.scale.z=.45; f.add(pt); }
-      const c=new THREE.Mesh(sph(.016,8,6),m('crown')); c.position.z=.012; f.add(c); } }
+  else if(id==='sweatband'){ // a stretchy band hugging the top of the head, tipped back round the head's centre so it sits on
+    // the forehead above the eyes and lower behind; its two edges follow the head's curve (hats go on top)
+    const tilt=new THREE.Group(); tilt.rotation.x=-.42; g.add(tilt);
+    const y=.215, hh=.075, rr=v=>Math.sqrt(HEAD_R*HEAD_R-v*v)+.016, band=new THREE.Group(); band.position.y=y; tilt.add(band);
+    band.add(new THREE.Mesh(new THREE.CylinderGeometry(rr(y+hh/2),rr(y-hh/2),hh,36,1,true),m('sweat')));
+    band.add(new THREE.Mesh(new THREE.CylinderGeometry(rr(y+.013)+.003,rr(y-.013)+.003,.026,36,1,true),m('sweatStripe')));
+    for(const e of [-hh/2,hh/2]){ const r=new THREE.Mesh(new THREE.TorusGeometry(rr(y+e),.007,6,40),lineMat); r.rotation.x=Math.PI/2; r.position.y=e; band.add(r); } }
+  else if(id==='daisies'){ // a chain of daisies lying on the head under the mouth: a circle on the head's sphere, round the
+    // chin and down the sides, its back hidden under the body
+    const tilt=new THREE.Group(); tilt.rotation.x=Math.PI-.47; g.add(tilt);
+    const d=.27, r=Math.sqrt(HEAD_R*HEAD_R-d*d)+.012, ring=new THREE.Group(); ring.position.y=d; tilt.add(ring);
+    const stem=new THREE.Mesh(new THREE.TorusGeometry(r,.014,6,48),m('leaf')); stem.rotation.x=Math.PI/2; ring.add(stem);
+    // (the ring's -z is the front once tipped; each daisy faces straight out from the head's centre)
+    for(let k=0;k<8;k++){ const a=-Math.PI/2+(k-3.5)*.4, f=new THREE.Group(), wv=new THREE.Vector3();
+      f.position.set(Math.cos(a)*r,0,Math.sin(a)*r); ring.add(f); f.getWorldPosition(wv); f.lookAt(wv.multiplyScalar(2));
+      for(let q=0;q<7;q++){ const pt=new THREE.Mesh(sph(.026,8,6),m('daisy')); const b=q/7*Math.PI*2+k; pt.position.set(Math.cos(b)*.03,Math.sin(b)*.03,.01); pt.scale.set(1,1,.45); f.add(pt); }
+      const c=new THREE.Mesh(sph(.018,8,6),m('crown')); c.position.z=.022; outline(c,.005); f.add(c);
+      if(k%2){ const lf=new THREE.Mesh(sph(.022,8,6),m('leaf')); lf.scale.set(1.6,.5,.4); lf.position.set(.045,-.02,0); lf.rotation.z=-.5; f.add(lf); } } }
   else if(id==='bandana'){ // a spotted neckerchief: a thin roll round the bottom of the head (like the scarf) and a triangle in front
     const R=.33, ring=new THREE.Group(); ring.position.set(0,-.1,-.07); ring.rotation.x=-.93; ring.scale.x=.92; g.add(ring);
     ring.add(new THREE.Mesh(new THREE.TorusGeometry(R,.036,10,36),m('bandana')), new THREE.Mesh(new THREE.TorusGeometry(R,.048,8,36),lineMat));
@@ -1353,10 +1360,13 @@ function buildHat(id){ const h=new THREE.Group();
     for(let i=0;i<6;i++){ const a=i/6*Math.PI*2+.3, d=new THREE.Mesh(sph(.018,8,6),m('teacupDot')); d.position.set(Math.cos(a)*.128,.11,Math.sin(a)*.128); d.scale.set(1,1,.4); d.lookAt(Math.cos(a),.11,Math.sin(a)); h.add(d); }
     const st=[]; for(let k=0;k<=6;k++){ const t=k/6; st.push(new THREE.Vector3(Math.sin(t*5)*.03,.2+t*.16,0)); }
     const steam=new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(st),16,.012,6,false),new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:.75})); h.add(steam); }
-  else if(id==='nest'){ // a twiggy nest with two speckled eggs
-    const ring=new THREE.Mesh(new THREE.TorusGeometry(.17,.06,10,26),m('twig')); ring.rotation.x=Math.PI/2; ring.scale.z=.8; ring.position.y=.05; outline(ring,.01); h.add(ring);
-    const bowl=new THREE.Mesh(new THREE.SphereGeometry(.17,20,10,0,Math.PI*2,Math.PI/2,Math.PI/2),m('acornCap')); bowl.scale.y=.4; bowl.position.y=.06; h.add(bowl);
-    for(let i=0;i<14;i++){ const a=i*.9, tw=new THREE.Mesh(new THREE.CylinderGeometry(.008,.008,.16,4),m('acornNut')); tw.position.set(Math.cos(a)*.19,.06+(i%3)*.02,Math.sin(a)*.19); tw.rotation.set(1.3,a,.4*(i%2?1:-1)); h.add(tw); }
+  else if(id==='nest'){ // a nest woven from thin twig rings in two browns, a few loose ends curving round it, two speckled eggs
+    const bowl=new THREE.Mesh(new THREE.SphereGeometry(.17,20,10,0,Math.PI*2,Math.PI/2,Math.PI/2),m('acornCap')); bowl.scale.y=.45; bowl.position.y=.07; h.add(bowl);
+    const rim=new THREE.Mesh(new THREE.TorusGeometry(.17,.055,10,28),m('twig')); rim.rotation.x=Math.PI/2; rim.scale.z=.75; rim.position.y=.055; outline(rim,.01); h.add(rim);
+    for(let i=0;i<9;i++){ const tw=new THREE.Mesh(new THREE.TorusGeometry(.175+(i%3)*.012,.011,5,30,Math.PI*(1.1+(i%4)*.25)),i%2?m('acornNut'):m('twig'));
+      tw.rotation.set(Math.PI/2+((i*37)%7-3)*.06,((i*53)%9-4)*.05,i*.83); tw.position.y=.04+(i%4)*.022; h.add(tw); }
+    for(let i=0;i<5;i++){ const a=i*1.31+.4, pts=[]; for(let k=0;k<=4;k++){ const t=a+k*.16; pts.push(new THREE.Vector3(Math.cos(t)*(.2+k*.012),.07+(i%2?.03:-.01)+k*.008,Math.sin(t)*(.2+k*.012))); }
+      h.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts),8,.008,4,false),m('acornNut'))); }
     for(const [x,z,r] of [[-.05,.02,.2],[.05,-.02,-.3]]){ const e=new THREE.Mesh(sph(.06,16,12),m('egg')); e.scale.set(.85,1.1,.85); e.position.set(x,.1,z); e.rotation.z=r; outline(e,.008); h.add(e);
       for(let k=0;k<4;k++){ const d=new THREE.Mesh(sph(.009,6,4),m('eggDot')); const a=k*1.7+x*20, el=.6+k*.3; d.position.set(x+Math.cos(a)*Math.sin(el)*.05,.1+Math.cos(el)*.064,z+Math.sin(a)*Math.sin(el)*.05); h.add(d); } } }
   else if(id==='cloud'){ // a little rain cloud hovering over the head, a few drops falling from it
@@ -2262,6 +2272,7 @@ window.addEventListener('popstate',()=>{ if(ignorePop>0){ ignorePop--; return; }
 // add an entry on top. Returning players see the newest entry once as a card on the Play tab, new players never
 // do (squirm-news holds the last version seen); Settings > About lists them all.
 const NEWS=[
+  ['1.12.1','2026-10-31','A tidier wardrobe',['The bird\'s nest is properly woven now, and its eggs sit snug inside.','The sweatband hugs the head all the way round, the pirate patch covers its eye, and the daisy chain shows under the chin.','The ladybug friend is a little bigger.']],
   ['1.12.0','2026-10-31','Pick a colour',['Many hats and extras now come in five colours: wear one and pick its colour in the wardrobe.','Four new hats: a little sprout, a teacup, a bird\'s nest and a little rain cloud.','Four new extras: a pirate patch, a ladybug friend, a sweatband and a daisy chain.','Each one unlocks in its own playful way. Take a peek in the wardrobe!']],
   ['1.11.0','2026-10-31','Far fields',['A new chapter, Far fields: ten big, wide patches, and the toughest one yet at the end.','An explorer\'s hat, a spotted bandana, a Sage colour and a new badge to earn.','A tidier top bar: just what you need to finish the patch.','A smarter fancy mustache, and the worm looks right when it pops out of a tunnel and straight back in.']],
   ['1.10.0','2026-10-31','Pollen and soft soil',['Two new things in the garden: flowers dust you in pollen that opens petal gates of the same colour, and soft soil lets you burrow under yourself.','Three new chapters: Pollen paths, Soft soil and Tangled roots.','New hats (a petal bonnet, a miner\'s helmet and a gnome hat), digging goggles, a Sprout colour and three new badges.','Pick pollen and soft soil for your meadow patches too.']],
