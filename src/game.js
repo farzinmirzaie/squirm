@@ -36,12 +36,14 @@ const C = {
   mushRed:0xF07A6A, topHat:0x4E3F5C, rainHat:0xFFD04A, brolly:0x9FD2F2, bowDark:0xE36A8C, bowKnot:0xC24E72,
   straw:0xF3D18A, strawDark:0xD9B166, acornCap:0x8A5A36, acornNut:0xC98E52, partyA:0x9FD2F2, partyB:0xFFF1A8, crown:0xF5C14E, beret:0xB79CF2, beanie:0x8FD0B0, beanieRib:0x6FB894, beetle:0x7C8CF0, beetleDark:0x5566C8, beetleHead:0x3E3F84, beetleSpot:0xB5C0FA, beetleLeg:0x3A2F5E, sunPetal:0xFFD34D, sunCore:0x7A4E2E, shellHat:0xC9A0E6, shellSpiral:0xA67CCB, pumpkin:0xF7A05A, pumpkinRib:0xE0843F,
   pollenP:0xFF7A6B, pollenPLight:0xFFC6BC, pollenPDark:0xC94A43, pollenY:0xFFC63A, pollenYLight:0xFFE9A6, pollenYDark:0xD08A1C, pollenU:0x63A9F2, pollenULight:0xC4E2FF, pollenUDark:0x3E73C2,
+  bandana:0xE4574C, bandanaDot:0xFFF1DE,
+  explorer:0xDCC28C, explorerBand:0x8A5A36,
   miner:0xF5A33A, minerDark:0xD9822A, lamp:0xFFF6C8, gnome:0xE4574C, goggle:0xA9703F, lensBlue:0xBFE6F7,
   softSoil:0xB07850, softRidge:0xCB9468, softClod:0x8A5A3A,
   wetLeaf:0x8EE0B4, leafVein:0x5DBA8A, dew:0xEAF8FF, hedge:0x5FA64F, hedgeDark:0x4E8F40, petalB:0xF7A8C4,
   burrow:0x3A2A22, mound:0xB07B57, ready:0x8EDB72, line:0x5B4436,
   chef:0xFFFBF2, wizard:0x8E7BE0, cowboy:0xC98E52, cowboyBand:0x8A5A36, phones:0xF7A8C4, phonesBand:0x6E5F86,
-  frame:0x4A3C52, lensDark:0x3E3548, heartFrame:0xF27DA2, starFrame:0xF5C14E, monocle:0xE0B04A, tash:0x6B4A35,
+  frame:0x4A3C52, lensDark:0x3E3548, heartFrame:0xF27DA2, starFrame:0xF5C14E, monocle:0xE0B04A, tash:0x6B4A35, tashLight:0xB08560,
   portal:{ '1':0x7FCFEA, '2':0xC69CF7, '3':0xFFB877, '4':0x9BE39B }
 };
 // ---------- DOM helpers ----------
@@ -1030,7 +1032,7 @@ const cheekMat=MC.wormCheek=new THREE.MeshBasicMaterial({color:C.cheek,transpare
 // colour under the same light, so any difference shows as a seam at the neck.
 // hats, earned by finishing chapters: [id, name, chapter index that unlocks it]. Each is built once and cloned.
 const HATS=[['none','No hat',-1],['crown','Flower crown',0],['mush','Mushroom cap',1],['straw','Straw hat',2],['tophat','Top hat',3],['leaf','Leaf cap',4],['rainhat','Rain hat',5],
-  ['acorn','Acorn cap',6],['bee','Bee antennae',7],['party','Party hat',8],['brolly','Tiny umbrella',9],['beret','Dewdrop beret',10],['bow','Ribbon bow',11],['gold','Garden crown',12],['beanie','Pompom beanie',13],['sunflower','Sunflower',14],['horn','Beetle horn',15],['shell','Snail shell',16],['pumpkin','Pumpkin hat',17],['bonnet','Petal bonnet',18],['miner','Miner\'s helmet',19],['gnome','Gnome hat',20],
+  ['acorn','Acorn cap',6],['bee','Bee antennae',7],['party','Party hat',8],['brolly','Tiny umbrella',9],['beret','Dewdrop beret',10],['bow','Ribbon bow',11],['gold','Garden crown',12],['beanie','Pompom beanie',13],['sunflower','Sunflower',14],['horn','Beetle horn',15],['shell','Snail shell',16],['pumpkin','Pumpkin hat',17],['bonnet','Petal bonnet',18],['miner','Miner\'s helmet',19],['gnome','Gnome hat',20],['explorer','Explorer\'s hat',21],
   ['chef','Chef hat',-2,'Eat 100 snacks',()=>(progress.stats.fruit||0)>=100],
   ['wizard','Wizard hat',-2,'30 patches, no hints',()=>Object.keys(progress.clean).length>=30],
   ['cowboy','Cowboy hat',-2,'Clear 15 meadow patches',()=>['easy','medium','hard'].reduce((a,d)=>a+progress.endless[d].cleared,0)>=15],
@@ -1051,7 +1053,8 @@ const EXTRAS=[['none','Nothing','',()=>true],
   ['monocle','Monocle','50 patches, no hints',()=>Object.keys(progress.clean).length>=50],
   ['stars','Star shades','3 stars on 60 patches',()=>LEVELS.filter(l=>progress.stars[l.name]===3).length>=60],
   ['butterfly','Butterfly friend','Finish every garden patch',()=>allCleared()],
-  ['goggles','Digging goggles','Burrow under yourself 30 times',()=>(progress.stats.burrows||0)>=30]];
+  ['goggles','Digging goggles','Burrow under yourself 30 times',()=>(progress.stats.burrows||0)>=30],
+  ['bandana','Explorer\'s bandana','Finish 200 patches',()=>LEVELS.filter((l,i)=>isCleared(i)).length>=200]];
 let extraId=store.get('squirm-extra')||'none';
 const extraOn=()=>{ const e=EXTRAS.find(x=>x[0]===extraId); return e&&e[3]()?extraId:'none'; };
 const extraArt=(id,size=36)=>art(id==='none'?'hat-none':'extra-'+id,size);
@@ -1107,6 +1110,13 @@ function buildExtra(id){ // frames sit in front of the eyes even when they widen
     const kp=new THREE.Vector3(.215,-.245,.18), knot=new THREE.Mesh(sph(.068,14,10),m('mushRed')); knot.position.copy(kp); knot.scale.set(1,.85,.8); outline(knot,.01); g.add(knot);
     for(const [dx,dy,dz,rz,rx] of [[.075,-.065,0,.9,.15],[.025,-.075,.06,.35,-.35]]){ const t=new THREE.Mesh(sph(.05,14,10),m('mushRed')); t.position.set(kp.x+dx,kp.y+dy,kp.z+dz); t.rotation.set(rx,0,rz); t.scale.set(1,2,.5); outline(t,.01); g.add(t);
       const tip=new THREE.Mesh(sph(.05,12,8),m('partyB')); tip.position.y=-.036; tip.scale.set(.88,.2,1.08); t.add(tip); } }
+  else if(id==='bandana'){ // a spotted neckerchief: a thin roll round the bottom of the head (like the scarf) and a triangle in front
+    const R=.33, ring=new THREE.Group(); ring.position.set(0,-.1,-.07); ring.rotation.x=-.93; ring.scale.x=.92; g.add(ring);
+    ring.add(new THREE.Mesh(new THREE.TorusGeometry(R,.036,10,36),m('bandana')), new THREE.Mesh(new THREE.TorusGeometry(R,.048,8,36),lineMat));
+    const tri=new THREE.Shape(); tri.moveTo(-.14,0); tri.lineTo(.14,0); tri.quadraticCurveTo(.03,-.12,0,-.19); tri.quadraticCurveTo(-.03,-.12,-.14,0);
+    const geo=new THREE.ExtrudeGeometry(tri,{depth:.02,bevelEnabled:true,bevelSize:.012,bevelThickness:.012,bevelSegments:2,curveSegments:10}); geo.translate(0,0,-.01);
+    const t=new THREE.Mesh(geo,m('bandana')); t.position.set(0,-.27,.21); t.rotation.x=-.35; outline(t,.01); g.add(t);
+    for(const [x,y] of [[-.06,-.04],[.06,-.04],[0,-.1]]){ const d=new THREE.Mesh(sph(.017,8,6),m('bandanaDot')); d.position.set(x,y,.024); d.scale.z=.35; t.add(d); } }
   else if(id==='goggles'){ // chunky round goggles on a strap that hugs the head at eye height
     const z=EZ+.01, rad=.125, R=Math.sqrt(HEAD_R*HEAD_R-EY*EY)+.012;
     const strap=new THREE.Mesh(new THREE.TorusGeometry(R,.028,8,40,Math.PI*1.3),m('goggle')); strap.rotation.set(Math.PI/2,0,Math.PI*.85); strap.position.y=EY; g.add(strap);
@@ -1120,7 +1130,22 @@ function buildExtra(id){ // frames sit in front of the eyes even when they widen
     const body=new THREE.Mesh(sph(.022,10,8),m('pupil')); body.scale.set(1,3.2,1); outline(body,.006); b.add(body);
     for(const s of [-1,1]){ for(const [y,r,mat,sx] of [[.035,.07,'petalB',1.1],[-.04,.05,'crown',1]]){ const w=new THREE.Mesh(sph(r,14,10),m(mat)); w.scale.set(sx,1,.25); w.position.set(s*(r+.008),y,.02); w.rotation.set(0,s*.5,s*(y>0?-.35:.4)); outline(w,.006); b.add(w); }
       const an=new THREE.Mesh(new THREE.CylinderGeometry(.005,.005,.07,4),m('pupil')); an.position.set(s*.016,.095,0); an.rotation.z=-s*.35; b.add(an); } }
-  else if(id==='tash'||id==='walrus'){ const half=id==='tash'
+  else if(id==='tash'){ // a handlebar: two tapered lobes from a round knot, curling up at the tips, hugging the face
+    const R=HEAD_R, Y=0, surf=(x,y)=>Math.sqrt(Math.max(0,R*R-x*x-y*y));
+    const lobe=[[0,.02],[.05,.006],[.1,-.006],[.15,-.004],[.185,.012],[.193,.036],[.177,.052],[.159,.047],[.158,.033]];
+    const rad=t=>.009+.028*Math.pow(1-t,1.2);
+    // a tube whose radius follows rad(t): TubeGeometry samples the curve evenly, so ring k sits at t=k/segs
+    const taper=(curve,f,add)=>{ const segs=48, rs=12, g=new THREE.TubeGeometry(curve,segs,1,rs,false), pa=g.attributes.position, v=new THREE.Vector3();
+      for(let i=0;i<pa.count;i++){ const t=Math.floor(i/(rs+1))/segs, c=curve.getPointAt(t); v.fromBufferAttribute(pa,i).sub(c).multiplyScalar(f(t)+add).add(c); pa.setXYZ(i,v.x,v.y,v.z); }
+      g.computeVertexNormals(); return g; };
+    for(const sd of [-1,1]){ const pts=lobe.map(([x,y])=>{ const X=sd*x, Yy=Y+y; return new THREE.Vector3(X,Yy,surf(X,Yy)+.012); });
+      const curve=new THREE.CatmullRomCurve3(pts,false,'centripetal');
+      g.add(new THREE.Mesh(taper(curve,rad,0),m('tash')), new THREE.Mesh(taper(curve,rad,.011),lineMat));
+      // a lighter strand along the top of the lobe, like the sticker
+      const hp=[]; for(let k=0;k<=8;k++){ const t=.08+k/8*.5, c=curve.getPointAt(t), n=c.clone().normalize(); hp.push(c.addScaledVector(n,rad(t)*.7).add(new THREE.Vector3(0,rad(t)*.4,0))); }
+      g.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(hp),16,0.006,6,false),m('tashLight'))); }
+    const knot=new THREE.Mesh(sph(.038,16,12),m('tash')); knot.position.set(0,Y+.02,surf(0,Y+.02)+.008); knot.scale.set(1.15,.85,.75); outline(knot,.011); g.add(knot); }
+  else if(id==='walrus'){ const half=id==='tash'
       ?[[0,.1],[.2,.17],[.45,.11],[.68,.02],[.86,.06],[.97,.22],[.93,.37],[.82,.4],[.78,.31],[.85,.24],[.8,.13],[.66,-.04],[.45,-.17],[.2,-.17],[0,-.06]]
       :[[0,.15],[.3,.2],[.6,.13],[.8,-.04],[.79,-.22],[.64,-.3],[.52,-.21],[.38,-.32],[.24,-.22],[.11,-.32],[0,-.22]];
     const pts=[...half,...half.slice(1,-1).reverse().map(([x,y])=>[-x,y])].map(([x,y])=>new THREE.Vector2(x,y)), sh=new THREE.Shape();
@@ -1253,6 +1278,12 @@ function buildHat(id){ const h=new THREE.Group();
     const body=new THREE.Mesh(new THREE.CylinderGeometry(.065,.075,.08,18),m('pole')); body.rotation.x=Math.PI/2; outline(body,.008); lamp.add(body);
     const glass=new THREE.Mesh(new THREE.CircleGeometry(.055,18),new THREE.MeshBasicMaterial({color:C.lamp})); glass.position.z=.042; lamp.add(glass);
     const glow=new THREE.Mesh(new THREE.CircleGeometry(.09,18),new THREE.MeshBasicMaterial({color:C.lamp,transparent:true,opacity:.35,depthWrite:false})); glow.position.z=.046; lamp.add(glow); }
+  else if(id==='explorer'){ // a pith helmet for the long trek: a tall khaki dome on a wide brim, a leather band and a feather
+    const brim=new THREE.Mesh(new THREE.CylinderGeometry(.33,.35,.03,30),m('explorer')); brim.rotation.x=.08; outline(brim,.012); h.add(brim);
+    const dome=new THREE.Mesh(new THREE.SphereGeometry(.22,26,12,0,Math.PI*2,0,Math.PI/2),m('explorer')); dome.scale.y=1.05; dome.position.y=.01; outline(dome,.012); h.add(dome);
+    const band=new THREE.Mesh(new THREE.CylinderGeometry(.222,.222,.055,26,1,true),m('explorerBand')); band.position.y=.04; h.add(band);
+    const nub=new THREE.Mesh(sph(.03,10,8),m('explorer')); nub.position.y=.24; outline(nub,.008); h.add(nub);
+    const fe=new THREE.Mesh(sph(.06,12,8),m('leaf')); fe.scale.set(.35,1.6,.5); fe.position.set(-.2,.13,-.04); fe.rotation.z=.5; outline(fe,.008); h.add(fe); }
   else if(id==='gnome'){ // a tall red gnome hat, tip flopping forward, on a fluffy white band
     const H=.5, cg=new THREE.ConeGeometry(.2,H,26,10), cp=cg.attributes.position;
     for(let k=0;k<cp.count;k++){ const t=cp.getY(k)/H+.5; cp.setXYZ(k,cp.getX(k),cp.getY(k)-.05*t*t*t,cp.getZ(k)+.17*t*t*t); }
@@ -1278,7 +1309,7 @@ function dressHat(g){ const slot=g&&g.userData.hatSlot; if(!slot) return; slot.c
   const h=HATS.find(x=>x[0]===hatId); if(!h||h[0]==='none'||!hatUnlocked(h)) return;
   if(!hatProto[hatId]) hatProto[hatId]=buildHat(hatId); slot.add(hatProto[hatId].clone()); }
 const WORM_COLS=[['Blossom',0xFFB3C8,0xFFB3C8,0,0xEF6A8F],['Mint',0x7FD9B0,0x7FD9B0,15,0xFF6B99],['Butter',0xFFE58F,0xFFE58F,45,0xFF827C],['Lavender',0xCDB8F5,0xCDB8F5,90,0xF979A6],['Sky',0xA9D8F5,0xA9D8F5,150,0xFF6B91],
-  ['Peach',0xFFC29A,0xFFC29A,210,0xF87569],['Teal',0x74CCD2,0x74CCD2,270,0xFF718B],['Cocoa',0xD6AE8C,0xD6AE8C,330,0xD66161],['Twilight',0xA4A6E4,0xA4A6E4,400,0xFD75AE],['Golden',0xF7BE4F,0xF7BE4F,480,0xFB776D],['Moonlight',0xD7DDF0,0xD7DDF0,520,0xF27FA8],['Sprout',0xBCE38A,0xBCE38A,600,0xFF7F8F]];
+  ['Peach',0xFFC29A,0xFFC29A,210,0xF87569],['Teal',0x74CCD2,0x74CCD2,270,0xFF718B],['Cocoa',0xD6AE8C,0xD6AE8C,330,0xD66161],['Twilight',0xA4A6E4,0xA4A6E4,400,0xFD75AE],['Golden',0xF7BE4F,0xF7BE4F,480,0xFB776D],['Moonlight',0xD7DDF0,0xD7DDF0,520,0xF27FA8],['Sprout',0xBCE38A,0xBCE38A,600,0xFF7F8F],['Sage',0xB4CBB0,0xB4CBB0,640,0xF27E93]];
 const starTotal=()=>LEVELS.reduce((a,l)=>a+(progress.stars[l.name]||0),0);
 const coloursUnlocked=()=>WORM_COLS.filter(c=>starTotal()>=c[3]).length;
 let wormCol=Math.max(0,Math.min(WORM_COLS.length-1,parseInt(store.get('squirm-colour')||'0',10)||0));
@@ -1377,6 +1408,14 @@ function updateWorm(){
       if(f>0 && f<segs.length && portalAt(segs[f-1])){ const q=partner(state,segs[f-1][0],segs[f-1][1]);
         if(q && Math.abs(q[0]-segs[f][0])+Math.abs(q[1]-segs[f][1])===1){ pts=[wp(q[0],q[1],-.3),wp(q[0],q[1],.12),...pts]; G=[f,f,...G]; Gp=[f-.9,f-.6,...Gp]; diveFront=true; } }
       if(l>0 && l<segs.length-1 && l+1<n && portalAt(segs[l]) && P[l+1].distanceTo(P[l])>1.3){ pts=[...pts,wp(segs[l][0],segs[l][1],-.3)]; G=[...G,l]; Gp=[...Gp,l+.4]; diveBack=true; }
+      // out of a tunnel, one tile on and straight back into the same tunnel: a hairpin, the strand coming up
+      // beside the one going down, instead of one tube folding back on itself
+      // (the tail end too, when the tail is the bit still coming out of that tunnel)
+      if(diveFront && ch.length===2 && l<segs.length){ const q=partner(state,segs[f-1][0],segs[f-1][1]);
+        if(q && q[0]===segs[l][0] && q[1]===segs[l][1]){ diveBack=true; const a=P[l], b=P[f], dx=b.x-a.x, dz=b.z-a.z, dl=Math.hypot(dx,dz)||1, ux=dx/dl, uz=dz/dl, w=.16;
+          const v=(o,y,sd,k)=>new THREE.Vector3(o.x-uz*w*sd+ux*k,y,o.z+ux*w*sd+uz*k);
+          pts=[v(a,-.3,1,0),v(a,.12,1,0),v(b,b.y,.85,-.06),v(b,b.y,0,.13),v(b,b.y,-.85,-.06),v(a,a.y,-1,0),v(a,-.3,-1,0)];
+          G=[f,f,f,f+.3,f+.6,l,l]; Gp=[f-.9,f-.6,f-.2,f+.1,f+.4,l,l+.4]; } }
       // the tail tapers to a soft point a little past the last anchor, resting on the ground
       let tipP=null, tipR=0; const tip=l===n-1 && !diveBack && ch.length>=2;
       if(tip){ const a=P[l], b=P[l-1], dx=a.x-b.x, dz=a.z-b.z, dl=Math.hypot(dx,dz)||1, rl=radAt(l,n,anchors);
@@ -1881,7 +1920,9 @@ const ART={
   'extra-butterfly':'<path d="M12 7.5v10"/><path d="M12 10C9.6 5.4 4 4.6 4 8.6c0 2.6 3 3.6 8 3.4zM12 10c2.4-4.6 8-5.4 8-1.4 0 2.6-3 3.6-8 3.4z" fill="#F7A8C4"/><path d="M12 12.2c-3.4.2-6 1.8-5 4.2 1 2.2 4 1.4 5-2.6zM12 12.2c3.4.2 6 1.8 5 4.2-1 2.2-4 1.4-5-2.6z" fill="#F5C14E"/><path d="M12 7.5l-1.6-2.6M12 7.5l1.6-2.6"/>',
   'hat-bonnet':'<g fill="#F7A8C4"><ellipse cx="5.6" cy="15" rx="3.4" ry="2.4" transform="rotate(-30 5.6 15)"/><ellipse cx="18.4" cy="15" rx="3.4" ry="2.4" transform="rotate(30 18.4 15)"/><ellipse cx="9" cy="17.4" rx="3.4" ry="2.4"/><ellipse cx="15" cy="17.4" rx="3.4" ry="2.4"/></g><g fill="#E36A8C"><ellipse cx="8.6" cy="11" rx="3" ry="2.2" transform="rotate(-40 8.6 11)"/><ellipse cx="15.4" cy="11" rx="3" ry="2.2" transform="rotate(40 15.4 11)"/><ellipse cx="12" cy="13.4" rx="3" ry="2.2"/></g><circle cx="12" cy="7.6" r="2.6" fill="#FFE9A6"/>',
   'hat-miner':'<path d="M2.6 17.6h18.8" stroke-width="2.4"/><path d="M4.6 17.2a7.4 7.6 0 0 1 14.8 0z" fill="#F5A33A"/><path d="M12 9.6v7.6" stroke-width="1.2"/><rect x="9.6" y="10.6" width="4.8" height="3.8" rx="1.4" fill="#B98A62"/><circle cx="12" cy="12.5" r="1.3" fill="#FFF6C8" stroke-width="1"/>',
+  'hat-explorer':'<path d="M2.4 17.4c3.6 2 15.6 2 19.2 0-3.4-1.4-15.8-1.4-19.2 0z" fill="#DCC28C"/><path d="M5.2 16.4C5.2 9.8 8 6 12 6s6.8 3.8 6.8 10.4z" fill="#DCC28C"/><path d="M5.4 14.4h13.2" stroke="#8A5A36" stroke-width="2.2"/><path d="M5.6 12.6C4 10.2 3.8 7.6 4.8 5.6c1.4 1.8 1.8 4.4.8 7z" fill="#6CC97A" stroke-width="1.2"/>',
   'hat-gnome':'<path d="M6 18.4L11.4 3.6c2.8.4 5.6 2.6 6.2 5.6l.6 9.2z" fill="#E4574C"/><circle cx="18.2" cy="9.6" r="1.8" fill="#FFFBF2"/><rect x="4.2" y="16.6" width="15.6" height="4" rx="2" fill="#FFFBF2"/>',
+  'extra-bandana':'<path d="M3.6 8.4c4.6 2.6 12.2 2.6 16.8 0" stroke-width="2.8" stroke="#5B4436"/><path d="M3.6 8.4c4.6 2.6 12.2 2.6 16.8 0" stroke-width="1.4" stroke="#E4574C"/><path d="M5.4 10.2h13.2c-1.6 4.4-4 8-6.6 10.4-2.6-2.4-5-6-6.6-10.4z" fill="#E4574C"/><g fill="#FFF1DE" stroke="none"><circle cx="9.4" cy="12.6" r="1"/><circle cx="14.6" cy="12.6" r="1"/><circle cx="12" cy="16.4" r="1"/></g>',
   'extra-goggles':'<path d="M2 12.8h20" stroke="#A9703F" stroke-width="2.4"/><circle cx="7.4" cy="12.8" r="4.3" fill="#BFE6F7" stroke-width="2.4"/><circle cx="16.6" cy="12.8" r="4.3" fill="#BFE6F7" stroke-width="2.4"/><path d="M5.6 11.2l1.2-1" stroke="#fff" stroke-width="1"/>',
   'hat-horn':'<path d="M4 20a8 8 0 0 1 16 0" stroke-width="2.6"/><path d="M8.2 14.2c-.2-4.8 2.4-8.8 8-11.2-1 3.8-1 7.4 0 11.2z" fill="#7C8CF0"/><circle cx="12.2" cy="10" r=".85" fill="#B5C0FA" stroke="none"/><circle cx="13.6" cy="7" r=".7" fill="#B5C0FA" stroke="none"/>'
 };
@@ -1895,7 +1936,7 @@ const ART={
   ART.soil='<path d="M5.6 16.4c-.6-5.6 1.8-9.6 6-9.6" stroke-width="4.6"/><path d="M5.6 16.4c-.6-5.6 1.8-9.6 6-9.6" stroke="#FFB3C8" stroke-width="2.4"/><circle cx="14.2" cy="7.6" r="3" fill="#FFB3C8"/><circle cx="15.1" cy="7" r=".75" fill="#5B4436" stroke="none"/><path d="M1.8 21c.9-4.6 4.9-7.6 10.2-7.6S21.3 16.4 22.2 21z" fill="#B07850"/><g fill="#8A5A3A" stroke="none"><circle cx="8" cy="18" r="1"/><circle cx="13.4" cy="16.4" r="1"/><circle cx="17.4" cy="18.8" r="1"/></g>'; }
 const art=(n,size=24)=>`<svg class="art" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="#5B4436" stroke-width="${Math.max(1.3,Math.min(2.6,1.9*24/size)).toFixed(2)}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ART[n]||''}</svg>`;
 // small stickers for the HUD tiles, toasts and pills
-const ICON={star:art('star',18),sun:art('sun',18),rain:art('rain',18),flag:art('flag',18),key:art('key',18),worm:art('worm',20),steps:art('steps',18),burrow:art('burrow',18),hedge:art('hedge',18),leaf:art('leaf',18)};
+const ICON={star:art('star',18),flag:art('flag',18),key:art('key',18),worm:art('worm',20),steps:art('steps',18),burrow:art('burrow',18),leaf:art('leaf',18)};
 // control icons: one line weight, drawn in the text colour
 const UI_ICON={
   chev:'<svg class="ui-ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 5.5L16 12l-6.5 6.5"/></svg>',
@@ -1908,9 +1949,6 @@ function statTip(k){ const par=curPar(), len=state.segs.length, fruit=/[+-]/.tes
   if(k==='moves') return `Par is ${par}. Finish in ${par} moves for 3 stars, or within ${Math.ceil(par*1.3)} for 2.`;
   if(k==='flags') return 'Touch every flag before the burrow will let you in.';
   if(k==='keys') return 'Each key opens one gate, then it is used up.';
-  if(k==='hedges') return hedgesOpen(state)?'You are resting on a flower, so every hedge is open.':'Hedges open while any part of you rests on a flower.';
-  if(k==='weather') return state.raining?'Raining: leaves are up and puddles are full. A cloud stone stops it.':'Sunny: seedlings are small and puddles are dry. A cloud stone brings rain.';
-  if(k==='pollen'){ const P=POLL[state.pollen]; return P?`You carry ${P.n} pollen, so ${P.n} petal gates open for you. Another flower swaps your colour.`:'Crawl over a flower to get dusted in its pollen. Petal gates only open for their own colour.'; }
   if(len===state.exitLen) return 'You are just the right length for the burrow.';
   return `The burrow fits a worm of ${state.exitLen}. You are ${len}.`+(fruit?(len<state.exitLen?' A peach makes you longer.':' A mushroom makes you shorter.'):''); }
 document.querySelector('.hud-stats').addEventListener('keydown',e=>{ if((e.key==='Enter'||e.key===' ')&&e.target.closest('.stat')){ e.preventDefault(); e.target.click(); } });
@@ -1931,9 +1969,6 @@ function updateHUD(silent){
   if(flagsTotal){ const left=countChar(state,'C');
     chips.push(hudTile('flags',left===0&&'done',`Flags ${flagsTotal-left} of ${flagsTotal}`,`${sticker(ICON.flag)}<b>${flagsTotal-left}</b><small>/${flagsTotal}</small>`,left?'Flags':'All flags')); }
   if(map.includes('K')) chips.push(hudTile('keys','',`${state.keys} ${state.keys===1?'key':'keys'}`,`${sticker(ICON.key)}<b>${state.keys}</b>`,state.keys===1?'Key':'Keys',false));
-  if(map.includes('H')){ const op=hedgesOpen(state); chips.push(hudTile('hedges',op&&'done',`Hedges ${op?'open':'closed'}`,`${sticker(ICON.hedge)}<small>${op?'Open':'Shut'}</small>`,'Hedges')); }
-  if(/[PYUpyu]/.test(map)){ const P=POLL[state.pollen]; chips.push(hudTile('pollen','',P?`Dusted in ${P.n} pollen`:'No pollen yet',sticker(art('pollen'+(state.pollen||'0'),18)),P?P.n[0].toUpperCase()+P.n.slice(1):'Pollen')); }
-  if(map.includes('R')) chips.push(hudTile('weather','wx',state.raining?'Raining':'Sunny',sticker(state.raining?ICON.rain:ICON.sun),state.raining?'Rainy':'Sunny'));
   const ok=state.segs.length===state.exitLen;
   chips.push(hudTile('length',ok&&'done',`Length ${state.segs.length}, burrow fits ${state.exitLen}`,
     `${sticker(ICON.worm)}<b>${state.segs.length}</b><span class="to" aria-hidden="true">${ok?'=':'&rarr;'}</span><b>${state.exitLen}</b>`,ok?'Fits!':'Length'));
@@ -2131,6 +2166,7 @@ window.addEventListener('popstate',()=>{ if(ignorePop>0){ ignorePop--; return; }
 // add an entry on top. Returning players see the newest entry once as a card on the Play tab, new players never
 // do (squirm-news holds the last version seen); Settings > About lists them all.
 const NEWS=[
+  ['1.11.0','2026-10-31','Far fields',['A new chapter, Far fields: ten big, wide patches, and the toughest one yet at the end.','An explorer\'s hat, a spotted bandana, a Sage colour and a new badge to earn.','A tidier top bar: just what you need to finish the patch.','A smarter fancy mustache, and the worm looks right when it pops out of a tunnel and straight back in.']],
   ['1.10.0','2026-10-31','Pollen and soft soil',['Two new things in the garden: flowers dust you in pollen that opens petal gates of the same colour, and soft soil lets you burrow under yourself.','Three new chapters: Pollen paths, Soft soil and Tangled roots.','New hats (a petal bonnet, a miner\'s helmet and a gnome hat), digging goggles, a Sprout colour and three new badges.','Pick pollen and soft soil for your meadow patches too.']],
   ['1.9.0','2026-10-28','Two new chapters',['Chapters 17 and 18, Critter crossing and Harvest moon: 20 of the toughest patches yet.','Two new hats to earn: a snail shell and a pumpkin.','A Moonlight worm colour, a butterfly friend for growing the whole garden, and two new badges.']],
   ['1.8.0','2026-10-28','Handier buttons',['Snap a photo of your garden any time, from the new Photo button.','Hold Undo to start a patch over.','The win card has a Home button now.']],
@@ -2399,6 +2435,7 @@ const BADGES=[
   ['pollinator','pollenY','Busy pollinator','Get dusted with pollen 50 times.',counted(()=>[progress.stats.dusts,50])],
   ['knots','soil','Tied in knots','Burrow under yourself 25 times.',counted(()=>[progress.stats.burrows,25])],
   ['tangled','hat-gnome','Deep roots','Finish every patch in Tangled roots.',()=>chapterCleared(20)],
+  ['farfields','hat-explorer','Far and wide','Finish every patch in Far fields.',()=>chapterCleared(21)],
   ['collector','medal','Badge collector','Earn 40 other badges.',counted(()=>[Object.keys(progress.badges).filter(k=>k!=='collector').length,40])]];
 // returns the badges earned just now; quiet ones (earned before badges existed) don't celebrate
 function checkBadges(ctx,quiet){ const got=[];
@@ -2408,7 +2445,7 @@ function checkBadges(ctx,quiet){ const got=[];
   return got; }
 function bumpStat(k,n=1){ progress.stats[k]=(progress.stats[k]||0)+n; }
 // badges screen: a filter, groups of sticker tiles in a fading scroller, and a card for the picked badge
-const BADGE_GROUPS=[['Garden journey',['first','par','chapter','clean','sage','stars50','stars150','shiny','chapters','garden','golden','pure','notake','lightning','critters','harvest','tangled','allstars']],
+const BADGE_GROUPS=[['Garden journey',['first','par','chapter','clean','sage','stars50','stars150','shiny','chapters','garden','golden','pure','notake','lightning','critters','harvest','tangled','farfields','allstars']],
   ['Daily and meadow',['daily','streak7','month','sunrises','meadow','brave','fearless','unstoppable','legend']],
   ['Garden helpers',['flags','snacks','appetite','crumbs','gates','tunnels','rain','bridges','slides','wheee','hedges','pushes','flowerpower','pollinator','knots']],
   ['Just for fun',['moves','marathon','undos','taps','nap','owl','dawn','quick','photos','dressup','hatrack','rainbow','patterns','fashion','collector']]];
@@ -2592,8 +2629,8 @@ function drawThumb(cv,lv){ const g=cv.getContext('2d'); const h=lv.map.length, w
   for(let y=0;y<h;y++) for(let x=0;x<w;x++){ const c=lv.map[y][x]||' '; if(c===' ') continue; g.fillStyle=THUMB_COL[c]||(c>='1'&&c<='9'?'#7FCFEA':'#B9E49E'); g.fillRect(ox+x*s+1,oy+y*s+1,s-2,s-2); }
   g.fillStyle='#FF8FAF'; lv.worm.forEach(p=>{ g.fillRect(ox+p[0]*s+2,oy+p[1]*s+2,s-4,s-4); }); }
 // the garden map: one little scene per chapter, its patches stepping stones along a winding path
-const SCENE_COL=['#CFEFB8','#FFD9C2','#E2D6FA','#FFE9A8','#CBE7F7','#FBD3E0','#D3EFD0','#F3DCC4','#CFE1F8','#F8D8EA','#D9F2C9','#FFD6DE','#C9EEDF','#FFE0C2','#FFF0A8','#D9DEFC','#E8F2C0','#F9D2BE','#FDE0EA','#EED9C4','#DCEFD6'];
-const SCENE_DECO=[['sprout','flag'],['peach','mushroom'],['wheat','crack'],['key','sunflower'],['tunnel','sprout'],['drop','rain'],['bridge','drop'],['blossom','butterfly'],['tree','bee'],['daisy','leaf'],['snail','leaf'],['blossom','hedge'],['wetleaf','drop'],['balloon','bowtie'],['sunflower','stars'],['beetle','daisy'],['snail','beetle'],['moon','wheat'],['pollenY','butterfly'],['soil','sprout'],['pollenU','soil']];
+const SCENE_COL=['#CFEFB8','#FFD9C2','#E2D6FA','#FFE9A8','#CBE7F7','#FBD3E0','#D3EFD0','#F3DCC4','#CFE1F8','#F8D8EA','#D9F2C9','#FFD6DE','#C9EEDF','#FFE0C2','#FFF0A8','#D9DEFC','#E8F2C0','#F9D2BE','#FDE0EA','#EED9C4','#DCEFD6','#E6EDC8'];
+const SCENE_DECO=[['sprout','flag'],['peach','mushroom'],['wheat','crack'],['key','sunflower'],['tunnel','sprout'],['drop','rain'],['bridge','drop'],['blossom','butterfly'],['tree','bee'],['daisy','leaf'],['snail','leaf'],['blossom','hedge'],['wetleaf','drop'],['balloon','bowtie'],['sunflower','stars'],['beetle','daisy'],['snail','beetle'],['moon','wheat'],['pollenY','butterfly'],['soil','sprout'],['pollenU','soil'],['tree','flag']];
 // a few pebble outlines so the stepping stones don't all look stamped from one mould
 const STONES=['48% 52% 46% 54% / 56% 50% 50% 44%','54% 46% 52% 48% / 48% 56% 44% 52%','46% 54% 50% 50% / 52% 46% 54% 48%','52% 48% 56% 44% / 50% 54% 46% 50%','50% 50% 44% 56% / 46% 52% 48% 54%'];
 const LOCK_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M8 10.5V8.2a4 4 0 0 1 8 0v2.3"/><rect x="5" y="10.5" width="14" height="10" rx="3"/><path d="M12 14.6v2.2"/></svg>';

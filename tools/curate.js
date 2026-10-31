@@ -1,6 +1,7 @@
 // Generates candidate levels with the in-game generator, keeps only solvable ones
 // that use the required mechanic, and picks a spread by difficulty.
 // with snails or soil required, a candidate is kept only if that mechanic makes the solution longer
+// CAP=60000 raises the solver's state limit (for big maps, passed as "size":{"w":[9,10],"h":[9,11]} in the features JSON)
 // usage: [LO=0.3 HI=0.9] node tools/curate.js <tag> <allowedFeaturesJSON> <required|none> <easy,medium,hard> <count> <seed> <seconds>
 // example: LO=.5 HI=.95 node tools/curate.js ch12 '{"flags":true,"snails":true}' snails medium 5 1401 90
 // output: gen/gen_<tag>.json
@@ -18,7 +19,7 @@ const pool=[]; const t0=Date.now(); const seen=new Set();
 while(Date.now()-t0<(+tl||60)*1000){
   const diff=diffs[pool.length%diffs.length]; const r=rng(seed++);
   const L=genCandidate(r,diff,allowed); if(!L) continue; const key=L.map.join('/'); if(seen.has(key)) continue; seen.add(key);
-  const a=analyzeCapped(L,{easy:4000,medium:10000,hard:15000}[diff]); if(!a||!a.par||a.par<5) continue;
+  const a=analyzeCapped(L,+process.env.CAP||{easy:4000,medium:10000,hard:15000}[diff]); if(!a||!a.par||a.par<5) continue;
   const u=usage(L,a.sol); if(required!=='none' && !required.split('+').every(k=>u.has(k))) continue;
   // the only mechanics present must be allowed ones (generator guarantees) ; require flags if allowed.flags
   if(required.includes('snails')){ const L2={...L,map:L.map.map(r=>r.replace(/[<>^v]/g,'.'))}; const a2=analyzeCapped(L2,20000); if(!a2||!a2.par||a2.par>=a.par) continue; }

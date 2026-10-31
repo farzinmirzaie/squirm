@@ -9,7 +9,7 @@ truth for agents; README.md is the public overview. Two project skills cover the
 The player steers a fixed-length worm on a grid of garden tiles, one swipe per move. The worm can't
 reverse into its own body or crawl onto soil. To finish a patch it must touch every flag and enter the
 burrow at exactly the length shown on the burrow's sign. Mechanics layer on top, one chapter at a time
-(see the level format). 210 handmade patches in 21 chapters, an endless meadow and a daily patch.
+(see the level format). 220 handmade patches in 22 chapters, an endless meadow and a daily patch.
 
 Look: soft cartoon, pastel, cozy garden, perspective camera tilted about 56 degrees. Mobile-first with
 swipe controls (keyboard works too). Plain JavaScript and three.js, no framework.
@@ -64,7 +64,7 @@ src/shell.html    page markup + all CSS (sectioned, index at the top of <style>)
                   /*__FONTS__*/ /*__LOGIC__*/ /*__LEVELS__*/ /*__GAME__*/; inline theme + boot scripts
 src/logic.js      pure rules, no DOM: parseLevel, initState, step (advance), tileAt, partner, cloneState,
                   hedgesOpen, beetleAt, stateKey, POLLEN / PETALS / SOFT
-src/levels.js     LEVELS (210) + CHAPTER_NAMES (21)
+src/levels.js     LEVELS (220) + CHAPTER_NAMES (22)
 src/game.js       everything else, one IIFE with a table of contents at the top: rendering, input, UI,
                   audio, music, endless generator, hint solver
 src/sw.js         service worker template (version and file list filled in by the build)
@@ -227,14 +227,15 @@ Touch these, in order:
   (14 mixes the late mechanics: snails, flower buttons and wet leaves; 15 mixes everything) and 17-18
   (17 brings beetles together with snails and the early mechanics; 18 mixes everything and ends the
   hardest). 19 and 20 introduce pollen and soft soil, each mixed with earlier mechanics, and 21 mixes both
-  with everything. The first level of a chapter is a gentle introduction to its mechanic.
+  with everything. 22 uses earlier mechanics in a few at a time on big boards (8-10 wide) and ends the hardest
+  (curate them with `"size":{"w":[9,10],"h":[9,11]},"fill":0.42` in the features JSON and `CAP=60000`). The first level of a chapter is a gentle introduction to its mechanic.
 - Difficulty rises inside a chapter. Use `par * (1 - winnable)` from `tools/analyze.js` as a rough score.
 - Names are unique (tested) and never renamed once shipped.
 
 Chapters (`CHAPTER_NAMES`): 1 First sprouts, 2 Snack time, 3 Cracked earth, 4 Garden gates, 5 Tunnels,
 6 Rainy days, 7 Riverside, 8 Overgrown, 9 Tough patches, 10 Storm season, 11 Snail trail, 12 Hedge
 garden, 13 Dewy morning, 14 Garden party, 15 Grand bloom, 16 Beetle bumps, 17 Critter crossing, 18 Harvest
-moon, 19 Pollen paths, 20 Soft soil, 21 Tangled roots. Each has a hat (`HATS`).
+moon, 19 Pollen paths, 20 Soft soil, 21 Tangled roots, 22 Far fields. Each has a hat (`HATS`).
 
 ## Key systems in game.js
 
@@ -245,9 +246,14 @@ Sections are listed in the table of contents at the top of the file; each starts
   It may rotate 90 degrees for wide boards; swipes are mapped through the projected grid directions, so
   controls always match the screen. Lighting is always daytime.
 - **Worm body:** a tube rebuilt every frame through segment anchors (`updateWorm`), with tapered radius,
-  segment rings and a crawl bulge. Tunnels split the body into chains that dive into the ground.
+  segment rings and a crawl bulge. Tunnels split the body into chains that dive into the ground;
+  a chain that comes out of a tunnel and goes straight back into the same one is drawn as a hairpin, two strands side
+  by side, instead of one tube folding back on itself.
 - **Head:** expressions (`applyExpr`), blinking, an idle look-at-camera cycle, reactions, idle acts
   between looks (`startAct`: watch a butterfly, stretch, wiggle), a yawn, and asleep after 25 s.
+- **HUD:** `updateHUD` shows the moves meter with par and only chips for what isn't visible on the board:
+  flags touched, keys held and length vs the burrow (`hudTile`). Weather, hedges and pollen show in the scene, so
+  they get no chip; keep the row to about four.
 - **Moves and hints:** `tryMove` queues swipes and animates `step` events; `history` is the undo stack.
   There's no Restart button: a tap on Undo takes back one move, holding it fills a ring (`--hold` on
   `#undoBtn`, `HOLD_WAIT` + `HOLD_MS`) and then calls `restart()`; R still restarts. The hint solver

@@ -24,13 +24,13 @@ garden patches, touch every flag, and slip into the burrow at exactly the right 
 
 ## Features
 
-- **210 hand-made patches in 21 chapters.** Each chapter introduces one mechanic gently, and a
+- **220 hand-made patches in 22 chapters.** Each chapter introduces one mechanic gently, and a
   few mixed chapters combine them at rising difficulty. Every patch is checked by a solver, and
   par is always the shortest solution.
 - **A garden map** where patches are stepping stones on a winding path, with a preview of each patch.
 - **Endless meadow:** fresh generated patches at easy, medium or hard, with the mechanics you pick.
 - **A daily patch** that's the same for everyone, with streaks and an optional daily reminder.
-- **Stars, 57 badges and a wardrobe to fill:** 25 hats, 12 worm colours, 8 patterns (stripes,
+- **Stars, 58 badges and a wardrobe to fill:** 26 hats, 13 worm colours, 8 patterns (stripes,
   spots, glitter, a rainbow tail, ...) and extras like glasses, digging goggles and a butterfly friend.
 - **Photo mode** any time in a patch: the HUD steps aside, your worm turns to the camera, and you can
   move the camera freely, then save or share a snapshot of your garden.
@@ -70,6 +70,7 @@ New things arrive chapter by chapter:
 | 19 Pollen paths | flowers dust you in their colour, and petal gates only open for it |
 | 20 Soft soil | burrow under loose earth to cross your own body |
 | 21 Tangled roots | pollen and soft soil mixed with everything |
+| 22 Far fields | big, wide patches with a few mechanics each, the hardest in the garden |
 
 ## Develop
 
@@ -93,7 +94,7 @@ fonts next to it, and writes a service worker that precaches everything.
 ```
 src/shell.html   markup and all CSS
 src/logic.js     pure game rules, shared by the game, the hint solver and the tools
-src/levels.js    the 210 patches as small ASCII maps
+src/levels.js    the 220 patches as small ASCII maps
 src/game.js      rendering, input, UI, audio, the endless generator and the solver
 src/sw.js        service worker template
 public/          manifest, icons and install screenshots

@@ -38,7 +38,7 @@ never renamed) and the character table are in CLAUDE.md under "Level format". Th
    Give each a new, unique, cozy name (check with grep; progress is keyed by name). Keep `hint` short and
    friendly, or empty. A new chapter needs a name appended to `CHAPTER_NAMES`, a hat in `HATS` in
    `src/game.js` (with its `buildHat` model and a `hat-<id>` sticker in `ART`), and a row in README's
-   chapter table. Totals that mention 210 patches or 21 chapters (README, manifest, package.json,
+   chapter table. Totals that mention 220 patches or 22 chapters (README, manifest, package.json,
    the `<meta>` description in `shell.html`) need updating too.
 
 4. **Set par and check difficulty.** `npm run analyze` prints `index name par … states … winnable …%

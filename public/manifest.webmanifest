@@ -1,7 +1,7 @@
 {
   "name": "Squirm",
   "short_name": "Squirm",
-  "description": "A cozy turn-based worm puzzle in a little 3D garden. 210 patches, endless mode and a daily patch, fully offline.",
+  "description": "A cozy turn-based worm puzzle in a little 3D garden. 220 patches, endless mode and a daily patch, fully offline.",
   "id": "./",
   "start_url": "./",
   "scope": "./",
