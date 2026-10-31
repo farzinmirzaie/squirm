@@ -24,14 +24,14 @@ garden patches, touch every flag, and slip into the burrow at exactly the right 
 
 ## Features
 
-- **180 hand-made patches in 18 chapters.** Each chapter introduces one mechanic gently, and a
+- **210 hand-made patches in 21 chapters.** Each chapter introduces one mechanic gently, and a
   few mixed chapters combine them at rising difficulty. Every patch is checked by a solver, and
   par is always the shortest solution.
 - **A garden map** where patches are stepping stones on a winding path, with a preview of each patch.
 - **Endless meadow:** fresh generated patches at easy, medium or hard, with the mechanics you pick.
 - **A daily patch** that's the same for everyone, with streaks and an optional daily reminder.
-- **Stars, 54 badges and a wardrobe to fill:** 22 hats, 11 worm colours, 8 patterns (stripes,
-  spots, glitter, a rainbow tail, ...) and extras like glasses, a fancy mustache and a butterfly friend.
+- **Stars, 57 badges and a wardrobe to fill:** 25 hats, 12 worm colours, 8 patterns (stripes,
+  spots, glitter, a rainbow tail, ...) and extras like glasses, digging goggles and a butterfly friend.
 - **Photo mode** any time in a patch: the HUD steps aside, your worm turns to the camera, and you can
   move the camera freely, then save or share a snapshot of your garden.
 - **Undo (hold it to start over) and hints.** A built-in solver points the way when you're stuck.
@@ -67,6 +67,9 @@ New things arrive chapter by chapter:
 | 16 Beetle bumps | push beetles around, even onto flower buttons |
 | 17 Critter crossing | snails and beetles meet keys, tunnels, dry patches and wet leaves |
 | 18 Harvest moon | everything at once, the toughest patches in the garden |
+| 19 Pollen paths | flowers dust you in their colour, and petal gates only open for it |
+| 20 Soft soil | burrow under loose earth to cross your own body |
+| 21 Tangled roots | pollen and soft soil mixed with everything |
 
 ## Develop
 
@@ -90,7 +93,7 @@ fonts next to it, and writes a service worker that precaches everything.
 ```
 src/shell.html   markup and all CSS
 src/logic.js     pure game rules, shared by the game, the hint solver and the tools
-src/levels.js    the 180 patches as small ASCII maps
+src/levels.js    the 210 patches as small ASCII maps
 src/game.js      rendering, input, UI, audio, the endless generator and the solver
 src/sw.js        service worker template
 public/          manifest, icons and install screenshots

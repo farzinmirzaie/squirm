@@ -190,6 +190,35 @@ test('snails turn around at beetles', () => {
   assert.deepEqual([n.x, n.y, n.dx], [1, 0, -1], 'stays put and turns around');
 });
 
+test('a petal gate lets the head through only in its own pollen colour', () => {
+  assert.equal(step(initState(level(['.p.'], [[0, 0]])), 'E').blocked, 'petals');
+  let r = play(initState(level(['.Pp.'], [[0, 0]])), ['E']);
+  assert.equal(r.state.pollen, 'P');
+  assert.equal(r.ev.pollen, 'P');
+  r = play(r.state, ['E', 'E']);
+  assert.equal(tileAt(r.state, 2, 0), 'p', 'gates stay put');
+  assert.equal(step(play(initState(level(['.PyY'], [[0, 0]])), ['E']).state, 'E').blocked, 'petals');
+  // the next flower swaps the colour
+  r = play(initState(level(['.PY'], [[0, 0]])), ['E', 'E']);
+  assert.equal(r.state.pollen, 'Y');
+  assert.equal(r.ev.pollen, 'Y');
+});
+
+test('pollen colour is part of the solver key', () => {
+  const s = initState(level(['.P'], [[0, 0]]));
+  assert.notEqual(stateKey(s), stateKey({ ...s, pollen: 'P' }));
+});
+
+test('on soft soil the head burrows past its own body, never onto its neck', () => {
+  const worm = [[1, 0], [0, 0], [0, 1], [1, 1], [2, 1], [2, 2], [1, 2]];
+  const r = play(initState(level(['...', '.#.', '...'], worm)), ['S']);
+  assert.deepEqual(r.ev.cross, [1, 1]);
+  assert.equal(r.state.segs.filter(p => p[0] === 1 && p[1] === 1).length, 2);
+  assert.ok(!step(r.state, 'S').blocked, 'and crawls out the other side');
+  assert.equal(step(initState(level(['...', '...', '...'], worm)), 'S').blocked, 'body', 'plain grass still blocks');
+  assert.equal(step(initState(level(['.#.'], [[2, 0], [1, 0], [0, 0]])), 'W').blocked, 'body', 'no folding back');
+});
+
 test('level names are unique (progress is stored by name)', () => {
   const names = LEVELS.map(l => l.name);
   assert.equal(new Set(names).size, names.length);

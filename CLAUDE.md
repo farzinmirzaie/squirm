@@ -9,7 +9,7 @@ truth for agents; README.md is the public overview. Two project skills cover the
 The player steers a fixed-length worm on a grid of garden tiles, one swipe per move. The worm can't
 reverse into its own body or crawl onto soil. To finish a patch it must touch every flag and enter the
 burrow at exactly the length shown on the burrow's sign. Mechanics layer on top, one chapter at a time
-(see the level format). 180 handmade patches in 18 chapters, an endless meadow and a daily patch.
+(see the level format). 210 handmade patches in 21 chapters, an endless meadow and a daily patch.
 
 Look: soft cartoon, pastel, cozy garden, perspective camera tilted about 56 degrees. Mobile-first with
 swipe controls (keyboard works too). Plain JavaScript and three.js, no framework.
@@ -63,8 +63,8 @@ deploys are never cancelled.
 src/shell.html    page markup + all CSS (sectioned, index at the top of <style>); build slots
                   /*__FONTS__*/ /*__LOGIC__*/ /*__LEVELS__*/ /*__GAME__*/; inline theme + boot scripts
 src/logic.js      pure rules, no DOM: parseLevel, initState, step (advance), tileAt, partner, cloneState,
-                  hedgesOpen, beetleAt, stateKey
-src/levels.js     LEVELS (180) + CHAPTER_NAMES (18)
+                  hedgesOpen, beetleAt, stateKey, POLLEN / PETALS / SOFT
+src/levels.js     LEVELS (210) + CHAPTER_NAMES (21)
 src/game.js       everything else, one IIFE with a table of contents at the top: rendering, input, UI,
                   audio, music, endless generator, hint solver
 src/sw.js         service worker template (version and file list filled in by the build)
@@ -76,7 +76,7 @@ tools/analyze.js  BFS solver: par, state count, "winnable %" (share of reachable
 tools/verify-levels.js  solvable + par + pacing check for src/levels.js
 tools/load-generator.js runs the endless generator from game.js in Node (curate.js, tests)
 tools/curate.js   generates candidate levels with that generator, picks a difficulty spread -> gen/ (ignored)
-test/logic.test.js      rules (22 tests, incl. unique level names and stateKey)
+test/logic.test.js      rules (25 tests, incl. unique level names and stateKey)
 test/generator.test.js  daily/endless generation (3 tests)
 test/news.test.js       What's new vs package.json version, semver order
 test/smoke.js           headless Chromium: boot, win patch 1, saved stars, GPU memory, offline reload
@@ -192,6 +192,9 @@ Touch these, in order:
 | `B` / `H` | flower button / hedge: every hedge is open while any worm segment is on a flower |
 | `i` | wet leaf: the head keeps sliding the same way until it is off the leaves or blocked |
 | `O` | beetle (tile underneath is `.`): crawling into it pushes it one tile ahead |
+| `P` `Y` `U` | pollen flower (poppy, buttercup, bluebell): dusts the worm in that colour |
+| `p` `y` `u` | petal gate: the head may enter only while the worm wears the matching pollen |
+| `#` | soft soil: the worm burrows under it, so the head may cross its own body there |
 
 `rain` sets whether it starts raining. Rule details that the table doesn't capture:
 
@@ -208,23 +211,30 @@ Touch these, in order:
   (`'beetle'`). A beetle on a flower holds every hedge open (`beetleOnFlower`). `ev.pushed`
   (`{i, from, path}`) drives the animation. Beetle positions are in every solver key, sorted so identical
   beetles don't double the state count.
+- **Pollen** is `state.pollen` (`''` or `P`/`Y`/`U`, in the solver key). Entering a flower sets it (`ev.pollen` when
+  it changes); a petal gate checks it only when the head enters, and gates are never used up. Beetles can't be
+  pushed onto flowers or gates, snails don't go there.
+- **Soft soil:** when the head enters a `#` tile it may share it with exactly one body segment, and only one at
+  least four behind the head (the neck is index 2 in the new body, so folding back is still blocked). Crossing
+  sets `ev.cross`. A worm needs a length of five or more to cross itself at all.
 
 ### Rules for levels
 
 - Every level must be **solvable**, and `par` must equal the BFS shortest solution (`npm run verify`).
 - **Pacing:** chapters are 10 levels each. A mechanic may not appear before its chapter: flags from
   level 6, fruit 11, dry 21, keys 31, tunnels 41, rain 51, rivers 61, snails 101, flower buttons 111,
-  wet leaves 121, beetles 151. Chapters 8-10 mix earlier mechanics at rising difficulty, and so do 14-15
+  wet leaves 121, beetles 151, pollen 181, soft soil 191. Chapters 8-10 mix earlier mechanics at rising difficulty, and so do 14-15
   (14 mixes the late mechanics: snails, flower buttons and wet leaves; 15 mixes everything) and 17-18
   (17 brings beetles together with snails and the early mechanics; 18 mixes everything and ends the
-  hardest). The first level of a chapter is a gentle introduction to its mechanic.
+  hardest). 19 and 20 introduce pollen and soft soil, each mixed with earlier mechanics, and 21 mixes both
+  with everything. The first level of a chapter is a gentle introduction to its mechanic.
 - Difficulty rises inside a chapter. Use `par * (1 - winnable)` from `tools/analyze.js` as a rough score.
 - Names are unique (tested) and never renamed once shipped.
 
 Chapters (`CHAPTER_NAMES`): 1 First sprouts, 2 Snack time, 3 Cracked earth, 4 Garden gates, 5 Tunnels,
 6 Rainy days, 7 Riverside, 8 Overgrown, 9 Tough patches, 10 Storm season, 11 Snail trail, 12 Hedge
 garden, 13 Dewy morning, 14 Garden party, 15 Grand bloom, 16 Beetle bumps, 17 Critter crossing, 18 Harvest
-moon. Each has a hat (`HATS`).
+moon, 19 Pollen paths, 20 Soft soil, 21 Tangled roots. Each has a hat (`HATS`).
 
 ## Key systems in game.js
 
@@ -337,6 +347,14 @@ Sections are listed in the table of contents at the top of the file; each starts
   move), `pushBeetle` (turns to face the worm, scoots along its path with eyes shut), `beetleNope`
   (shakes its head at a blocked push), `updateBeetles` (blinks, watches the worm, scrabbles, looks
   content on a flower). Open hedges pull in from the tile edges so the change reads from above.
+- **Pollen and soft soil** (its own section): `makePollenFlower` (cupped bloom, fuzzy dome, floating motes in
+  `polItems`), `makePetalGate` (six tall petals closed into a bud; `setPetals(u,o)` folds them flat, `syncPetals`
+  opens a gate while the worm wears its colour or lies in it, `petalsNope` shakes it at a blocked move),
+  `POLL` / `polMat` for the three colours. The worm's tint: `updatePollen` eases `dustCol` / `dustAmt`, `dusty()`
+  blends the tube's vertex colours, and the patch worm's head has its own material (`MC.gameHead`) so the home
+  worm never changes; a few motes (`dustG`) drift round the body. Soft soil: `makeSoftTile` (a grass tile with a
+  low molehill; `setMound` / `syncSoil` swell it while the worm is in the tile, a collar for the head alone), and `updateWorm` sinks every body
+  anchor (never the head) by `soilDepth(v)`, so the tube dives under the heap. `syncHedges` calls both syncs.
 - **Ambient motion:** river tiles register in `flowTiles` (drifting leaf, glints, ripple, a water-babble
   loop); snails leave a slime strip (`trail`) that grows from tile to tile.
 - **Performance:** `watchSpeed` lowers `quality` (pixel ratio, shadow map size) when most frames take

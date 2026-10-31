@@ -12,7 +12,7 @@ function parseLevel(L){
 }
 function initState(L){
   const {w,h,grid,snails,beetles} = parseLevel(L);
-  return { w, h, grid, snails, beetles, segs: L.worm.map(p=>[p[0],p[1]]), keys:0, status:'play', moves:0, exitLen:L.exitLen, raining:!!L.rain };
+  return { w, h, grid, snails, beetles, segs: L.worm.map(p=>[p[0],p[1]]), keys:0, pollen:'', status:'play', moves:0, exitLen:L.exitLen, raining:!!L.rain };
 }
 function tileAt(s,x,y){ if(x<0||y<0||x>=s.w||y>=s.h) return ' '; return s.grid[y][x]; }
 function partner(s,x,y){
@@ -25,6 +25,12 @@ function snailAt(s,x,y){ return (s.snails||[]).some(n=>n.x===x&&n.y===y); }
 function beetleAt(s,x,y){ return (s.beetles||[]).findIndex(b=>b.x===x&&b.y===y); }
 // beetles can be pushed onto grass, flower buttons, dry patches and wet leaves (where they slide)
 const BEETLE_OK = { '.':1, 'B':1, 'x':1, 'i':1 };
+// pollen: a flower (P pink, Y yellow, U blue) dusts the worm in its colour; a petal gate (p, y, u)
+// lets the head through only while the worm wears that colour. Gates stay; colours change at the next flower.
+const POLLEN = { P:1, Y:1, U:1 }, PETALS = { p:1, y:1, u:1 };
+// soft soil (#): the worm burrows through it, so the head may cross its own body there (one pass over
+// another, never more), but never fold back onto its neck
+const SOFT = '#';
 function countChar(s,c){ let n=0; for(const r of s.grid) for(const t of r) if(t===c) n++; return n; }
 
 // flower buttons: every hedge is open while any part of the worm, or a beetle, rests on a flower
@@ -36,7 +42,7 @@ function hedgesOpen(s){ return onFlower(s,s.segs)||beetleOnFlower(s,s.beetles); 
 // from the worm and beetles, so they add nothing; beetles are sorted so identical ones don't double up.
 function stateKey(s){
   return s.segs.map(p=>p[0]+','+p[1]).join(';')+'|'+s.grid.map(r=>r.join('')).join('')+'|'+s.keys+(s.raining?'r':'')+'|'+
-    (s.snails||[]).map(n=>n.x+','+n.y+','+n.dx+','+n.dy).join(';')+'|'+(s.beetles||[]).map(b=>b.x+','+b.y).sort().join(';');
+    (s.snails||[]).map(n=>n.x+','+n.y+','+n.dx+','+n.dy).join(';')+'|'+(s.beetles||[]).map(b=>b.x+','+b.y).sort().join(';')+'|'+(s.pollen||'');
 }
 
 // One crawl of the head by one tile, with everything it touches. No snails, no win check:
@@ -54,6 +60,7 @@ function advance(s, dirKey){
   if(t==='G' && s.keys===0) return { blocked:'locked' };
   if(t==='w' && s.raining) return { blocked:'flooded' };
   if(t==='s' && !s.raining) return { blocked:'sprout' };
+  if(PETALS[t] && s.pollen!==t.toUpperCase()) return { blocked:'petals' };
   const ev = { type:'move', from: head, via:null, portal:false };
   let dest = [nx,ny];
   if(t>='1' && t<='9'){ const p = partner(s,nx,ny); if(p){ dest=p; ev.portal=true; ev.via=[nx,ny]; } }
@@ -63,7 +70,10 @@ function advance(s, dirKey){
   if(t==='+') newLen = len+1;
   if(t==='-') newLen = Math.max(1,len-1);
   const newSegs = [dest, ...s.segs].slice(0,newLen);
-  for(let i=1;i<newSegs.length;i++) if(newSegs[i][0]===dest[0]&&newSegs[i][1]===dest[1]) return { blocked:'body' };
+  const hits=[]; for(let i=1;i<newSegs.length;i++) if(newSegs[i][0]===dest[0]&&newSegs[i][1]===dest[1]) hits.push(i);
+  // on soft soil the head may burrow past one stretch of its own body (index 2 is the neck: no folding back)
+  if(hits.length && !(tileAt(s,dest[0],dest[1])===SOFT && hits.length===1 && hits[0]>=4)) return { blocked:'body' };
+  if(hits.length) ev.cross = [dest[0],dest[1]];
   // a beetle in the way gets pushed one tile on (sliding further over wet leaves), if there's room for it
   let beetles = s.beetles||[];
   const bi = beetleAt(s,dest[0],dest[1]);
@@ -87,6 +97,7 @@ function advance(s, dirKey){
   if(t==='+'||t==='-'){ ns.grid[ny][nx]='.'; ev.eaten=t; }
   if(t==='C'){ ns.grid[ny][nx]='c'; ev.eaten='C'; }
   if(t==='R'){ ns.raining=!s.raining; ev.rain=ns.raining; }
+  if(POLLEN[t] && s.pollen!==t){ ns.pollen=t; ev.pollen=t; }
   if(t==='L'){ ev.swung=[]; for(let yy=0;yy<ns.h;yy++) for(let xx=0;xx<ns.w;xx++){ const c=ns.grid[yy][xx]; if(c!=='='&&c!=='|') continue;
       if(newSegs.some(q=>q[0]===xx&&q[1]===yy)) continue; ns.grid[yy][xx]= c==='='?'|':'='; ev.swung.push([xx,yy]); } }
   // crumbling tiles fall once nothing stands on them
@@ -129,4 +140,4 @@ function step(s, dirKey){
   }
   return { state:ns, ev };
 }
-if(typeof module!=='undefined') module.exports = { DIRS, initState, step, tileAt, countChar, cloneState, hedgesOpen, beetleAt, stateKey };
+if(typeof module!=='undefined') module.exports = { DIRS, initState, step, tileAt, countChar, cloneState, hedgesOpen, beetleAt, stateKey, POLLEN, PETALS, SOFT };

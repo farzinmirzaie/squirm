@@ -35,6 +35,9 @@ const C = {
   flag:0xF27DA2, flagDone:0x79C95F, pole:0xB98A62,
   mushRed:0xF07A6A, topHat:0x4E3F5C, rainHat:0xFFD04A, brolly:0x9FD2F2, bowDark:0xE36A8C, bowKnot:0xC24E72,
   straw:0xF3D18A, strawDark:0xD9B166, acornCap:0x8A5A36, acornNut:0xC98E52, partyA:0x9FD2F2, partyB:0xFFF1A8, crown:0xF5C14E, beret:0xB79CF2, beanie:0x8FD0B0, beanieRib:0x6FB894, beetle:0x7C8CF0, beetleDark:0x5566C8, beetleHead:0x3E3F84, beetleSpot:0xB5C0FA, beetleLeg:0x3A2F5E, sunPetal:0xFFD34D, sunCore:0x7A4E2E, shellHat:0xC9A0E6, shellSpiral:0xA67CCB, pumpkin:0xF7A05A, pumpkinRib:0xE0843F,
+  pollenP:0xFF7A6B, pollenPLight:0xFFC6BC, pollenPDark:0xC94A43, pollenY:0xFFC63A, pollenYLight:0xFFE9A6, pollenYDark:0xD08A1C, pollenU:0x63A9F2, pollenULight:0xC4E2FF, pollenUDark:0x3E73C2,
+  miner:0xF5A33A, minerDark:0xD9822A, lamp:0xFFF6C8, gnome:0xE4574C, goggle:0xA9703F, lensBlue:0xBFE6F7,
+  softSoil:0xB07850, softRidge:0xCB9468, softClod:0x8A5A3A,
   wetLeaf:0x8EE0B4, leafVein:0x5DBA8A, dew:0xEAF8FF, hedge:0x5FA64F, hedgeDark:0x4E8F40, petalB:0xF7A8C4,
   burrow:0x3A2A22, mound:0xB07B57, ready:0x8EDB72, line:0x5B4436,
   chef:0xFFFBF2, wizard:0x8E7BE0, cowboy:0xC98E52, cowboyBand:0x8A5A36, phones:0xF7A8C4, phonesBand:0x6E5F86,
@@ -125,6 +128,12 @@ const SFX={
   hedgeClose:()=>{ noise(.26,{freq:500,vol:.08,q:1.2,slide:1.6}); tone(294,.18,{type:'triangle',vol:.05,slide:1.2}); },
   yawn:()=>{ tone(330,.7,{type:'sine',vol:.05,slide:.6,attack:.25}); noise(.6,{freq:500,ftype:'lowpass',vol:.03,slide:.7}); },
   push:()=>{ noise(.22,{freq:420,ftype:'lowpass',vol:.12,slide:.6}); tone(196,.16,{type:'triangle',vol:.09,slide:.8}); tone(392,.12,{type:'sine',vol:.05,slide:1.3,delay:.1}); },
+  // pollen: a soft puff with a shimmer; petal gates bloom open with a rising pluck and fold shut with a falling one
+  pollen:()=>{ noise(.22,{freq:2400,vol:.05,q:.8,slide:.6}); [1175,1480,1760].forEach((f,i)=>tone(f,.16,{vol:.05,delay:.04+i*.05})); },
+  bloom:()=>{ tone(523,.14,{type:'triangle',vol:.08,slide:1.5}); tone(784,.22,{vol:.07,delay:.07}); noise(.2,{freq:1600,vol:.04,q:1.5,slide:.6}); },
+  bud:()=>{ tone(659,.14,{type:'triangle',vol:.06,slide:.6}); noise(.16,{freq:900,vol:.04,q:1.5,slide:1.4}); },
+  // soft soil: an earthy shuffle as the worm burrows under itself
+  dig:()=>{ noise(.32,{freq:300,ftype:'lowpass',vol:.2,slide:.6}); tone(150,.2,{type:'triangle',vol:.07,slide:.7}); tone(440,.12,{vol:.04,delay:.18,slide:1.3}); },
   snail:()=>{ tone(330,.14,{type:'sine',vol:.05,slide:.75}); tone(250,.12,{type:'sine',vol:.035,slide:.8,delay:.08}); },
 };
 // ---------- music: a slow generated tune that follows the time of day and the rain ----------
@@ -451,6 +460,7 @@ function makeBridge(ch){ const br=new THREE.Group(); const wm=m('plank'), dm=m('
   br.rotation.y = ch==='|'?Math.PI/2:0; return br; }
 function makeTile(x,y,ch){
   const g=new THREE.Group(); const dry=ch==='x';
+  if(ch===SOFT){ makeSoftTile(g,x,y); g.position.copy(wp(x,y)); board.add(g); return g; }
   if(ch==='~'||ch==='='||ch==='|'){ waterTile(g,x,y); if(ch!=='~'){ const br=makeBridge(ch); g.add(br); g.userData.bridge=br; } g.userData.river=true; g.position.copy(wp(x,y)); board.add(g); return g; }
   if(ch==='i'){ // a big wet leaf lying on the grass: slippery
     const top=new THREE.Mesh(TURF,m('turf2')); top.position.y=-.15; top.receiveShadow=true; outlineBox(top,.02,.94,.3,.94); g.add(top);
@@ -584,6 +594,8 @@ function makeItem(x,y,ch){
     const label=new THREE.Mesh(new THREE.PlaneGeometry(.28,.28),new THREE.MeshBasicMaterial({map:numberTex(state.exitLen),transparent:true})); label.position.set(0,0,.04); face.add(label);
     for(let i=0;i<3;i++){ const t=new THREE.Mesh(new THREE.ConeGeometry(.03,.12,6),m('leaf')); const a=i*2.1+.4; t.position.set(Math.cos(a)*.36,.05,Math.sin(a)*.3); t.rotation.z=(i-1)*.3; t.castShadow=true; g.add(t); }
     g.userData.rim=rim; g.userData.sprite=sign; g.userData.signs=[sign]; }
+  else if(POLLEN[ch]) makePollenFlower(g,ch,x,y);
+  else if(PETALS[ch]) makePetalGate(g,ch,x,y);
   else return null;
   faceCamera(g); board.add(g); return g;
 }
@@ -596,7 +608,7 @@ function disposeTree(root){
   root.traverse(o=>{ if(o.geometry&&!keepG.has(o.geometry)) o.geometry.dispose();
     for(const mt of o.material?[].concat(o.material):[]){ if(keepM.has(mt)) continue; if(mt.map&&!keepT.has(mt.map)) mt.map.dispose(); mt.dispose(); } }); }
 function buildBoard(){
-  disposeTree(board); disposeTree(fx); board.clear(); fx.clear(); cells=[]; flowTiles=[];
+  disposeTree(board); disposeTree(fx); board.clear(); fx.clear(); cells=[]; flowTiles=[]; polItems=[]; snapPollen();
   for(let y=0;y<state.h;y++){ const row=[]; for(let x=0;x<state.w;x++){
     const ch=state.grid[y][x]; row.push({ch, tile: ch===' '?null:makeTile(x,y,ch), item: makeItem(x,y,ch)}); } cells.push(row); }
   buildGarden(); buildRain(); syncWeather(false); buildSnails(); buildBeetles(); syncHedges(false);
@@ -608,7 +620,8 @@ function syncHedges(animate){ if(!state) return; const open=hedgesOpen(state); l
     // an open hedge sinks to a low cushion and pulls in from the tile edges, so grass shows round it even from above
     if(u.hedge){ const want=occupied(x,y)?.06:open?.22:1, wide=want<1?.66:1; if(u.hedgeH!==want){ if(u.hedgeH!==undefined) changed=true; u.hedgeH=want; const h=u.hedge, s0=h.scale.y, w0=h.scale.x;
         if(animate) tween(300,e=>{ h.scale.y=Math.max(.06,s0+(want-s0)*e); const w=w0+(wide-w0)*e; h.scale.x=h.scale.z=w; h.position.y=-(1-h.scale.y)*.06; }); else { h.scale.set(wide,want,wide); h.position.y=-(1-want)*.06; } } } }
-  if(changed&&animate){ sfx(open?'hedgeOpen':'hedgeClose'); if(open) bumpStat('hedges'); } }
+  if(changed&&animate){ sfx(open?'hedgeOpen':'hedgeClose'); if(open) bumpStat('hedges'); }
+  syncPetals(animate); syncSoil(animate); }
 function removeObj(o){ if(o&&o.parent) o.parent.remove(o); }
 // ---------- snails ----------
 let snailMeshes=[];
@@ -782,10 +795,87 @@ function burst(pos,color){
     const a=i/10*Math.PI*2, v=new THREE.Vector3(Math.cos(a)*.035,.05+Math.random()*.03,Math.sin(a)*.035);
     tween(520,(e,k)=>{ p.position.add(v); v.y-=.006; p.scale.setScalar(Math.max(.01,1-k)); },kill(p)); }
 }
-function dustPuff(pos){ if(reduceMotion) return; const mt=toon(0xE6D2A8,{transparent:true,opacity:.9,depthWrite:false});
+function dustPuff(pos,col=0xE6D2A8){ if(reduceMotion) return; const mt=toon(col,{transparent:true,opacity:.9,depthWrite:false});
   for(let i=0;i<8;i++){ const p=new THREE.Mesh(sph(.09,12,8),mt), a=i/8*Math.PI*2+Math.random()*.5, s0=.75+Math.random()*.5; p.position.copy(pos); fx.add(p); const done=kill(p);
     tween(650,(e,k)=>{ const r=.16+e*.34; p.position.set(pos.x+Math.cos(a)*r,pos.y+Math.sin(Math.min(1,k*1.5)*Math.PI/2)*.2,pos.z+Math.sin(a)*r); p.scale.setScalar(s0*(.55+e*.85)); mt.opacity=.85*Math.min(1,(1-k)*2); },
       ()=>{ done(); if(i===7) mt.dispose(); }); } }
+
+// ---------- pollen and soft soil ----------
+// Pollen flowers (P poppy, Y buttercup, U bluebell) are low cupped blooms with a fuzzy centre and motes above.
+// Petal gates (p, y, u) are tall closed buds that fold down flat while the worm wears their colour or lies in them.
+// The worm's body and head blend toward its pollen colour, with a few motes drifting round it.
+const POLL={P:{n:'poppy',col:C.pollenP,light:C.pollenPLight,dark:C.pollenPDark},Y:{n:'buttercup',col:C.pollenY,light:C.pollenYLight,dark:C.pollenYDark},U:{n:'bluebell',col:C.pollenU,light:C.pollenULight,dark:C.pollenUDark}};
+const polMat=(ch,k='col')=>MC['pol'+ch+k]||(MC['pol'+ch+k]=toon(POLL[ch][k]));
+let polItems=[];
+function makePollenFlower(g,ch,x,y){ const fl=new THREE.Group(); fl.position.y=.02; fl.rotation.y=(x*3+y*5)%6*.5; g.add(fl); g.userData.pollenFlower=fl; g.userData.pcol=ch;
+  for(let i=0;i<3;i++){ const a=i/3*Math.PI*2+.5, lf=new THREE.Mesh(sph(.12,14,8),m('leaf')); lf.scale.set(1.7,.16,.6); lf.position.set(Math.cos(a)*.31,0,Math.sin(a)*.31); lf.rotation.y=-a; outline(lf,.01); fl.add(lf); }
+  // six cupped petals, tips turned up, round a fuzzy dome dotted with darker stamens
+  for(let i=0;i<6;i++){ const pv=new THREE.Group(); pv.rotation.y=-i/6*Math.PI*2; fl.add(pv);
+    const pt=new THREE.Mesh(sph(.13,18,12),polMat(ch)); pt.scale.set(1.35,.32,.95); pt.position.set(.19,.08,0); pt.rotation.z=.42; pt.castShadow=true; outline(pt,.012); pv.add(pt); }
+  const c=new THREE.Mesh(sph(.13,20,14),polMat(ch,'light')); c.scale.set(1,.62,1); c.position.y=.11; outline(c,.012); fl.add(c);
+  for(let i=0;i<11;i++){ const a=i*2.4, r=i?.035+(i%3)*.027:0, d=new THREE.Mesh(sph(.02,8,6),polMat(ch,'dark')); d.position.set(Math.cos(a)*r,.11+.0806*Math.sqrt(Math.max(0,1-(r/.13)**2)),Math.sin(a)*r); fl.add(d); }
+  const motes=[]; for(let i=0;i<4;i++){ const mo=new THREE.Mesh(sph(.026,8,6),polMat(ch,'light')); mo.userData.ph=i*1.6+x+y*.7; fl.add(mo); motes.push(mo); }
+  polItems.push({motes,fl}); }
+function makePetalGate(g,ch,x,y){ const P=ch.toUpperCase(), gt=new THREE.Group(); gt.rotation.y=(x+y)%2*.5; g.add(gt); g.userData.petalGate=gt; g.userData.pcol=P;
+  // a ring of the colour on the grass, so even a folded gate says whose it is
+  const ring=new THREE.Mesh(new THREE.RingGeometry(.3,.43,36),polMat(P,'light')); ring.rotation.x=-Math.PI/2; ring.position.y=.006; ring.receiveShadow=true; gt.add(ring);
+  const base=new THREE.Mesh(new THREE.CylinderGeometry(.2,.24,.07,20),m('leaf')); base.position.y=.035; outline(base,.012); gt.add(base);
+  for(let i=0;i<6;i++){ const a=(i+.5)/6*Math.PI*2, se=new THREE.Mesh(sph(.08,10,8),m('leaf')); se.scale.set(1.5,.3,.7); se.position.set(Math.cos(a)*.26,.03,Math.sin(a)*.26); se.rotation.y=-a; gt.add(se); }
+  const petals=[]; for(let i=0;i<6;i++){ const h=new THREE.Group(); h.rotation.y=-i/6*Math.PI*2; gt.add(h);
+    const pv=new THREE.Group(); pv.position.set(.16,.05,0); h.add(pv);
+    const pt=new THREE.Mesh(sph(.18,20,14),polMat(P)); pt.scale.set(.32,2.3,1.15); pt.castShadow=true; outline(pt,.012); pv.add(pt);
+    const vein=new THREE.Mesh(sph(.18,12,10),polMat(P,'light')); vein.scale.set(.2,.8,.16); vein.position.x=-.14; pt.add(vein); petals.push(pv); }
+  g.userData.petals=petals; setPetals(g.userData,0); }
+// o: 0 is a closed bud (tips leaning in to meet), 1 is folded flat round the edge of the tile
+function setPetals(u,o){ for(const pv of u.petals){ pv.rotation.z=.27+(-1.45-.27)*o; const pt=pv.children[0], sy=2.3-(2.3-.85)*o; pt.scale.y=sy; pt.position.y=.18*sy; } u.open=o; }
+function syncPetals(animate){ if(!state) return; let opened=false, closed=false;
+  for(let y=0;y<state.h;y++) for(let x=0;x<state.w;x++){ const it=cells[y]&&cells[y][x]&&cells[y][x].item; if(!it||!it.userData.petalGate) continue; const u=it.userData;
+    const want=state.pollen===u.pcol||occupied(x,y)?1:0; if(u.want===want) continue; const first=u.want===undefined; u.want=want;
+    if(animate&&!first){ const o0=u.open; if(want){ opened=true; burst(wp(x,y,.5),POLL[u.pcol].light); } else closed=true;
+      // opening overshoots a little, like a bloom springing open
+      tween(want?460:300,(e,k)=>setPetals(u,o0+(want-o0)*(want?Math.min(1.08,e*1.08)-Math.max(0,e-.92):e))); }
+    else setPetals(u,want); }
+  if(opened) sfx('bloom'); else if(closed) sfx('bud'); }
+function petalsNope(x,y){ const it=cells[y]&&cells[y][x]&&cells[y][x].item; if(!it||!it.userData.petalGate||reduceMotion) return; const gt=it.userData.petalGate, r0=gt.rotation.y;
+  tween(320,(e,k)=>{ gt.rotation.y=r0+Math.sin(k*Math.PI*4)*.12*(1-k); },()=>{ gt.rotation.y=r0; }); }
+// soft soil: a tilled bed (raised like grass, so it reads as somewhere to go) with a heap that rises while the worm is under it
+function softDome(){ const g=new THREE.SphereGeometry(.4,26,10,0,Math.PI*2,0,Math.PI/2), pa=g.attributes.position, v=new THREE.Vector3();
+  for(let i=0;i<pa.count;i++){ v.fromBufferAttribute(pa,i); const a=Math.atan2(v.z,v.x), f=1+.07*Math.sin(5*a)+.04*Math.sin(9*a+1.3)+.05*Math.sin(v.y*30); pa.setXYZ(i,v.x*f,v.y,v.z*f); }
+  g.computeVertexNormals(); return g; }
+function makeSoftTile(g,x,y){ const top=new THREE.Mesh(TURF,(x+y)%2?m('turf1'):m('turf2')); top.position.y=-.15; top.receiveShadow=true; top.castShadow=true; outlineBox(top,.02,.94,.3,.94); g.add(top);
+  // a low molehill of loose earth on the grass; it swells up while the worm burrows under it
+  const md=new THREE.Group(); md.rotation.y=(x*7+y*3)%6; g.add(md); g.userData.mound=md;
+  const dome=new THREE.Mesh(GC.softDome||(GC.softDome=softDome()),m('softSoil')); dome.castShadow=true; dome.receiveShadow=true; outline(dome,.012,.4); md.add(dome);
+  for(let i=0;i<9;i++){ const a=i*2.4, r=i<3?.1+i*.04:.24+(i%3)*.05, c=new THREE.Mesh(sph(i%2?.045:.035,10,8),i%3?m('softClod'):m('softRidge')); c.position.set(Math.cos(a)*r,.0,Math.sin(a)*r); c.userData.r=r; c.scale.set(1,.65,.85); md.add(c); }
+  g.userData.moundH=-1; setMound(g.userData,0); }
+// v: 0 a flat molehill, 1 a heap with the worm under it (a little more for two passes), .45 a collar round the head
+function setMound(u,v){ const md=u.mound, h=.17+.33*Math.min(1.25,v), w=.82+.18*Math.min(1,v); md.children[0].scale.set(w,h,w);
+  for(const c of md.children.slice(1)){ const r=c.userData.r*w, k=Math.max(0,1-(r/.4)**2); c.position.y=.4*h*Math.sqrt(k)-.005; } u.moundV=v; }
+// how deep an anchor at world position v sits under soft soil: 1 in the middle of a soft tile, easing to 0 at its edge
+function soilDepth(v){ const gx=v.x+(state.w-1)/2, gy=v.z+(state.h-1)/2, x=Math.round(gx), y=Math.round(gy);
+  if(tileAt(state,x,y)!==SOFT) return 0; const d=Math.max(Math.abs(gx-x),Math.abs(gy-y)); return 1-Math.min(1,Math.max(0,(d-.12)/.42)); }
+function syncSoil(animate){ if(!state) return;
+  for(let y=0;y<state.h;y++) for(let x=0;x<state.w;x++){ const t=cells[y]&&cells[y][x]&&cells[y][x].tile; if(!t||!t.userData.mound) continue; const u=t.userData;
+    let n=0, head=false; state.segs.forEach((p,i)=>{ if(p[0]===x&&p[1]===y){ if(i) n++; else head=true; } });
+    const want=n?(n>1?1.25:1):head?.45:0; if(u.moundH===want) continue; u.moundH=want; const v0=u.moundV;
+    if(animate) tween(260,e=>setMound(u,v0+(want-v0)*e)); else setMound(u,want); } }
+// the worm's pollen: its colour eases in, and a few motes drift round the body while it carries some
+const DUST_K=.78, dustCol=new THREE.Color(), dustTarget=new THREE.Color(); let dustAmt=0, dustG=null;
+MC.gameHead=toon(C.head);
+const dusty=c=>dustAmt>.002?c.lerp(dustCol,DUST_K*dustAmt):c;
+function snapPollen(){ const p=state&&POLL[state.pollen]; dustAmt=p?1:0; if(p) dustCol.setHex(p.col); }
+function pollenPuff(pos,ch){ if(reduceMotion) return; const mt=polMat(ch,'light');
+  for(let i=0;i<14;i++){ const p=new THREE.Mesh(sph(.03,8,6),mt), a=Math.random()*Math.PI*2, r=.25+Math.random()*.35, up=.25+Math.random()*.35; p.position.copy(pos); fx.add(p);
+    tween(700+i*15,(e,k)=>{ p.position.set(pos.x+Math.cos(a)*r*e,pos.y+Math.sin(k*Math.PI)*up,pos.z+Math.sin(a)*r*e); p.scale.setScalar(Math.max(.01,1.4*(1-k*k))); },kill(p)); } }
+function updatePollen(dt){ if(!state) return; const sec=dt/1000, k=1-Math.exp(-sec*5), p=POLL[state.pollen];
+  if(p){ dustTarget.setHex(p.col); if(dustAmt<.02) dustCol.copy(dustTarget); else dustCol.lerp(dustTarget,k); }
+  dustAmt+=((p?1:0)-dustAmt)*k; MC.gameHead.color.copy(m('head').color).lerp(dustCol,DUST_K*dustAmt);
+  if(!dustG){ dustG=new THREE.Group(); wormG.add(dustG); const mt=MC.dustMote=new THREE.MeshBasicMaterial({color:0xffffff});
+    for(let i=0;i<7;i++){ const mo=new THREE.Mesh(sph(.028,8,6),mt); mo.userData.ph=i*.9; dustG.add(mo); } }
+  dustG.visible=dustAmt>.03&&!reduceMotion; if(dustG.visible){ MC.dustMote.color.copy(dustCol).lerp(WHITE,.4); const n=segMeshes.length;
+    dustG.children.forEach((mo,i)=>{ const s=segMeshes[Math.min(n-1,Math.floor(i*n/7))]; if(!s){ mo.visible=false; return; } const ph=mo.userData.ph+idleT*1.3;
+      mo.visible=soilDepth(s.position)<.3; mo.position.set(s.position.x+Math.cos(ph*1.7)*.24,s.position.y+.18+Math.sin(ph*2.3)*.1,s.position.z+Math.sin(ph*1.7)*.24); mo.scale.setScalar(dustAmt*(.7+.3*Math.sin(ph*3))); }); }
+  for(const it of polItems) it.motes.forEach((mo,i)=>{ const ph=mo.userData.ph+idleT*.9; mo.position.set(Math.cos(ph)*.13,.3+.08*Math.sin(ph*1.7+i)+i*.03,Math.sin(ph)*.13); }); }
 
 // ---------- weather ----------
 let wet=0, rainLines=null, rainGain=null, riverGain=null;
@@ -848,7 +938,8 @@ function segY(i,n){ return i===0?HEAD_R:segR(i,n); }
 function makeSeg(i,parent){
   const g=new THREE.Group();
   if(i===0){
-    const head=new THREE.Mesh(sph(HEAD_R,36,28),m('head')); head.castShadow=true; outline(head,.03); g.add(head); g.userData.body=head;
+    // the worm in a patch has its own head material, so pollen can tint it without touching the home worm
+    const head=new THREE.Mesh(sph(HEAD_R,36,28),parent?m('head'):MC.gameHead); head.castShadow=true; outline(head,.03); g.add(head); g.userData.body=head;
     const face=new THREE.Group(); head.add(face);
     const F={eyes:[],arcs:[],squints:[],pupils:[],mouths:{}}; g.userData.face=F;
     const dark=m('pupil');
@@ -939,7 +1030,7 @@ const cheekMat=MC.wormCheek=new THREE.MeshBasicMaterial({color:C.cheek,transpare
 // colour under the same light, so any difference shows as a seam at the neck.
 // hats, earned by finishing chapters: [id, name, chapter index that unlocks it]. Each is built once and cloned.
 const HATS=[['none','No hat',-1],['crown','Flower crown',0],['mush','Mushroom cap',1],['straw','Straw hat',2],['tophat','Top hat',3],['leaf','Leaf cap',4],['rainhat','Rain hat',5],
-  ['acorn','Acorn cap',6],['bee','Bee antennae',7],['party','Party hat',8],['brolly','Tiny umbrella',9],['beret','Dewdrop beret',10],['bow','Ribbon bow',11],['gold','Garden crown',12],['beanie','Pompom beanie',13],['sunflower','Sunflower',14],['horn','Beetle horn',15],['shell','Snail shell',16],['pumpkin','Pumpkin hat',17],
+  ['acorn','Acorn cap',6],['bee','Bee antennae',7],['party','Party hat',8],['brolly','Tiny umbrella',9],['beret','Dewdrop beret',10],['bow','Ribbon bow',11],['gold','Garden crown',12],['beanie','Pompom beanie',13],['sunflower','Sunflower',14],['horn','Beetle horn',15],['shell','Snail shell',16],['pumpkin','Pumpkin hat',17],['bonnet','Petal bonnet',18],['miner','Miner\'s helmet',19],['gnome','Gnome hat',20],
   ['chef','Chef hat',-2,'Eat 100 snacks',()=>(progress.stats.fruit||0)>=100],
   ['wizard','Wizard hat',-2,'30 patches, no hints',()=>Object.keys(progress.clean).length>=30],
   ['cowboy','Cowboy hat',-2,'Clear 15 meadow patches',()=>['easy','medium','hard'].reduce((a,d)=>a+progress.endless[d].cleared,0)>=15],
@@ -959,7 +1050,8 @@ const EXTRAS=[['none','Nothing','',()=>true],
   ['hearts','Heart glasses','Collect 200 stars',()=>starTotal()>=200],
   ['monocle','Monocle','50 patches, no hints',()=>Object.keys(progress.clean).length>=50],
   ['stars','Star shades','3 stars on 60 patches',()=>LEVELS.filter(l=>progress.stars[l.name]===3).length>=60],
-  ['butterfly','Butterfly friend','Finish every garden patch',()=>allCleared()]];
+  ['butterfly','Butterfly friend','Finish every garden patch',()=>allCleared()],
+  ['goggles','Digging goggles','Burrow under yourself 30 times',()=>(progress.stats.burrows||0)>=30]];
 let extraId=store.get('squirm-extra')||'none';
 const extraOn=()=>{ const e=EXTRAS.find(x=>x[0]===extraId); return e&&e[3]()?extraId:'none'; };
 const extraArt=(id,size=36)=>art(id==='none'?'hat-none':'extra-'+id,size);
@@ -1015,6 +1107,14 @@ function buildExtra(id){ // frames sit in front of the eyes even when they widen
     const kp=new THREE.Vector3(.215,-.245,.18), knot=new THREE.Mesh(sph(.068,14,10),m('mushRed')); knot.position.copy(kp); knot.scale.set(1,.85,.8); outline(knot,.01); g.add(knot);
     for(const [dx,dy,dz,rz,rx] of [[.075,-.065,0,.9,.15],[.025,-.075,.06,.35,-.35]]){ const t=new THREE.Mesh(sph(.05,14,10),m('mushRed')); t.position.set(kp.x+dx,kp.y+dy,kp.z+dz); t.rotation.set(rx,0,rz); t.scale.set(1,2,.5); outline(t,.01); g.add(t);
       const tip=new THREE.Mesh(sph(.05,12,8),m('partyB')); tip.position.y=-.036; tip.scale.set(.88,.2,1.08); t.add(tip); } }
+  else if(id==='goggles'){ // chunky round goggles on a strap that hugs the head at eye height
+    const z=EZ+.01, rad=.125, R=Math.sqrt(HEAD_R*HEAD_R-EY*EY)+.012;
+    const strap=new THREE.Mesh(new THREE.TorusGeometry(R,.028,8,40,Math.PI*1.3),m('goggle')); strap.rotation.set(Math.PI/2,0,Math.PI*.85); strap.position.y=EY; g.add(strap);
+    for(const s of [-1,1]){ const f=new THREE.Mesh(new THREE.TorusGeometry(rad,.032,10,30),m('goggle')); f.position.set(s*.135,EY,z); outline(f,.008); g.add(f);
+      const cup=new THREE.Mesh(new THREE.CylinderGeometry(rad,rad*.95,.06,26,1,true),m('goggle')); cup.rotation.x=Math.PI/2; cup.position.set(s*.135,EY,z-.03); g.add(cup);
+      const l=new THREE.Mesh(new THREE.CircleGeometry(rad,28),m('lensBlue')); l.position.set(s*.135,EY,z-.004); g.add(l);
+      const hl=new THREE.Mesh(new THREE.CircleGeometry(.03,12),new THREE.MeshBasicMaterial({color:0xffffff})); hl.position.set(s*.135-.05,EY+.05,z+.002); hl.scale.set(1.5,.6,1); hl.rotation.z=.5; g.add(hl); }
+    const br=new THREE.Mesh(new THREE.CylinderGeometry(.02,.02,.05,8),m('goggle')); br.rotation.z=Math.PI/2; br.position.set(0,EY,z); g.add(br); }
   else if(id==='butterfly'){ // perched where the flower clip sits, wings tipped up a little as if it just landed
     const b=new THREE.Group(), bp=new THREE.Vector3(-.28,.24,.1).setLength(HEAD_R+.04); b.position.copy(bp); b.lookAt(bp.x*3,bp.y*3,bp.z*3+.3); b.scale.setScalar(1.4); g.add(b);
     const body=new THREE.Mesh(sph(.022,10,8),m('pupil')); body.scale.set(1,3.2,1); outline(body,.006); b.add(body);
@@ -1140,6 +1240,25 @@ function buildHat(id){ const h=new THREE.Group();
     for(let i=0;i<8;i++){ const a=i/8*Math.PI*2, r=new THREE.Mesh(sph(.11,14,10),m(i%2?'pumpkin':'pumpkinRib')); r.scale.set(.75,1.15,1); r.position.set(Math.cos(a)*.13,0,Math.sin(a)*.13); r.rotation.y=-a; outline(r,.008); p.add(r); }
     const stem=new THREE.Mesh(new THREE.CylinderGeometry(.025,.035,.09,8),m('acornCap')); stem.position.y=.15; stem.rotation.z=-.25; p.add(stem);
     const lf=new THREE.Mesh(sph(.06,12,8),m('leaf')); lf.scale.set(1.3,.18,.7); lf.position.set(-.08,.14,.05); lf.rotation.set(.2,.5,.35); outline(lf,.008); p.add(lf); }
+  else if(id==='bonnet'){ // a soft cap of overlapping petals, like an upside-down bloom, with a pollen bud on top
+    for(const [ring,n,r,y,tilt,mat] of [[0,9,.21,.03,.95,'petalB'],[1,7,.12,.12,.55,'bowDark']]) for(let i=0;i<n;i++){ const a=(i+ring*.5)/n*Math.PI*2, pv=new THREE.Group(); pv.rotation.y=-a; h.add(pv);
+      const pt=new THREE.Mesh(sph(.12,16,12),m(mat)); pt.scale.set(1.4,.32,.95); pt.position.set(r,y,0); pt.rotation.z=tilt; outline(pt,.01); pv.add(pt); }
+    const bud=new THREE.Mesh(sph(.07,14,10),polMat('Y','light')); bud.position.y=.2; outline(bud,.01); h.add(bud);
+    for(let i=0;i<5;i++){ const a=i*1.26, d=new THREE.Mesh(sph(.018,8,6),polMat('Y','dark')); d.position.set(Math.cos(a)*.035,.255,Math.sin(a)*.035); h.add(d); } }
+  else if(id==='miner'){ // a round hard hat with a little lamp, for a worm who digs
+    const dome=new THREE.Mesh(new THREE.SphereGeometry(.25,24,12,0,Math.PI*2,0,Math.PI/2),m('miner')); dome.scale.y=.82; outline(dome,.012); h.add(dome);
+    const brim=new THREE.Mesh(new THREE.CylinderGeometry(.3,.3,.035,28),m('minerDark')); brim.position.y=.005; outline(brim,.01); h.add(brim);
+    const ridge=new THREE.Mesh(new THREE.TorusGeometry(.2,.022,8,24,Math.PI),m('minerDark')); ridge.rotation.y=Math.PI/2; ridge.position.y=.0; h.add(ridge);
+    const lamp=new THREE.Group(); lamp.position.set(0,.13,.2); lamp.rotation.x=.35; h.add(lamp);
+    const body=new THREE.Mesh(new THREE.CylinderGeometry(.065,.075,.08,18),m('pole')); body.rotation.x=Math.PI/2; outline(body,.008); lamp.add(body);
+    const glass=new THREE.Mesh(new THREE.CircleGeometry(.055,18),new THREE.MeshBasicMaterial({color:C.lamp})); glass.position.z=.042; lamp.add(glass);
+    const glow=new THREE.Mesh(new THREE.CircleGeometry(.09,18),new THREE.MeshBasicMaterial({color:C.lamp,transparent:true,opacity:.35,depthWrite:false})); glow.position.z=.046; lamp.add(glow); }
+  else if(id==='gnome'){ // a tall red gnome hat, tip flopping forward, on a fluffy white band
+    const H=.5, cg=new THREE.ConeGeometry(.2,H,26,10), cp=cg.attributes.position;
+    for(let k=0;k<cp.count;k++){ const t=cp.getY(k)/H+.5; cp.setXYZ(k,cp.getX(k),cp.getY(k)-.05*t*t*t,cp.getZ(k)+.17*t*t*t); }
+    cg.computeVertexNormals(); const cone=new THREE.Mesh(cg,m('gnome')); cone.position.y=H/2+.02; outline(cone,.012); h.add(cone);
+    const band=new THREE.Mesh(new THREE.TorusGeometry(.2,.05,10,28),m('chef')); band.rotation.x=Math.PI/2; band.position.y=.03; outline(band,.01); h.add(band);
+    const tip=new THREE.Mesh(sph(.045,12,10),m('chef')); tip.position.set(0,H+.02-.05,.17); outline(tip,.008); h.add(tip); }
   else if(id==='horn'){ // a headband hugging the head side to side, with a curved beetle horn on top
     const band=new THREE.Mesh(new THREE.TorusGeometry(.355,.03,8,30,Math.PI-.7),m('beetleDark')); band.rotation.z=.35; band.position.y=-.27; h.add(band);
     const pts=[]; for(let k=0;k<=8;k++){ const t=k/8, a=t*1.4; pts.push(new THREE.Vector3(0,.06+Math.sin(a)*.2,-.06+(1-Math.cos(a))*.2)); }
@@ -1159,7 +1278,7 @@ function dressHat(g){ const slot=g&&g.userData.hatSlot; if(!slot) return; slot.c
   const h=HATS.find(x=>x[0]===hatId); if(!h||h[0]==='none'||!hatUnlocked(h)) return;
   if(!hatProto[hatId]) hatProto[hatId]=buildHat(hatId); slot.add(hatProto[hatId].clone()); }
 const WORM_COLS=[['Blossom',0xFFB3C8,0xFFB3C8,0,0xEF6A8F],['Mint',0x7FD9B0,0x7FD9B0,15,0xFF6B99],['Butter',0xFFE58F,0xFFE58F,45,0xFF827C],['Lavender',0xCDB8F5,0xCDB8F5,90,0xF979A6],['Sky',0xA9D8F5,0xA9D8F5,150,0xFF6B91],
-  ['Peach',0xFFC29A,0xFFC29A,210,0xF87569],['Teal',0x74CCD2,0x74CCD2,270,0xFF718B],['Cocoa',0xD6AE8C,0xD6AE8C,330,0xD66161],['Twilight',0xA4A6E4,0xA4A6E4,400,0xFD75AE],['Golden',0xF7BE4F,0xF7BE4F,480,0xFB776D],['Moonlight',0xD7DDF0,0xD7DDF0,520,0xF27FA8]];
+  ['Peach',0xFFC29A,0xFFC29A,210,0xF87569],['Teal',0x74CCD2,0x74CCD2,270,0xFF718B],['Cocoa',0xD6AE8C,0xD6AE8C,330,0xD66161],['Twilight',0xA4A6E4,0xA4A6E4,400,0xFD75AE],['Golden',0xF7BE4F,0xF7BE4F,480,0xFB776D],['Moonlight',0xD7DDF0,0xD7DDF0,520,0xF27FA8],['Sprout',0xBCE38A,0xBCE38A,600,0xFF7F8F]];
 const starTotal=()=>LEVELS.reduce((a,l)=>a+(progress.stars[l.name]||0),0);
 const coloursUnlocked=()=>WORM_COLS.filter(c=>starTotal()>=c[3]).length;
 let wormCol=Math.max(0,Math.min(WORM_COLS.length-1,parseInt(store.get('squirm-colour')||'0',10)||0));
@@ -1238,7 +1357,8 @@ function updateWorm(){
   const anchors=segMeshes.concat(tailExtras); const n=anchors.length; let ti=0, ci=0;
   if(wormG.visible && n){
     const idle = !animating && state.status==='play' && !reduceMotion;
-    const P=anchors.map((a,i)=>{ const v=a.position.clone(); if(idle) v.y+=Math.sin(idleT*3-i*.8)*.02; return v; });
+    // under soft soil the body (never the head) sinks out of sight, and the heap on the tile hides it
+    const P=anchors.map((a,i)=>{ const v=a.position.clone(); if(idle) v.y+=Math.sin(idleT*3-i*.8)*.02; if(i) v.y-=soilDepth(v)*.5; return v; });
     // the length the tints are spread over follows a growing or shrinking tail, so fade, sunset and rainbow glide
     const nP=anchors.reduce((a,s,i)=>a+(i?Math.min(1,s.scale.x):1),0);
     let chains=[], cur=[0];
@@ -1267,12 +1387,12 @@ function updateWorm(){
         const curve=new THREE.CatmullRomCurve3(pts,false,'centripetal');
         const S=(pts.length-1)*9+1, sp=[], rr=[], cc=[], gs=[];
         for(let j=0;j<S;j++){ const u=j/(S-1); sp.push(curve.getPoint(u)); const fi=u*(pts.length-1), i0=Math.floor(Math.min(fi,pts.length-1.0001)), t=fi-i0;
-          const gg=G[i0]*(1-t)+G[i0+1]*t, gp=Gp[i0]*(1-t)+Gp[i0+1]*t; rr.push(radAt(gg,n,anchors)*(tip&&i0===pts.length-2?1-(1-TIP_K)*t*t:1)); cc.push(colorAt(gp,nP)); gs.push(gp); }
+          const gg=G[i0]*(1-t)+G[i0+1]*t, gp=Gp[i0]*(1-t)+Gp[i0+1]*t; rr.push(radAt(gg,n,anchors)*(tip&&i0===pts.length-2?1-(1-TIP_K)*t*t:1)); cc.push(dusty(colorAt(gp,nP))); gs.push(gp); }
         const tb=getTube(ti++); tb.body.visible=tb.line.visible=true; tubeGeo(tb.body.geometry,sp,rr,cc,0,gs); tubeGeo(tb.line.geometry,sp,rr.map(r=>r+.03*Math.min(1,r/.15)),null,0);
       }
       const ends=[]; if(!diveFront && f!==0) ends.push(f); if(!diveBack && (l!==f || ch.length===1) && l!==0) ends.push(l);
       for(const end of ends){ const c=getCap(ci++); const atTip=tip&&end===l, r=atTip?Math.max(.001,tipR):Math.max(.001,radAt(Math.min(end,n-1),n,anchors));
-        c.visible=true; c.position.copy(atTip?tipP:P[end]); c.scale.setScalar(r); c.userData.o.scale.setScalar(1+.03*Math.min(1,r/.15)/r); c.material.color.copy(colorAt(atTip?Gp[Gp.length-1]:end,nP)); }
+        c.visible=true; c.position.copy(atTip?tipP:P[end]); c.scale.setScalar(r); c.userData.o.scale.setScalar(1+.03*Math.min(1,r/.15)/r); c.material.color.copy(dusty(colorAt(atTip?Gp[Gp.length-1]:end,nP))); }
     }
   }
   for(let i=ti;i<tubePool.length;i++){ tubePool[i].body.visible=tubePool[i].line.visible=false; }
@@ -1355,6 +1475,9 @@ function tryMove(dir){
     if(r.blocked==='flooded') toast('That puddle is full of water. Wait for the sun.');
     if(r.blocked==='sprout') toast('Just a seedling. It needs rain to grow into a leaf.');
     if(r.blocked==='hedge') toast('The hedge only opens while part of you rests on a flower.');
+    if(r.blocked==='petals'){ const h=state.segs[0], dd=DIRS[dir], gx=h[0]+dd[0], gy=h[1]+dd[1], P=POLL[tileAt(state,gx,gy).toUpperCase()]; petalsNope(gx,gy);
+      toast(`These petals only open for ${P.n} pollen. Find a ${P.n} flower first.`); }
+    if(r.blocked==='body'&&tileAt(state,state.segs[0][0]+DIRS[dir][0],state.segs[0][1]+DIRS[dir][1])===SOFT&&state.segs.length>2) toast('Soft soil lets you burrow past your body, but not fold back on yourself.');
     nudge(dir); return; }
   history.push(state); const prev=state; state=r.state; lastMoveT=idleT; clearHint(); saveResume(); bumpStat('moves'); dismissTutorial();
   if(r.ev.slide){ progress.stats.slideMax=Math.max(progress.stats.slideMax||0,r.ev.slide.length); slideSteps=r.ev.slide.slice(1).map(x=>({state:x.state,ev:x.ev})).concat([{state:r.state,ev:r.ev}]); state=r.ev.slide[0].state; animateMove(prev,r.ev.slide[0].ev,dir); return; }
@@ -1378,6 +1501,9 @@ function animateMove(prev,ev,dir,sliding){
   if(ev.pushed){ pushBeetle(ev.pushed,sliding?95:queue.length?110:170); bumpStat('pushes'); const bb=state.beetles[ev.pushed.i]; if(bb&&tileAt(state,bb.x,bb.y)==='B') bumpStat('beetleFlower'); }
   if(ev.swung){ sfx('creak'); const it=cells[state.segs[0][1]][state.segs[0][0]].item; if(it&&it.userData.wheel){ const w=it.userData.wheel, z0=w.rotation.z; tween(600,(e)=>{ w.rotation.z=z0-e*Math.PI*1.5; }); }
     if(!ev.swung.length) toast('Nothing turned. Bridges with you on them stay put.',2400); }
+  if(ev.pollen){ const h=state.segs[0]; pollenPuff(wp(h[0],h[1],.25),ev.pollen); sfx('pollen'); bumpStat('dusts'); react('wow',700);
+    if(!sliding){ const t=sayFor('pollen'); if(t) wormSays(t,1400); } }
+  if(ev.cross){ dustPuff(wp(ev.cross[0],ev.cross[1],.05),C.softSoil); sfx('dig'); bumpStat('burrows'); }
   if(ev.rain!==undefined){ sfx(ev.rain?'rainOn':'rainOff'); toast(ev.rain?'Rain is falling. Leaves grow, puddles fill.':'The sun is back. Puddles dry, leaves fold away.',2400); }
   const n=state.segs.length, on=prev.segs.length;
   while(segMeshes.length<n){ const t=prev.segs[on-1]; const s=makeSeg(segMeshes.length); s.position.copy(wp(t[0],t[1],.25)); s.scale.setScalar(.2); segMeshes.push(s); }
@@ -1753,8 +1879,20 @@ const ART={
   'hat-shell':'<path d="M3.6 19.6h16.8" stroke-width="2.4"/><ellipse cx="12" cy="11.6" rx="8" ry="7.4" fill="#C9A0E6"/><path d="M12.6 12.4a1 1 0 1 1 .5-1.7 2.4 2.4 0 1 1-3.3 2.8 3.8 3.8 0 1 1 6.2-3.8" stroke-width="1.3"/>',
   'hat-pumpkin':'<path d="M12 7.4c.2-1.6.8-3 2-3.8"/><path d="M13.4 6c1.4-1.8 4-2 5.2-.8-1.2 1.6-3.4 2-5.2.8z" fill="#6CC97A" stroke-width="1.2"/><ellipse cx="12" cy="14" rx="9" ry="6.4" fill="#F7A05A"/><path d="M12 7.6c-2.4 2-2.4 10.8 0 12.8M12 7.6c2.4 2 2.4 10.8 0 12.8M7.4 8.6c-2.4 2.6-2.4 8.2 0 10.8M16.6 8.6c2.4 2.6 2.4 8.2 0 10.8" stroke-width="1.2"/>',
   'extra-butterfly':'<path d="M12 7.5v10"/><path d="M12 10C9.6 5.4 4 4.6 4 8.6c0 2.6 3 3.6 8 3.4zM12 10c2.4-4.6 8-5.4 8-1.4 0 2.6-3 3.6-8 3.4z" fill="#F7A8C4"/><path d="M12 12.2c-3.4.2-6 1.8-5 4.2 1 2.2 4 1.4 5-2.6zM12 12.2c3.4.2 6 1.8 5 4.2-1 2.2-4 1.4-5-2.6z" fill="#F5C14E"/><path d="M12 7.5l-1.6-2.6M12 7.5l1.6-2.6"/>',
+  'hat-bonnet':'<g fill="#F7A8C4"><ellipse cx="5.6" cy="15" rx="3.4" ry="2.4" transform="rotate(-30 5.6 15)"/><ellipse cx="18.4" cy="15" rx="3.4" ry="2.4" transform="rotate(30 18.4 15)"/><ellipse cx="9" cy="17.4" rx="3.4" ry="2.4"/><ellipse cx="15" cy="17.4" rx="3.4" ry="2.4"/></g><g fill="#E36A8C"><ellipse cx="8.6" cy="11" rx="3" ry="2.2" transform="rotate(-40 8.6 11)"/><ellipse cx="15.4" cy="11" rx="3" ry="2.2" transform="rotate(40 15.4 11)"/><ellipse cx="12" cy="13.4" rx="3" ry="2.2"/></g><circle cx="12" cy="7.6" r="2.6" fill="#FFE9A6"/>',
+  'hat-miner':'<path d="M2.6 17.6h18.8" stroke-width="2.4"/><path d="M4.6 17.2a7.4 7.6 0 0 1 14.8 0z" fill="#F5A33A"/><path d="M12 9.6v7.6" stroke-width="1.2"/><rect x="9.6" y="10.6" width="4.8" height="3.8" rx="1.4" fill="#B98A62"/><circle cx="12" cy="12.5" r="1.3" fill="#FFF6C8" stroke-width="1"/>',
+  'hat-gnome':'<path d="M6 18.4L11.4 3.6c2.8.4 5.6 2.6 6.2 5.6l.6 9.2z" fill="#E4574C"/><circle cx="18.2" cy="9.6" r="1.8" fill="#FFFBF2"/><rect x="4.2" y="16.6" width="15.6" height="4" rx="2" fill="#FFFBF2"/>',
+  'extra-goggles':'<path d="M2 12.8h20" stroke="#A9703F" stroke-width="2.4"/><circle cx="7.4" cy="12.8" r="4.3" fill="#BFE6F7" stroke-width="2.4"/><circle cx="16.6" cy="12.8" r="4.3" fill="#BFE6F7" stroke-width="2.4"/><path d="M5.6 11.2l1.2-1" stroke="#fff" stroke-width="1"/>',
   'hat-horn':'<path d="M4 20a8 8 0 0 1 16 0" stroke-width="2.6"/><path d="M8.2 14.2c-.2-4.8 2.4-8.8 8-11.2-1 3.8-1 7.4 0 11.2z" fill="#7C8CF0"/><circle cx="12.2" cy="10" r=".85" fill="#B5C0FA" stroke="none"/><circle cx="13.6" cy="7" r=".7" fill="#B5C0FA" stroke="none"/>'
 };
+// pollen flowers and petal gates come in three colours (and a pale flower for no pollen yet), drawn from POLL
+{ const hx=n=>'#'+n.toString(16).padStart(6,'0');
+  const flower=(c,l,d)=>`<g fill="${c}">${[0,60,120,180,240,300].map(a=>`<ellipse cx="12" cy="6.3" rx="3.3" ry="4.5" transform="rotate(${a} 12 12)"/>`).join('')}</g><circle cx="12" cy="12" r="3.8" fill="${l}"/><g fill="${d}" stroke="none"><circle cx="10.9" cy="11" r=".85"/><circle cx="13.3" cy="12.1" r=".85"/><circle cx="11.6" cy="13.6" r=".85"/></g>`;
+  const bud=c=>`<path d="M4.5 20.6h15" stroke-width="2.2"/><path d="M12 20c-4.6 0-6.6-3.6-6.6-8 0-4 2.4-7.4 6.6-9.4 4.2 2 6.6 5.4 6.6 9.4 0 4.4-2 8-6.6 8z" fill="${c}"/><path d="M12 20c-2-1.6-2.8-4.4-2.8-8 0-3 1-5.6 2.8-7.6M12 20c2-1.6 2.8-4.4 2.8-8 0-3-1-5.6-2.8-7.6" stroke-width="1.2"/><path d="M6.4 19.4c-1.6-.4-2.9-1.5-3.4-3.1 1.7-.4 3.3.2 4.4 1.4M17.6 19.4c1.6-.4 2.9-1.5 3.4-3.1-1.7-.4-3.3.2-4.4 1.4" fill="#6CC97A" stroke-width="1.2"/>`;
+  for(const k in POLL){ const P=POLL[k]; ART['pollen'+k]=flower(hx(P.col),hx(P.light),hx(P.dark)); ART['petals'+k]=bud(hx(P.col)); }
+  ART.pollen0=flower('#EFE6DA','#FFF8EA','#C9BBA8');
+  // soft soil: a tilled heap with the worm arching out of it and diving back in
+  ART.soil='<path d="M5.6 16.4c-.6-5.6 1.8-9.6 6-9.6" stroke-width="4.6"/><path d="M5.6 16.4c-.6-5.6 1.8-9.6 6-9.6" stroke="#FFB3C8" stroke-width="2.4"/><circle cx="14.2" cy="7.6" r="3" fill="#FFB3C8"/><circle cx="15.1" cy="7" r=".75" fill="#5B4436" stroke="none"/><path d="M1.8 21c.9-4.6 4.9-7.6 10.2-7.6S21.3 16.4 22.2 21z" fill="#B07850"/><g fill="#8A5A3A" stroke="none"><circle cx="8" cy="18" r="1"/><circle cx="13.4" cy="16.4" r="1"/><circle cx="17.4" cy="18.8" r="1"/></g>'; }
 const art=(n,size=24)=>`<svg class="art" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="#5B4436" stroke-width="${Math.max(1.3,Math.min(2.6,1.9*24/size)).toFixed(2)}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ART[n]||''}</svg>`;
 // small stickers for the HUD tiles, toasts and pills
 const ICON={star:art('star',18),sun:art('sun',18),rain:art('rain',18),flag:art('flag',18),key:art('key',18),worm:art('worm',20),steps:art('steps',18),burrow:art('burrow',18),hedge:art('hedge',18),leaf:art('leaf',18)};
@@ -1772,6 +1910,7 @@ function statTip(k){ const par=curPar(), len=state.segs.length, fruit=/[+-]/.tes
   if(k==='keys') return 'Each key opens one gate, then it is used up.';
   if(k==='hedges') return hedgesOpen(state)?'You are resting on a flower, so every hedge is open.':'Hedges open while any part of you rests on a flower.';
   if(k==='weather') return state.raining?'Raining: leaves are up and puddles are full. A cloud stone stops it.':'Sunny: seedlings are small and puddles are dry. A cloud stone brings rain.';
+  if(k==='pollen'){ const P=POLL[state.pollen]; return P?`You carry ${P.n} pollen, so ${P.n} petal gates open for you. Another flower swaps your colour.`:'Crawl over a flower to get dusted in its pollen. Petal gates only open for their own colour.'; }
   if(len===state.exitLen) return 'You are just the right length for the burrow.';
   return `The burrow fits a worm of ${state.exitLen}. You are ${len}.`+(fruit?(len<state.exitLen?' A peach makes you longer.':' A mushroom makes you shorter.'):''); }
 document.querySelector('.hud-stats').addEventListener('keydown',e=>{ if((e.key==='Enter'||e.key===' ')&&e.target.closest('.stat')){ e.preventDefault(); e.target.click(); } });
@@ -1793,6 +1932,7 @@ function updateHUD(silent){
     chips.push(hudTile('flags',left===0&&'done',`Flags ${flagsTotal-left} of ${flagsTotal}`,`${sticker(ICON.flag)}<b>${flagsTotal-left}</b><small>/${flagsTotal}</small>`,left?'Flags':'All flags')); }
   if(map.includes('K')) chips.push(hudTile('keys','',`${state.keys} ${state.keys===1?'key':'keys'}`,`${sticker(ICON.key)}<b>${state.keys}</b>`,state.keys===1?'Key':'Keys',false));
   if(map.includes('H')){ const op=hedgesOpen(state); chips.push(hudTile('hedges',op&&'done',`Hedges ${op?'open':'closed'}`,`${sticker(ICON.hedge)}<small>${op?'Open':'Shut'}</small>`,'Hedges')); }
+  if(/[PYUpyu]/.test(map)){ const P=POLL[state.pollen]; chips.push(hudTile('pollen','',P?`Dusted in ${P.n} pollen`:'No pollen yet',sticker(art('pollen'+(state.pollen||'0'),18)),P?P.n[0].toUpperCase()+P.n.slice(1):'Pollen')); }
   if(map.includes('R')) chips.push(hudTile('weather','wx',state.raining?'Raining':'Sunny',sticker(state.raining?ICON.rain:ICON.sun),state.raining?'Rainy':'Sunny'));
   const ok=state.segs.length===state.exitLen;
   chips.push(hudTile('length',ok&&'done',`Length ${state.segs.length}, burrow fits ${state.exitLen}`,
@@ -1826,7 +1966,7 @@ function renderMute(){ if($('homeSound')){ const hb=$('homeSound'); hb.setAttrib
 
 // ---------- endless meadow ----------
 const DIFF_NAME={easy:'Easy',medium:'Medium',hard:'Hard'};
-const FEATURES=[['flags','Flags'],['buttons','Flower buttons'],['leaves','Wet leaves'],['fruit','Fruit'],['keys','Keys & gates'],['portals','Tunnels'],['dry','Dry patches'],['rain','Rain'],['rivers','Rivers'],['snails','Snails'],['beetles','Beetles']];
+const FEATURES=[['flags','Flags'],['buttons','Flower buttons'],['leaves','Wet leaves'],['fruit','Fruit'],['keys','Keys & gates'],['portals','Tunnels'],['dry','Dry patches'],['rain','Rain'],['rivers','Rivers'],['snails','Snails'],['beetles','Beetles'],['pollen','Pollen'],['soil','Soft soil']];
 const ADJ=['Clover','Mossy','Sunny','Dewy','Puddle','Bramble','Tulip','Daisy','Mint','Fern','Pebble','Willow','Honey','Petal','Thistle','Bluebell','Acorn','Buttercup'];
 const NOUN=['Corner','Patch','Hollow','Nook','Lane','Bend','Meadow','Path','Dell','Knoll','Row','Glade'];
 function analyzeCapped(Ld,cap){
@@ -1844,7 +1984,9 @@ function analyzeCapped(Ld,cap){
 function genCandidate(r,diff,o){
   const ri=n=>Math.floor(r()*n), pick=a=>a[ri(a.length)], D4=[[1,0],[-1,0],[0,1],[0,-1]];
   const cfg={easy:{w:[5,6],h:[5,7],fill:.5,len:3,flags:1,dry:.14,cap:12000},medium:{w:[6,7],h:[6,8],fill:.56,len:3,flags:2,dry:.2,cap:25000},hard:{w:[7,8],h:[7,9],fill:.5,len:r()<.6?4:3,flags:2,dry:.3,cap:12000}}[diff];
-  if(o.size){ cfg.w=o.size.w; cfg.h=o.size.h; } if(o.fill) cfg.fill=o.fill; if(o.dryRate!=null) cfg.dry=o.dryRate;
+  if(o.size){ cfg.w=o.size.w; cfg.h=o.size.h; }
+  // crossing itself needs a worm of five or more, so soft soil brings a longer worm, laid out as a wiggle
+  if(o.soil){ cfg.len=Math.max(cfg.len,5)+(diff!=='easy'&&r()<.5?1:0); if(diff==='easy'){ cfg.w=[6,6]; cfg.h=[6,7]; } } if(o.fill) cfg.fill=o.fill; if(o.dryRate!=null) cfg.dry=o.dryRate;
   const W=cfg.w[0]+ri(cfg.w[1]-cfg.w[0]+1), H=cfg.h[0]+ri(cfg.h[1]-cfg.h[0]+1);
   const g=Array.from({length:H},()=>Array(W).fill(' ')); const target=Math.floor(W*H*cfg.fill); let cnt=0;
   const walkers=[[W>>1,H>>1],[W>>1,H>>1],[ri(W),ri(H)]];
@@ -1859,7 +2001,8 @@ function genCandidate(r,diff,o){
   const floor=()=>{ const f=[]; for(let y=0;y<H;y++) for(let x=0;x<W;x++) if(g[y][x]==='.') f.push([x,y]); return f; };
   // worm in a straight line
   let worm=null; for(let t=0;t<120&&!worm;t++){ const f=floor(); if(!f.length) return null; const s=pick(f), d=pick(D4);
-    const segs=[]; for(let i=0;i<cfg.len;i++){ const x=s[0]+d[0]*i, y=s[1]+d[1]*i; if(at(x,y)!=='.') break; segs.push([x,y]); } if(segs.length===cfg.len) worm=segs; }
+    const segs=[]; if(o.soil){ segs.push(s); while(segs.length<cfg.len){ const c=segs[segs.length-1], n=D4.map(e=>[c[0]+e[0],c[1]+e[1]]).filter(q=>at(q[0],q[1])==='.'&&!segs.some(z=>z[0]===q[0]&&z[1]===q[1])); if(!n.length) break; segs.push(pick(n)); } }
+    else for(let i=0;i<cfg.len;i++){ const x=s[0]+d[0]*i, y=s[1]+d[1]*i; if(at(x,y)!=='.') break; segs.push([x,y]); } if(segs.length===cfg.len) worm=segs; }
   if(!worm) return null; const used=new Set(worm.map(p=>p+''));
   // exit far from the head
   const dist={}; const q=[worm[0]]; dist[worm[0]+'']=0;
@@ -1897,6 +2040,15 @@ function genCandidate(r,diff,o){
       const pushable=D4.some(([dx,dy])=>{ const bk=at(p[0]-dx,p[1]-dy); return bk!==' '&&bk!=='~'&&at(p[0]+dx,p[1]+dy)==='.'; });
       if(!pushable) continue; g[p[1]][p[0]]='O'; used.add(p+''); placed++; }
     if(!placed) return null; }
+  // pollen: a flower for each colour, and a petal gate or two of that colour on narrow paths
+  if(o.pollen){ const cols=['P','Y','U'].sort(()=>r()-.5).slice(0,diff==='easy'?1:diff==='medium'?1+ri(2):2+(r()<.3?1:0));
+    for(const c of cols){ if(!put(c,notNearHead)) return null;
+      for(let k=0;k<(diff==='easy'?1:1+ri(2));k++) if(!put(c.toLowerCase(),p=>corridor(p)&&notNearHead(p))&&!k) return null; } }
+  // soft soil where paths meet, so there's a way to loop round and burrow back through
+  if(o.soil){ const n=diff==='easy'?1:diff==='medium'?1+ri(2):2+ri(2); let placed=0;
+    for(let t=0;t<60&&placed<n;t++){ const f=floor().filter(p=>!used.has(p+'')); if(!f.length) break; const p=pick(f);
+      if(D4.filter(d=>{ const ch=at(p[0]+d[0],p[1]+d[1]); return ch!==' '&&ch!=='~'; }).length<3) continue; g[p[1]][p[0]]='#'; used.add(p+''); placed++; }
+    if(!placed) return null; }
   return {name:pick(ADJ)+' '+pick(NOUN), exitLen, worm, map:g.map(row=>row.join('')), rain:false};
 }
 // which optional mechanics a solution actually needs, so the generator can prefer patches that use what was asked for
@@ -1906,11 +2058,11 @@ function usage(Ld,sol){ let s=initState(Ld); const u=new Set();
     if(h&&tileAt(s,h[0],h[1])==='H') u.add('buttons'); if(ev.portal) u.add('portals'); if(ev.rain!==undefined) u.add('rain');
     if(ev.swung&&ev.swung.length) u.add('rivers'); if(ev.eaten==='+'||ev.eaten==='-') u.add('fruit'); if(ev.eaten==='G') u.add('keys');
     if(h&&r.state.snails&&r.state.snails.some(n=>Math.abs(n.x-h[0])+Math.abs(n.y-h[1])<=1)) u.add('snails');
-    if(ev.crumbled&&ev.crumbled.length) u.add('dry'); s=r.state; }
+    if(ev.crumbled&&ev.crumbled.length) u.add('dry'); if(h&&PETALS[tileAt(s,h[0],h[1])]) u.add('pollen'); if(ev.cross) u.add('soil'); s=r.state; }
   return u; }
 async function generateEndless(diff,o,seed,fixedTries){
   const r=rng(seed); const budget={easy:1400,medium:2600,hard:4800}[diff]; const t0=performance.now(); let best=null, bestScore=-1e9, n=0;
-  const enabled=['fruit','keys','portals','dry','rain','rivers','snails','buttons','leaves','beetles'].filter(k=>o[k]); const needUse=Math.min(enabled.length,diff==='easy'?1:2);
+  const enabled=['fruit','keys','portals','dry','rain','rivers','snails','buttons','leaves','beetles','pollen','soil'].filter(k=>o[k]); const needUse=Math.min(enabled.length,diff==='easy'?1:2);
   while(true){ n++; const Ld=genCandidate(r,diff,o);
     if(Ld){ const cap={easy:4000,medium:10000,hard:12000}[diff]; const a=analyzeCapped(Ld,cap);
       if(a&&a.par>=5){ const win=a.good/a.states; const u=usage(Ld,a.sol); const used=enabled.filter(k=>u.has(k)).length;
@@ -1926,7 +2078,7 @@ async function generateEndless(diff,o,seed,fixedTries){
     if(n>3) $('genText').textContent=['Planting seeds','Digging tunnels','Watering the soil','Checking every path'][Math.floor(el/700)%4]+'...';
     await new Promise(res=>setTimeout(res,0)); // let the page breathe between candidates
   }
-  const feats=FEATURES.filter(([k])=>k!=='flags'&&o[k]&&best.map.join('').match({buttons:/H/,leaves:/i/,fruit:/[+-]/,keys:/K/,portals:/1/,dry:/x/,rain:/R/,rivers:/L|=|\|/,snails:/[<>^v]/,beetles:/O/}[k])).map(([,n])=>n.toLowerCase());
+  const feats=FEATURES.filter(([k])=>k!=='flags'&&o[k]&&best.map.join('').match({buttons:/H/,leaves:/i/,fruit:/[+-]/,keys:/K/,portals:/1/,dry:/x/,rain:/R/,rivers:/L|=|\|/,snails:/[<>^v]/,beetles:/O/,pollen:/[PYU]/,soil:/#/}[k])).map(([,n])=>n.toLowerCase());
   best.tries=n; best.seed=seed; best.hint=feats.length?`A fresh ${DIFF_NAME[diff].toLowerCase()} patch with ${feats.join(', ')}.`:`A fresh ${DIFF_NAME[diff].toLowerCase()} patch.`;
   return best;
 }
@@ -1979,6 +2131,7 @@ window.addEventListener('popstate',()=>{ if(ignorePop>0){ ignorePop--; return; }
 // add an entry on top. Returning players see the newest entry once as a card on the Play tab, new players never
 // do (squirm-news holds the last version seen); Settings > About lists them all.
 const NEWS=[
+  ['1.10.0','2026-10-31','Pollen and soft soil',['Two new things in the garden: flowers dust you in pollen that opens petal gates of the same colour, and soft soil lets you burrow under yourself.','Three new chapters: Pollen paths, Soft soil and Tangled roots.','New hats (a petal bonnet, a miner\'s helmet and a gnome hat), digging goggles, a Sprout colour and three new badges.','Pick pollen and soft soil for your meadow patches too.']],
   ['1.9.0','2026-10-28','Two new chapters',['Chapters 17 and 18, Critter crossing and Harvest moon: 20 of the toughest patches yet.','Two new hats to earn: a snail shell and a pumpkin.','A Moonlight worm colour, a butterfly friend for growing the whole garden, and two new badges.']],
   ['1.8.0','2026-10-28','Handier buttons',['Snap a photo of your garden any time, from the new Photo button.','Hold Undo to start a patch over.','The win card has a Home button now.']],
   ['1.7.0','2026-10-27','Wardrobe polish',['Five more extras: freckles, a button nose, a flower clip, a bow tie and a cozy scarf.','Hats, extras, colours and patterns all got a careful polish.','Your worm chats a little less while you play.']],
@@ -2079,7 +2232,7 @@ $('dressRandom').onclick=()=>{ const pick=(a,cur)=>{ const o=a.filter(x=>x!==cur
   if(hHead) homeReact('wow'); renderWardrobe(); };
 const DIFF_ICON_KEY={easy:'sprout',medium:'tulip',hard:'tree'};
 // short names for the mechanic tiles; the full name goes in the label
-const FEAT_SHORT={flags:'Flags',buttons:'Flowers',leaves:'Leaves',fruit:'Fruit',keys:'Keys',portals:'Tunnels',dry:'Dry',rain:'Rain',rivers:'Rivers',snails:'Snails',beetles:'Beetles'};
+const FEAT_SHORT={flags:'Flags',buttons:'Flowers',leaves:'Leaves',fruit:'Fruit',keys:'Keys',portals:'Tunnels',dry:'Dry',rain:'Rain',rivers:'Rivers',snails:'Snails',beetles:'Beetles',pollen:'Pollen',soil:'Soil'};
 const DIFF_DESC={easy:'Small patches. A gentle stroll.',medium:'Roomier patches with a few more twists.',hard:'Big patches, longer worms, real head-scratchers.'};
 function renderEndless(anim){ const e=progress.endless[endlessDiff];
   const h=$('mHero'); h.dataset.d=endlessDiff;
@@ -2124,7 +2277,7 @@ function finGo(k,el){
   layers[layers.length-1]='tab'; hide('finOv'); showTab(k,true); }
 $('finClose').onclick=()=>{ hide('finOv'); popLayer('finale'); renderHome(); };
 $('endlessGo').onclick=()=>{ newEndless(); };
-$('surprise').onclick=()=>{ const ks=['fruit','keys','portals','dry','rain','rivers','snails','buttons','leaves','beetles']; ks.forEach(k=>endlessOpts[k]=false); endlessOpts.flags=Math.random()<.8;
+$('surprise').onclick=()=>{ const ks=['fruit','keys','portals','dry','rain','rivers','snails','buttons','leaves','beetles','pollen','soil']; ks.forEach(k=>endlessOpts[k]=false); endlessOpts.flags=Math.random()<.8;
   const n=2+Math.floor(Math.random()*2); for(let i=0;i<n;i++) endlessOpts[ks[Math.floor(Math.random()*ks.length)]]=true; renderEndless(); qa($('featGrid'),'.mech.on').forEach(settle); };
 $('meadowBtn').onclick=()=>{ ensureAudio(); if(!continueEndless()) newEndless(); };
 // the badge closest to being earned, as a little goal on the Play tab; tapping opens it on the Badges tab
@@ -2243,6 +2396,9 @@ const BADGES=[
   ['fashion','extra-shades','Fashion icon','Unlock every extra.',counted(()=>[EXTRAS.filter(e=>e[0]!=='none'&&e[3]()).length,EXTRAS.length-1])],
   ['critters','hat-shell','Critter wrangler','Finish every patch in Critter crossing.',()=>chapterCleared(16)],
   ['harvest','hat-pumpkin','Harvest home','Finish every patch in Harvest moon.',()=>chapterCleared(17)],
+  ['pollinator','pollenY','Busy pollinator','Get dusted with pollen 50 times.',counted(()=>[progress.stats.dusts,50])],
+  ['knots','soil','Tied in knots','Burrow under yourself 25 times.',counted(()=>[progress.stats.burrows,25])],
+  ['tangled','hat-gnome','Deep roots','Finish every patch in Tangled roots.',()=>chapterCleared(20)],
   ['collector','medal','Badge collector','Earn 40 other badges.',counted(()=>[Object.keys(progress.badges).filter(k=>k!=='collector').length,40])]];
 // returns the badges earned just now; quiet ones (earned before badges existed) don't celebrate
 function checkBadges(ctx,quiet){ const got=[];
@@ -2252,9 +2408,9 @@ function checkBadges(ctx,quiet){ const got=[];
   return got; }
 function bumpStat(k,n=1){ progress.stats[k]=(progress.stats[k]||0)+n; }
 // badges screen: a filter, groups of sticker tiles in a fading scroller, and a card for the picked badge
-const BADGE_GROUPS=[['Garden journey',['first','par','chapter','clean','sage','stars50','stars150','shiny','chapters','garden','golden','pure','notake','lightning','critters','harvest','allstars']],
+const BADGE_GROUPS=[['Garden journey',['first','par','chapter','clean','sage','stars50','stars150','shiny','chapters','garden','golden','pure','notake','lightning','critters','harvest','tangled','allstars']],
   ['Daily and meadow',['daily','streak7','month','sunrises','meadow','brave','fearless','unstoppable','legend']],
-  ['Garden helpers',['flags','snacks','appetite','crumbs','gates','tunnels','rain','bridges','slides','wheee','hedges','pushes','flowerpower']],
+  ['Garden helpers',['flags','snacks','appetite','crumbs','gates','tunnels','rain','bridges','slides','wheee','hedges','pushes','flowerpower','pollinator','knots']],
   ['Just for fun',['moves','marathon','undos','taps','nap','owl','dawn','quick','photos','dressup','hatrack','rainbow','patterns','fashion','collector']]];
 // a badge left out of every group still shows, in the last one
 { const seen=new Set(BADGE_GROUPS.flatMap(g=>g[1])); BADGE_GROUPS[BADGE_GROUPS.length-1][1].push(...BADGES.map(b=>b[0]).filter(id=>!seen.has(id))); }
@@ -2365,6 +2521,8 @@ const MECH={
   buttons:{t:'Flower buttons',d:'Hedges open while any part of you rests on a big flower. Keep your tail on the flower while your head slips through.',k:/[BH]/,i:art('flowerbtn',40)},
   beetles:{t:'Beetles',d:'Bump into a beetle to push it one tile ahead. Beetles only move onto grass, flowers, dry patches and leaves, where they slide. A beetle resting on a flower holds the hedges open for you.',k:/O/,i:art('beetle',40)},
   leaves:{t:'Wet leaves',d:'Dewy leaves are slippery. Crawl onto one and you slide along until you reach dry grass or bump into something.',k:/i/,i:art('wetleaf',40)},
+  pollen:{t:'Pollen and petal gates',d:'Crawl over a flower to get dusted in its pollen. Petal gates only open for a worm wearing their colour, and the next flower you visit swaps your colour.',k:/[PYUpyu]/,i:art('pollenY',40)},
+  soil:{t:'Soft soil',d:'Worms love loose earth! On soft soil you burrow under, so you can cross your own body there. Just never fold back onto yourself.',k:/#/,i:art('soil',40)},
   rivers:{t:'Rivers and bridges',d:'Water blocks the way. Bridges only go along their planks, and a crank swings every bridge you are not standing on.',k:/[~=|L]/,i:art('bridge',40)},
 };
 let seenMech=store.json('squirm-seen')||{};
@@ -2393,7 +2551,7 @@ function placeSay(){ const el=$('wormSayG'), h=segMeshes[0]; if(el.hidden) retur
   const v=h.position.clone(); v.y+=.45; v.project(camera); const W=window.innerWidth, H=window.innerHeight, x=(v.x+1)/2*W, y=(1-v.y)/2*H;
   const w=el.offsetWidth, left=x+30+w>W-8; el.classList.toggle('left',left);
   el.style.transform=`translate(${Math.round(Math.max(8,left?x-30-w:x+30))}px,${Math.round(Math.max(8,y-el.offsetHeight/2))}px)`; }
-const SAY={ '+':['Yum!','Peachy!','Nom nom!'], '-':['Whoa, smaller!','Shrinking!'], C:['Got it!','A flag!','Tagged!'], K:['A key!','Ooh, shiny!'], G:['Open sesame!'] };
+const SAY={ '+':['Yum!','Peachy!','Nom nom!'], '-':['Whoa, smaller!','Shrinking!'], C:['Got it!','A flag!','Tagged!'], K:['A key!','Ooh, shiny!'], G:['Open sesame!'], pollen:['Achoo!','Tickles!','So fluffy!','Pretty colour!'] };
 let sayN=0;
 let sayLast=-99;
 const sayFor=k=>{ const a=SAY[k]; if(!a||idleT-sayLast<40||Math.random()>.25) return null; sayLast=idleT; return a[sayN++%a.length]; };
@@ -2428,14 +2586,14 @@ function introAnim(){ if(reduceMotion) return;
     ()=>{ items.forEach(it=>{ it.o.scale.setScalar(1); it.o.position.y=it.y0; }); worm.forEach(s=>s.scale.setScalar(1)); wormG.visible=true; animating--; if(queue.length) tryMove(queue.shift()); });
 }
 const CHAPTERS=CHAPTER_NAMES.map((name,k)=>({name,from:k*10,to:Math.min(LEVELS.length-1,k*10+9)}));
-const THUMB_COL={'O':'#7C8CF0','B':'#F7A8C4','H':'#4E8F40','i':'#8EE0B4','<':'#C9A0E6','>':'#C9A0E6','^':'#C9A0E6','v':'#C9A0E6','.':'#B9E49E','x':'#EBD59C','~':'#8CCFEA','=':'#D9A56E','|':'#D9A56E','E':'#3A2A22','C':'#F27DA2','K':'#F7C64F','G':'#C88A55','+':'#FFA27C','-':'#B79CF2','R':'#C9D6EA','w':'#9ED6EF','s':'#7CC95F','L':'#B98352'};
+const THUMB_COL={'O':'#7C8CF0','B':'#F7A8C4','H':'#4E8F40','i':'#8EE0B4','<':'#C9A0E6','>':'#C9A0E6','^':'#C9A0E6','v':'#C9A0E6','.':'#B9E49E','x':'#EBD59C','~':'#8CCFEA','=':'#D9A56E','|':'#D9A56E','E':'#3A2A22','C':'#F27DA2','K':'#F7C64F','G':'#C88A55','+':'#FFA27C','-':'#B79CF2','R':'#C9D6EA','w':'#9ED6EF','s':'#7CC95F','L':'#B98352','P':'#FF7A6B','Y':'#FFC63A','U':'#63A9F2','p':'#FFC6BC','y':'#FFE9A6','u':'#C4E2FF','#':'#C99063'};
 function drawThumb(cv,lv){ const g=cv.getContext('2d'); const h=lv.map.length, w=Math.max(...lv.map.map(r=>r.length)); const s=Math.floor(80/Math.max(w,h)), ox=(88-w*s)/2, oy=(88-h*s)/2;
   g.fillStyle='#9A6A4C'; g.fillRect(0,0,88,88);
   for(let y=0;y<h;y++) for(let x=0;x<w;x++){ const c=lv.map[y][x]||' '; if(c===' ') continue; g.fillStyle=THUMB_COL[c]||(c>='1'&&c<='9'?'#7FCFEA':'#B9E49E'); g.fillRect(ox+x*s+1,oy+y*s+1,s-2,s-2); }
   g.fillStyle='#FF8FAF'; lv.worm.forEach(p=>{ g.fillRect(ox+p[0]*s+2,oy+p[1]*s+2,s-4,s-4); }); }
 // the garden map: one little scene per chapter, its patches stepping stones along a winding path
-const SCENE_COL=['#CFEFB8','#FFD9C2','#E2D6FA','#FFE9A8','#CBE7F7','#FBD3E0','#D3EFD0','#F3DCC4','#CFE1F8','#F8D8EA','#D9F2C9','#FFD6DE','#C9EEDF','#FFE0C2','#FFF0A8','#D9DEFC','#E8F2C0','#F9D2BE'];
-const SCENE_DECO=[['sprout','flag'],['peach','mushroom'],['wheat','crack'],['key','sunflower'],['tunnel','sprout'],['drop','rain'],['bridge','drop'],['blossom','butterfly'],['tree','bee'],['daisy','leaf'],['snail','leaf'],['blossom','hedge'],['wetleaf','drop'],['balloon','bowtie'],['sunflower','stars'],['beetle','daisy'],['snail','beetle'],['moon','wheat']];
+const SCENE_COL=['#CFEFB8','#FFD9C2','#E2D6FA','#FFE9A8','#CBE7F7','#FBD3E0','#D3EFD0','#F3DCC4','#CFE1F8','#F8D8EA','#D9F2C9','#FFD6DE','#C9EEDF','#FFE0C2','#FFF0A8','#D9DEFC','#E8F2C0','#F9D2BE','#FDE0EA','#EED9C4','#DCEFD6'];
+const SCENE_DECO=[['sprout','flag'],['peach','mushroom'],['wheat','crack'],['key','sunflower'],['tunnel','sprout'],['drop','rain'],['bridge','drop'],['blossom','butterfly'],['tree','bee'],['daisy','leaf'],['snail','leaf'],['blossom','hedge'],['wetleaf','drop'],['balloon','bowtie'],['sunflower','stars'],['beetle','daisy'],['snail','beetle'],['moon','wheat'],['pollenY','butterfly'],['soil','sprout'],['pollenU','soil']];
 // a few pebble outlines so the stepping stones don't all look stamped from one mould
 const STONES=['48% 52% 46% 54% / 56% 50% 50% 44%','54% 46% 52% 48% / 48% 56% 44% 52%','46% 54% 50% 50% / 52% 46% 54% 48%','52% 48% 56% 44% / 50% 54% 46% 50%','50% 50% 44% 56% / 46% 52% 48% 54%'];
 const LOCK_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M8 10.5V8.2a4 4 0 0 1 8 0v2.3"/><rect x="5" y="10.5" width="14" height="10" rx="3"/><path d="M12 14.6v2.2"/></svg>';
@@ -2672,7 +2830,7 @@ function frame(now){
   windU.value=idleT; gustU.value=reduceMotion?1:1+1.2*Math.pow(Math.max(0,Math.sin(idleT*.21)),4);
   for(const s of swayers){ const a=(s.amp||1)*.07; s.o.rotation.z=Math.sin(idleT*1.6+s.ph)*a; s.o.rotation.x=Math.cos(idleT*1.3+s.ph)*a*.5; }
   const hp0=segMeshes[0]&&segMeshes[0].position;
-  updateBeetles(dt);
+  updateBeetles(dt); updatePollen(dt);
   snailMeshes.forEach((s,i)=>{ let lean=0; if(hp0){ const a=Math.atan2(hp0.x-s.position.x,hp0.z-s.position.z)-s.rotation.y; lean=-Math.sin(a)*.35; }
     s.userData.eyes.forEach((e,j)=>{ e.rotation.z=(j?-.25:.25)+lean+Math.sin(idleT*3+i+j)*.08; }); });
   if(hintMesh){ hintMesh.children[0].position.y=Math.sin(idleT*5)*.08; hintMesh.rotation.y+=dt*.002; }
