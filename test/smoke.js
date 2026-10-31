@@ -6,6 +6,7 @@ const { chromium } = require('playwright');
 const fs = require('fs'), path = require('path'), os = require('os'), cp = require('child_process');
 const assert = require('assert/strict');
 const { createServer } = require('../tools/serve');
+const analyze = require('../tools/analyze'), LEVELS = require('../src/levels');
 
 const root = path.join(__dirname, '..');
 const errors = [];
@@ -54,12 +55,21 @@ const errors = [];
     step('solves patch 1 on par and saves 3 stars');
 
     await page.keyboard.press('Escape');
-    const mem = async () => { for (const i of [40, 60, 91, 100, 30]) { await page.evaluate(i => window.__squirm.load(i), i); await page.waitForTimeout(400); }
+    // each round plays a patch with a key, a gate and fruit to the end (eaten and opened pieces, the win, a
+    // new worm), then loads a few more: a round must leave nothing behind on the GPU
+    const played = 31, sol = analyze(LEVELS[played]).sol;
+    const idle = () => page.waitForFunction(() => !window.__squirm.busy(), null, { timeout: 60000 });
+    const mem = async () => {
+      await page.evaluate(i => window.__squirm.load(i), played); await page.waitForTimeout(400); await idle();
+      for (const d of sol) { await page.evaluate(k => window.__squirm.move(k), d); await idle(); }
+      await page.waitForSelector('#winOv.show', { timeout: 60000 });
+      for (const i of [40, 60, 91, 100, 30]) { await page.evaluate(i => window.__squirm.load(i), i); await page.waitForTimeout(400); }
       return page.evaluate(() => window.__squirm.mem()); };
     const m1 = await mem(), m2 = await mem();
-    assert.ok(m2.geometries - m1.geometries < 40, `GPU geometries grew from ${m1.geometries} to ${m2.geometries}`);
+    // a little slack for caches that fill on first use (cached spheres of a new size)
+    assert.ok(m2.geometries - m1.geometries <= 6, `GPU geometries grew from ${m1.geometries} to ${m2.geometries}`);
     assert.equal(m2.textures, m1.textures, 'GPU textures grew');
-    step(`GPU memory stays flat across patches (${m1.geometries} -> ${m2.geometries} geometries)`);
+    step(`GPU memory stays flat across played patches (${m1.geometries} -> ${m2.geometries} geometries)`);
 
     await ctx.setOffline(true);
     await page.reload();

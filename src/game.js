@@ -793,7 +793,7 @@ function splash(){ const spots=[]; for(let y=0;y<state.h;y++) for(let x=0;x<stat
   const mt=new THREE.MeshBasicMaterial({color:0xEAF6FF,transparent:true,opacity:.8,depthWrite:false}); const r=new THREE.Mesh(ringGeo,mt); r.rotation.x=-Math.PI/2; r.position.copy(p); fx.add(r);
   tween(450,(e,k)=>{ r.scale.setScalar(1+k*(wet?4:2.5)); mt.opacity=.8*(1-k); },kill(r)); }
 function burst(pos,color){
-  if(reduceMotion) return; const geo=sph(.05,10,8), mt=toon(color);
+  if(reduceMotion) return; const geo=sph(.05,10,8), mt=MC['burst'+color]||(MC['burst'+color]=toon(color)); // one cached material per colour
   for(let i=0;i<10;i++){ const p=new THREE.Mesh(geo,mt); p.position.copy(pos); fx.add(p);
     const a=i/10*Math.PI*2, v=new THREE.Vector3(Math.cos(a)*.035,.05+Math.random()*.03,Math.sin(a)*.035);
     tween(520,(e,k)=>{ p.position.add(v); v.y-=.006; p.scale.setScalar(Math.max(.01,1-k)); },kill(p)); }
@@ -996,8 +996,11 @@ function applyExpr(g,name){ const F=g.userData.face; if(!F) return; g.userData.e
   for(const k in F.mouths) F.mouths[k].visible=(k===mouth);
   F.tongue.visible=tongue;
 }
+// frees an old worm segment: the head's face parts are its own, but its hat and extra share geometry with
+// their cached protos, so they come off first
+function dropSeg(sg){ const u=sg.userData; if(u.hatSlot) u.hatSlot.clear(); if(u.accSlot) u.accSlot.clear(); removeObj(sg); disposeTree(sg); }
 function snapWorm(){
-  act=null; segMeshes.forEach(removeObj); segMeshes=[]; tailExtras=[];
+  act=null; segMeshes.forEach(dropSeg); segMeshes=[]; tailExtras=[];
   const n=state.segs.length;
   state.segs.forEach((p,i)=>{ const s=makeSeg(i); s.position.copy(wp(p[0],p[1],segY(i,n))); segMeshes.push(s); });
   if(n>1){ const a=state.segs[0], b=state.segs[1]; const dx=a[0]-b[0], dy=a[1]-b[1]; if(Math.abs(dx)+Math.abs(dy)===1) headDir=[dx,dy]; }
@@ -1591,8 +1594,11 @@ function newExpression(h){ let e; do{ e=EXPRS[Math.floor(Math.random()*EXPRS.len
 
 // ---------- tweens ----------
 const tweens=[]; const dying=new Set();
-function kill(o){ dying.add(o); return ()=>{ dying.delete(o); removeObj(o); }; }
-function clearDying(){ dying.forEach(removeObj); dying.clear(); }
+// removes an effect or a board piece once its animation ends, and frees its GPU resources (disposeTree keeps
+// the shared ones): eaten fruit, opened gates, sunk tiles, sparkles and ripples are gone from the board by the
+// time the next patch is built, so nothing else would free them
+function kill(o){ dying.add(o); return ()=>{ dying.delete(o); removeObj(o); disposeTree(o); }; }
+function clearDying(){ dying.forEach(o=>{ removeObj(o); disposeTree(o); }); dying.clear(); }
 function tween(dur,fn,done){ if(reduceMotion) dur=Math.min(dur,90); tweens.push({t:0,dur,fn,done}); }
 const ease=k=>k<.5?2*k*k:1-Math.pow(-2*k+2,2)/2;
 
@@ -2272,6 +2278,7 @@ window.addEventListener('popstate',()=>{ if(ignorePop>0){ ignorePop--; return; }
 // add an entry on top. Returning players see the newest entry once as a card on the Play tab, new players never
 // do (squirm-news holds the last version seen); Settings > About lists them all.
 const NEWS=[
+  ['1.12.2','2026-10-31','Lighter on your phone',['Long play sessions stay smooth: the garden now tidies up after every snack, gate, sparkle and new patch.']],
   ['1.12.1','2026-10-31','A tidier wardrobe',['The bird\'s nest is properly woven now, and its eggs sit snug inside.','The sweatband hugs the head all the way round, the pirate patch covers its eye, and the daisy chain shows under the chin.','The ladybug friend is a little bigger.']],
   ['1.12.0','2026-10-31','Pick a colour',['Many hats and extras now come in five colours: wear one and pick its colour in the wardrobe.','Four new hats: a little sprout, a teacup, a bird\'s nest and a little rain cloud.','Four new extras: a pirate patch, a ladybug friend, a sweatband and a daisy chain.','Each one unlocks in its own playful way. Take a peek in the wardrobe!']],
   ['1.11.0','2026-10-31','Far fields',['A new chapter, Far fields: ten big, wide patches, and the toughest one yet at the end.','An explorer\'s hat, a spotted bandana, a Sage colour and a new badge to earn.','A tidier top bar: just what you need to finish the patch.','A smarter fancy mustache, and the worm looks right when it pops out of a tunnel and straight back in.']],
