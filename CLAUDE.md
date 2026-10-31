@@ -294,6 +294,12 @@ Sections are listed in the table of contents at the top of the file; each starts
   (glasses, shades, a mustache, ...: [id, name, how to earn, test]) work the same way through `buildExtra`
   into the head's `accSlot`, saved in `squirm-extra`; every new hat or extra needs a sticker in `ART`
   (`hat-<id>` / `extra-<id>`).
+  `TINTS` gives some hats and extras colour options: `keys` are the item's `C` materials, swapped by `tinted()` when
+  its proto is built (protos are cached per id and option), `art` the sticker hexes `tintArt()` recolours, and option 0
+  is the item's own look. The wardrobe shows a picker row (`renderTints`, `#wardTint`) only for the worn item when it
+  has options; choices live in `squirm-tints` by item id. Items where a colour makes no sense (sunglasses, monocle,
+  mustaches) simply have no entry. Milestone unlocks can use any `progress.stats` counter (`naps`, `rains`,
+  `restarts`, `outfits`, `days`, `teatime`, `allPollen`, ...); bump new ones with `bumpStat`.
   `WORM_COLS` ([name, body, head, stars, cheek]) unlock with stars; keep head and body the same hex (the
   toon head and the vertex-coloured body render a hex identically, so any difference shows at the neck), and
   the cheek is a blush picked per colour (`cheekMat`). `PATTERNS` (id, name, how to earn, test) unlock with milestones and are

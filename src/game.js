@@ -36,7 +36,8 @@ const C = {
   mushRed:0xF07A6A, topHat:0x4E3F5C, rainHat:0xFFD04A, brolly:0x9FD2F2, bowDark:0xE36A8C, bowKnot:0xC24E72,
   straw:0xF3D18A, strawDark:0xD9B166, acornCap:0x8A5A36, acornNut:0xC98E52, partyA:0x9FD2F2, partyB:0xFFF1A8, crown:0xF5C14E, beret:0xB79CF2, beanie:0x8FD0B0, beanieRib:0x6FB894, beetle:0x7C8CF0, beetleDark:0x5566C8, beetleHead:0x3E3F84, beetleSpot:0xB5C0FA, beetleLeg:0x3A2F5E, sunPetal:0xFFD34D, sunCore:0x7A4E2E, shellHat:0xC9A0E6, shellSpiral:0xA67CCB, pumpkin:0xF7A05A, pumpkinRib:0xE0843F,
   pollenP:0xFF7A6B, pollenPLight:0xFFC6BC, pollenPDark:0xC94A43, pollenY:0xFFC63A, pollenYLight:0xFFE9A6, pollenYDark:0xD08A1C, pollenU:0x63A9F2, pollenULight:0xC4E2FF, pollenUDark:0x3E73C2,
-  bandana:0xE4574C, bandanaDot:0xFFF1DE,
+  bandana:0xE4574C, bandanaDot:0xFFF1DE, teacup:0x9FD2F2, teacupDot:0xFFFBF2, tea:0xB8794A, twig:0x9A6B45, egg:0xBFE6F7, eggDot:0x7FA8C2,
+  patch:0x3B2A22, sweat:0xFFFBF2, sweatStripe:0xF27DA2, ladybug:0xE4574C, daisy:0xFFFBF2,
   explorer:0xDCC28C, explorerBand:0x8A5A36,
   miner:0xF5A33A, minerDark:0xD9822A, lamp:0xFFF6C8, gnome:0xE4574C, goggle:0xA9703F, lensBlue:0xBFE6F7,
   softSoil:0xB07850, softRidge:0xCB9468, softClod:0x8A5A3A,
@@ -1033,11 +1034,15 @@ const cheekMat=MC.wormCheek=new THREE.MeshBasicMaterial({color:C.cheek,transpare
 // hats, earned by finishing chapters: [id, name, chapter index that unlocks it]. Each is built once and cloned.
 const HATS=[['none','No hat',-1],['crown','Flower crown',0],['mush','Mushroom cap',1],['straw','Straw hat',2],['tophat','Top hat',3],['leaf','Leaf cap',4],['rainhat','Rain hat',5],
   ['acorn','Acorn cap',6],['bee','Bee antennae',7],['party','Party hat',8],['brolly','Tiny umbrella',9],['beret','Dewdrop beret',10],['bow','Ribbon bow',11],['gold','Garden crown',12],['beanie','Pompom beanie',13],['sunflower','Sunflower',14],['horn','Beetle horn',15],['shell','Snail shell',16],['pumpkin','Pumpkin hat',17],['bonnet','Petal bonnet',18],['miner','Miner\'s helmet',19],['gnome','Gnome hat',20],['explorer','Explorer\'s hat',21],
+  ['sprout','Little sprout',-2,'Let the worm doze off 10 times',()=>(progress.stats.naps||0)>=10],
+  ['teacup','Teacup',-2,'Finish a patch at tea time, 3 to 5 pm',()=>(progress.stats.teatime||0)>=1],
+  ['nest','Bird\'s nest',-2,'Visit the garden on 7 different days',()=>(progress.stats.days||0)>=7],
+  ['cloud','Little cloud',-2,'Start the rain 30 times',()=>(progress.stats.rains||0)>=30],
   ['chef','Chef hat',-2,'Eat 100 snacks',()=>(progress.stats.fruit||0)>=100],
   ['wizard','Wizard hat',-2,'30 patches, no hints',()=>Object.keys(progress.clean).length>=30],
   ['cowboy','Cowboy hat',-2,'Clear 15 meadow patches',()=>['easy','medium','hard'].reduce((a,d)=>a+progress.endless[d].cleared,0)>=15],
   ['phones','Headphones',-2,'Finish 10 daily patches',()=>(progress.stats.dailies||0)>=10]];
-const hatArt=(id,size=36)=>art('hat-'+id,size);
+const hatArt=(id,size=36)=>tintArt(id,art('hat-'+id,size));
 // extras: things for the face, earned with milestones: [id, name, how to earn, test]. Built once and cloned, like hats.
 const EXTRAS=[['none','Nothing','',()=>true],
   ['glasses','Round glasses','Earn 10 badges',()=>Object.keys(progress.badges).length>=10],
@@ -1054,10 +1059,42 @@ const EXTRAS=[['none','Nothing','',()=>true],
   ['stars','Star shades','3 stars on 60 patches',()=>LEVELS.filter(l=>progress.stars[l.name]===3).length>=60],
   ['butterfly','Butterfly friend','Finish every garden patch',()=>allCleared()],
   ['goggles','Digging goggles','Burrow under yourself 30 times',()=>(progress.stats.burrows||0)>=30],
-  ['bandana','Explorer\'s bandana','Finish 200 patches',()=>LEVELS.filter((l,i)=>isCleared(i)).length>=200]];
+  ['bandana','Explorer\'s bandana','Finish 200 patches',()=>LEVELS.filter((l,i)=>isCleared(i)).length>=200],
+  ['eyepatch','Pirate patch','Start a patch over 15 times',()=>(progress.stats.restarts||0)>=15],
+  ['ladybug','Ladybug friend','Change your outfit 40 times',()=>(progress.stats.outfits||0)>=40],
+  ['sweatband','Sweatband','Crawl 20,000 moves',()=>(progress.stats.moves||0)>=20000],
+  ['daisies','Daisy chain','Wear all three pollens in one patch',()=>(progress.stats.allPollen||0)>=1]];
 let extraId=store.get('squirm-extra')||'none';
 const extraOn=()=>{ const e=EXTRAS.find(x=>x[0]===extraId); return e&&e[3]()?extraId:'none'; };
-const extraArt=(id,size=36)=>art(id==='none'?'hat-none':'extra-'+id,size);
+const extraArt=(id,size=36)=>tintArt(id,art(id==='none'?'hat-none':'extra-'+id,size));
+// colour options for some hats and extras: each option swaps the item's own materials (keys, by index) and recolours
+// its sticker (art: the sticker's hexes for those keys). Option 0 is the item's own look. Items without an entry
+// (sunglasses, the monocle, ...) have no colour picker. Chosen options live in squirm-tints, by item id.
+const TINT_SET={red:[['Poppy',0xE4574C],['Bluebell',0x5B8FD9],['Fern',0x5FAE6A],['Plum',0x9A72D6],['Marigold',0xF2B83A]],
+  pastel:[['Sky',0x9FD2F2],['Blossom',0xF7A8C4],['Butter',0xFFE08A],['Mint',0x9FE0BE],['Lilac',0xCDB8F5]]};
+const TINTS={
+  bow:{keys:['bowDark','bowKnot'],art:['#E36A8C','#C24E72'],opts:[['Berry',0xE36A8C,0xC24E72],['Sky',0x7FBFEA,0x4F95C8],['Mint',0x7FD3A8,0x4FAE80],['Butter',0xF5C84E,0xD9A22A],['Lilac',0xB79CF2,0x8E72D6]]},
+  beanie:{keys:['beanie','beanieRib'],art:['#8FD0B0','#6FB894'],opts:[['Mint',0x8FD0B0,0x6FB894],['Berry',0xF2A0B8,0xE07A98],['Sky',0x9FCBF0,0x7AAEDC],['Butter',0xF7D57A,0xE8BC4E],['Lilac',0xC7B2F2,0xA890E0]]},
+  party:{keys:['partyA'],art:['#9FD2F2'],opts:TINT_SET.pastel.map(([n,c])=>[n,c])},
+  brolly:{keys:['brolly'],art:['#9FD2F2'],opts:TINT_SET.pastel.map(([n,c])=>[n,c])},
+  beret:{keys:['beret'],art:['#B79CF2'],opts:[['Lilac',0xB79CF2],['Berry',0xE36A8C],['Navy',0x5B6FB8],['Mint',0x7FD3A8],['Coral',0xF07A6A]]},
+  rainhat:{keys:['rainHat'],art:['#FFD04A'],opts:[['Sunny',0xFFD04A],['Coral',0xF07A6A],['Sky',0x7FBFEA],['Mint',0x7FD3A8],['Lilac',0xB79CF2]]},
+  mush:{keys:['mushRed'],art:['#F07A6A'],opts:[['Toadstool',0xF07A6A],['Lilac',0xB79CF2],['Butter',0xF5C84E],['Sky',0x7FBFEA],['Mint',0x7FD3A8]]},
+  gnome:{keys:['gnome'],art:['#E4574C'],opts:TINT_SET.red},
+  teacup:{keys:['teacup','teacupDot'],art:['#9FD2F2','#FFFBF2'],opts:[['Sky',0x9FD2F2,0xFFFBF2],['Rose',0xF7A8C4,0xFFFBF2],['Butter',0xFFE08A,0xF27DA2],['Mint',0x9FE0BE,0xFFFBF2],['Lilac',0xCDB8F5,0xFFE08A]]},
+  scarf:{keys:['mushRed','partyB'],art:['#F07A6A','#FFF1A8'],opts:[['Coral',0xF07A6A,0xFFF1A8],['Sky',0x7FBFEA,0xFFFBF2],['Mint',0x7FD3A8,0xFFF1A8],['Berry',0xE36A8C,0xFFE3EC],['Lilac',0xB79CF2,0xFFF1A8]]},
+  bowtie:{keys:['bowDark','heartFrame'],art:['#E36A8C','#F27DA2'],opts:[['Berry',0xE36A8C,0xF27DA2],['Navy',0x4E5E9E,0x6F80C2],['Fern',0x4FAE80,0x7FD3A8],['Marigold',0xD9A22A,0xF5C84E],['Plum',0x8E72D6,0xB79CF2]]},
+  bandana:{keys:['bandana'],art:['#E4574C'],opts:TINT_SET.red},
+  flower:{keys:['chef'],art:['#FFFBF2'],opts:[['Daisy',0xFFFBF2],['Blossom',0xF7A8C4],['Butter',0xFFE08A],['Lilac',0xCDB8F5],['Sky',0x9FD2F2]]},
+  sweatband:{keys:['sweat','sweatStripe'],art:['#FFFBF2','#F27DA2'],opts:[['Classic',0xFFFBF2,0xF27DA2],['Sky',0x9FD2F2,0xFFFBF2],['Lime',0xC9E77E,0x4FAE80],['Sunny',0xFFD04A,0xE4574C],['Berry',0xE36A8C,0xFFFBF2]]}};
+let tints=store.json('squirm-tints')||{};
+const tintOf=id=>{ const t=TINTS[id]; return t?Math.min(t.opts.length-1,Math.max(0,tints[id]|0)):0; };
+const hexStr=n=>'#'+n.toString(16).padStart(6,'0').toUpperCase();
+function tintArt(id,svg){ const t=TINTS[id], k=tintOf(id); if(!t||!k) return svg; t.art.forEach((h,i)=>{ if(t.opts[k][i+1]!=null) svg=svg.split(h).join(hexStr(t.opts[k][i+1])); }); return svg; }
+// swaps the tinted materials in a freshly built hat or extra
+function tinted(id,proto){ const t=TINTS[id], k=tintOf(id); if(!t||!k) return proto;
+  const map=new Map(t.keys.map((key,i)=>[m(key),MC['tint'+t.opts[k][i+1]]||(MC['tint'+t.opts[k][i+1]]=toon(t.opts[k][i+1]))]).filter((e,i)=>t.opts[k][i+1]!=null));
+  proto.traverse(o=>{ if(o.material&&map.has(o.material)) o.material=map.get(o.material); }); return proto; }
 const extraProto={};
 const SHAPE_HEART=()=>{ const s=new THREE.Shape(); s.moveTo(0,-1); s.bezierCurveTo(-.6,-.45,-1.25,-.1,-1.05,.45); s.bezierCurveTo(-.88,.95,-.25,1.05,0,.55); s.bezierCurveTo(.25,1.05,.88,.95,1.05,.45); s.bezierCurveTo(1.25,-.1,.6,-.45,0,-1); return s; };
 const SHAPE_STAR=()=>{ const s=new THREE.Shape(); for(let i=0;i<10;i++){ const a=Math.PI/2+i*Math.PI/5, r=i%2?.45:1; s[i?'lineTo':'moveTo'](Math.cos(a)*r,Math.sin(a)*r); } return s; };
@@ -1110,6 +1147,30 @@ function buildExtra(id){ // frames sit in front of the eyes even when they widen
     const kp=new THREE.Vector3(.215,-.245,.18), knot=new THREE.Mesh(sph(.068,14,10),m('mushRed')); knot.position.copy(kp); knot.scale.set(1,.85,.8); outline(knot,.01); g.add(knot);
     for(const [dx,dy,dz,rz,rx] of [[.075,-.065,0,.9,.15],[.025,-.075,.06,.35,-.35]]){ const t=new THREE.Mesh(sph(.05,14,10),m('mushRed')); t.position.set(kp.x+dx,kp.y+dy,kp.z+dz); t.rotation.set(rx,0,rz); t.scale.set(1,2,.5); outline(t,.01); g.add(t);
       const tip=new THREE.Mesh(sph(.05,12,8),m('partyB')); tip.position.y=-.036; tip.scale.set(.88,.2,1.08); t.add(tip); } }
+  else if(id==='eyepatch'){ // over the right eye, its strap running up over the forehead and round the back of the head
+    const p=new THREE.Vector3(.13,.14,.36), pt=new THREE.Mesh(sph(.12,20,14),m('patch')); pt.position.copy(p); pt.scale.set(1,.9,.28); pt.lookAt(p.clone().multiplyScalar(3)); outline(pt,.01); g.add(pt);
+    const on=d=>new THREE.Vector3(...d).normalize().multiplyScalar(HEAD_R+.012);
+    const strap=new THREE.CatmullRomCurve3([on([.33,.37,.87]),on([.05,.62,.75]),on([-.35,.72,.5]),on([-.75,.55,.0]),on([-.45,.35,-.8])]);
+    g.add(new THREE.Mesh(new THREE.TubeGeometry(strap,30,.016,6,false),m('patch')));
+    const end=on([.62,.15,.77]), side=new THREE.CatmullRomCurve3([on([.4,.2,.88]),end,on([.85,.15,.45]),on([.6,.1,-.75])]); g.add(new THREE.Mesh(new THREE.TubeGeometry(side,24,.016,6,false),m('patch'))); }
+  else if(id==='ladybug'){ // a ladybug resting on the right of the head, away from the flower clip and the butterfly
+    const b=new THREE.Group(), bp=new THREE.Vector3(.26,.24,.12).setLength(HEAD_R+.02); b.position.copy(bp); b.lookAt(bp.x*3,bp.y*3,bp.z*3); b.rotateZ(-.6); g.add(b);
+    const shell=new THREE.Mesh(new THREE.SphereGeometry(.07,18,12,0,Math.PI*2,0,Math.PI/2),m('ladybug')); shell.rotation.x=Math.PI/2; shell.scale.set(1,1,.7); outline(shell,.008); b.add(shell);
+    const head=new THREE.Mesh(sph(.032,12,10),m('patch')); head.position.set(0,.07,.012); b.add(head);
+    const line=new THREE.Mesh(new THREE.BoxGeometry(.006,.13,.01),m('patch')); line.position.z=.05; b.add(line);
+    for(const [x,y] of [[-.035,.02],[.035,.02],[-.03,-.03],[.03,-.03]]){ const d=new THREE.Mesh(sph(.014,8,6),m('patch')); d.position.set(x,y,.045); d.scale.z=.4; b.add(d); }
+    for(const sd of [-1,1]){ const e=new THREE.Mesh(sph(.008,6,4),m('eye')); e.position.set(sd*.013,.085,.03); b.add(e); } }
+  else if(id==='sweatband'){ // a stretchy band round the top of the head, tipped back so it sits above the eyes (hats go on top)
+    const y=.24, R=Math.sqrt(HEAD_R*HEAD_R-y*y)+.018, band=new THREE.Group(); band.position.y=y-.02; band.rotation.x=-.32; g.add(band);
+    band.add(new THREE.Mesh(new THREE.CylinderGeometry(R,R+.012,.075,30,1,true),m('sweat')));
+    band.add(new THREE.Mesh(new THREE.CylinderGeometry(R+.004,R+.016,.026,30,1,true),m('sweatStripe')));
+    for(const yy of [-.04,.04]){ const r=new THREE.Mesh(new THREE.TorusGeometry(R+.006*(yy<0?2:0),.006,6,30),lineMat); r.rotation.x=Math.PI/2; r.position.y=yy; band.add(r); } }
+  else if(id==='daisies'){ // a chain of little daisies round the bottom of the head, where the scarf sits, on a green stem
+    const R=.33, ring=new THREE.Group(); ring.position.set(0,-.1,-.07); ring.rotation.x=-.93; ring.scale.x=.92; g.add(ring);
+    ring.add(new THREE.Mesh(new THREE.TorusGeometry(R,.012,6,40),m('leaf')));
+    for(let k=0;k<9;k++){ const a=-Math.PI/2+(k-4)*.3, f=new THREE.Group(); f.position.set(Math.cos(a)*R,Math.sin(a)*R,.012); ring.add(f);
+      for(let q=0;q<6;q++){ const pt=new THREE.Mesh(sph(.024,8,6),m('daisy')); const b=q/6*Math.PI*2; pt.position.set(Math.cos(b)*.026,Math.sin(b)*.026,0); pt.scale.z=.45; f.add(pt); }
+      const c=new THREE.Mesh(sph(.016,8,6),m('crown')); c.position.z=.012; f.add(c); } }
   else if(id==='bandana'){ // a spotted neckerchief: a thin roll round the bottom of the head (like the scarf) and a triangle in front
     const R=.33, ring=new THREE.Group(); ring.position.set(0,-.1,-.07); ring.rotation.x=-.93; ring.scale.x=.92; g.add(ring);
     ring.add(new THREE.Mesh(new THREE.TorusGeometry(R,.036,10,36),m('bandana')), new THREE.Mesh(new THREE.TorusGeometry(R,.048,8,36),lineMat));
@@ -1156,7 +1217,7 @@ function buildExtra(id){ // frames sit in front of the eyes even when they widen
     const t=new THREE.Mesh(geo,m('tash')); t.position.set(0,id==='tash'?.008:.026,.322); t.rotation.x=-.22; outline(t,.008); g.add(t); }
   return g; }
 function dressExtra(g){ const slot=g&&g.userData.accSlot; if(!slot) return; slot.clear(); const id=extraOn(); if(id==='none') return;
-  if(!extraProto[id]) extraProto[id]=buildExtra(id); slot.add(extraProto[id].clone()); }
+  const k=id+'|'+tintOf(id); if(!extraProto[k]) extraProto[k]=tinted(id,buildExtra(id)); slot.add(extraProto[k].clone()); }
 const hatProto={};
 function buildHat(id){ const h=new THREE.Group();
   if(id==='chef'){ const band=new THREE.Mesh(new THREE.CylinderGeometry(.19,.2,.13,24),m('chef')); band.position.y=.05; outline(band,.012); h.add(band);
@@ -1278,6 +1339,32 @@ function buildHat(id){ const h=new THREE.Group();
     const body=new THREE.Mesh(new THREE.CylinderGeometry(.065,.075,.08,18),m('pole')); body.rotation.x=Math.PI/2; outline(body,.008); lamp.add(body);
     const glass=new THREE.Mesh(new THREE.CircleGeometry(.055,18),new THREE.MeshBasicMaterial({color:C.lamp})); glass.position.z=.042; lamp.add(glass);
     const glow=new THREE.Mesh(new THREE.CircleGeometry(.09,18),new THREE.MeshBasicMaterial({color:C.lamp,transparent:true,opacity:.35,depthWrite:false})); glow.position.z=.046; lamp.add(glow); }
+  else if(id==='sprout'){ // a seedling growing out of the top of the head: a stem and two round leaves
+    const stem=new THREE.Mesh(new THREE.CylinderGeometry(.018,.024,.2,8),m('leaf')); stem.position.y=.07; stem.rotation.z=.12; outline(stem,.008); h.add(stem);
+    for(const sd of [-1,1]){ const lf=new THREE.Mesh(sph(.09,14,10),m('leaf')); lf.scale.set(1.15,.22,.7); lf.position.set(sd*.085-.015,.18+(sd>0?.02:0),0); lf.rotation.z=-sd*.45; outline(lf,.008); h.add(lf);
+      const v=new THREE.Mesh(new THREE.BoxGeometry(.11,.006,.012),m('leafVein')); v.position.set(sd*.085-.015,.2+(sd>0?.02:0),0); v.rotation.z=-sd*.45; h.add(v); }
+    h.position.y=-.03; }
+  else if(id==='teacup'){ // a teacup on its saucer, a little tea inside and a curl of steam
+    const sau=new THREE.Mesh(new THREE.CylinderGeometry(.22,.18,.035,28),m('chef')); outline(sau,.01); h.add(sau);
+    const cup=new THREE.Mesh(new THREE.CylinderGeometry(.15,.1,.17,26,1,true),m('teacup')); cup.position.y=.1; outline(cup,.01); h.add(cup);
+    const bot=new THREE.Mesh(new THREE.CircleGeometry(.1,20),m('teacup')); bot.rotation.x=-Math.PI/2; bot.position.y=.018; h.add(bot);
+    const tea=new THREE.Mesh(new THREE.CircleGeometry(.135,24),m('tea')); tea.rotation.x=-Math.PI/2; tea.position.y=.165; h.add(tea);
+    const handle=new THREE.Mesh(new THREE.TorusGeometry(.05,.016,8,16,Math.PI*1.3),m('teacup')); handle.position.set(.15,.1,0); handle.rotation.z=-Math.PI*.65; outline(handle,.006); h.add(handle);
+    for(let i=0;i<6;i++){ const a=i/6*Math.PI*2+.3, d=new THREE.Mesh(sph(.018,8,6),m('teacupDot')); d.position.set(Math.cos(a)*.128,.11,Math.sin(a)*.128); d.scale.set(1,1,.4); d.lookAt(Math.cos(a),.11,Math.sin(a)); h.add(d); }
+    const st=[]; for(let k=0;k<=6;k++){ const t=k/6; st.push(new THREE.Vector3(Math.sin(t*5)*.03,.2+t*.16,0)); }
+    const steam=new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(st),16,.012,6,false),new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:.75})); h.add(steam); }
+  else if(id==='nest'){ // a twiggy nest with two speckled eggs
+    const ring=new THREE.Mesh(new THREE.TorusGeometry(.17,.06,10,26),m('twig')); ring.rotation.x=Math.PI/2; ring.scale.z=.8; ring.position.y=.05; outline(ring,.01); h.add(ring);
+    const bowl=new THREE.Mesh(new THREE.SphereGeometry(.17,20,10,0,Math.PI*2,Math.PI/2,Math.PI/2),m('acornCap')); bowl.scale.y=.4; bowl.position.y=.06; h.add(bowl);
+    for(let i=0;i<14;i++){ const a=i*.9, tw=new THREE.Mesh(new THREE.CylinderGeometry(.008,.008,.16,4),m('acornNut')); tw.position.set(Math.cos(a)*.19,.06+(i%3)*.02,Math.sin(a)*.19); tw.rotation.set(1.3,a,.4*(i%2?1:-1)); h.add(tw); }
+    for(const [x,z,r] of [[-.05,.02,.2],[.05,-.02,-.3]]){ const e=new THREE.Mesh(sph(.06,16,12),m('egg')); e.scale.set(.85,1.1,.85); e.position.set(x,.1,z); e.rotation.z=r; outline(e,.008); h.add(e);
+      for(let k=0;k<4;k++){ const d=new THREE.Mesh(sph(.009,6,4),m('eggDot')); const a=k*1.7+x*20, el=.6+k*.3; d.position.set(x+Math.cos(a)*Math.sin(el)*.05,.1+Math.cos(el)*.064,z+Math.sin(a)*Math.sin(el)*.05); h.add(d); } } }
+  else if(id==='cloud'){ // a little rain cloud hovering over the head, a few drops falling from it
+    const c=new THREE.Group(); c.position.y=.22; h.add(c);
+    [[0,0,0,.11],[-.1,-.02,0,.08],[.1,-.02,0,.08],[.05,.05,0,.08],[-.05,.05,0,.075]].forEach(p=>{ const s=new THREE.Mesh(sph(p[3],16,12),m('cloud')); s.position.set(p[0],p[1],p[2]); outline(s,.01); c.add(s); });
+    const face=new THREE.Group(); face.position.set(0,0,.105); c.add(face);
+    for(const sd of [-1,1]){ const e=new THREE.Mesh(new THREE.TorusGeometry(.016,.006,6,10,Math.PI),m('pupil')); e.position.set(sd*.035,.01,0); e.rotation.z=Math.PI; face.add(e); }
+    for(const [x,y] of [[-.07,-.12],[.02,-.15],[.08,-.1]]){ const d=new THREE.Mesh(sph(.018,8,6),m('water')); d.scale.y=1.5; d.position.set(x,y,.02); c.add(d); } }
   else if(id==='explorer'){ // a pith helmet for the long trek: a tall khaki dome on a wide brim, a leather band and a feather
     const brim=new THREE.Mesh(new THREE.CylinderGeometry(.33,.35,.03,30),m('explorer')); brim.rotation.x=.08; outline(brim,.012); h.add(brim);
     const dome=new THREE.Mesh(new THREE.SphereGeometry(.22,26,12,0,Math.PI*2,0,Math.PI/2),m('explorer')); dome.scale.y=1.05; dome.position.y=.01; outline(dome,.012); h.add(dome);
@@ -1307,7 +1394,7 @@ const chapterCleared=k=>{ const ch=CHAPTERS[k]; if(!ch) return false; for(let i=
 const hatUnlocked=h=>h[4]?h[4]():h[2]<0||chapterCleared(h[2]);
 function dressHat(g){ const slot=g&&g.userData.hatSlot; if(!slot) return; slot.clear();
   const h=HATS.find(x=>x[0]===hatId); if(!h||h[0]==='none'||!hatUnlocked(h)) return;
-  if(!hatProto[hatId]) hatProto[hatId]=buildHat(hatId); slot.add(hatProto[hatId].clone()); }
+  const k=hatId+'|'+tintOf(hatId); if(!hatProto[k]) hatProto[k]=tinted(hatId,buildHat(hatId)); slot.add(hatProto[k].clone()); }
 const WORM_COLS=[['Blossom',0xFFB3C8,0xFFB3C8,0,0xEF6A8F],['Mint',0x7FD9B0,0x7FD9B0,15,0xFF6B99],['Butter',0xFFE58F,0xFFE58F,45,0xFF827C],['Lavender',0xCDB8F5,0xCDB8F5,90,0xF979A6],['Sky',0xA9D8F5,0xA9D8F5,150,0xFF6B91],
   ['Peach',0xFFC29A,0xFFC29A,210,0xF87569],['Teal',0x74CCD2,0x74CCD2,270,0xFF718B],['Cocoa',0xD6AE8C,0xD6AE8C,330,0xD66161],['Twilight',0xA4A6E4,0xA4A6E4,400,0xFD75AE],['Golden',0xF7BE4F,0xF7BE4F,480,0xFB776D],['Moonlight',0xD7DDF0,0xD7DDF0,520,0xF27FA8],['Sprout',0xBCE38A,0xBCE38A,600,0xFF7F8F],['Sage',0xB4CBB0,0xB4CBB0,640,0xF27E93]];
 const starTotal=()=>LEVELS.reduce((a,l)=>a+(progress.stars[l.name]||0),0);
@@ -1540,7 +1627,7 @@ function animateMove(prev,ev,dir,sliding){
   if(ev.pushed){ pushBeetle(ev.pushed,sliding?95:queue.length?110:170); bumpStat('pushes'); const bb=state.beetles[ev.pushed.i]; if(bb&&tileAt(state,bb.x,bb.y)==='B') bumpStat('beetleFlower'); }
   if(ev.swung){ sfx('creak'); const it=cells[state.segs[0][1]][state.segs[0][0]].item; if(it&&it.userData.wheel){ const w=it.userData.wheel, z0=w.rotation.z; tween(600,(e)=>{ w.rotation.z=z0-e*Math.PI*1.5; }); }
     if(!ev.swung.length) toast('Nothing turned. Bridges with you on them stay put.',2400); }
-  if(ev.pollen){ const h=state.segs[0]; pollenPuff(wp(h[0],h[1],.25),ev.pollen); sfx('pollen'); bumpStat('dusts'); react('wow',700);
+  if(ev.pollen){ pollensHere.add(ev.pollen); if(pollensHere.size===3&&!progress.stats.allPollen) bumpStat('allPollen'); const h=state.segs[0]; pollenPuff(wp(h[0],h[1],.25),ev.pollen); sfx('pollen'); bumpStat('dusts'); react('wow',700);
     if(!sliding){ const t=sayFor('pollen'); if(t) wormSays(t,1400); } }
   if(ev.cross){ dustPuff(wp(ev.cross[0],ev.cross[1],.05),C.softSoil); sfx('dig'); bumpStat('burrows'); }
   if(ev.rain!==undefined){ sfx(ev.rain?'rainOn':'rainOff'); toast(ev.rain?'Rain is falling. Leaves grow, puddles fill.':'The sun is back. Puddles dry, leaves fold away.',2400); }
@@ -1637,6 +1724,7 @@ function onWin(){ shareText=''; newBest=false; chapterDone=null; const coloursBe
     shareText=shareLine(`${DIFF_NAME[endlessDiff].toLowerCase()} endless patch, streak ${e.streak}`,mv,par,st);
     gift(art(DIFF_ICON_KEY[endlessDiff],26),`${DIFF_NAME[endlessDiff]} streak ${e.streak}`,`${e.cleared} cleared, best streak ${e.best}`,e.streak>1&&e.streak===e.best);
   }
+  { const hr=new Date().getHours(); if(hr>=15&&hr<17) bumpStat('teatime'); }
   if(mode==='garden'&&!hintsUsed) progress.clean[LEVELS[li].name]=true;
   save(); askPersist();
   const hatsBefore=winHats;
@@ -1737,7 +1825,7 @@ function undo(){
   const a=state.segs[0], b=state.segs[1]; if(b&&Math.abs(a[0]-b[0])+Math.abs(a[1]-b[1])===1) headDir=[a[0]-b[0],a[1]-b[1]];
   animating++; tween(150,(e)=>{ segMeshes.forEach((s,i)=>{ if(starts[i].distanceTo(targets[i])>1.3){ s.position.copy(targets[i]); return; } s.position.lerpVectors(starts[i],targets[i],e); }); },()=>{ animating--; if(queue.length) tryMove(queue.shift()); });
 }
-function restart(){ if(!L) return; clearHint(); tweens.length=0; clearDying(); animating=0; queue.length=0; slideSteps.length=0; hideAll(); sfx('undo');
+function restart(){ if(!L) return; if(state&&state.moves>0) bumpStat('restarts'); clearHint(); tweens.length=0; clearDying(); animating=0; queue.length=0; slideSteps.length=0; hideAll(); sfx('undo');
   if(state.status==='play' && state.moves>0){ history=[]; state=initState(L); syncBoard(false); snapWorm(); syncSnails(false); snapBeetles(); syncWeather(false); syncHedges(false); updateHUD(true); saveResume(); lastMoveT=idleT;
     toast('Fresh start.',1800); return; }
   clearResume(); hintsUsed=0; undosHere=0; if(mode==='garden') loadLevel(li,false); else startLevel(L,false); }
@@ -1921,6 +2009,14 @@ const ART={
   'hat-bonnet':'<g fill="#F7A8C4"><ellipse cx="5.6" cy="15" rx="3.4" ry="2.4" transform="rotate(-30 5.6 15)"/><ellipse cx="18.4" cy="15" rx="3.4" ry="2.4" transform="rotate(30 18.4 15)"/><ellipse cx="9" cy="17.4" rx="3.4" ry="2.4"/><ellipse cx="15" cy="17.4" rx="3.4" ry="2.4"/></g><g fill="#E36A8C"><ellipse cx="8.6" cy="11" rx="3" ry="2.2" transform="rotate(-40 8.6 11)"/><ellipse cx="15.4" cy="11" rx="3" ry="2.2" transform="rotate(40 15.4 11)"/><ellipse cx="12" cy="13.4" rx="3" ry="2.2"/></g><circle cx="12" cy="7.6" r="2.6" fill="#FFE9A6"/>',
   'hat-miner':'<path d="M2.6 17.6h18.8" stroke-width="2.4"/><path d="M4.6 17.2a7.4 7.6 0 0 1 14.8 0z" fill="#F5A33A"/><path d="M12 9.6v7.6" stroke-width="1.2"/><rect x="9.6" y="10.6" width="4.8" height="3.8" rx="1.4" fill="#B98A62"/><circle cx="12" cy="12.5" r="1.3" fill="#FFF6C8" stroke-width="1"/>',
   'hat-explorer':'<path d="M2.4 17.4c3.6 2 15.6 2 19.2 0-3.4-1.4-15.8-1.4-19.2 0z" fill="#DCC28C"/><path d="M5.2 16.4C5.2 9.8 8 6 12 6s6.8 3.8 6.8 10.4z" fill="#DCC28C"/><path d="M5.4 14.4h13.2" stroke="#8A5A36" stroke-width="2.2"/><path d="M5.6 12.6C4 10.2 3.8 7.6 4.8 5.6c1.4 1.8 1.8 4.4.8 7z" fill="#6CC97A" stroke-width="1.2"/>',
+  'hat-sprout':'<path d="M12 21v-9"/><path d="M12 13.4c-.6-4.4-3.8-6.6-8.2-6.4.2 4.6 3.4 6.8 8.2 6.4z" fill="#6CC97A"/><path d="M12 11.4c.6-4 3.6-6.2 8-6 0 4.2-3.2 6.4-8 6z" fill="#8CC673"/><path d="M6 20.8h12" stroke-width="2.2"/>',
+  'hat-teacup':'<ellipse cx="12" cy="19" rx="9" ry="2.2" fill="#FFFBF2"/><path d="M5.4 9.8h12.2l-1.4 7.4c-.2 1-1.2 1.6-2.2 1.6H9c-1 0-2-.6-2.2-1.6z" fill="#9FD2F2"/><path d="M17.6 11.4c2.4-.4 3.6 1 3 2.6-.6 1.4-2.2 1.6-3.8 1.2" fill="none"/><g fill="#FFFBF2" stroke="none"><circle cx="9.4" cy="13.4" r="1"/><circle cx="13.6" cy="13.4" r="1"/></g><path d="M11.4 7.8c-1-1.4.6-2.4-.2-4" stroke-width="1.2"/>',
+  'hat-nest':'<path d="M3 13.4c1 4.6 4.8 6.6 9 6.6s8-2 9-6.6z" fill="#9A6B45"/><ellipse cx="9.4" cy="11.8" rx="2.8" ry="3.4" fill="#BFE6F7"/><ellipse cx="14.8" cy="12.2" rx="2.6" ry="3.2" fill="#BFE6F7"/><path d="M5 15.6l3 1.4M10 17.2l4-.6M16 16.6l3-1.6" stroke-width="1.2"/><g fill="#7FA8C2" stroke="none"><circle cx="8.6" cy="10.8" r=".7"/><circle cx="15.4" cy="11.4" r=".7"/></g>',
+  'hat-cloud':'<path d="M6.4 14.6a3.4 3.4 0 0 1 .6-6.6 4.6 4.6 0 0 1 8.8-.6 3.4 3.4 0 0 1 2.4 6.6z" fill="#FFFFFF"/><path d="M9.4 11.6q.8-.9 1.6 0M13 11.6q.8-.9 1.6 0" stroke-width="1.1"/><g fill="#9ED6EF"><path d="M8.4 17.4c-.8 1.4-.8 2.4 0 2.4s.8-1 0-2.4z"/><path d="M12.4 18c-.8 1.4-.8 2.4 0 2.4s.8-1 0-2.4z"/><path d="M16.2 17.2c-.8 1.4-.8 2.4 0 2.4s.8-1 0-2.4z"/></g>',
+  'extra-eyepatch':'<path d="M2.6 6.4c5 2.4 13.6 3.8 18.8 3.6" stroke-width="1.4"/><ellipse cx="15.6" cy="13" rx="4.6" ry="4" fill="#3B2A22"/><circle cx="7.2" cy="13" r="3.4" fill="#FFFFFF"/><circle cx="7.6" cy="13.2" r="1.6" fill="#3B2A22" stroke="none"/>',
+  'extra-ladybug':'<path d="M12 6.4a7.4 7.4 0 0 1 7.4 7.4c0 4-3.2 6.8-7.4 6.8s-7.4-2.8-7.4-6.8A7.4 7.4 0 0 1 12 6.4z" fill="#E4574C"/><path d="M8.2 7.6a4 3.2 0 0 1 7.6 0z" fill="#3B2A22"/><path d="M12 7.6v12.8"/><g fill="#3B2A22" stroke="none"><circle cx="8.6" cy="12" r="1.3"/><circle cx="15.4" cy="12" r="1.3"/><circle cx="8.8" cy="16.4" r="1.2"/><circle cx="15.2" cy="16.4" r="1.2"/></g><path d="M10 5.4L8.6 3.4M14 5.4l1.4-2"/>',
+  'extra-sweatband':'<path d="M3 9.4c4.8-2 13.2-2 18 0v5.2c-4.8-2-13.2-2-18 0z" fill="#FFFBF2"/><path d="M3 11.6c4.8-2 13.2-2 18 0v1.2c-4.8-2-13.2-2-18 0z" fill="#F27DA2" stroke-width="1"/>',
+  'extra-daisies':'<path d="M2.6 8.6c4.4 5.4 14.4 5.4 18.8 0" stroke="#6CC97A" stroke-width="1.6"/><g fill="#FFFBF2"><circle cx="6.2" cy="12.6" r="2.4"/><circle cx="12" cy="14.8" r="2.6"/><circle cx="17.8" cy="12.6" r="2.4"/></g><g fill="#F5C14E" stroke="none"><circle cx="6.2" cy="12.6" r="1"/><circle cx="12" cy="14.8" r="1.1"/><circle cx="17.8" cy="12.6" r="1"/></g>',
   'hat-gnome':'<path d="M6 18.4L11.4 3.6c2.8.4 5.6 2.6 6.2 5.6l.6 9.2z" fill="#E4574C"/><circle cx="18.2" cy="9.6" r="1.8" fill="#FFFBF2"/><rect x="4.2" y="16.6" width="15.6" height="4" rx="2" fill="#FFFBF2"/>',
   'extra-bandana':'<path d="M3.6 8.4c4.6 2.6 12.2 2.6 16.8 0" stroke-width="2.8" stroke="#5B4436"/><path d="M3.6 8.4c4.6 2.6 12.2 2.6 16.8 0" stroke-width="1.4" stroke="#E4574C"/><path d="M5.4 10.2h13.2c-1.6 4.4-4 8-6.6 10.4-2.6-2.4-5-6-6.6-10.4z" fill="#E4574C"/><g fill="#FFF1DE" stroke="none"><circle cx="9.4" cy="12.6" r="1"/><circle cx="14.6" cy="12.6" r="1"/><circle cx="12" cy="16.4" r="1"/></g>',
   'extra-goggles':'<path d="M2 12.8h20" stroke="#A9703F" stroke-width="2.4"/><circle cx="7.4" cy="12.8" r="4.3" fill="#BFE6F7" stroke-width="2.4"/><circle cx="16.6" cy="12.8" r="4.3" fill="#BFE6F7" stroke-width="2.4"/><path d="M5.6 11.2l1.2-1" stroke="#fff" stroke-width="1"/>',
@@ -2166,6 +2262,7 @@ window.addEventListener('popstate',()=>{ if(ignorePop>0){ ignorePop--; return; }
 // add an entry on top. Returning players see the newest entry once as a card on the Play tab, new players never
 // do (squirm-news holds the last version seen); Settings > About lists them all.
 const NEWS=[
+  ['1.12.0','2026-10-31','Pick a colour',['Many hats and extras now come in five colours: wear one and pick its colour in the wardrobe.','Four new hats: a little sprout, a teacup, a bird\'s nest and a little rain cloud.','Four new extras: a pirate patch, a ladybug friend, a sweatband and a daisy chain.','Each one unlocks in its own playful way. Take a peek in the wardrobe!']],
   ['1.11.0','2026-10-31','Far fields',['A new chapter, Far fields: ten big, wide patches, and the toughest one yet at the end.','An explorer\'s hat, a spotted bandana, a Sage colour and a new badge to earn.','A tidier top bar: just what you need to finish the patch.','A smarter fancy mustache, and the worm looks right when it pops out of a tunnel and straight back in.']],
   ['1.10.0','2026-10-31','Pollen and soft soil',['Two new things in the garden: flowers dust you in pollen that opens petal gates of the same colour, and soft soil lets you burrow under yourself.','Three new chapters: Pollen paths, Soft soil and Tangled roots.','New hats (a petal bonnet, a miner\'s helmet and a gnome hat), digging goggles, a Sprout colour and three new badges.','Pick pollen and soft soil for your meadow patches too.']],
   ['1.9.0','2026-10-28','Two new chapters',['Chapters 17 and 18, Critter crossing and Harvest moon: 20 of the toughest patches yet.','Two new hats to earn: a snail shell and a pumpkin.','A Moonlight worm colour, a butterfly friend for growing the whole garden, and two new badges.']],
@@ -2240,7 +2337,7 @@ function patArt(id,size=40,col=wormCol){ const c=WORM_COLS[col], hex=n=>'#'+n.to
 // the worm on its stage shows the whole outfit; Hats / Colours / Patterns switch one grid of tiles
 let wardTab='hats';
 const tile=(key,val,on,ok,ico,name,note)=>`<button data-${key}="${val}" class="hat ${on?'on':''} ${ok?'':'locked'}" aria-pressed="${on}"><span class="hat-ico" aria-hidden="true">${ok?ico:art('lock',28)}</span><b>${name}</b><small>${ok?(on?'Wearing':'Tap to wear'):note}</small></button>`;
-function outfitChanged(el){ if(hHead) homeReact('joy'); renderWardrobe(); const on=$('wardGrid').querySelector('.hat.on'); if(on) settle(on); }
+function outfitChanged(el){ bumpStat('outfits'); save(); if(hHead) homeReact('joy'); renderWardrobe(); const on=$('wardGrid').querySelector('.hat.on'); if(on) settle(on); }
 function wearHat(id){ hatId=id; store.set('squirm-hat',hatId); dressHat(hHead); dressHat(segMeshes[0]); }
 function wearColour(i){ wormCol=i; store.set('squirm-colour',String(i)); applyWormColour(); }
 function wearPattern(id){ wormPat=id; store.set('squirm-pattern',wormPat); applyWormColour(); }
@@ -2254,16 +2351,26 @@ function renderWardrobe(){ const hats=HATS.filter(hatUnlocked), cols=coloursUnlo
   else if(wardTab==='extras') g.innerHTML=EXTRAS.map(e=>tile('x',e[0],e[0]===extraOn(),e[3](),extraArt(e[0],44),e[1],e[2])).join('');
   else if(wardTab==='colours') g.innerHTML=WORM_COLS.map((c,i)=>tile('c',i,i===wormCol,i<cols,patArt(patOn(),46,i),c[0],`${c[3]} stars`)).join('');
   else g.innerHTML=PATTERNS.map(p=>tile('p',p[0],p[0]===patOn(),pats.includes(p[0]),patArt(p[0],46),p[1],p[2])).join('');
+  renderTints();
   qa(g,'button').forEach(b=>b.onclick=()=>{
     if(b.dataset.h){ const h=HATS.find(x=>x[0]===b.dataset.h); if(!hatUnlocked(h)){ nope(b,h[3]?`${h[1]}: ${h[3].charAt(0).toLowerCase()+h[3].slice(1)} to earn it.`:`Finish every patch in ${CHAPTERS[h[2]].name} to earn the ${h[1].toLowerCase()}.`,2800); return; } wearHat(h[0]); }
     else if(b.dataset.x){ const e=EXTRAS.find(x=>x[0]===b.dataset.x); if(!e[3]()){ nope(b,`${e[1]}: ${e[2].charAt(0).toLowerCase()+e[2].slice(1)} to earn it.`,2800); return; } wearExtra(e[0]); }
     else if(b.dataset.c!=null){ const i=+b.dataset.c, c=WORM_COLS[i]; if(i>=coloursUnlocked()){ nope(b,`${c[0]} unlocks at ${c[3]} stars. You have ${starTotal()}.`,2600); return; } wearColour(i); }
     else { const p=PATTERNS.find(x=>x[0]===b.dataset.p); if(!p[3]()){ nope(b,`${p[1]}: ${p[2].charAt(0).toLowerCase()+p[2].slice(1)} to earn it.`,2800); return; } wearPattern(p[0]); }
     outfitChanged(); }); }
+// a colour picker for the hat or extra being worn, only on its tab and only for items with colour options
+function renderTints(){ const row=$('wardTint'), id=wardTab==='hats'?hatId:wardTab==='extras'?extraOn():null, t=id&&TINTS[id];
+  const item=t&&(wardTab==='hats'?HATS.find(h=>h[0]===id):EXTRAS.find(e=>e[0]===id));
+  row.hidden=!t; if(!t) return; const k=tintOf(id);
+  row.innerHTML=`<span class="tint-lbl">${item[1]}<small>${t.opts[k][0]}</small></span>`+t.opts.map((o,i)=>`<button role="radio" class="tint${i===k?' on':''}" aria-checked="${i===k}" aria-label="${o[0]}" data-t="${i}"><svg width="26" height="26" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.5" fill="${hexStr(o[1])}" stroke="#5B4436" stroke-width="2"/>${o[2]!=null?`<path d="M12 21.5a9.5 9.5 0 0 1 0-19z" fill="${hexStr(o[2])}" stroke="#5B4436" stroke-width="2" transform="rotate(45 12 12)"/>`:''}</svg></button>`).join('');
+  qa(row,'button').forEach(b=>b.onclick=()=>{ const i=+b.dataset.t; if(i===tintOf(id)) return; tints[id]=i; store.set('squirm-tints',JSON.stringify(tints));
+    if(wardTab==='hats'){ dressHat(hHead); dressHat(segMeshes[0]); } else { dressExtra(hHead); dressExtra(segMeshes[0]); }
+    outfitChanged(); settle($('wardTint').querySelector('.tint.on')); }); }
 qa($('wardSeg'),'button').forEach(b=>b.onclick=()=>{ if(wardTab===b.dataset.w) return; wardTab=b.dataset.w; renderWardrobe(); $('wardGrid').scrollTop=0; settle(b);
   stagger(qa($('wardGrid'),'button'),'rise',0,22,12); });
 // a random outfit from what's unlocked, different from the current one where possible
 $('dressRandom').onclick=()=>{ const pick=(a,cur)=>{ const o=a.filter(x=>x!==cur); return (o.length?o:a)[Math.floor(Math.random()*(o.length||a.length))]; };
+  for(const k in TINTS) if(Math.random()<.5) tints[k]=Math.floor(Math.random()*TINTS[k].opts.length); store.set('squirm-tints',JSON.stringify(tints)); bumpStat('outfits');
   wearHat(pick(HATS.filter(hatUnlocked).map(h=>h[0]),hatId)); wearColour(pick([...Array(coloursUnlocked()).keys()],wormCol)); wearPattern(pick(patternsUnlocked(),patOn())); wearExtra(pick(EXTRAS.filter(e=>e[3]()).map(e=>e[0]),extraOn()));
   if(hHead) homeReact('wow'); renderWardrobe(); };
 const DIFF_ICON_KEY={easy:'sprout',medium:'tulip',hard:'tree'};
@@ -2603,7 +2710,8 @@ function dismissTutorial(){ const t=$('tutorial'); if(!t.classList.contains('sho
 function loadLevel(i,withHint=true){ mode='garden'; li=i; startLevel(LEVELS[i],withHint); store.set('squirm-current-name',LEVELS[i].name); }
 let nudged=false, playT=0;
 const playTime=()=>{ const s=Math.round(playT); return s<60?`${s}s`:`${Math.floor(s/60)}m ${String(s%60).padStart(2,'0')}s`; };
-function startLevel(def,withHint=true){ nudged=false; playT=0;
+let pollensHere=new Set();
+function startLevel(def,withHint=true){ nudged=false; playT=0; pollensHere=new Set();
   L=def; state=initState(L); history=[]; queue.length=0; slideSteps.length=0; wasReady=false; hintsUsed=0; undosHere=0; clearHint(); $('wormSayG').hidden=true; gSayT=0;
   buildBoard(); snapWorm(); fitCamera(); updateHUD(true); hudIntro(); lastMoveT=idleT;
   const resumed=tryResume(); if(!resumed) clearResume();
@@ -2985,7 +3093,8 @@ document.querySelectorAll('[data-art]').forEach(e=>e.insertAdjacentHTML('afterbe
 // upload the shared effect textures once up front: otherwise each one is first sent to the GPU
 // whenever its effect first happens (a random sparkle, a snore), which shows up as a tiny hitch
 const warmTextures=()=>{ for(const t of [gradTex,glowTex,sparkTex,turfTex,crackTex,swirlTex,lawnTex,flowH,flowV,blobTex,zTex,slimeTex]) try{ renderer.initTexture(t); }catch(e){} };
-const start=()=>{ const i=currentGardenIndex(); warmTextures(); applyWormColour(); checkBadges(null,true); pickTod(); setInterval(pickTod,60000); setTimeout(statsBoot,2000);
+const start=()=>{ const i=currentGardenIndex();
+  { const dk=todayKey(); if(progress.lastDay!==dk){ progress.lastDay=dk; bumpStat('days'); save(); } } warmTextures(); applyWormColour(); checkBadges(null,true); pickTod(); setInterval(pickTod,60000); setTimeout(statsBoot,2000);
   mode='garden'; li=i; showHome(true);
   // the home screen is already up; the garden and the home worm are built on the next frame and fade in
   requestAnimationFrame(()=>{ startLevel(LEVELS[i],false); initHomeWorm(); requestAnimationFrame(frame);

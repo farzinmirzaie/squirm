@@ -30,8 +30,9 @@ garden patches, touch every flag, and slip into the burrow at exactly the right 
 - **A garden map** where patches are stepping stones on a winding path, with a preview of each patch.
 - **Endless meadow:** fresh generated patches at easy, medium or hard, with the mechanics you pick.
 - **A daily patch** that's the same for everyone, with streaks and an optional daily reminder.
-- **Stars, 58 badges and a wardrobe to fill:** 26 hats, 13 worm colours, 8 patterns (stripes,
-  spots, glitter, a rainbow tail, ...) and extras like glasses, digging goggles and a butterfly friend.
+- **Stars, 58 badges and a wardrobe to fill:** 30 hats, 13 worm colours, 8 patterns (stripes,
+  spots, glitter, a rainbow tail, ...) and 19 extras like glasses, a pirate patch and a ladybug
+  friend. Many hats and extras come in five colours.
 - **Photo mode** any time in a patch: the HUD steps aside, your worm turns to the camera, and you can
   move the camera freely, then save or share a snapshot of your garden.
 - **Undo (hold it to start over) and hints.** A built-in solver points the way when you're stuck.

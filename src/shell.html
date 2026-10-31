@@ -337,6 +337,13 @@ nav{display:flex;justify-content:center;align-items:flex-end;gap:12px}
 #wardSeg{grid-template-columns:repeat(4,1fr)}
 #wardGrid.ward-colours,#wardGrid.ward-patterns,#wardGrid.ward-extras{grid-template-columns:repeat(3,1fr)}
 #wardGrid.ward-colours .hat-ico,#wardGrid.ward-patterns .hat-ico,#wardGrid.ward-extras .hat-ico{height:50px}
+/* the colour picker under the wardrobe tabs, for the hat or extra being worn (when it has colours) */
+.tint-row{display:flex;align-items:center;gap:6px;padding:6px 8px 6px 14px;border-radius:18px;background:var(--paper-2)}
+.tint-row[hidden]{display:none}
+.tint-lbl{margin-right:auto;min-width:0;font:800 14px/1.1 var(--fd);color:var(--ink);display:flex;flex-direction:column;gap:2px}
+.tint-lbl small{font:700 12px/1 var(--fb);color:var(--ink-soft)}
+.tint{width:38px;height:38px;padding:0;display:grid;place-items:center;border:3px solid transparent;border-radius:50%;background:none;cursor:pointer;transition:border-color var(--dur-fast) var(--ease-out)}
+.tint.on{border-color:var(--leaf)}
 /* -- Play: logo, the big play button, the daily patch and its week -- */
 .home-inner{width:min(100%,420px);margin:auto;align-items:stretch;display:flex;flex-direction:column;gap:14px}
 .logo{display:flex;flex-direction:column;align-items:center;text-align:center;margin:6px 0 2px}
@@ -631,7 +638,7 @@ body.photo .wsay{display:none}
 .b-tile.on:active{box-shadow:0 0 0 var(--honey-dark)}
 .hat.on:active{box-shadow:0 0 0 var(--leaf)}
 .diff:active{transform:translateY(3px);box-shadow:0 0 0 var(--acc)}
-.mech:active,.seg button:active,.stat:active,.icon-btn:active,.link:active,.switch:active{scale:.94}
+.mech:active,.seg button:active,.stat:active,.icon-btn:active,.link:active,.switch:active,.tint:active{scale:.94}
 .tab:active svg{scale:.9}
 button:disabled{cursor:default}
 /* dialogs: the scrim fades in while the card pops; closing fades and shrinks a little faster (hide() adds .out) */
@@ -700,7 +707,7 @@ nav .enter,.rise{animation:navIn var(--dur-slow) var(--ease-pop) var(--d,0ms) bo
   .tab.on.pop svg,.stat.cheer,.stat.cheer .ic,.stat.lost .mini,.gbtn.pop .disc,.gbtn.hint .disc svg,#hintBtn.busy svg,
   #tutorial .hand,.brand span,.node.cur::after{animation:none}
   .star{animation:none;transform:none}
-  .btn,.round,.disc,.play,.big,.goal,.set-link,.pick .go,.snap,.hat,.b-tile,.b-progress i,.b-medal>.art,.diff,.node,.mech,.seg button,.stat,.icon-btn,.link,.tab svg,.switch,.switch i,.mech .mi,#toast,#app,.news-more summary .chev{transition:none}
+  .btn,.round,.disc,.play,.big,.goal,.set-link,.pick .go,.snap,.hat,.tint,.b-tile,.b-progress i,.b-medal>.art,.diff,.node,.mech,.seg button,.stat,.icon-btn,.link,.tab svg,.switch,.switch i,.mech .mi,#toast,#app,.news-more summary .chev{transition:none}
   .diff.on:not(:active){transform:none}
   .petals{display:none}
 }
@@ -829,6 +836,7 @@ nav .enter,.rise{animation:navIn var(--dur-slow) var(--ease-pop) var(--d,0ms) bo
         <div class="panel-head"><h2>Wardrobe</h2><button class="link" id="dressRandom" data-sfx="ready"><span data-art="dice" data-size="18"></span> Surprise outfit</button></div>
         <p class="outfit" id="outfitLine"></p>
         <div class="seg seg-sm" id="wardSeg" role="tablist" aria-label="Wardrobe"><button role="tab" data-w="hats"><b>Hats</b><small></small></button><button role="tab" data-w="colours"><b>Colours</b><small></small></button><button role="tab" data-w="patterns"><b>Patterns</b><small></small></button><button role="tab" data-w="extras"><b>Extras</b><small></small></button></div>
+        <div class="tint-row" id="wardTint" role="radiogroup" aria-label="Colour" hidden></div>
         <div class="hat-grid fade-scroll" id="wardGrid" role="group" aria-label="Wardrobe items"></div>
       </div>
     </section>
