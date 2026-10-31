@@ -1,6 +1,6 @@
 ---
 name: ui-check
-description: Visually check a Squirm UI or 3D change in headless Chromium - debug build, serve, screenshot every home tab and a patch in light and dark at phone size, close-ups of hats and extras from every side, then compare. Use after editing src/shell.html CSS or markup, UI code in src/game.js, or anything that changes how the game looks.
+description: Visually check a Squirm UI or 3D change in headless Chromium - debug build, serve, screenshot every home tab and a patch in light and dark at phone size, then compare. For a 3D model itself, use add-model. Use after editing src/shell.html CSS or markup, UI code in src/game.js, or anything that changes how the game looks.
 ---
 
 # Checking the UI visually
@@ -30,16 +30,8 @@ description: Visually check a Squirm UI or 3D change in headless Chromium - debu
    debug hooks and launch flags are listed in CLAUDE.md under "Seeing the game in a browser";
    `test/smoke.js` is a fuller example.
 
-4. **3D models (hats, extras, colour options).** Review each one from every side:
-
-   ```
-   node .claude/skills/ui-check/look.js <outDir> '[["teacup","teacup","none",{"teacup":1},0]]' [--dark]
-   ```
-
-   Each entry is `[name, hat id, extra id, {colour option by item id}, worm colour index]`; it saves front,
-   left, right, back and top close-ups plus `<name>.png`, all five in a row. Look for clipping into the head
-   or face, floating parts, ragged or missing outlines, pieces hidden under the chin or behind the head, and
-   whether it matches its sticker. Fix and shoot again until it looks right from every side, then check it
-   on the wardrobe stage and in a patch. CLAUDE.md, "Adding or changing a 3D model", has the full checklist.
+4. **3D models** (hats, extras, colour options, tiles, items) have their own skill, `add-model`, with
+   `look.js` for close-ups from every side. Use it for any model change, then come back here for the
+   screens around it.
 
 5. **Finish** with `npm run check` (unit tests, verify, build, smoke).

@@ -2,8 +2,9 @@
 
 Guide for working on **Squirm**, a cozy turn-based worm puzzle PWA. This file is the single source of
 truth for agents; README.md is a short public overview without details that go stale (no counts, no
-screenshots). Two project skills cover the recurring workflows: `add-levels` and `ui-check` (in
-`.claude/skills/`). When you change a system, update its part of this file in the same commit.
+screenshots). Three project skills cover the recurring workflows (in `.claude/skills/`): `add-levels`,
+`add-model` (build a 3D model and review it from every side) and `ui-check` (screenshots of the UI).
+When you change a system, update its part of this file in the same commit.
 
 ## What it is
 
@@ -80,7 +81,7 @@ test/logic.test.js      rules, unique level names, stateKey
 test/generator.test.js  daily and endless generation (daily patches must not change)
 test/news.test.js       What's new vs package.json version, semver order
 test/smoke.js           headless Chromium: boot, win patch 1, saved stars, GPU memory, offline reload
-.claude/skills/   add-levels; ui-check (shoot.js for screenshots, look.js for 3D model close-ups)
+.claude/skills/   add-levels; add-model (look.js: 3D model close-ups); ui-check (shoot.js: UI screenshots)
 ```
 
 `logic.js` and `levels.js` are plain scripts in the browser and CommonJS modules in Node (a guarded
@@ -137,25 +138,16 @@ A chapter is ten levels plus everything around them. Touch all of these:
    chapter's mechanic. Use `progress.stats` counters (`bumpStat`) and write the "how to earn" line as a
    friendly hint. Check that every unlock is reachable, shows its hint while locked, and appears on the win
    card when earned.
-6. Review every new model properly (next section), then release it with a `NEWS` entry.
+6. Build and review every new model with the `add-model` skill, then release it with a `NEWS` entry.
 
 ### Adding or changing a 3D model
 
-Every model (hat, extra, tile, item, critter) gets a real review before it ships. Take the time:
-
-- Look at it from every side with `node .claude/skills/ui-check/look.js <outDir> '<list>'` (front, both
-  sides, back and above, which is about the in-patch camera; `--dark` for dark mode), then in its real
-  places: the wardrobe stage (`ui-check`) and a patch.
-- Check for parts clipping into the head, eyes, mouth, cheeks or body; parts floating off the surface; gaps;
-  outlines that are missing, doubled or ragged; pieces hidden from the usual camera (under the chin, behind
-  the head); scale next to the other items; and every colour option if it has `TINTS`. Compare it with its
-  sticker: they should be the same object in the same colours.
-- Shapes on the head follow the sphere (`HEAD_R`; the head's centre is the slot's origin for extras). Put
-  rings on the sphere's surface (a circle at distance `d` along a tilted axis has radius
-  `sqrt(HEAD_R²-d²)`), and keep clear of the face (eyes at y .14, mouth from about y -.03 down, cheeks at
-  x ±.21).
-- Fix, re-render and look again until it's right. A model that only looks right from the front isn't
-  finished.
+Use the `add-model` skill for every model (hat, extra, colour option, tile, item, critter, scenery): where it
+lives, the coordinates to build against, the house style, and a review loop with
+`.claude/skills/add-model/look.js`, which renders wardrobe items from five sides and board pieces from the
+patch camera plus close orbits. The rule: take the time to look at it from every side, in light and dark and
+in every colour option, and fix it until it looks right. A model that only looks right from the front isn't
+finished.
 
 ### Adding a mechanic
 
@@ -577,7 +569,7 @@ from a tab replaces that layer with `game`.
 - **Debug hooks:** `tools/build.js --debug` inserts `window.__squirm` by matching the final `})();` at
   the very end of `game.js`, and the hooks call `hideAll`, `loadLevel`, `tryMove`, `animating`, `queue`,
   `dirFromScreen`, `renderer` and `state`. Keep the file ending in `})();` and keep those names, or the
-  smoke test loses its hooks. (`look.js` also adds an `ev` hook to its own throwaway build.)
+  smoke test loses its hooks. (`add-model`'s `look.js` also adds an `ev` hook to its own throwaway build.)
 - **Build string surgery:** the build strips the one-line `if(typeof module!=='undefined') ...` export
   from `logic.js` and `levels.js`, replaces the `/*__...__*/` slots and `__BUILD__` in `shell.html`, and
   syntax-checks only the first bare `<script>` (the game). Give any other inline script an attribute

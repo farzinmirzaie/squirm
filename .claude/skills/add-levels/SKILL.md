@@ -8,7 +8,7 @@ description: Add or retune handmade Squirm patches in src/levels.js - generate c
 The rules (solvable, `par` = BFS shortest, pacing by chapter, rising difficulty, unique names that are
 never renamed), the character table and the chapter table are in CLAUDE.md under "Level format". This is
 the procedure. For a whole new chapter, also follow CLAUDE.md's "Adding a chapter" checklist (map scene,
-hat, unlockables, model review).
+hat, unlockables) and build its models with the `add-model` skill.
 
 1. **Decide the slot.** Level `n` (1-based) is in chapter `ceil(n/10)`. Check which mechanics that
    chapter may use (the pacing table) and what its first level introduces. A chapter's first level is a
