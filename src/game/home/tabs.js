@@ -1,6 +1,8 @@
 // ---------- home ----------
-function showHome(quiet){ if(updateReady){ location.reload(); return; } document.title='Squirm'; const was=curTab; showTab('play',true); renderHome(); show('homeOv');
-  if(quiet) return; if(was==='play') tabIntro('play'); stagger(document.querySelectorAll('.home-top .star-pill,.home-top .round:not([hidden])'),'enter',0,50); stagger(document.querySelectorAll('.tabbar .tab'),'rise',150,40); }
+function showHome(quiet){ if(updateReady){ location.reload(); return; } document.title='Squirm'; const was=curTab; showTab('play',true); renderHome();
+  show('homeOv');
+  if(quiet) return; if(was==='play') tabIntro('play'); stagger(document.querySelectorAll('.home-top .star-pill,.home-top .round:not([hidden])'),'enter',0,50);
+    stagger(document.querySelectorAll('.tabbar .tab'),'rise',150,40); }
 // ---------- home tabs: Play, Garden (patch list), Meadow (endless), Me (wardrobe), Badges ----------
 let curTab='play';
 const TAB_RENDER={garden:()=>renderLevelList(),meadow:()=>renderEndless(),me:()=>renderWardrobe(),badges:()=>renderBadges()};

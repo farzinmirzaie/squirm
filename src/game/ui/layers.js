@@ -4,7 +4,8 @@ function pushLayer(n){ layers.push(n); try{ window.history.pushState({squirm:lay
 // replace the layers from `from` upward with one new layer, without racing the async history.go
 function swapLayers(from,n){ const i=layers.lastIndexOf(from); if(i<0){ pushLayer(n); return; } const k=layers.length-i; layers.length=i; layers.push(n);
   if(k>1){ ignorePop++; try{ window.history.go(-(k-1)); }catch(e){ ignorePop--; } } }
-function popLayer(n){ const i=layers.lastIndexOf(n); if(i<0) return; const k=layers.length-i; layers.length=i; ignorePop++; try{ window.history.go(-k); }catch(e){ ignorePop--; } }
+function popLayer(n){ const i=layers.lastIndexOf(n); if(i<0) return; const k=layers.length-i; layers.length=i; ignorePop++; try{ window.history.go(-k);
+  }catch(e){ ignorePop--; } }
 function enterGame(){ const top=layers[layers.length-1];
   if(top==='game') return;
   if(layers.includes('game')){ popLayer(layers[layers.indexOf('game')+1]); return; }

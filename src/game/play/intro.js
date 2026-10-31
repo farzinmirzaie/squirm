@@ -35,7 +35,8 @@ function introNext(){ if(introI<introList.length-1){ introI++; renderIntro(true)
 // ---------- the worm talks ----------
 // a speech bubble that follows the worm's head during play: little reactions and hints
 let gSayT=0;
-function wormSays(t,ms=2000){ const el=$('wormSayG'); if(!state||anyOverlay()||photoOn) return; el.textContent=t; el.hidden=false; gSayT=ms/1000; placeSay(); animOnce(el,'say'); }
+function wormSays(t,ms=2000){ const el=$('wormSayG'); if(!state||anyOverlay()||photoOn) return; el.textContent=t; el.hidden=false; gSayT=ms/1000; placeSay();
+  animOnce(el,'say'); }
 function placeSay(){ const el=$('wormSayG'), h=segMeshes[0]; if(el.hidden) return;
   if(!h||anyOverlay()||photoOn||document.body.classList.contains('at-home')){ el.hidden=true; gSayT=0; return; }
   const v=h.position.clone(); v.y+=.45; v.project(camera); const W=window.innerWidth, H=window.innerHeight, x=(v.x+1)/2*W, y=(1-v.y)/2*H;
@@ -49,6 +50,7 @@ function closeIntro(fromBack){ hide('introOv'); if(!fromBack) popLayer('intro');
 $('introOk').onclick=introNext;
 
 // ---------- first-time tutorial ----------
-function maybeTutorial(){ if(store.get('squirm-tutorial')==='1'||mode!=='garden'||li!==0||history.length) return false; $('tutorial').classList.add('show'); return true; }
+function maybeTutorial(){ if(store.get('squirm-tutorial')==='1'||mode!=='garden'||li!==0||history.length) return false; $('tutorial').classList.add('show');
+  return true; }
 function dismissTutorial(){ const t=$('tutorial'); if(!t.classList.contains('show')) return; t.classList.remove('show'); store.set('squirm-tutorial','1'); }
 

@@ -126,7 +126,8 @@ const ART={
   for(const k in POLL){ const P=POLL[k]; ART['pollen'+k]=flower(hx(P.col),hx(P.light),hx(P.dark)); ART['petals'+k]=bud(hx(P.col)); }
   ART.pollen0=flower('#EFE6DA','#FFF8EA','#C9BBA8');
   // soft soil: a tilled heap with the worm arching out of it and diving back in
-  ART.soil='<path d="M5.6 16.4c-.6-5.6 1.8-9.6 6-9.6" stroke-width="4.6"/><path d="M5.6 16.4c-.6-5.6 1.8-9.6 6-9.6" stroke="#FFB3C8" stroke-width="2.4"/><circle cx="14.2" cy="7.6" r="3" fill="#FFB3C8"/><circle cx="15.1" cy="7" r=".75" fill="#5B4436" stroke="none"/><path d="M1.8 21c.9-4.6 4.9-7.6 10.2-7.6S21.3 16.4 22.2 21z" fill="#B07850"/><g fill="#8A5A3A" stroke="none"><circle cx="8" cy="18" r="1"/><circle cx="13.4" cy="16.4" r="1"/><circle cx="17.4" cy="18.8" r="1"/></g>'; }
+  ART.soil='<path d="M5.6 16.4c-.6-5.6 1.8-9.6 6-9.6" stroke-width="4.6"/><path d="M5.6 16.4c-.6-5.6 1.8-9.6 6-9.6" stroke="#FFB3C8" stroke-width="2.4"/><circle cx="14.2" cy="7.6" r="3" fill="#FFB3C8"/><circle cx="15.1" cy="7" r=".75" fill="#5B4436" stroke="none"/><path d="M1.8 21c.9-4.6 4.9-7.6 10.2-7.6S21.3 16.4 22.2 21z" fill="#B07850"/><g fill="#8A5A3A" stroke="none"><circle cx="8" cy="18" r="1"/><circle cx="13.4" cy="16.4" r="1"/><circle cx="17.4" cy="18.8" r="1"/></g>';
+    }
 const art=(n,size=24)=>`<svg class="art" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="#5B4436" stroke-width="${Math.max(1.3,Math.min(2.6,1.9*24/size)).toFixed(2)}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ART[n]||''}</svg>`;
 // small stickers for the HUD tiles, toasts and pills
 const ICON={star:art('star',18),flag:art('flag',18),key:art('key',18),worm:art('worm',20),steps:art('steps',18),burrow:art('burrow',18),leaf:art('leaf',18)};

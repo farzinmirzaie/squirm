@@ -26,11 +26,11 @@ swipe controls (keyboard works too). Plain JavaScript and three.js, no framework
 - **Don't rename `squirm-` storage keys or shipped level names.** Progress is stored by level name and
   in those keys; renaming loses players' progress. Every new key and cache name starts with `squirm-`
   (other projects can share the `<user>.github.io` origin).
-- **Don't touch `localStorage` directly** in `game.js`: use `store` (see conventions). The only raw
+- **Don't touch `localStorage` directly** in the game code: use `store` (see conventions). The only raw
   accesses are the tiny `theme` / `boot` scripts in `shell.html` and the bulk restore in settings.
 - **Don't ship a level that fails `npm run verify`** (unsolvable, wrong par, or a mechanic before its
   chapter).
-- **Don't use `history` for the browser history** inside `game.js`: in that IIFE it's the undo stack.
+- **Don't use `history` for the browser history** in the game code: in its scope it's the undo stack.
   Always `window.history`.
 - **Don't write colours, emoji or text glyphs inline in the UI**: use tokens and the icon sets.
 - **Don't break the text markers other files cut on** (see "Things that will bite you").
@@ -67,26 +67,43 @@ src/shell.html    page markup + all CSS (sectioned, index at the top of <style>)
 src/logic.js      pure rules, no DOM: parseLevel, initState, step (advance), tileAt, partner, cloneState,
                   hedgesOpen, beetleAt, stateKey, POLLEN / PETALS / SOFT
 src/levels.js     LEVELS + CHAPTER_NAMES
-src/game.js       everything else, one IIFE with a table of contents at the top: rendering, input, UI,
-                  audio, music, endless generator, hint solver
+src/game/         everything else, in folders (map at the top of core/base.js), joined into one script:
+  core/           base.js (store, DOM helpers, the C palette), three.js (renderer, materials, outlines),
+                  state, tweens (kill, tween), loop (frame, quality), boot
+  audio/          sfx.js (effects), music.js (the generated tune)
+  models/         3D objects: garden.js (scenery, batching), visitors.js (ladybug, bird), board.js (tiles,
+                  items, disposeTree, buildBoard), snails.js, beetles.js, pollen-soil.js, weather.js,
+                  worm-head.js, worm-skin.js (tube material, pattern shader), worm-body.js (updateWorm),
+                  hats.js (buildHat), extras.js (buildExtra)
+  rewards/        wardrobe.js (HATS, EXTRAS, TINTS), colours.js (WORM_COLS, PATTERNS), badges.js
+  play/           worm-life.js (idle acts), moves.js (tryMove, win), photo.js, hints.js, resume.js, hud.js,
+                  intro.js (mechanic cards, the worm talks, tutorial), levels.js (startLevel, garden map),
+                  camera.js, input.js
+  ui/             feedback.js, stickers.js (ART), dialogs.js, layers.js (back button), news.js (NEWS),
+                  finale.js, settings.js
+  home/           tabs.js, wardrobe.js (the tab), worm.js (home worm, secret reset)
+  endless/        generator.js (rng, genCandidate, analyzeCapped, usage, generateEndless), daily.js
+  platform/       stats.js, offline.js (service worker, install), reminder.js
 src/sw.js         service worker template (version and file list filled in by the build)
 public/           manifest, icons, install screenshots: copied as-is into dist/
 tools/build.js    builds dist/ and syntax-checks the game script; --debug adds window.__squirm; --out <dir>
+tools/game-files.js  the order the src/game/ files are joined in
 tools/serve.js    tiny static server (also used by smoke): [dir] --port --base
 tools/analyze.js  BFS solver: par, state count, "winnable %" (share of reachable states that can still win)
 tools/verify-levels.js  solvable + par + pacing check for src/levels.js
-tools/load-generator.js runs the endless generator from game.js in Node (curate.js, tests)
+tools/load-generator.js runs src/game/endless/generator.js in Node (curate.js, tests)
 tools/curate.js   generates candidate levels with that generator, picks a difficulty spread -> gen/ (ignored)
 test/logic.test.js      rules, unique level names, stateKey
 test/generator.test.js  daily and endless generation (daily patches must not change)
 test/news.test.js       What's new vs package.json version, semver order
-test/smoke.js           headless Chromium: boot, win patch 1, saved stars, GPU memory, offline reload
+test/smoke.js           headless Chromium: boot, win patch 1, saved stars, GPU memory while playing, offline reload
 .claude/skills/   add-levels; add-model (look.js: 3D model close-ups); ui-check (shoot.js: UI screenshots)
 ```
 
 `logic.js` and `levels.js` are plain scripts in the browser and CommonJS modules in Node (a guarded
 one-line `module.exports` that the build strips), so the same rules run in the game, the hint solver
-and the tools.
+and the tools. The `src/game/` files are not modules: `tools/build.js` joins them in `tools/game-files.js`
+order inside one function wrapper, so they share one scope and any file can call any other's functions.
 
 ### What ships (`dist/`)
 
@@ -107,7 +124,7 @@ Every push that players will notice is a release:
 1. Pick the version: minor (`1.8.0` -> `1.9.0`) for anything new, patch (`1.8.1`) for fixes only; major
    only for a big change in how the game plays.
 2. `npm version <x.y.z> --no-git-tag-version` (updates `package.json` and the lockfile).
-3. Add a `NEWS` entry on top in `game.js`: that version, today's date, a short title and a few cozy lines.
+3. Add a `NEWS` entry on top in `src/game/ui/news.js`: that version, today's date, a short title and a few cozy lines.
    Don't append to an older entry: the card only comes back when the top version changes.
    `test/news.test.js` fails if the top entry and `package.json` disagree.
 4. `npm run check`, commit and push. Tag the release (`git tag v<x.y.z> && git push origin v<x.y.z>`)
@@ -156,9 +173,9 @@ Touch these, in order:
 1. Rules in `src/logic.js`: `advance` / `step` (and `cloneState` if it adds state). `step` must never
    mutate the state it's given (there's a test). Add tests to `test/logic.test.js`.
 2. Solver key: `stateKey` in `logic.js`, the one key used by `solveFrom` and `analyzeCapped` in
-   `game.js` and by `tools/analyze.js`. Anything that tells two states apart goes in it; derived state
+   `endless/generator.js` and by `tools/analyze.js`. Anything that tells two states apart goes in it; derived state
    (like hedges) doesn't.
-3. Rendering in `game.js`: `makeTile` / `makeItem` or a sync/update function, `disposeTree` keep lists
+3. Rendering in `src/game/models/`: `makeTile` / `makeItem` (`board.js`) or its own file with a sync/update function, `disposeTree` keep lists
    for any new shared geometry, material or texture. A HUD chip only if its state can't be seen on the board.
 4. Intro dialog: `MECH` entry (title, text, char regex, `ART` picture; add the sticker to `ART`).
 5. Endless mode: `FEATURES`, `genCandidate`, `usage` (how a solution "uses" it), the feature regex in
@@ -171,8 +188,8 @@ Touch these, in order:
 
 ### UI and CSS changes
 
-- Find the place through the index: the table of contents at the top of `game.js` and the section index
-  at the top of the `<style>` in `shell.html` (sections are in cascade order, later ones may override).
+- Find the place through the indexes: the folder map at the top of `src/game/core/base.js` (and the Layout
+  above) and the section index at the top of the `<style>` in `shell.html` (sections are in cascade order, later ones may override).
 - Use the tokens, scales, icon sets and the UI feedback system (conventions below). New animations go
   in the one reduced-motion block (section 11).
 - Check it visually with the `ui-check` skill (light and dark, phone size) before committing.
@@ -285,43 +302,43 @@ Chapters (`CHAPTER_NAMES`, ten levels each; level `n` is in chapter `ceil(n/10)`
 
 Each chapter has a hat (`HATS`, by chapter index) and a map scene (`SCENE_COL`, `SCENE_DECO`).
 
-## Key systems in game.js
+## Key systems in src/game/
 
-Sections are listed in the table of contents at the top of the file; each starts with a
-`// ---------- name ----------` line, so search for the divider.
+Each file starts with a `// ---------- name ----------` divider (some hold several sections); the Layout above
+says which file holds what, and a search for a function name finds it fast.
 
 ### The board and the worm
 
-- **Scene:** a perspective camera fitted so the board sits between the header and the button row
+- **Scene** (`play/camera.js`): a perspective camera fitted so the board sits between the header and the button row
   (`fitCamera`). It may rotate 90 degrees for wide boards; swipes are mapped through the projected grid
   directions, so controls always match the screen. Lighting is always daytime.
-- **Worm body:** a tube rebuilt every frame through segment anchors (`updateWorm`), with tapered radius,
+- **Worm body** (`models/worm-body.js`, `worm-skin.js`): a tube rebuilt every frame through segment anchors (`updateWorm`), with tapered radius,
   segment rings and a crawl bulge. Tunnels split the body into chains that dive into the ground; a chain
   that comes out of a tunnel and goes straight back into the same one is drawn as a hairpin, two strands
   side by side, instead of one tube folding back on itself.
-- **Head:** expressions (`applyExpr`), blinking, an idle look-at-camera cycle, reactions, idle acts between
+- **Head** (`models/worm-head.js`, `play/worm-life.js`): expressions (`applyExpr`), blinking, an idle look-at-camera cycle, reactions, idle acts between
   looks (`startAct`: watch a butterfly, stretch, wiggle), a yawn, and asleep after 25 s.
-- **Moves and hints:** `tryMove` queues swipes and animates `step` events; `history` is the undo stack.
+- **Moves and hints** (`play/moves.js`, `play/hints.js`): `tryMove` queues swipes and animates `step` events; `history` is the undo stack.
   There's no Restart button: a tap on Undo takes back one move, holding it fills a ring (`--hold` on
   `#undoBtn`, `HOLD_WAIT` + `HOLD_MS`) and then calls `restart()`; R still restarts. The hint solver
   `solveFrom` is a capped BFS over `stateKey`.
-- **HUD:** `updateHUD` shows the moves meter with par and chips (`hudTile`) only for what isn't visible on
+- **HUD** (`play/hud.js`): `updateHUD` shows the moves meter with par and chips (`hudTile`) only for what isn't visible on
   the board: flags touched, keys held and length vs the burrow. Weather, hedges and pollen show in the
   scene, so they get no chip; keep the row to about four.
-- **The worm talks in play:** `wormSays(text,ms)` shows a bubble (`#wormSayG`) that `placeSay` keeps next to
+- **The worm talks in play** (`play/intro.js`): `wormSays(text,ms)` shows a bubble (`#wormSayG`) that `placeSay` keeps next to
   the head. Snacks, flags, keys, gates and pollen sometimes get a word (`SAY` via `sayFor`: 1 in 4, at most
   every 40 s), while hints and the stuck nudge always speak through it. Rule explanations and blocked moves
   stay as toasts.
-- **Meeting a mechanic:** `showIntro(list,done)` pages through one illustrated card per mechanic
+- **Meeting a mechanic** (`play/intro.js`): `showIntro(list,done)` pages through one illustrated card per mechanic
   (`renderIntro`, a bobbing `MECH` sticker in a tinted circle, dots, Next / Let's go).
 
 ### Board pieces
 
-- **Beetles:** `makeBeetle` (solid body merged into one mesh; eyes, antennae and legs separate so they
+- **Beetles** (`models/beetles.js`): `makeBeetle` (solid body merged into one mesh; eyes, antennae and legs separate so they
   move), `pushBeetle` (turns to face the worm, scoots along its path with eyes shut), `beetleNope` (shakes
   its head at a blocked push), `updateBeetles` (blinks, watches the worm, scrabbles, looks content on a
   flower). Open hedges pull in from the tile edges so the change reads from above.
-- **Pollen and soft soil** (their own section): `makePollenFlower` (cupped bloom, fuzzy dome, floating
+- **Pollen and soft soil** (`models/pollen-soil.js`): `makePollenFlower` (cupped bloom, fuzzy dome, floating
   motes in `polItems`), `makePetalGate` (six tall petals closed into a bud; `setPetals(u,o)` folds them
   flat, `syncPetals` opens a gate while the worm wears its colour or lies in it, `petalsNope` shakes it at
   a blocked move), `POLL` / `polMat` for the three colours. The worm's tint: `updatePollen` eases `dustCol` /
@@ -330,21 +347,21 @@ Sections are listed in the table of contents at the top of the file; each starts
   `makeSoftTile` (a grass tile with a low molehill; `setMound` / `syncSoil` swell it while the worm is in
   the tile, a collar for the head alone), and `updateWorm` sinks every body anchor (never the head) by
   `soilDepth(v)`, so the tube dives under the heap. `syncHedges` calls both syncs.
-- **Ambient motion:** river tiles register in `flowTiles` (drifting leaf, glints, ripple, a water-babble
+- **Ambient motion** (`models/board.js`, `models/beetles.js`): river tiles register in `flowTiles` (drifting leaf, glints, ripple, a water-babble
   loop); snails leave a slime strip (`trail`) that grows from tile to tile.
 
 ### The garden around the board
 
-- **Scenery batching:** the plants, bushes and trees around the bed are built into a temporary group and
+- **Scenery batching** (`models/garden.js`): the plants, bushes and trees around the bed are built into a temporary group and
   merged by `batchScenery` into a few chunked meshes (vertex colours, one for outlines). Their sway runs in
   the vertex shader (`windify`, uniforms `windU` / `gustU`, per-vertex `sway`), so the lawn costs a handful
   of draw calls. Critters use the same merge (`merged`).
-- **Garden visitors:** `buildCritters` adds a ladybug on the wooden border and, above the lowest quality,
+- **Garden visitors** (`models/visitors.js`): `buildCritters` adds a ladybug on the wooden border and, above the lowest quality,
   a bird on the lawn in front of the bed (placed once the camera is fitted). `birdSpot` only picks spots
   clear of `lawnObstacles` / `treeObstacles` and reachable in a straight line. It bobs when the ambient
   birdsong plays. Animated in `updateCritters`.
 
-### Home (`homeOv`)
+### Home (`homeOv`; `home/`, the map in `play/levels.js`)
 
 Five tabs switched by `showTab`. Leaving Play pushes a `tab` layer, so back returns to Play; opening a patch
 from a tab replaces that layer with `game`.
@@ -367,7 +384,7 @@ from a tab replaces that layer with `game`.
 - **Badges:** grouped by `BADGE_GROUPS` with an All / Earned / To find filter and a detail card for the
   tapped badge (`renderBadges`, `renderBadgeDetail`).
 
-### Rewards and the wardrobe
+### Rewards and the wardrobe (`rewards/`, `models/hats.js`, `models/extras.js`, `home/wardrobe.js`)
 
 - **Badges:** `BADGES` (id, icon, name, description, test) are checked after every win and after moves that
   bump a counter in `progress.stats`; earned ones live in `progress.badges` (with a timestamp, not shown).
@@ -399,21 +416,21 @@ from a tab replaces that layer with `game`.
 
 ### Modes and screens
 
-- **Endless meadow and daily:** `genCandidate` + `analyzeCapped` + difficulty scoring in `generateEndless`.
+- **Endless meadow and daily** (`endless/`): `genCandidate` + `analyzeCapped` + difficulty scoring in `generateEndless`.
   The daily patch (`startDaily`) uses a date seed, `DAILY_OPTS` and a fixed number of tries, so everyone gets
   the same one; it's cached in `squirm-daily-patch` for the day.
-- **Win card** (`onWin`): big stars, a line about par or hints, Moves / Par / Time tiles (`New best` tag),
+- **Win card** (`onWin`, `play/moves.js`): big stars, a line about par or hints, Moves / Par / Time tiles (`New best` tag),
   then `gifts`: rows for what was earned (badges, hats, colours, patterns: `hot`, honey) and progress notes
   (chapter, streaks, next chapter), in a `.fade-scroll`. Next is the big button; Replay, Home and Share sit
   under it. Badges earned by a win only play their jingle; the card lists them.
-- **Finale:** once every patch is cleared (`allCleared`), winning the last one offers "What's next?", which
+- **Finale** (`ui/finale.js`): once every patch is cleared (`allCleared`), winning the last one offers "What's next?", which
   opens `finOv` (`showFinale` / `renderFinale`): totals plus choices built from progress (patches below 3
   stars via `shineable`, badges left, the meadow, today's daily). The home Play card turns into "Garden
   grown!" and opens it too, and the map ends with a card about more patches coming.
-- **What's new:** `NEWS` (newest first: `[version, date, title, lines]`). Returning players see the newest
+- **What's new** (`ui/news.js`): `NEWS` (newest first: `[version, date, title, lines]`). Returning players see the newest
   entry once as a card on the Play tab (`renderNews`; `squirm-news` holds the last version seen; new players
   never see it); Settings > About lists them all.
-- **Photo mode:** the Photo button in the game's button row (also P), any time in play, via `enterPhoto` /
+- **Photo mode** (`play/photo.js`): the Photo button in the game's button row (also P), any time in play, via `enterPhoto` /
   `exitPhoto` and a `photo` layer. `photoFrom` remembers where it came from: during play the worm turns to
   the camera and leaving goes back to the patch; after a win the worm peeks out of the burrow and leaving
   reopens the card. The HUD fades out (`body.photo`) and the camera glides to a full-screen framing
@@ -424,45 +441,49 @@ from a tab replaces that layer with `game`.
   glide back. `#stage` gets `touch-action:none` in photo mode and Safari's `gesturestart` is cancelled, so
   pinching never zooms the page. `snapPhoto` draws a frame with a caption plaque (from `photoInfo`) and
   shares the PNG where the browser can share files, or downloads it. Keys: Space/Enter snap, P pose, Esc back.
-- **Settings and backups:** the home gear opens `setOv`, one scrolling page (`#setScroll`) of cards with
+- **Settings and backups** (`ui/settings.js`): the home gear opens `setOv`, one scrolling page (`#setScroll`) of cards with
   sticker headings (`renderSettings`): a stats strip, Sound (music, volume, effects, vibration), Look (theme
   with swatches; Graphics: Auto lets `watchSpeed` adapt, Saver pins the lowest quality, Sharp the highest;
   `squirm-gfx`, device-specific), Reminders, Back up your garden (save code) and About (the anonymous stats
   switch, What's new folded into a `<details>`, the build id). A save code is `SQUIRM1:` + base64 JSON of
   every `squirm-` key except the throwaway ones in `SAVE_SKIP`; restoring replaces those keys and reloads.
   Starting over is only the secret reset: hold the home worm's head for 3 s, which clears every `squirm-` key.
-- **Layers and the back button:** a small layer stack mirrored to `window.history` (`pushLayer` /
+- **Layers and the back button** (`ui/layers.js`): a small layer stack mirrored to `window.history` (`pushLayer` /
   `popLayer` / `swapLayers`). `popLayer`'s `history.go` is async, so use `swapLayers` when replacing a layer
   right after closing another (the finale does this coming from the win dialog).
 
 ### Sound, performance and the platform
 
-- **Music and sound:** `sfx(name)` plays synthesized effects. `musicTick` schedules a generated tune (pad,
+- **Music and sound** (`audio/`): `sfx(name)` plays synthesized effects. `musicTick` schedules a generated tune (pad,
   bass, melody, echo) a little ahead on the Web Audio clock; its mood follows `todName` (time of day, which
   also brings fireflies in the evening and at night) and rain. `squirm-music` (off by default for new
   players, on for players who already had progress), `squirm-music-vol` (0-1).
-- **Performance:** `watchSpeed` lowers `quality` (pixel ratio, shadow map size) when most frames take over
+- **Performance** (`core/loop.js`): `watchSpeed` lowers `quality` (pixel ratio, shadow map size) when most frames take over
   40 ms (a 30 fps low-power cap doesn't count), raises it one step per session once frames are quick again,
   and remembers it in `squirm-quality`. Behind menus the blurred garden is drawn every third frame only.
   Ground textures use anisotropic filtering. Keep the mobile budget in mind; scenery is the first thing to trim.
-- **GPU memory:** `disposeTree` frees a patch's meshes when the next one is built, except what's in its keep
-  lists (`GC`, `MC`, shared geometries, materials and textures). Add new module-level resources to those
-  lists. The smoke test fails if geometries or textures grow across patches.
-- **Fast first paint:** the home overlay is visible in the markup, and the `boot` script in `shell.html`
+- **GPU memory** (`models/board.js`, `core/tweens.js`): `disposeTree` frees a patch's meshes when the next one
+  is built, `kill()` frees an effect or board piece when its animation ends (eaten fruit, opened gates,
+  sparkles), and `dropSeg` frees the old worm's head (its hat and extra come off first: they share geometry
+  with their cached protos). All of them skip the keep lists (`GC`, `MC`, shared geometries, materials and
+  textures): add new module-level resources to those lists, and cache an effect's material instead of making
+  one per call. The smoke test plays a patch with fruit and a gate to a win twice and fails if geometries or
+  textures grow.
+- **Fast first paint** (`core/boot.js`, `shell.html`): the home overlay is visible in the markup, and the `boot` script in `shell.html`
   fills in stars, the Continue text and the daily card from `squirm-boot` (written by `renderHome`) before
   three.js loads. `start` shows home first and builds the garden a frame later; the 3D canvases fade in
   (`.ready`) once they've drawn. The `theme` script in `<head>` applies a forced theme before first paint.
-- **Offline, install and updates:** `sw.js` is registered at boot (http/https only) and checked for updates
+- **Offline, install and updates** (`platform/offline.js`): `sw.js` is registered at boot (http/https only) and checked for updates
   when the app returns to the foreground and every 30 minutes. A new worker takes over right away; the page
   reloads into it at a calm moment (immediately on the home screen, otherwise the next time the player heads
   home). The home screen shows an install button on `beforeinstallprompt`.
-- **Daily reminder:** no server, so no push. Where `PeriodicSyncManager` exists (installed Chrome on
+- **Daily reminder** (`platform/reminder.js`): no server, so no push. Where `PeriodicSyncManager` exists (installed Chrome on
   Android) the page registers periodic sync `squirm-daily`, and `sw.js` shows one notification a day if
   today's daily isn't done and it's past the chosen hour (quiet while the game is on screen). The worker
   reads `{on, hour, done, streak, told}` from the `squirm-state` cache, which the page writes
   (`shareRemindState`) and the worker's cache cleanup skips. Where only `setAppBadge` exists, the icon gets
   a badge instead. Setting: `squirm-remind` (device-specific, in `SAVE_SKIP`).
-- **Anonymous stats:** the one outgoing request: GoatCounter counters via `stat(path)` (a beacon to
+- **Anonymous stats** (`platform/stats.js`): the one outgoing request: GoatCounter counters via `stat(path)` (a beacon to
   `https://<STATS_CODE>.goatcounter.com/count`), no cookies and nothing personal. Off anywhere but https on a
   real host (so never in tests or local builds); players switch it off in Settings > About (`squirm-stats`,
   device-specific, in `SAVE_SKIP` with `squirm-stats-v`). It sends a visit on boot, `launch/app` or
@@ -484,8 +505,12 @@ from a tab replaces that layer with `game`.
   `outline(mesh)`, cached spheres `sph(r)` (radii rounded so the cache stays bounded). Never change a shared
   material's settings (`m(key).side = ...`): every mesh using that key changes with it.
 - Pictures: add to `ART` and use `art(name,size)` (see icons).
-- New code goes in the matching `game.js` section; a new section gets a `// ---------- name ----------`
-  divider and a line in the table of contents. `.editorconfig`: 2 spaces, LF, final newline.
+- New code goes in the matching file under `src/game/`. A new file gets a `// ---------- name ----------`
+  divider, a place in `tools/game-files.js`, and a line in the folder map at the top of `core/base.js` and in
+  the Layout above. Code that runs as the page loads (a top-level `const`, a list, a call) can only use what
+  earlier files in that order define; function declarations are fine anywhere.
+- Keep lines readable: break long ones after a statement's `;` (data like stickers and lists may run long).
+  `.editorconfig`: 2 spaces, LF, final newline.
 
 ### Copy
 
@@ -513,7 +538,7 @@ from a tab replaces that layer with `game`.
 - `:where(.dialog) p` is a zero-specificity default for dialog paragraphs, so a class on a paragraph
   wins without `!important`. Prefer low-specificity defaults like that over overrides.
 - Respect `prefers-reduced-motion`: every animation and transition is listed in the single reduced-motion
-  block (section 11), and `reduceMotion` in `game.js` gates scripted motion.
+  block (section 11), and `reduceMotion` (in `core/base.js`) gates scripted motion.
 
 ### Icons
 
@@ -522,7 +547,7 @@ from a tab replaces that layer with `game`.
   Meadow tiles via `MECH[k].i`) come from the `ART` sticker set via `art(name,size)`: a 24-unit grid, pastel
   fills, brown `#5B4436` outline whose width scales with size, stars filled honey. Each object has one
   drawing everywhere, coloured like its 3D model (the mushroom is lilac like the board's; the red one is the
-  hat). In `shell.html` write `<span data-art="name" data-size="28"></span>`; the boot section of `game.js`
+  hat). In `shell.html` write `<span data-art="name" data-size="28"></span>`; `core/boot.js`
   fills it in. Sticker hexes are the one place hard-coded colours are expected (the wardrobe colour swatches
   are drawn the same way).
 - Controls (chevrons, back, close, check, HUD buttons) are monoline `currentColor` SVGs from `UI_ICON`
@@ -556,20 +581,18 @@ from a tab replaces that layer with `game`.
 
 ## Things that will bite you
 
-- **Generator extraction:** `tools/load-generator.js` evaluates `game.js` from the line that starts with
-  `// ---------- endless meadow ----------` up to the line that starts with `const todayKey`, plus the
-  one-line `function rng(seed){...}`, in a Node sandbox that only has logic.js, `performance`,
-  `setTimeout`, `console`, a stub `$` and an empty `progress`. So: keep both markers at line starts and
-  in that order, keep `rng` on one line, and don't use other page globals (`store`, `document`, three.js)
-  in that stretch. Tests and `curate` break otherwise.
+- **The generator runs in Node too:** `tools/load-generator.js` evaluates `src/game/endless/generator.js` with
+  logic.js in a sandbox that only has `performance`, `setTimeout`, `console`, a stub `$` and an empty
+  `progress`. Don't use other page globals (`store`, `document`, three.js) in that file, or the tests and
+  `curate` break.
 - **Daily determinism:** `test/generator.test.js` copies `DAILY_OPTS` and the date-seed recipe from
   `startDaily`; change them together. Any change to the endless section that alters output for a seed
   changes everyone's daily patch, so refactors there must produce identical patches, and a new feature may
   only draw random numbers when it's switched on.
-- **Debug hooks:** `tools/build.js --debug` inserts `window.__squirm` by matching the final `})();` at
-  the very end of `game.js`, and the hooks call `hideAll`, `loadLevel`, `tryMove`, `animating`, `queue`,
-  `dirFromScreen`, `renderer` and `state`. Keep the file ending in `})();` and keep those names, or the
-  smoke test loses its hooks. (`add-model`'s `look.js` also adds an `ev` hook to its own throwaway build.)
+- **Debug hooks:** `tools/build.js --debug` inserts `window.__squirm` just before the wrapper it puts round the
+  game files closes, and the hooks call `hideAll`, `loadLevel`, `tryMove`, `animating`, `queue`,
+  `dirFromScreen`, `renderer` and `state`. Keep those names, or the smoke test loses its hooks.
+  (`add-model`'s `look.js` also adds an `ev` hook to its own throwaway build.)
 - **Build string surgery:** the build strips the one-line `if(typeof module!=='undefined') ...` export
   from `logic.js` and `levels.js`, replaces the `/*__...__*/` slots and `__BUILD__` in `shell.html`, and
   syntax-checks only the first bare `<script>` (the game). Give any other inline script an attribute
@@ -579,5 +602,5 @@ from a tab replaces that layer with `game`.
 - **Service worker in dev:** a served build installs `sw.js`, which can serve a stale copy after you
   rebuild. `tools/serve.js` sends `no-cache` and the worker updates itself, but a hard reload or a fresh
   browser context is the quick fix.
-- **Storage keys outside `game.js`:** `squirm-theme` (theme script), `squirm-boot` (boot script) and
+- **Storage keys outside the game code:** `squirm-theme` (theme script), `squirm-boot` (boot script) and
   `squirm-state` (a Cache Storage entry the service worker reads) are read by code that can't use `store`.

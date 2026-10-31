@@ -1,19 +1,18 @@
-// Squirm's game code: rendering, input, UI, audio, the endless generator and the hint solver, in one IIFE
-// that tools/build.js joins into index.html after logic.js and levels.js. Sections, in order (each starts
-// with a "// ---------- name" line):
-//   saved data (store) · DOM helpers · three setup (renderer, toon materials, outlines) · audio · music
-//   state · geometry helpers · garden scenery · scenery batching · little garden visitors
-//   tiles and items · snails · beetles · weather · worm (body, head, wardrobe, idle acts) · tweens · moves
-//   hints (solveFrom) · UI feedback · resume · sticker icons · HUD · toasts and dialogs
-//   endless meadow (genCandidate, analyzeCapped, generateEndless; daily patch) · native back button
-//   home · home tabs · the whole garden (finale) · settings · badges · secret reset · home worm
-//   first time you meet a mechanic · first-time tutorial · levels (startLevel, garden map) · camera
-//   input · buttons · loop · unexpected errors · anonymous stats · offline play and install · daily reminder · boot
-// Text other files rely on: tools/load-generator.js runs everything from the endless meadow divider up
-// to the todayKey definition (plus the one-line rng) in Node, so that stretch must not touch the page
-// beyond $(), and neither marker may appear earlier in this file; tools/build.js --debug inserts
-// window.__squirm just before the final closing of this IIFE.
-// Inside this IIFE `history` is the undo stack; the browser's is always window.history.
+// Squirm's game code: rendering, input, UI, audio, the endless generator and the hint solver. The files in
+// src/game/ are joined in tools/game-files.js order inside one function wrapper, after logic.js and levels.js,
+// so they share one scope. Folders:
+//   core/     store, DOM helpers, three setup, state, tweens, the frame loop, boot
+//   audio/    sound effects and the generated music
+//   models/   3D objects: garden scenery, critters, tiles and items, snails, beetles, pollen and soft soil,
+//             weather, the worm (head, skin, body), hats and extras
+//   rewards/  the wardrobe lists (hats, extras, colour options, worm colours, patterns) and badges
+//   play/     the worm's idle life, moves, photo mode, hints, resume, HUD, mechanic intros, levels, camera, input
+//   ui/       press feedback, stickers (ART), dialogs, the back-button layers, what's new, finale, settings
+//   home/     the home tabs, the wardrobe tab, the home worm
+//   endless/  the generator (also run in Node by tools/load-generator.js, so it must not touch the page
+//             beyond $()) and the daily patch
+//   platform/ anonymous stats, offline and install, the daily reminder
+// Inside the wrapper `history` is the undo stack; the browser's is always window.history.
 
 const motionQuery = window.matchMedia ? matchMedia('(prefers-reduced-motion: reduce)') : null;
 let reduceMotion = !!(motionQuery && motionQuery.matches);

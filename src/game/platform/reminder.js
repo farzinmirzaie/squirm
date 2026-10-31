@@ -10,7 +10,8 @@ function updateAppBadge(){ if(!navigator.setAppBadge) return;
 // the service worker can't read localStorage, so the page hands it what it needs through a cache
 async function shareRemindState(){ updateAppBadge(); if(!('caches' in window)) return;
   try{ const c=await caches.open('squirm-state'), old=await c.match('reminder'), prev=old?await old.json():{};
-    await c.put('reminder',new Response(JSON.stringify({...prev,on:remind.on,hour:remind.hour,done:progress.daily.last,streak:progress.daily.streak}),{headers:{'content-type':'application/json'}})); }catch(e){} }
+    await c.put('reminder',new Response(JSON.stringify({...prev,on:remind.on,hour:remind.hour,done:progress.daily.last,streak:progress.daily.streak}),{headers:{'content-type':'application/json'}}));
+      }catch(e){} }
 function saveRemind(){ store.set('squirm-remind',JSON.stringify(remind)); shareRemindState(); renderRemind(); }
 function renderRemind(){ const k=remindKind(), on=remind.on&&k!=='none';
   $('setRemind').setAttribute('aria-checked',String(on)); $('setRemind').disabled=k==='none';
@@ -21,9 +22,11 @@ function renderRemind(){ const k=remindKind(), on=remind.on&&k!=='none';
     : on ? "Once a day, after the time you pick, Squirm sends a gentle nudge if today's patch is still waiting. Your phone picks the exact moment, so it may come a little later."
     : "Get a gentle nudge when a fresh daily patch is waiting for you."; }
 $('setRemind').onclick=async()=>{ const k=remindKind(); if(k==='none') return;
-  if(remind.on){ remind.on=false; saveRemind(); sfx('off'); try{ const reg=await navigator.serviceWorker.ready; if(reg.periodicSync) await reg.periodicSync.unregister('squirm-daily'); }catch(e){} return; }
+  if(remind.on){ remind.on=false; saveRemind(); sfx('off'); try{ const reg=await navigator.serviceWorker.ready;
+    if(reg.periodicSync) await reg.periodicSync.unregister('squirm-daily'); }catch(e){} return; }
   let perm=Notification.permission; if(perm==='default'){ try{ perm=await Notification.requestPermission(); }catch(e){} }
-  if(perm!=='granted'){ nope($('setRemind'),'Notifications are turned off for Squirm. You can allow them in your browser settings.',3600); renderRemind(); return; }
+  if(perm!=='granted'){ nope($('setRemind'),'Notifications are turned off for Squirm. You can allow them in your browser settings.',3600); renderRemind();
+    return; }
   if(k==='full'){ try{ const reg=await navigator.serviceWorker.ready;
       const st=await navigator.permissions.query({name:'periodic-background-sync'}).catch(()=>null);
       if(st&&st.state!=='granted') throw new Error('not installed');
@@ -34,7 +37,8 @@ $('setRemindAt').querySelectorAll('button').forEach(b=>b.onclick=()=>{ remind.ho
 if('serviceWorker' in navigator) navigator.serviceWorker.addEventListener('message',e=>{ if(e.data==='squirm-daily'&&calmMoment()) $('dailyBtn').onclick(); });
 document.addEventListener('visibilitychange',()=>{ if(document.hidden) updateAppBadge(); });
 // keep the worker's copy in step (it also hears about a secret reset this way)
-if(remindKind()!=='none'){ shareRemindState(); if(!remind.on) navigator.serviceWorker.ready.then(r=>r.periodicSync&&r.periodicSync.unregister('squirm-daily')).catch(()=>{}); }
+if(remindKind()!=='none'){ shareRemindState();
+  if(!remind.on) navigator.serviceWorker.ready.then(r=>r.periodicSync&&r.periodicSync.unregister('squirm-daily')).catch(()=>{}); }
 
 let installEvt=null;
 window.addEventListener('beforeinstallprompt',e=>{ e.preventDefault(); installEvt=e; $('installBtn').hidden=false; });

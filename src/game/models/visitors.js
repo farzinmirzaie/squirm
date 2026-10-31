@@ -3,7 +3,8 @@ let critters=[];
 function ladybug(){ const g=new THREE.Group(), red=toon(0xE8544E), dark=m('pupil');
   const shell=new THREE.Mesh(sph(.075,16,12),red); shell.scale.set(1,.55,1.2); shell.position.y=.03; outline(shell,.012); g.add(shell);
   const head=new THREE.Mesh(sph(.04,12,10),dark); head.position.set(0,.025,.085); g.add(head);
-  for(const [x,z] of [[.035,.02],[-.035,.02],[.03,-.045],[-.03,-.045],[0,-.01]]){ const d=new THREE.Mesh(sph(.017,8,6),dark); d.scale.y=.4; d.position.set(x,.068,z); g.add(d); }
+  for(const [x,z] of [[.035,.02],[-.035,.02],[.03,-.045],[-.03,-.045],[0,-.01]]){ const d=new THREE.Mesh(sph(.017,8,6),dark); d.scale.y=.4;
+    d.position.set(x,.068,z); g.add(d); }
   // the seam between the wing cases follows the curve of the shell
   const line=new THREE.Mesh(new THREE.TorusGeometry(.09,.006,4,24,Math.PI),dark); line.scale.y=.46; line.rotation.y=Math.PI/2; line.position.y=.03; g.add(line);
   return merged(g,1.5); }
@@ -28,7 +29,8 @@ function buildCritters(r,cx,cz,bw,bd){ critters=[];
   critters.push(c); bird.visible=false; }
 const BIRD_R=.28, BUG_Y=-.052; // the wooden border's top is at y -.07; the bug's shell reaches .011 below its origin (x1.5)
 const clearAt=(x,z)=>![...lawnObstacles,...treeObstacles].some(o=>Math.hypot(x-o.x,z-o.z)<o.r+BIRD_R);
-function clearPath(a,b){ const n=Math.ceil(a.distanceTo(b)/.12); for(let i=1;i<=n;i++){ const t=i/n; if(!clearAt(a.x+(b.x-a.x)*t,a.z+(b.z-a.z)*t)) return false; } return true; }
+function clearPath(a,b){ const n=Math.ceil(a.distanceTo(b)/.12); for(let i=1;i<=n;i++){ const t=i/n; if(!clearAt(a.x+(b.x-a.x)*t,a.z+(b.z-a.z)*t)) return false;
+  } return true; }
 // a free spot on the lawn between the bed and the camera that the bird can reach without going through anything
 function birdSpot(c,from){ const fx=camera.position.x-c.cx, fz=camera.position.z-c.cz, l=Math.hypot(fx,fz)||1, ux=fx/l, uz=fz/l;
   const ext=Math.abs(ux)*c.hw+Math.abs(uz)*c.hd, span=Math.abs(uz)*c.hw+Math.abs(ux)*c.hd, box=viewBox();
@@ -52,15 +54,18 @@ function updateCritters(dt){ const sec=dt/1000;
     if(c.kind==='bug'){ if(reduceMotion){ const [x,z]=perimeter(c,c.s); o.position.set(x,BUG_Y,z); continue; }
       if(c.rest>0){ c.rest-=sec; continue; }
       const sp=.035/Math.max(c.hw,c.hd); c.s+=c.dir*sp*sec*4; if(Math.random()<sec*.12){ c.rest=1.5+Math.random()*3; if(Math.random()<.3) c.dir*=-1; }
-      const [x,z]=perimeter(c,c.s), [nx,nz]=perimeter(c,c.s+c.dir*.01); o.position.set(x,BUG_Y+Math.abs(Math.sin(idleT*30))*.004,z); o.rotation.y=Math.atan2(nx-x,nz-z); continue; }
+      const [x,z]=perimeter(c,c.s), [nx,nz]=perimeter(c,c.s+c.dir*.01); o.position.set(x,BUG_Y+Math.abs(Math.sin(idleT*30))*.004,z);
+        o.rotation.y=Math.atan2(nx-x,nz-z); continue; }
     // bird: settles on a spot and eats there for a while (pecks, looks around), then hops a few times to another spot
-    if(!o.visible){ if((c.retry=(c.retry||0)-sec)>0) continue; const p=birdSpot(c); if(!p){ c.retry=1; continue; } o.position.copy(p); o.rotation.y=Math.random()*6; o.visible=true; c.mode='eat'; c.t=3+Math.random()*4; } // placed once the camera has settled
+    if(!o.visible){ if((c.retry=(c.retry||0)-sec)>0) continue; const p=birdSpot(c); if(!p){ c.retry=1; continue; } o.position.copy(p);
+      o.rotation.y=Math.random()*6; o.visible=true; c.mode='eat'; c.t=3+Math.random()*4; } // placed once the camera has settled
     const head=o.userData.head; head.rotation.z=birdSong>0?Math.sin(birdSong*30)*.2:0;
     if(reduceMotion){ head.rotation.x=0; continue; }
     if(c.mode==='eat'){ c.t-=sec;
       if(c.peck>0){ c.peck-=sec; head.rotation.x=Math.sin((1-c.peck/.45)*Math.PI)*.95; }
       else { head.rotation.x*=.85; if(Math.random()<sec*1.1) c.peck=.45; }
-      if(c.look>0){ c.look-=sec; head.rotation.y+=(c.lookTo-head.rotation.y)*Math.min(1,sec*8); } else { head.rotation.y*=.9; if(Math.random()<sec*.25){ c.look=.9; c.lookTo=(Math.random()-.5)*1.4; } }
+      if(c.look>0){ c.look-=sec; head.rotation.y+=(c.lookTo-head.rotation.y)*Math.min(1,sec*8); } else { head.rotation.y*=.9;
+        if(Math.random()<sec*.25){ c.look=.9; c.lookTo=(Math.random()-.5)*1.4; } }
       if(c.t<=0){ const p=birdSpot(c,o.position); if(p){ c.mode='go'; c.to=p; c.wait=0; } else c.t=2; }
       continue; }
     // travelling: short hops with small pauses, facing where it's going

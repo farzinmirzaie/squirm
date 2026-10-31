@@ -13,7 +13,9 @@ document.querySelector('.hud-stats').addEventListener('click',e=>{ const st=e.ta
 const hudTile=(tip,cls,label,v,k,tap=true)=>`<span${tap?' role="button" tabindex="0"':''} class="stat${cls?' '+cls:''}" data-tip="${tip}" aria-label="${label}"><span class="v">${v}</span><span class="k">${k}</span></span>`;
 let shownStars=3;
 function updateHUD(silent){
-  $('lvlNum').style.fontSize=String(mode==='garden'?li+1:0).length>2?'16px':''; $('lvlNum').textContent= mode==='garden' ? li+1 : L.daily ? new Date().getDate() : (progress.endless[endlessDiff].cleared+1); $('lvlName').textContent=L.name;
+  $('lvlNum').style.fontSize=String(mode==='garden'?li+1:0).length>2?'16px':'';
+    $('lvlNum').textContent= mode==='garden' ? li+1 : L.daily ? new Date().getDate() : (progress.endless[endlessDiff].cleared+1);
+    $('lvlName').textContent=L.name;
   $('lvlSub').textContent=hudSub(); document.body.dataset.mode=mode;
   const tabTitle=(mode==='garden'?`${li+1} · `:'')+L.name+' · Squirm'; if(document.title!==tabTitle&&!$('homeOv').classList.contains('show')) document.title=tabTitle;
   const now=starsFor(state.moves,curPar(),hintsUsed>0), meter=[0,1,2].map(j=>`<i class="${j<now?'on':''}"></i>`).join('');
@@ -28,11 +30,15 @@ function updateHUD(silent){
   const ok=state.segs.length===state.exitLen;
   chips.push(hudTile('length',ok&&'done',`Length ${state.segs.length}, burrow fits ${state.exitLen}`,
     `${sticker(ICON.worm)}<b>${state.segs.length}</b><span class="to" aria-hidden="true">${ok?'=':'&rarr;'}</span><b>${state.exitLen}</b>`,ok?'Fits!':'Length'));
-  const html=chips.join(''); if($('chips').innerHTML!==html){ const prev=[...$('chips').children], old=prev.map(c=>c.textContent), wasDone=prev.map(c=>c.classList.contains('done')); $('chips').innerHTML=html;
-    if(!silent) [...$('chips').children].forEach((c,i)=>{ if(c.classList.contains('done')&&!wasDone[i]) animOnce(c,'cheer'); else if(old[i]!==c.textContent) pulse(c); }); }
+  const html=chips.join('');
+    if($('chips').innerHTML!==html){ const prev=[...$('chips').children], old=prev.map(c=>c.textContent), wasDone=prev.map(c=>c.classList.contains('done'));
+    $('chips').innerHTML=html;
+    if(!silent) [...$('chips').children].forEach((c,i)=>{ if(c.classList.contains('done')&&!wasDone[i]) animOnce(c,'cheer'); else if(old[i]!==c.textContent) pulse(c); });
+      }
   for(const [id,off] of [['undoBtn',!history.length&&state.moves===0]]){ const b=$(id); if(b.disabled&&!off&&!silent) animOnce(b,'pop'); b.disabled=off; }
   const ready = countChar(state,'C')===0 && ok;
   if(ready && !wasReady && !silent && state.status==='play'){ sfx('ready'); glanceT=1.4; }
   wasReady=ready;
-  for(const row of cells) for(const c of row) if(c.item&&c.item.userData.rim){ c.item.userData.rim.material = ready? m('ready') : toon(C.mound); c.item.userData.ready=ready; if(c.item.userData.signBoard) c.item.userData.signBoard.material = ready? m('ready') : m('plank'); }
+  for(const row of cells) for(const c of row) if(c.item&&c.item.userData.rim){ c.item.userData.rim.material = ready? m('ready') : toon(C.mound);
+    c.item.userData.ready=ready; if(c.item.userData.signBoard) c.item.userData.signBoard.material = ready? m('ready') : m('plank'); }
 }

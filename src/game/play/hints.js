@@ -4,7 +4,8 @@ function solveFrom(s0,cap=350000,ms=2500){ const until=performance.now()+ms;
   const seen=new Set([stateKey(s0)]); let q=[[s0,null]];
   while(q.length){ const nq=[];
     for(const [s,first] of q){ for(const d of ['N','S','W','E']){ const r=step(s,d); if(r.blocked) continue; const f=first||d;
-        if(r.state.status==='won') return f; const k=stateKey(r.state); if(seen.has(k)) continue; seen.add(k); if(seen.size>cap||((seen.size&1023)===0&&performance.now()>until)) return undefined; nq.push([r.state,f]); } }
+        if(r.state.status==='won') return f; const k=stateKey(r.state); if(seen.has(k)) continue; seen.add(k);
+          if(seen.size>cap||((seen.size&1023)===0&&performance.now()>until)) return undefined; nq.push([r.state,f]); } }
     q=nq; }
   return null; }
 function clearHint(){ if(hintMesh){ removeObj(hintMesh); hintMesh=null; } }
@@ -18,7 +19,8 @@ function showHint(){
     hintsUsed++; saveResume(); clearHint(); const h=state.segs[0], dd=DIRS[d], tx=h[0]+dd[0], ty=h[1]+dd[1];
     hintMesh=new THREE.Group(); const am=m('key');
     const cone=new THREE.Mesh(new THREE.ConeGeometry(.13,.26,20),am); cone.rotation.x=Math.PI; outline(cone,.02); hintMesh.add(cone);
-    const ring=new THREE.Mesh(new THREE.TorusGeometry(.3,.04,10,32),new THREE.MeshBasicMaterial({color:0xFFD866,transparent:true,opacity:.9})); ring.rotation.x=-Math.PI/2; ring.position.y=-.82; hintMesh.add(ring);
+    const ring=new THREE.Mesh(new THREE.TorusGeometry(.3,.04,10,32),new THREE.MeshBasicMaterial({color:0xFFD866,transparent:true,opacity:.9}));
+      ring.rotation.x=-Math.PI/2; ring.position.y=-.82; hintMesh.add(ring);
     hintMesh.position.copy(wp(tx,ty,.85)); fx.add(hintMesh);
     headDir=[dd[0],dd[1]]; lastMoveT=idleT; sfx('ready'); wormSays(`Let's try ${({N:'up',S:'down',W:'left',E:'right'})[screenWord(d)]}!`,2600);
   },60);

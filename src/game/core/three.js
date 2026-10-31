@@ -22,7 +22,8 @@ scene.add(garden,board,wormG,fx,flyers);
 
 // soft cartoon shading: a smooth ramp instead of hard bands
 const gradTex=(()=>{ const d=new Uint8Array([175,175,180,255, 205,205,208,255, 232,232,232,255, 255,255,255,255]);
-  const t=new THREE.DataTexture(d,4,1,THREE.RGBAFormat); t.minFilter=t.magFilter=THREE.LinearFilter; t.generateMipmaps=false; t.needsUpdate=true; return t; })();
+  const t=new THREE.DataTexture(d,4,1,THREE.RGBAFormat); t.minFilter=t.magFilter=THREE.LinearFilter; t.generateMipmaps=false; t.needsUpdate=true; return t;
+    })();
 const toon=(color,o={})=>new THREE.MeshToonMaterial(Object.assign({color,gradientMap:gradTex},o));
 const MC={}; const m=k=>MC[k]||(MC[k]=toon(C[k]));
 const lineMat=new THREE.MeshBasicMaterial({color:C.line,side:THREE.BackSide});

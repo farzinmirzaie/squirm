@@ -1,3 +1,4 @@
+// ---------- the worm's idle life: looks, acts, blinks, naps ----------
 // head: faces where it's going, then turns to look at you when resting
 const angLerp=(a,b,t)=>{ let d=((b-a+Math.PI)%(Math.PI*2)+Math.PI*2)%(Math.PI*2)-Math.PI; return a+d*t; };
 let blinkT=1.5, lookPhase='off', phaseT=0, lastExpr='smile';
@@ -13,7 +14,8 @@ function updateHead(dt){
   const h=segMeshes[0]; if(!h||!h.userData.body) return;
   const asleep=!animating && state.status==='play' && idleT-lastMoveT>25 && reactT<=0;
   if(asleep){ endAct(h); if(h.userData.expr!=='sleepy'){ applyExpr(h,'sleepy'); bumpStat('naps'); checkBadges(null); save(); } lookPhase='sleep';
-    h.rotation.y=angLerp(h.rotation.y,Math.atan2(headDir[0],headDir[1]),1-Math.exp(-dt/1000*3)); h.userData.body.rotation.x+=(.25-h.userData.body.rotation.x)*(1-Math.exp(-dt/1000*3));
+    h.rotation.y=angLerp(h.rotation.y,Math.atan2(headDir[0],headDir[1]),1-Math.exp(-dt/1000*3));
+      h.userData.body.rotation.x+=(.25-h.userData.body.rotation.x)*(1-Math.exp(-dt/1000*3));
     h.userData.face.eyes.forEach(e=>e.scale.set(1,.22,1)); zT-=dt/1000; if(zT<0&&!reduceMotion){ zT=1.3; snore(h); } return; }
   if(lookPhase==='sleep'){ lookPhase='off'; applyExpr(h,'smile'); }
   if(reactT>0){ reactT-=dt/1000; if(reactT<=0 && lookPhase!=='look') applyExpr(h,'smile'); }
@@ -25,7 +27,8 @@ function updateHead(dt){
   else { phaseT+=dt/1000;
     if(lookPhase==='off'){ lookPhase='look'; phaseT=0; newExpression(h); }
     else if(lookPhase==='look' && phaseT>LOOK_TIME){ lookPhase='away'; phaseT=0; applyExpr(h,'smile');
-      if(!reduceMotion&&Math.random()<.6){ const ks=['stretch','wiggle']; if(flyers.children.length) ks.push('butterfly','butterfly'); startAct(h,ks[Math.floor(Math.random()*ks.length)]); } }
+      if(!reduceMotion&&Math.random()<.6){ const ks=['stretch','wiggle']; if(flyers.children.length) ks.push('butterfly','butterfly');
+        startAct(h,ks[Math.floor(Math.random()*ks.length)]); } }
     // a big yawn a few seconds before dozing off
     if(!yawned && !act && idleT-lastMoveT>21 && !reduceMotion){ yawned=true; lookPhase='away'; phaseT=0; startAct(h,'yawn'); }
     else if(lookPhase==='away' && phaseT>AWAY_TIME){ lookPhase='look'; phaseT=0; newExpression(h); } }
@@ -48,7 +51,8 @@ function updateHead(dt){
   h.userData.body.rotation.x+=(tilt-h.userData.body.rotation.x)*(act?1-Math.exp(-dt/1000*6):k);
   blinkEyes(h,dt);
 }
-function blinkEyes(h,dt){ blinkT-=dt/1000; let bl=1; if(blinkT<0){ bl=Math.max(.08,Math.abs(blinkT+.07)/.07); if(blinkT<-.14){ blinkT = Math.random()<.25 ? .18 : 1.8+Math.random()*2.5; } }
+function blinkEyes(h,dt){ blinkT-=dt/1000; let bl=1; if(blinkT<0){ bl=Math.max(.08,Math.abs(blinkT+.07)/.07);
+  if(blinkT<-.14){ blinkT = Math.random()<.25 ? .18 : 1.8+Math.random()*2.5; } }
   h.userData.face.eyes.forEach(e=>{ const s=e.userData.baseS||1; e.scale.set(s,s*(e.userData.baseY||1)*bl,s); }); }
 function newExpression(h){ let e; do{ e=EXPRS[Math.floor(Math.random()*EXPRS.length)]; }while(e===lastExpr); lastExpr=e; applyExpr(h,e);
   const b=h.userData.body; tween(320,(x,k)=>{ const s=1+Math.sin(k*Math.PI)*.08; b.scale.set(s,1/s,s); },()=>b.scale.set(1,1,1)); }

@@ -1,6 +1,6 @@
 ---
 name: ui-check
-description: Visually check a Squirm UI or 3D change in headless Chromium - debug build, serve, screenshot every home tab and a patch in light and dark at phone size, then compare. For a 3D model itself, use add-model. Use after editing src/shell.html CSS or markup, UI code in src/game.js, or anything that changes how the game looks.
+description: Visually check a Squirm UI or 3D change in headless Chromium - debug build, serve, screenshot every home tab and a patch in light and dark at phone size, then compare. For a 3D model itself, use add-model. Use after editing src/shell.html CSS or markup, UI code in src/game/, or anything that changes how the game looks.
 ---
 
 # Checking the UI visually

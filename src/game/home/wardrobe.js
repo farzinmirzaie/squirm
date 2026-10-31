@@ -2,7 +2,8 @@
 // the worm on its stage shows the whole outfit; Hats / Colours / Patterns switch one grid of tiles
 let wardTab='hats';
 const tile=(key,val,on,ok,ico,name,note)=>`<button data-${key}="${val}" class="hat ${on?'on':''} ${ok?'':'locked'}" aria-pressed="${on}"><span class="hat-ico" aria-hidden="true">${ok?ico:art('lock',28)}</span><b>${name}</b><small>${ok?(on?'Wearing':'Tap to wear'):note}</small></button>`;
-function outfitChanged(el){ bumpStat('outfits'); save(); if(hHead) homeReact('joy'); renderWardrobe(); const on=$('wardGrid').querySelector('.hat.on'); if(on) settle(on); }
+function outfitChanged(el){ bumpStat('outfits'); save(); if(hHead) homeReact('joy'); renderWardrobe(); const on=$('wardGrid').querySelector('.hat.on');
+  if(on) settle(on); }
 function wearHat(id){ hatId=id; store.set('squirm-hat',hatId); dressHat(hHead); dressHat(segMeshes[0]); }
 function wearColour(i){ wormCol=i; store.set('squirm-colour',String(i)); applyWormColour(); }
 function wearPattern(id){ wormPat=id; store.set('squirm-pattern',wormPat); applyWormColour(); }
@@ -35,8 +36,10 @@ qa($('wardSeg'),'button').forEach(b=>b.onclick=()=>{ if(wardTab===b.dataset.w) r
   stagger(qa($('wardGrid'),'button'),'rise',0,22,12); });
 // a random outfit from what's unlocked, different from the current one where possible
 $('dressRandom').onclick=()=>{ const pick=(a,cur)=>{ const o=a.filter(x=>x!==cur); return (o.length?o:a)[Math.floor(Math.random()*(o.length||a.length))]; };
-  for(const k in TINTS) if(Math.random()<.5) tints[k]=Math.floor(Math.random()*TINTS[k].opts.length); store.set('squirm-tints',JSON.stringify(tints)); bumpStat('outfits');
-  wearHat(pick(HATS.filter(hatUnlocked).map(h=>h[0]),hatId)); wearColour(pick([...Array(coloursUnlocked()).keys()],wormCol)); wearPattern(pick(patternsUnlocked(),patOn())); wearExtra(pick(EXTRAS.filter(e=>e[3]()).map(e=>e[0]),extraOn()));
+  for(const k in TINTS) if(Math.random()<.5) tints[k]=Math.floor(Math.random()*TINTS[k].opts.length); store.set('squirm-tints',JSON.stringify(tints));
+    bumpStat('outfits');
+  wearHat(pick(HATS.filter(hatUnlocked).map(h=>h[0]),hatId)); wearColour(pick([...Array(coloursUnlocked()).keys()],wormCol));
+    wearPattern(pick(patternsUnlocked(),patOn())); wearExtra(pick(EXTRAS.filter(e=>e[3]()).map(e=>e[0]),extraOn()));
   if(hHead) homeReact('wow'); renderWardrobe(); };
 const DIFF_ICON_KEY={easy:'sprout',medium:'tulip',hard:'tree'};
 // short names for the mechanic tiles; the full name goes in the label
@@ -56,7 +59,8 @@ function renderEndless(anim){ const e=progress.endless[endlessDiff];
   const r=readResume('endless'); $('homeEndlessCont').hidden=!(r&&r.def&&!r.def.daily&&r.diff===endlessDiff);
 }
 // All turns every mechanic on; once they all are, the same link clears them back to just the basics
-$('mixAll').onclick=()=>{ const all=FEATURES.every(([k])=>endlessOpts[k]); FEATURES.forEach(([k])=>endlessOpts[k]=!all); sfx(all?'off':'on'); renderEndless(); if(!all) qa($('featGrid'),'.mech.on').forEach(settle); };
+$('mixAll').onclick=()=>{ const all=FEATURES.every(([k])=>endlessOpts[k]); FEATURES.forEach(([k])=>endlessOpts[k]=!all); sfx(all?'off':'on'); renderEndless();
+  if(!all) qa($('featGrid'),'.mech.on').forEach(settle); };
 // the patch to continue with: the current one, or the next if the current one is already cleared
 function nextGardenIndex(){ const i=currentGardenIndex(); if(!isCleared(i)) return i;
   for(let j=i+1;j<LEVELS.length;j++) if(!isCleared(j)&&isUnlocked(j)) return j; return i; }

@@ -66,7 +66,8 @@ const BADGES=[
   ['collector','medal','Badge collector','Earn 40 other badges.',counted(()=>[Object.keys(progress.badges).filter(k=>k!=='collector').length,40])]];
 // returns the badges earned just now; quiet ones (earned before badges existed) don't celebrate
 function checkBadges(ctx,quiet){ const got=[];
-  for(const b of BADGES){ if(progress.badges[b[0]]) continue; let ok=false; try{ ok=!!b[4](ctx); }catch(e){} if(ok){ progress.badges[b[0]]=Date.now(); got.push(b); } }
+  for(const b of BADGES){ if(progress.badges[b[0]]) continue; let ok=false; try{ ok=!!b[4](ctx); }catch(e){} if(ok){ progress.badges[b[0]]=Date.now();
+    got.push(b); } }
   if(got.length){ save(); // after a win the win card lists them, so only the jingle plays
     if(!quiet) setTimeout(()=>{ sfx('badge'); if(!(ctx&&ctx.won)) toast(`Badge earned: ${got[0][2].replace(/&[^;]+;/g,'')}${got.length>1?` and ${got.length-1} more`:''}!`,3200); },ctx&&ctx.won?1400:200); }
   return got; }
@@ -107,7 +108,8 @@ function renderBadges(){ const n=Object.keys(progress.badges).length;
     return `<section class="b-group" aria-label="${title}"><p class="label">${title}<span>${got} of ${ids.length}</span></p><div class="b-tiles">${list.map(badgeTile).join('')}</div></section>`; }).join('');
   const g=$('badgeGrid'); g.innerHTML=html||`<p class="b-empty">${badgeFilter==='earned'?'No badges yet. Finish a patch to earn your first one.':'You found every badge. What a garden!'}</p>`;
   qa(g,'.b-tile').forEach(el=>el.onclick=()=>{ if(badgeSel===el.dataset.b) return; badgeSel=el.dataset.b;
-    qa(g,'.b-tile').forEach(x=>{ const on=x===el; x.classList.toggle('sel',on); x.setAttribute('aria-pressed',String(on)); }); settle(el); renderBadgeDetail(true); });
+    qa(g,'.b-tile').forEach(x=>{ const on=x===el; x.classList.toggle('sel',on); x.setAttribute('aria-pressed',String(on)); }); settle(el);
+      renderBadgeDetail(true); });
   renderBadgeDetail(); }
 qa($('badgeFilter'),'button').forEach(b=>b.onclick=()=>{ if(badgeFilter===b.dataset.f) return; badgeFilter=b.dataset.f; renderBadges(); $('badgeGrid').scrollTop=0; settle(b);
   stagger(qa($('badgeGrid'),'.b-tile'),'rise',0,25,12); });

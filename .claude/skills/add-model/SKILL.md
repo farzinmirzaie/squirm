@@ -5,7 +5,7 @@ description: Build or change a Squirm 3D model (hat, extra, colour option, board
 
 # Adding or changing a 3D model
 
-Every model is built in code (`src/game.js`), so nothing is checked by eye unless you look. A model isn't
+Every model is built in code (`src/game/models/`), so nothing is checked by eye unless you look. A model isn't
 done until it looks right from every side, in its real places, in light and dark, in every colour option.
 Budget the time for several review rounds; the first version is rarely right.
 
@@ -13,15 +13,20 @@ Budget the time for several review rounds; the first version is rarely right.
 
 - **Where it lives:**
 
-  | Kind | List | Built by | Lives in |
+  | Kind | List (file) | Built by (file) | Lives in |
   |---|---|---|---|
-  | Hat | `HATS` | `buildHat(id)` | the head's `hatSlot` (cloned from a cached proto) |
-  | Extra (face, neck, head) | `EXTRAS` | `buildExtra(id)` | the head's `accSlot` |
-  | Colour options | `TINTS` | `tinted()` swaps materials | any hat or extra |
-  | Board tile | (map char) | `makeTile` | `cells[y][x].tile` |
-  | Board item | (map char) | `makeItem` | `cells[y][x].item` |
-  | Snail, beetle | `state` | `makeSnail`, `makeBeetle` | their own update functions |
-  | Scenery, critters | | `buildGarden`, `buildCritters` | merged by `batchScenery` / `merged` |
+  | Hat | `HATS` (`rewards/wardrobe.js`) | `buildHat(id)` (`models/hats.js`) | the head's `hatSlot` (cloned from a cached proto) |
+  | Extra (face, neck, head) | `EXTRAS` (`rewards/wardrobe.js`) | `buildExtra(id)` (`models/extras.js`) | the head's `accSlot` |
+  | Colour options | `TINTS` (`rewards/wardrobe.js`) | `tinted()` swaps materials | any hat or extra |
+  | Board tile | (map char) | `makeTile` (`models/board.js`) | `cells[y][x].tile` |
+  | Board item | (map char) | `makeItem` (`models/board.js`) | `cells[y][x].item` |
+  | Snail, beetle | `state` | `makeSnail`, `makeBeetle` (`models/snails.js`, `beetles.js`) | their own update functions |
+  | Pollen flowers, gates, soft soil | (map chars) | `models/pollen-soil.js` | tiles and items |
+  | Scenery, critters | | `buildGarden` (`models/garden.js`), `buildCritters` (`models/visitors.js`) | merged by `batchScenery` / `merged` |
+  | The worm | | `models/worm-head.js`, `worm-skin.js`, `worm-body.js` | `wormG`, the home stage |
+
+  All paths are under `src/game/`. Stickers are in `ui/stickers.js` (`ART`), the palette `C` in `core/base.js`
+  and the material helpers (`m`, `toon`, `outline`, `sph`) in `core/three.js`.
 
 - **Start from its sticker.** Draw the `ART` sticker first (or read the existing one): the model and the
   sticker are the same object in the same colours, and the sticker forces a clear silhouette.

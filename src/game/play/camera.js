@@ -9,7 +9,8 @@ function boardCorners(){ const pts=[];
 function measure(yaw,d,pts,W,H){ camera.clearViewOffset(); camera.aspect=W/H; camera.updateProjectionMatrix();
   camera.position.copy(camDir(yaw)).multiplyScalar(d); camera.lookAt(0,0,0); camera.updateMatrixWorld();
   let x0=1e9,x1=-1e9,y0=1e9,y1=-1e9; const v=new THREE.Vector3();
-  for(const p of pts){ v.copy(p).project(camera); const px=(v.x+1)/2*W, py=(1-v.y)/2*H; x0=Math.min(x0,px); x1=Math.max(x1,px); y0=Math.min(y0,py); y1=Math.max(y1,py); }
+  for(const p of pts){ v.copy(p).project(camera); const px=(v.x+1)/2*W, py=(1-v.y)/2*H; x0=Math.min(x0,px); x1=Math.max(x1,px); y0=Math.min(y0,py);
+    y1=Math.max(y1,py); }
   return {x0,x1,y0,y1}; }
 function fitFor(yaw,pts,W,H,availW,availH){ let lo=2, hi=120;
   for(let i=0;i<28;i++){ const mid=(lo+hi)/2, b=measure(yaw,mid,pts,W,H); if(b.x1-b.x0<=availW && b.y1-b.y0<=availH) hi=mid; else lo=mid; }
@@ -32,8 +33,11 @@ function fitCamera(refit,frame){
 }
 // move the camera to a new framing over a moment instead of jumping (basePos is where the frame loop puts it)
 function glideCamera(frame){ const W=window.innerWidth, H=window.innerHeight, p0=basePos.clone(), v=camera.view, o0=v&&v.enabled?[v.offsetX,v.offsetY]:[0,0];
-  fitCamera(false,frame); if(reduceMotion){ camLook.set(0,0,0); return; } const p1=basePos.clone(), o1=[camera.view.offsetX,camera.view.offsetY]; basePos.copy(p0);
-  const l0=camLook.clone(); tween(700,(e,k)=>{ const t=ease(k); basePos.lerpVectors(p0,p1,t); camLook.copy(l0).multiplyScalar(1-t); camera.position.copy(basePos); camera.lookAt(camLook); camera.setViewOffset(W,H,o0[0]+(o1[0]-o0[0])*t,o0[1]+(o1[1]-o0[1])*t,W,H); camera.updateProjectionMatrix(); }); }
+  fitCamera(false,frame); if(reduceMotion){ camLook.set(0,0,0); return; } const p1=basePos.clone(), o1=[camera.view.offsetX,camera.view.offsetY];
+    basePos.copy(p0);
+  const l0=camLook.clone();
+    tween(700,(e,k)=>{ const t=ease(k); basePos.lerpVectors(p0,p1,t); camLook.copy(l0).multiplyScalar(1-t); camera.position.copy(basePos); camera.lookAt(camLook); camera.setViewOffset(W,H,o0[0]+(o1[0]-o0[0])*t,o0[1]+(o1[1]-o0[1])*t,W,H); camera.updateProjectionMatrix(); });
+    }
 let resizeQueued=false;
 window.addEventListener('resize',()=>{ if(resizeQueued) return; resizeQueued=true; requestAnimationFrame(()=>{ resizeQueued=false; fitCamera(); }); });
 

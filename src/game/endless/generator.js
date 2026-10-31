@@ -1,4 +1,7 @@
 // ---------- endless meadow ----------
+// a small seeded random number generator (mulberry32); also seeds each patch's garden scenery
+function rng(seed){ return ()=>{ seed|=0; seed=seed+0x6D2B79F5|0; let t=Math.imul(seed^seed>>>15,1|seed); t=t+Math.imul(t^t>>>7,61|t)^t;
+  return ((t^t>>>14)>>>0)/4294967296; }; }
 const DIFF_NAME={easy:'Easy',medium:'Medium',hard:'Hard'};
 const FEATURES=[['flags','Flags'],['buttons','Flower buttons'],['leaves','Wet leaves'],['fruit','Fruit'],['keys','Keys & gates'],['portals','Tunnels'],['dry','Dry patches'],['rain','Rain'],['rivers','Rivers'],['snails','Snails'],['beetles','Beetles'],['pollen','Pollen'],['soil','Soft soil']];
 const ADJ=['Clover','Mossy','Sunny','Dewy','Puddle','Bramble','Tulip','Daisy','Mint','Fern','Pebble','Willow','Honey','Petal','Thistle','Bluebell','Acorn','Buttercup'];
@@ -8,7 +11,8 @@ function analyzeCapped(Ld,cap){
   for(let i=0;i<states.length;i++){ if(states.length>cap) return null; const s=states[i];
     for(const d of ['N','S','W','E']){ const r=step(s,d); if(r.blocked) continue;
       if(r.state.status==='won'){ wins.push(i); if(best<0) best=i*4+'NSWE'.indexOf(d); continue; }
-      const k=stateKey(r.state); let j=id.get(k); if(j===undefined){ j=states.length; id.set(k,j); states.push(r.state); edges.push([]); par.push(i); pd.push(d); } edges[i].push(j); } }
+      const k=stateKey(r.state); let j=id.get(k); if(j===undefined){ j=states.length; id.set(k,j); states.push(r.state); edges.push([]); par.push(i);
+        pd.push(d); } edges[i].push(j); } }
   if(best<0) return {par:0};
   let i=Math.floor(best/4), sol='NSWE'[best%4]; while(i>0){ sol=pd[i]+sol; i=par[i]; }
   const rev=states.map(()=>[]); edges.forEach((es,i)=>es.forEach(j=>rev[j].push(i)));
@@ -20,7 +24,8 @@ function genCandidate(r,diff,o){
   const cfg={easy:{w:[5,6],h:[5,7],fill:.5,len:3,flags:1,dry:.14,cap:12000},medium:{w:[6,7],h:[6,8],fill:.56,len:3,flags:2,dry:.2,cap:25000},hard:{w:[7,8],h:[7,9],fill:.5,len:r()<.6?4:3,flags:2,dry:.3,cap:12000}}[diff];
   if(o.size){ cfg.w=o.size.w; cfg.h=o.size.h; }
   // crossing itself needs a worm of five or more, so soft soil brings a longer worm, laid out as a wiggle
-  if(o.soil){ cfg.len=Math.max(cfg.len,5)+(diff!=='easy'&&r()<.5?1:0); if(diff==='easy'){ cfg.w=[6,6]; cfg.h=[6,7]; } } if(o.fill) cfg.fill=o.fill; if(o.dryRate!=null) cfg.dry=o.dryRate;
+  if(o.soil){ cfg.len=Math.max(cfg.len,5)+(diff!=='easy'&&r()<.5?1:0); if(diff==='easy'){ cfg.w=[6,6]; cfg.h=[6,7]; } } if(o.fill) cfg.fill=o.fill;
+    if(o.dryRate!=null) cfg.dry=o.dryRate;
   const W=cfg.w[0]+ri(cfg.w[1]-cfg.w[0]+1), H=cfg.h[0]+ri(cfg.h[1]-cfg.h[0]+1);
   const g=Array.from({length:H},()=>Array(W).fill(' ')); const target=Math.floor(W*H*cfg.fill); let cnt=0;
   const walkers=[[W>>1,H>>1],[W>>1,H>>1],[ri(W),ri(H)]];
@@ -35,15 +40,19 @@ function genCandidate(r,diff,o){
   const floor=()=>{ const f=[]; for(let y=0;y<H;y++) for(let x=0;x<W;x++) if(g[y][x]==='.') f.push([x,y]); return f; };
   // worm in a straight line
   let worm=null; for(let t=0;t<120&&!worm;t++){ const f=floor(); if(!f.length) return null; const s=pick(f), d=pick(D4);
-    const segs=[]; if(o.soil){ segs.push(s); while(segs.length<cfg.len){ const c=segs[segs.length-1], n=D4.map(e=>[c[0]+e[0],c[1]+e[1]]).filter(q=>at(q[0],q[1])==='.'&&!segs.some(z=>z[0]===q[0]&&z[1]===q[1])); if(!n.length) break; segs.push(pick(n)); } }
+    const segs=[]; if(o.soil){ segs.push(s);
+      while(segs.length<cfg.len){ const c=segs[segs.length-1], n=D4.map(e=>[c[0]+e[0],c[1]+e[1]]).filter(q=>at(q[0],q[1])==='.'&&!segs.some(z=>z[0]===q[0]&&z[1]===q[1]));
+      if(!n.length) break; segs.push(pick(n)); } }
     else for(let i=0;i<cfg.len;i++){ const x=s[0]+d[0]*i, y=s[1]+d[1]*i; if(at(x,y)!=='.') break; segs.push([x,y]); } if(segs.length===cfg.len) worm=segs; }
   if(!worm) return null; const used=new Set(worm.map(p=>p+''));
   // exit far from the head
   const dist={}; const q=[worm[0]]; dist[worm[0]+'']=0;
-  while(q.length){ const c=q.shift(); for(const d of D4){ const n=[c[0]+d[0],c[1]+d[1]], ch=at(n[0],n[1]); if(ch===' '||ch==='~'||dist[n+'']!==undefined) continue; dist[n+'']=dist[c+'']+1; q.push(n); } }
+  while(q.length){ const c=q.shift(); for(const d of D4){ const n=[c[0]+d[0],c[1]+d[1]], ch=at(n[0],n[1]);
+    if(ch===' '||ch==='~'||dist[n+'']!==undefined) continue; dist[n+'']=dist[c+'']+1; q.push(n); } }
   const reach=floor().filter(p=>dist[p+'']!==undefined&&!used.has(p+'')).sort((a,b)=>dist[b+'']-dist[a+'']);
   if(reach.length<6) return null; const ex=reach[ri(Math.max(1,Math.floor(reach.length*.2)))]; g[ex[1]][ex[0]]='E'; used.add(ex+'');
-  const free=(filter)=>{ const f=floor().filter(p=>!used.has(p+'')&&(!filter||filter(p))); if(!f.length) return null; const p=pick(f); used.add(p+''); return p; };
+  const free=(filter)=>{ const f=floor().filter(p=>!used.has(p+'')&&(!filter||filter(p))); if(!f.length) return null; const p=pick(f); used.add(p+''); return p;
+    };
   const put=(c,filter)=>{ const p=free(filter); if(p) g[p[1]][p[0]]=c; return p; };
   const corridor=p=>{ let n=0; for(const d of D4){ const ch=at(p[0]+d[0],p[1]+d[1]); if(ch!==' '&&ch!=='~') n++; } return n===2; };
   const notNearHead=p=>Math.abs(p[0]-worm[0][0])+Math.abs(p[1]-worm[0][1])>1;
@@ -64,13 +73,16 @@ function genCandidate(r,diff,o){
   if(o.rivers){ put('L'); if(diff==='hard'&&r()<.6) put('L'); }
   if(o.dry){ for(const p of floor()){ if(!used.has(p+'') && r()<cfg.dry) g[p[1]][p[0]]='x'; } }
   if(o.snails){ const n=diff==='hard'?2:1; let placed=0;
-    for(let t=0;t<60&&placed<n;t++){ const f=floor().filter(p=>!used.has(p+'')&&Math.abs(p[0]-worm[0][0])+Math.abs(p[1]-worm[0][1])>2); if(!f.length) break; const p=pick(f);
-      const dirs=[['>',1,0],['<',-1,0],['v',0,1],['^',0,-1]].filter(([c,dx,dy])=>at(p[0]+dx,p[1]+dy)==='.'&&at(p[0]+2*dx,p[1]+2*dy)==='.'); if(!dirs.length) continue;
+    for(let t=0;t<60&&placed<n;t++){ const f=floor().filter(p=>!used.has(p+'')&&Math.abs(p[0]-worm[0][0])+Math.abs(p[1]-worm[0][1])>2); if(!f.length) break;
+      const p=pick(f);
+      const dirs=[['>',1,0],['<',-1,0],['v',0,1],['^',0,-1]].filter(([c,dx,dy])=>at(p[0]+dx,p[1]+dy)==='.'&&at(p[0]+2*dx,p[1]+2*dy)==='.');
+        if(!dirs.length) continue;
       const d=pick(dirs); g[p[1]][p[0]]=d[0]; used.add(p+''); placed++; }
     if(!placed) return null; }
   // beetles sit on grass where at least one push is possible: something to stand on behind them, grass ahead
   if(o.beetles){ const n=diff==='hard'?2:diff==='medium'?1+ri(2):1; let placed=0;
-    for(let t=0;t<60&&placed<n;t++){ const f=floor().filter(p=>!used.has(p+'')&&Math.abs(p[0]-worm[0][0])+Math.abs(p[1]-worm[0][1])>1); if(!f.length) break; const p=pick(f);
+    for(let t=0;t<60&&placed<n;t++){ const f=floor().filter(p=>!used.has(p+'')&&Math.abs(p[0]-worm[0][0])+Math.abs(p[1]-worm[0][1])>1); if(!f.length) break;
+      const p=pick(f);
       const pushable=D4.some(([dx,dy])=>{ const bk=at(p[0]-dx,p[1]-dy); return bk!==' '&&bk!=='~'&&at(p[0]+dx,p[1]+dy)==='.'; });
       if(!pushable) continue; g[p[1]][p[0]]='O'; used.add(p+''); placed++; }
     if(!placed) return null; }
@@ -96,7 +108,8 @@ function usage(Ld,sol){ let s=initState(Ld); const u=new Set();
   return u; }
 async function generateEndless(diff,o,seed,fixedTries){
   const r=rng(seed); const budget={easy:1400,medium:2600,hard:4800}[diff]; const t0=performance.now(); let best=null, bestScore=-1e9, n=0;
-  const enabled=['fruit','keys','portals','dry','rain','rivers','snails','buttons','leaves','beetles','pollen','soil'].filter(k=>o[k]); const needUse=Math.min(enabled.length,diff==='easy'?1:2);
+  const enabled=['fruit','keys','portals','dry','rain','rivers','snails','buttons','leaves','beetles','pollen','soil'].filter(k=>o[k]);
+    const needUse=Math.min(enabled.length,diff==='easy'?1:2);
   while(true){ n++; const Ld=genCandidate(r,diff,o);
     if(Ld){ const cap={easy:4000,medium:10000,hard:12000}[diff]; const a=analyzeCapped(Ld,cap);
       if(a&&a.par>=5){ const win=a.good/a.states; const u=usage(Ld,a.sol); const used=enabled.filter(k=>u.has(k)).length;

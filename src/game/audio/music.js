@@ -1,6 +1,7 @@
 // ---------- music: a slow generated tune that follows the time of day and the rain ----------
 // music starts off for first-time visitors; players from before that change keep it on unless they turned it off
-let musicOn=false, musicVol=.7; { const m=store.get('squirm-music'), v=parseFloat(store.get('squirm-music-vol')); musicOn=m===null?store.get('squirm-progress')!==null:m==='1'; if(v>=0&&v<=1) musicVol=v; }
+let musicOn=false, musicVol=.7; { const m=store.get('squirm-music'), v=parseFloat(store.get('squirm-music-vol'));
+  musicOn=m===null?store.get('squirm-progress')!==null:m==='1'; if(v>=0&&v<=1) musicVol=v; }
 let mBus=null, mLp=null, mNext=0, mStep=0, mDeg=2;
 const SCALES={major:[0,2,4,7,9],minor:[0,3,5,7,10]};
 const PROG={major:[[0,4,7],[-3,0,4],[5,9,12],[7,11,14]],minor:[[0,3,7],[-4,0,3],[3,7,10],[-2,2,5]]};
@@ -12,8 +13,10 @@ function musicSetup(){ if(!ac||mBus) return; mBus=ac.createGain(); mBus.gain.val
   const echo=ac.createDelay(1), fb=ac.createGain(), wet=ac.createGain(); echo.delayTime.value=.42; fb.gain.value=.3; wet.gain.value=.26;
   mBus.connect(mLp); mBus.connect(echo); echo.connect(fb); fb.connect(echo); echo.connect(wet); wet.connect(mLp); mLp.connect(master); }
 // a note with a smooth attack, a held body and a gentle release, so consecutive notes overlap instead of leaving gaps
-function mNote(hz,t,attack,hold,release,vol,wave,detune){ const o=ac.createOscillator(), g=ac.createGain(); o.type=wave; o.frequency.value=hz; if(detune) o.detune.value=detune;
-  g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(vol,t+attack); g.gain.setValueAtTime(vol,t+attack+hold); g.gain.linearRampToValueAtTime(0,t+attack+hold+release);
+function mNote(hz,t,attack,hold,release,vol,wave,detune){ const o=ac.createOscillator(), g=ac.createGain(); o.type=wave; o.frequency.value=hz;
+  if(detune) o.detune.value=detune;
+  g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(vol,t+attack); g.gain.setValueAtTime(vol,t+attack+hold);
+    g.gain.linearRampToValueAtTime(0,t+attack+hold+release);
   o.connect(g); g.connect(mBus); o.start(t); o.stop(t+attack+hold+release+.05); }
 function musicTick(){ if(!ac||!mBus) return; const want=musicOn&&!muted&&!document.hidden&&ac.state==='running';
   mBus.gain.setTargetAtTime(want?1.4*musicVol:0,ac.currentTime,.3); if(!want){ mNext=0; return; }
@@ -29,14 +32,16 @@ function musicTick(){ if(!ac||!mBus) return; const want=musicOn&&!muted&&!docume
     if(pos%(8/md.arp)===0){ const up=[0,1,2,1,0,1,2,1][pos]; mNote(midiHz(md.root+chord[up]+(pos>=4&&up===0?12:0)),t,.02,e8*.6,e8*1.4,rain?.008:.012,'sine'); }
     // melody: on the beat, held for one or two beats, wandering through the scale
     if(pos%2===0&&Math.random()<md.prob*(rain?.65:1)){ mDeg=Math.max(0,Math.min(sc.length*2-1,mDeg+[-2,-1,-1,1,1,2][Math.floor(Math.random()*6)]));
-      const semi=sc[mDeg%sc.length]+12*Math.floor(mDeg/sc.length), beats=Math.random()<.4?2:1; mNote(midiHz(md.root+semi),t,.04,spb*beats*.7,spb*.9,.05,md.wave); }
+      const semi=sc[mDeg%sc.length]+12*Math.floor(mDeg/sc.length), beats=Math.random()<.4?2:1;
+        mNote(midiHz(md.root+semi),t,.04,spb*beats*.7,spb*.9,.05,md.wave); }
     mStep++; mNext+=e8; } }
 setInterval(musicTick,200);
 let hapticsOn=store.get('squirm-haptics')!=='0';
 const HAPTIC={push:16,move:8,grow:[10,30,14],shrink:[14,30,10],key:[8,25,8,25,12],gate:22,flag:[12,40,16],portal:[10,30,24],crumble:28,bump:[14,30,14],stuck:[40,70,40],undo:6,
   tap:6,on:8,off:8,badge:[15,40,15,40,30],win:[30,60,30,60,90],ready:[10,40,10],slide:6,hedgeOpen:[12,30,12],hedgeClose:14,rainOn:[30,50,15],creak:[20,40,20,40,20],rainOff:[15,50,30]};
 const iosHaptic=(()=>{ try{ const l=document.createElement('label'); l.setAttribute('aria-hidden','true'); l.style.cssText='position:fixed;left:-200px;top:0;width:1px;height:1px;opacity:0;pointer-events:none';
-  const i=document.createElement('input'); i.type='checkbox'; i.setAttribute('switch',''); i.tabIndex=-1; l.appendChild(i); document.body.appendChild(l); return l; }catch(e){ return null; } })();
+  const i=document.createElement('input'); i.type='checkbox'; i.setAttribute('switch',''); i.tabIndex=-1; l.appendChild(i); document.body.appendChild(l);
+    return l; }catch(e){ return null; } })();
 // what the current press has already done (see the press handler under input), so it never doubles up
 const fbNow={s:false,b:false};
 function buzz(p){ if(p!=null) fbNow.b=true; if(!hapticsOn||p==null) return;
