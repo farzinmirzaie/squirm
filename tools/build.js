@@ -31,8 +31,9 @@ fs.copyFileSync(require.resolve('three/LICENSE'),path.join(dist,'vendor','three-
 for(const [,pkg] of FONTS) fs.copyFileSync(require.resolve(`@fontsource/${pkg}/LICENSE`),path.join(dist,'fonts',`${pkg}-LICENSE.txt`));
 
 // the page
-let game=src('game.js');
-// --debug exposes a few hooks for browser automation, inserted before the IIFE closes at the end of game.js
+// the game script: the files in src/game/, joined in tools/game-files.js order inside one function wrapper
+let game='(function(){\n'+require('./game-files').map(f=>src('game/'+f)).join('')+'})();\n';
+// --debug exposes a few hooks for browser automation, inserted just before the wrapper closes
 if(process.argv.includes('--debug')) game=game.replace(/\}\)\(\);\s*$/,"window.__squirm={load:(i,intro)=>{hideAll(); loadLevel(i,!!intro);},move:k=>tryMove(k),busy:()=>animating>0||queue.length>0,names:()=>LEVELS.map(l=>l.name),dir:(x,y)=>dirFromScreen(x,y),mem:()=>({...renderer.info.memory,programs:renderer.info.programs.length,calls:renderer.info.render.calls,tris:renderer.info.render.triangles}),st:()=>JSON.stringify({s:state.segs,st:state.status,m:state.moves})};\n})();\n");
 let sha=(process.env.GITHUB_SHA||'').slice(0,7);
 if(!sha){ try{ sha=require('child_process').execSync('git rev-parse --short HEAD',{cwd:root,stdio:['ignore','pipe','ignore']}).toString().trim(); }catch(e){ sha='dev'; } }

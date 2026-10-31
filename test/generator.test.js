@@ -1,11 +1,11 @@
-// Tests for the endless / daily patch generator (the code in src/game.js, loaded by tools/load-generator.js).
+// Tests for the endless / daily patch generator (src/game/endless/generator.js, loaded by tools/load-generator.js).
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const loadGenerator = require('../tools/load-generator');
 const analyze = require('../tools/analyze');
 
 const { generateEndless } = loadGenerator();
-// same options and seed recipe as startDaily() in game.js
+// same options and seed recipe as startDaily() in src/game/endless/daily.js
 const DAILY_OPTS = { flags: true, fruit: true, keys: true, dry: true, portals: true };
 const dailySeed = key => { let seed = 0; for (const ch of 'daily' + key) seed = (seed * 31 + ch.charCodeAt(0)) | 0; return seed; };
 

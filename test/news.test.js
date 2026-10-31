@@ -3,7 +3,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('fs'), path = require('path');
-const game = fs.readFileSync(path.join(__dirname, '..', 'src', 'game.js'), 'utf8');
+const game = fs.readFileSync(path.join(__dirname, '..', 'src', 'game', 'ui', 'news.js'), 'utf8');
 const pkg = require('../package.json');
 const NEWS = eval(game.match(/^const NEWS=(\[[\s\S]*?\]\]\]);$/m)[1]);
 const cmp = (a, b) => { const x = a.split('.').map(Number), y = b.split('.').map(Number); for (let i = 0; i < 3; i++) if (x[i] !== y[i]) return x[i] - y[i]; return 0; };
