@@ -24,7 +24,8 @@ description: Visually check a Squirm UI or 3D change in headless Chromium - debu
 
 3. **Go further when the change needs it.** Copy `shoot.js` into the scratchpad and adapt it: open a
    dialog by clicking its button, play moves with `window.__squirm.move('N')` (wait for
-   `!window.__squirm.busy()` between moves), set `squirm-` localStorage keys in `addInitScript` to fake
+   `!window.__squirm.busy()` between moves, and after `load(i)` too: software rendering makes a patch pop in
+   over a few seconds, so an early shot has no worm), set `squirm-` localStorage keys in `addInitScript` to fake
    progress, or `page.emulateMedia({ reducedMotion: 'reduce' })` to check the reduced-motion block. The
    debug hooks and launch flags are listed in CLAUDE.md under "Seeing the game in a browser";
    `test/smoke.js` is a fuller example.
