@@ -466,9 +466,19 @@ from a tab replaces that layer with `game`.
 
 ### Sound, performance and the platform
 
-- **Music and sound** (`audio/`): `sfx(name)` plays synthesized effects. `musicTick` schedules a generated tune (pad,
-  bass, melody, echo) a little ahead on the Web Audio clock; its mood follows `todName` (time of day, which
-  also brings fireflies in the evening and at night) and rain. `squirm-music` (off by default for new
+- **Music and sound** (`audio/`): `sfx(name)` plays synthesized effects (`sfx.js`; haptics and birdsong sit at the end
+  of `music.js`). The music is little songs composed on the fly: `musicTick` calls `musicSchedule`, which plans
+  notes a bar at a time a little ahead on the Web Audio clock. Each patch has its own song (`makeSong`, seeded by
+  `songKey()`: the patch name or meadow seed, so a replay brings its tune back); home plays the hand-written
+  `THEME`. A song is 16 bars, A A B A', over seventh-chord `PROGS`, its melody a motif (`RHY` rhythm + steps)
+  that repeats and varies with strong beats snapped to chord tones (`melodyBar`). Instruments are synthesized
+  (kalimba, FM electric piano, music box, a filtered saw pad, plucked bass, soft kick, rim, brush, shaker) into
+  layer gains (`mLayer`) that `musicWants()` fades in as a patch goes on: pad and melody, bass after a few
+  moves, arpeggio, drums past about half of par, a sparkle once the burrow is ready; a dozing worm thins it to
+  a lullaby. `MOODS` by `todName` (time of day, which also brings fireflies in the evening and at night) pick
+  tempo, lead and drums; rain slows and darkens it. `MIX` balances the layers; a glue compressor and a trim
+  (keep the level matched to the sound effects) feed `master`, plus a generated reverb. `mForce` pins mood,
+  rain, song and layers for offline renders. `squirm-music` (off by default for new
   players, on for players who already had progress), `squirm-music-vol` (0-1).
 - **Performance** (`core/loop.js`): `watchSpeed` lowers `quality` (pixel ratio, shadow map size) when most frames take over
   40 ms (a 30 fps low-power cap doesn't count), raises it one step per session once frames are quick again,
