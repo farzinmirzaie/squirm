@@ -69,16 +69,25 @@ const hOnEllipsoid=(d,a,b)=>{ const k=1/Math.sqrt(d.x*d.x/(a*a)+d.y*d.y/(b*b)+d.
 function hStick(mesh,p,nrm){ mesh.position.copy(p); mesh.lookAt(p.x+nrm.x,p.y+nrm.y,p.z+nrm.z); return mesh; }
 
 function buildHat(id){ const h=new THREE.Group();
-  if(id==='chef'){ // a pleated band with a rolled lip, and a big puffy top spilling over it, creased between its puffs
-    const band=new THREE.Mesh(hWarp(new THREE.CylinderGeometry(.19,.2,.17,64,1,true),v=>{ const a=Math.atan2(v.z,v.x), k=1+.03*Math.cos(a*16); v.x*=k; v.z*=k; }),m('chef'));
+  if(id==='chef'){ // a pleated band with a rolled lip, and a big puffy top spilling over it: a tall middle puff and five round
+    // side puffs (like the sticker), blended into one smooth shape with soft creases between them
+    const band=new THREE.Mesh(hWarp(new THREE.CylinderGeometry(.19,.2,.17,64,1,true),v=>{ const a=Math.atan2(v.z,v.x), k=1+.025*Math.cos(a*16); v.x*=k; v.z*=k; }),m('chef'));
     band.position.y=.09; hHull(band,.01); h.add(band);
     h.add(hRing(.2,.02,m('chef'),.009,.01,8,40));
-    const pf=v=>{ const l=v.length()||1, dx=v.x/l, dy=v.y/l, dz=v.z/l, a=Math.atan2(dz,dx), s2=1-dy*dy, R=.215*(1+.08*Math.cos(6*a)*s2);
-      return v.set(dx*R,dy*R*(dy>0?.78:.42)-(dy>0?.035*Math.exp(-s2/.05):0),dz*R); };
-    const top=new THREE.Mesh(hWarp(new THREE.SphereGeometry(1,42,14),pf),m('chef')); top.position.y=.25; hHull(top,.012); h.add(top);
-    for(let k=0;k<6;k++){ const a=(k+.5)/6*hTAU, pts=[]; for(let i=0;i<=6;i++){ const th=.3+i/6*1.15;
-      pts.push(pf(hV3(Math.sin(th)*Math.cos(a),Math.cos(th),Math.sin(th)*Math.sin(a))).multiplyScalar(1.015).add(hV3(0,.25,0))); }
-      h.add(hTube(pts,.0055,lineMat,{seg:10,rs:4})); } }
+    // the top is a union of round puffs, found by casting a ray from the middle out to the farthest puff it meets
+    // (a smooth maximum, so they blend into soft creases): a tall middle puff and five side puffs over the band's edge
+    const N=5, puffs=[[0,.085,0,.17],[0,-.01,0,.17]];
+    for(let k=0;k<N;k++){ const a=k/N*hTAU+.3; puffs.push([.165*Math.cos(a),.015,.165*Math.sin(a),.12]); }
+    const pf=v=>{ const l=v.length()||1, dx=v.x/l, dy=v.y/l, dz=v.z/l; let acc=0;
+      for(const [cx,cy,cz,r] of puffs){ const b=dx*cx+dy*cy+dz*cz, disc=b*b-(cx*cx+cy*cy+cz*cz)+r*r; if(disc>0) acc+=Math.exp(60*(b+Math.sqrt(disc))); }
+      const R=Math.log(acc)/60, under=dy<0?Math.min(1,-dy/.9):0;
+      // the underside flattens and tucks in towards the band, so the puffs overhang it
+      return v.set(dx*R*(1-.25*under*under),dy*R*(dy<0?.55:1),dz*R*(1-.25*under*under)); };
+    const top=new THREE.Mesh(hWarp(new THREE.SphereGeometry(1,64,32),pf),m('chef')); top.position.y=.2; hHull(top,.012); h.add(top);
+    // soft creases in the valleys between the side puffs, from the overhang up towards the middle puff
+    for(let k=0;k<N;k++){ const a=(k+.5)/N*hTAU+.3, pts=[]; for(let i=0;i<=6;i++){ const th=1.65-i/6*.75;
+      pts.push(pf(hV3(Math.sin(th)*Math.cos(a),Math.cos(th),Math.sin(th)*Math.sin(a))).multiplyScalar(1.004).add(hV3(0,.2,0))); }
+      h.add(hTube(pts,.005,lineMat,{seg:12,rs:4,taper:t=>Math.sin(Math.PI*Math.min(1,t*1.15))})); } }
   else if(id==='wizard'){ // a floppy brim, a tall cone whose tip flops over with a crumple, a gold band and gold stars
     const brim=hLathe([[.17,.014],[.17,-.012],[.3,-.012],[.335,-.005],[.346,.006],[.335,.016],[.3,.014],[.17,.014]],56,m('wizard'));
     hWarp(brim.geometry,v=>{ const r=Math.hypot(v.x,v.z), a=Math.atan2(v.z,v.x), q=Math.max(0,(r-.19)/.155); v.y+=-.045*q*q+.014*Math.sin(3*a+1)*q*q; });

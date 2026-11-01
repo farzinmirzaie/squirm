@@ -256,28 +256,30 @@ function buildExtra(id){ // frames sit in front of the eyes even when they widen
       wing(SHAPE_HINDWING,hw,'crown',-.004);
       const es=dot(.019,m('petalB'),0,[1,1,.3],10,6); es.position.set(.46*hw,-.5*hw,hw*.12-.004+.001); wg.add(es);
       const ec=dot(.008,m('daisy'),0,[1,1,.3],8,6); ec.position.set(.46*hw,-.5*hw,hw*.12-.004+.003); wg.add(ec); } }
-  else if(id==='tash'){ // a handlebar: two tapered lobes from a round knot, curling up at the tips, hugging the face, combed into strands
-    const R=HEAD_R, Y=0, surf=(x,y)=>Math.sqrt(Math.max(0,R*R-x*x-y*y));
-    const lobe=[[0,.02],[.05,.006],[.1,-.006],[.15,-.004],[.185,.012],[.193,.036],[.177,.052],[.159,.047],[.158,.033]];
-    const rad=t=>.009+.028*Math.pow(1-t,1.2);
-    for(const sd of [-1,1]){ const pts=lobe.map(([x,y])=>{ const X=sd*x, Yy=Y+y; return V(X,Yy,surf(X,Yy)+.02); });
+  else if(id==='tash'){ // a handlebar: two smooth tapered lobes from a round knot, curling up at the tips, hugging the face
+    const R=HEAD_R, Y=.018, surf=(x,y)=>Math.sqrt(Math.max(0,R*R-x*x-y*y));
+    const lobe=[[0,.02],[.05,.006],[.1,-.006],[.15,-.004],[.183,.013],[.19,.035],[.176,.05],[.16,.046],[.157,.034]];
+    const rad=t=>.01+.029*Math.pow(1-t,1.2), hullR=t=>rad(t)*1.22+.005;
+    for(const sd of [-1,1]){ const pts=lobe.map(([x,y])=>{ const X=sd*x, Yy=Y+y; return V(X,Yy,surf(X,Yy)+.014); });
       const curve=new THREE.CatmullRomCurve3(pts,false,'centripetal');
-      g.add(new THREE.Mesh(taper(curve,rad,0,.13),m('tash')), new THREE.Mesh(taper(curve,rad,.011,0,0,32,8),lineMat));
-      // two lighter strands along the top of the lobe, like the sticker
-      for(const [t0,len,lift,r] of [[.06,.52,.7,.006],[.12,.34,.15,.0045]]){ const hp=[]; for(let k=0;k<=8;k++){ const t=t0+k/8*len, c=curve.getPointAt(t), n=c.clone().normalize();
-        hp.push(c.addScaledVector(n,rad(t)*.72).add(V(0,rad(t)*lift*.55,0))); }
-        g.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(hp),16,r,6,false),m('tashLight'))); } }
-    const knot=dot(.038,m('tash'),.011,[1.15,.85,.75],16,12); knot.position.set(0,Y+.02,surf(0,Y+.02)+.014); g.add(knot); }
-  else if(id==='walrus'){ // a bushy mustache: a soft pad under the nose and chunky locks combed down and out from it, each one
-    // fluted into strands; sized and raised to sit between the eyes and the mouth, clear of every mouth (the wow/yawn 'o' tops out at y -.026)
-    const R=HEAD_R, surf=(x,y)=>Math.sqrt(Math.max(0,R*R-x*x-y*y)), P=(x,y,off)=>V(x,y,surf(x,y)+off), tm=m('tash');
-    const pad=dot(.1,tm,.009,[1.5,.32,.36],20,12); pad.position.copy(P(0,.034,-.004)); pad.rotation.x=-.1; g.add(pad);
-    for(const sd of [-1,1]) for(let j=3;j>=0;j--){ const x0=.024+j*.042, u=j/3;
-      const cv=new THREE.CatmullRomCurve3([P(sd*x0,.05-u*.014,.012),P(sd*(x0+.012+u*.02),.016-u*.012,.03),P(sd*(x0+.02+u*.04),-.008-u*.03,.014)]);
-      const f=t=>.011+.022*Math.pow(1-t,.9)*(1-.12*u);
-      g.add(new THREE.Mesh(taper(cv,f,0,.13,3,14,8),tm),new THREE.Mesh(taper(cv,f,.008,0,0,10,6),lineMat)); }
-    for(const sd of [-1,1]){ const hp=[P(sd*.03,.052,.034),P(sd*.08,.052,.036),P(sd*.13,.04,.03)];
-      g.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(hp),12,.0055,6,false),m('tashLight'))); } }
+      // smooth tubes (no fluting, so the outline stays clean) with round caps on the curled tips
+      g.add(new THREE.Mesh(taper(curve,rad,0,0,0,48,12),m('tash')), new THREE.Mesh(taper(curve,hullR,0,0,0,48,12),lineMat));
+      const tip=curve.getPointAt(1), cap=dot(rad(1),m('tash'),0,[1,1,1],10,8), capL=dot(hullR(1),lineMat,0,[1,1,1],10,8);
+      cap.position.copy(tip); capL.position.copy(tip); g.add(cap,capL);
+      // one lighter strand combed along the top of the lobe, like the sticker
+      const hp=[]; for(let k=0;k<=10;k++){ const t=.07+k/10*.5, c=curve.getPointAt(t), n=c.clone().normalize();
+        hp.push(c.addScaledVector(n,rad(t)*.62).add(V(0,rad(t)*.42,0))); }
+      g.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(hp),20,.0048,6,false),m('tashLight'))); }
+    const knot=dot(.04,m('tash'),.01,[1.15,.85,.75],16,12); knot.position.set(0,Y+.018,surf(0,Y+.018)+.012); g.add(knot); }
+  else if(id==='walrus'){ // a bushy mustache: one soft, scalloped pad, curved round the face
+    const half=[[0,.15],[.3,.2],[.6,.13],[.8,-.04],[.79,-.22],[.64,-.3],[.52,-.21],[.38,-.32],[.24,-.22],[.11,-.32],[0,-.22]];
+    const pts=[...half,...half.slice(1,-1).reverse().map(([x,y])=>[-x,y])].map(([x,y])=>new THREE.Vector2(x,y)), sh=new THREE.Shape();
+    sh.moveTo(pts[0].x,pts[0].y); sh.splineThru([...pts.slice(1),pts[0]]);
+    // sized and raised to sit between the eyes and the mouth, clear of every mouth (the wow/yawn 'o' tops out at y -.026)
+    const geo=new THREE.ExtrudeGeometry(sh,{depth:.22,bevelEnabled:true,bevelSize:.05,bevelThickness:.05,bevelSegments:2,curveSegments:24}), w=.18;
+    geo.scale(w,w*.78,w); const pos=geo.getAttribute('position'); for(let i=0;i<pos.count;i++){ const x=pos.getX(i);
+      pos.setZ(i,pos.getZ(i)-x*x*1.5); } geo.computeVertexNormals();
+    const t=new THREE.Mesh(geo,m('tash')); t.position.set(0,.026,.322); t.rotation.x=-.22; outline(t,.008); g.add(t); }
   return g; }
 function dressExtra(g){ const slot=g&&g.userData.accSlot; if(!slot) return; slot.clear(); const id=extraOn(); if(id==='none') return;
   const k=id+'|'+tintOf(id); if(!extraProto[k]) extraProto[k]=tinted(id,buildExtra(id)); slot.add(extraProto[k].clone()); }
