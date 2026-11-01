@@ -423,7 +423,8 @@ from a tab replaces that layer with `game`.
   their size on the stage and in a patch. `patArt` draws the wardrobe preview in the current colour.
 - **Milestones** for unlocks and badges come from `progress.stats` counters (`moves`, `fruit`, `naps`,
   `rains`, `restarts`, `outfits`, `days`, `teatime`, `allPollen`, `burrows`, ...); bump new ones with
-  `bumpStat`.
+  `bumpStat`. A few keep a best instead of a count: `pokeRun` (the longest run of quick taps on the worm in a
+  patch, `wormEmote`), `slideMax`.
 
 ### Modes and screens
 

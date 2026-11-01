@@ -66,6 +66,7 @@ const BADGES=[
   ['moonlit','hat-owl','Moonlit wanderer','Finish every patch in Moonlit meadow.',()=>chapterCleared(22)],
   ['homeward','hat-nightcap','Home at last','Finish every patch in Long way home.',()=>chapterCleared(23)],
   ['longhaul','lantern','The long haul','Finish a patch with a par of 45 or more.',c=>c&&c.won&&c.par>=45],
+  ['tickles','dizzy','Tickle monster','Tap the worm 15 times in a row during a patch.',counted(()=>[progress.stats.pokeRun||0,15])],
   ['stocked','hintseed','Well stocked','Fill your pouch with 9 hint seeds.',counted(()=>[progress.seeds,SEED_MAX])],
   ['collector','medal','Badge collector','Earn 40 other badges.',counted(()=>[Object.keys(progress.badges).filter(k=>k!=='collector').length,40])]];
 // returns the badges earned just now; quiet ones (earned before badges existed) don't celebrate
@@ -80,7 +81,7 @@ function bumpStat(k,n=1){ progress.stats[k]=(progress.stats[k]||0)+n; }
 const BADGE_GROUPS=[['Garden journey',['first','par','chapter','clean','sage','stars50','stars150','shiny','chapters','garden','golden','pure','notake','lightning','critters','harvest','tangled','farfields','moonlit','homeward','longhaul','allstars']],
   ['Daily and meadow',['daily','streak7','month','sunrises','meadow','brave','fearless','unstoppable','legend','stocked']],
   ['Garden helpers',['flags','snacks','appetite','crumbs','gates','tunnels','rain','bridges','slides','wheee','hedges','pushes','flowerpower','pollinator','knots']],
-  ['Just for fun',['moves','marathon','undos','taps','nap','owl','dawn','quick','photos','dressup','hatrack','rainbow','patterns','fashion','collector']]];
+  ['Just for fun',['moves','marathon','undos','taps','tickles','nap','owl','dawn','quick','photos','dressup','hatrack','rainbow','patterns','fashion','collector']]];
 // a badge left out of every group still shows, in the last one
 { const seen=new Set(BADGE_GROUPS.flatMap(g=>g[1])); BADGE_GROUPS[BADGE_GROUPS.length-1][1].push(...BADGES.map(b=>b[0]).filter(id=>!seen.has(id))); }
 let badgeFilter='all', badgeSel=null;

@@ -32,7 +32,12 @@ document.addEventListener('pointercancel',()=>{ gest=null; });
 document.addEventListener('touchmove',e=>{ if(!e.target.closest('.list,.home,.dialog')) e.preventDefault(); },{passive:false});
 document.addEventListener('gesturestart',e=>e.preventDefault());
 const ray=new THREE.Raycaster(); const plane=new THREE.Plane(new THREE.Vector3(0,1,0),0);
-function wormEmote(){ const h=segMeshes[0]; if(!h||animating||state.status!=='play') return; bumpStat('taps'); checkBadges(null); save();
+// taps in quick succession (each within 1.5 s) make a run; the longest run is kept for the Tickle monster badge
+let pokeRun=0, pokeT=0;
+function wormEmote(){ const h=segMeshes[0]; if(!h||animating||state.status!=='play') return; bumpStat('taps');
+  const now=performance.now(); pokeRun=now-pokeT<1500?pokeRun+1:1; pokeT=now; if(pokeRun>(progress.stats.pokeRun||0)) progress.stats.pokeRun=pokeRun;
+  if(pokeRun===8) wormSays('Hey! That tickles!',1600); else if(pokeRun===15) wormSays('Hee hee hee! Okay, you win!',2200);
+  checkBadges(null); save();
   react(EXPRS[Math.floor(Math.random()*EXPRS.length)],1200); lastMoveT=idleT;
   sfx('tap'); tone(660+Math.random()*300,.18,{type:'sine',vol:.08,slide:1.4}); buzz(10); const b=h.userData.body;
   if(!reduceMotion) tween(420,(e,k)=>{ const s=1+Math.sin(k*Math.PI)*.16; b.scale.set(s,1/s,s); b.rotation.z=Math.sin(k*Math.PI*3)*.25*(1-k); },()=>{ b.scale.set(1,1,1); b.rotation.z=0; });
