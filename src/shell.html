@@ -183,7 +183,13 @@ button:focus-visible{outline:3px solid var(--honey);outline-offset:2px}
 .sheet p.label{margin:4px 0 -4px}
 .sheet .label-row p.label{margin:0}
 /* out of hint seeds: where to grow more */
-.seeds .seed-art{display:block;margin:0 auto}
+.seeds .seed-art{display:flex;justify-content:center}
+/* the explainer from the home pill: how seeds work, one row each */
+.seed-how{display:flex;flex-direction:column;gap:8px;margin:0 0 16px;padding:0;list-style:none;text-align:left}
+.seed-how[hidden]{display:none}
+.seed-how li{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:14px;background:var(--paper-2);border:2px solid var(--edge);font-weight:700;font-size:14px;line-height:1.3;color:var(--ink)}
+.seed-how li b{margin-left:auto;font:800 14px/1 var(--fd);white-space:nowrap}
+button.seed-pill{cursor:pointer;color:var(--ink);font:800 18px/1 var(--fd)}
 .seed-go{display:flex;flex-direction:column;gap:10px}
 .seed-go .btn{flex:none}
 /* "something new": the intro keeps its button in view */
@@ -795,7 +801,7 @@ nav .enter,.rise{animation:navIn var(--dur-slow) var(--ease-pop) var(--d,0ms) bo
 <div class="petals" id="petals"></div>
 <div class="home ov show" id="homeOv">
   <div class="home-top">
-    <span class="home-pills"><span class="star-pill" id="homeStars" aria-label="Stars"></span><span class="star-pill seed-pill" id="homeSeeds" aria-label="Hint seeds" title="Hint seeds for garden hints"></span></span>
+    <span class="home-pills"><span class="star-pill" id="homeStars" aria-label="Stars"></span><button class="star-pill seed-pill" id="homeSeeds" aria-label="Hint seeds: what they are"></button></span>
     <span class="home-top-tools"><button class="round" id="homeSound"></button><button class="round" id="installBtn" aria-label="Install Squirm as an app" hidden><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7 10l5 5 5-5"/><path d="M5 19h14"/></svg></button><button class="round" id="settingsBtn" aria-label="Settings" title="Settings"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.8v2.4M12 18.8v2.4M2.8 12h2.4M18.8 12h2.4M5.5 5.5l1.7 1.7M16.8 16.8l1.7 1.7M5.5 18.5l1.7-1.7M16.8 7.2l1.7-1.7"/><circle cx="12" cy="12" r="6.6"/></svg></button></span>
   </div>
   <div class="tab-pages">
@@ -929,8 +935,8 @@ nav .enter,.rise{animation:navIn var(--dur-slow) var(--ease-pop) var(--d,0ms) bo
 </div></div>
 <div class="ov" id="seedOv"><div role="dialog" aria-modal="true" aria-labelledby="seedTitle" class="dialog card seeds">
   <span class="seed-art" aria-hidden="true" data-art="hintseed" data-size="64"></span>
-  <h2 id="seedTitle">Out of hint seeds</h2><p>Garden hints use hint seeds. Grow more in today's patch or out in the meadow. This patch will wait for you.</p>
-  <div class="seed-go"><button class="btn primary" id="seedDaily"></button><button class="btn" id="seedMeadow"></button><button class="btn" id="seedKeep">Keep trying</button></div>
+  <h2 id="seedTitle">Out of hint seeds</h2><p id="seedText"></p><ul class="seed-how" id="seedHow"></ul>
+  <div class="seed-go"><button class="btn primary" id="seedDaily"></button><button class="btn" id="seedMeadow"></button><button class="btn" id="seedKeep"></button></div>
 </div></div>
 <div class="ov" id="introOv"><div role="dialog" aria-modal="true" aria-labelledby="introTitle" class="dialog card intro">
   <div id="introBody" aria-live="polite"></div>

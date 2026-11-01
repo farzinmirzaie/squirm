@@ -9,7 +9,8 @@ const HATS=[['none','No hat',-1],['crown','Flower crown',0],['mush','Mushroom ca
   ['chef','Chef hat',-2,'Eat 100 snacks',()=>(progress.stats.fruit||0)>=100],
   ['wizard','Wizard hat',-2,'30 patches, no hints',()=>Object.keys(progress.clean).length>=30],
   ['cowboy','Cowboy hat',-2,'Clear 15 meadow patches',()=>['easy','medium','hard'].reduce((a,d)=>a+progress.endless[d].cleared,0)>=15],
-  ['phones','Headphones',-2,'Finish 10 daily patches',()=>(progress.stats.dailies||0)>=10]];
+  ['phones','Headphones',-2,'Finish 10 daily patches',()=>(progress.stats.dailies||0)>=10],
+  ['idea','Bright idea',-2,'Grow 30 hint seeds',()=>(progress.stats.seedsGot||0)>=30]];
 const hatArt=(id,size=36)=>tintArt(id,art('hat-'+id,size));
 // extras: things for the face, earned with milestones: [id, name, how to earn, test]. Built once and cloned, like hats.
 const EXTRAS=[['none','Nothing','',()=>true],

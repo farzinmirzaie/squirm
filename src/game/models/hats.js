@@ -458,6 +458,22 @@ function buildHat(id){ const h=new THREE.Group();
       const band=new THREE.Mesh(bendGeo(new THREE.CylinderGeometry(rT,rB,len,32,4,true),len,t0,t1),m('nightStripe')); band.position.y=.02; h.add(band); }
     const cuff=new THREE.Mesh(new THREE.TorusGeometry(.205,.045,12,48),m('nightStripe')); cuff.rotation.x=Math.PI/2; cuff.scale.z=.85; cuff.position.y=.035; hHull(cuff,.01); h.add(cuff);
     const tp=fl(1), pom=new THREE.Mesh(hPomGeo(.05,14,10),m('nightStripe')); pom.position.set(tp[0],.02+H+tp[1]-.01,tp[2]); hHull(pom,.008); h.add(pom); }
+  else if(id==='idea'){ // a bright idea: a little lightbulb on a springy stalk, like the hint button's bulb
+    const cap=hLathe([[0,.03],[.06,.026],[.075,.01],[.078,-.004],[0,-.004]],28,m('ideaBase')); hHull(cap,.008); h.add(cap);
+    // the spring: a coil from the cap up to the bulb's screw base
+    const coil=[]; for(let i=0;i<=72;i++){ const t=i/72, a=t*hTAU*3.5; coil.push(hV3(Math.cos(a)*.026,.03+t*.15,Math.sin(a)*.026)); }
+    h.add(hTube(coil,.008,m('ideaBase'),{seg:110,rs:6,line:.006}));
+    const screw=hLathe([[0,.18],[.044,.18],[.05,.192],[.044,.204],[.05,.216],[.044,.228],[.05,.24],[.046,.252],[0,.252]],28,m('ideaBase')); hHull(screw,.008); h.add(screw);
+    // the glass: a pear-shaped lathe, glowing butter yellow, with a glint and a little filament showing through
+    // the glass: a round globe on a short neck (a lathe), glowing butter yellow, with a glint and a filament showing through
+    const C0=.4, R=.1, pts=[[0,.252],[.045,.252],[.05,.27],[.058,.29],[.066,.31]];
+    for(let i=0;i<=18;i++){ const th=-.8+i/18*(Math.PI/2+.8); pts.push([R*Math.cos(th),C0+R*Math.sin(th)]); }
+    pts[pts.length-1][0]=0;
+    const glass=hLathe(pts,40,m('idea')); hHull(glass,.011); h.add(glass);
+    const onGlass=(x,y)=>{ const z=Math.sqrt(Math.max(0,R*R-x*x-(y-C0)*(y-C0)))+.003; return hV3(x,y,z); };
+    h.add(hTube([onGlass(-.07,C0+.04),onGlass(-.082,C0+.005),onGlass(-.075,C0-.03)],.009,m('glint'),{seg:10,rs:5}));
+    h.add(hTube([onGlass(-.03,C0-.045),onGlass(-.018,C0-.01),onGlass(-.006,C0-.035),onGlass(.006,C0-.01),onGlass(.018,C0-.035),onGlass(.03,C0-.01)].map(v=>v.setZ(v.z+.001)),.005,m('tash'),{seg:20,rs:4}));
+    h.rotation.z=-.1; }
   return hBake(h); }
 let hatId=store.get('squirm-hat')||'none';
 const chapterCleared=k=>{ const ch=CHAPTERS[k]; if(!ch) return false; for(let i=ch.from;i<=ch.to;i++) if(!isCleared(i)) return false; return true; };

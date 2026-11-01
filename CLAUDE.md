@@ -331,7 +331,8 @@ says which file holds what, and a search for a function name finds it fast.
   7th streak day), a meadow patch +1 (hard +2), +1 for the first meadow patch of the day (`progress.meadowDay`).
   Asking again for the same position is free. An empty pouch opens `seedOv` (`openSeeds`), which sends the player
   to the daily or the meadow; the garden patch keeps its own resume slot. The count shows on the hint button
-  (`#seedN`, `renderSeeds` from `updateHUD`), the home pill `#homeSeeds` and chips on the Daily and Meadow cards.
+  (`#seedN`, `renderSeeds` from `updateHUD`), the home pill `#homeSeeds` (tap: `seedInfo`, the same dialog as an
+  explainer) and chips on the Daily and Meadow cards. `stats.seedsGot` counts seeds grown; 30 unlock the `idea` hat.
 - **HUD** (`play/hud.js`): `updateHUD` shows the moves meter with par and chips (`hudTile`) only for what isn't visible on
   the board: flags touched, keys held and length vs the burrow. Weather, hedges and pollen show in the
   scene, so they get no chip; keep the row to about four.
