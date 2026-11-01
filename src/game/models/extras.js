@@ -179,20 +179,20 @@ function buildExtra(id){ // frames sit in front of the eyes even when they widen
     // a little heart stitched on the front, off to the left
     const a=-.55, hy=.025, hr=rr(y+hy)+.009, ht=new THREE.Mesh(new THREE.ShapeGeometry(SHAPE_HEART(),10),m('sweatStripe'));
     ht.scale.setScalar(.0095); ht.position.set(Math.sin(a)*hr,hy,Math.cos(a)*hr); ht.rotation.set(-.17,a,0,'YXZ'); band.add(ht); }
-  else if(id==='daisies'){ // a chain of daisies lying on the head under the mouth: a circle on the head's sphere, round the
-    // chin and down the sides, its back hidden under the body
-    const tilt=new THREE.Group(); tilt.rotation.x=Math.PI-.47; g.add(tilt);
-    const d=.27, r=Math.sqrt(HEAD_R*HEAD_R-d*d)+.012, rg=new THREE.Group(); rg.position.y=d; tilt.add(rg);
-    const stem=ring(r,.012,m('leaf'),.006,5,48); stem.rotation.x=Math.PI/2; rg.add(stem);
-    // (the ring's -z is the front once tipped; each daisy faces straight out from the head's centre)
-    const out=(a,lift)=>{ const f=new THREE.Group(), wv=V(); f.position.set(Math.cos(a)*r,lift,Math.sin(a)*r); rg.add(f); f.getWorldPosition(wv); f.lookAt(wv.multiplyScalar(2));
-      return f; };
-    for(let k=0;k<8;k++){ const a=-Math.PI/2+(k-3.5)*.4, f=out(a,0);
-      for(let q=0;q<8;q++){ const pg=new THREE.Group(); pg.rotation.z=q/8*Math.PI*2+k; f.add(pg);
-        const pt=dot(.1,m('daisy'),.004,[.11,.26,.08],6,4); pt.position.set(0,.027,.006); pt.rotation.x=.18; pg.add(pt); }
-      const c=dot(.016,m('crown'),.005,[1,1,.7],8,6); c.position.z=.014; f.add(c);
-      // a leaf on the stem between this daisy and the next
-      if(k<7){ const lf=out(a+.2,0), l=dot(.1,m('leaf'),.004,[.12,.28,.07],6,4); l.position.set(0,.012,.004); l.rotation.z=k%2?.9:-.9+Math.PI; lf.add(l); } } }
+  else if(id==='daisies'){ // a daisy chain worn like a necklace: a green stem round the neck where the scarf sits, with five
+    // big daisies along the front (the middle one biggest, like the sticker) and leaves between them
+    const R=.335, rg=new THREE.Group(); rg.position.set(0,-.1,-.07); rg.rotation.x=-.93; rg.scale.x=.92; g.add(rg);
+    rg.add(new THREE.Mesh(new THREE.TorusGeometry(R,.011,6,56),m('leaf')),new THREE.Mesh(new THREE.TorusGeometry(R,.017,6,56),lineMat));
+    // a flower on the ring at angle a (the front is -pi/2), facing out from the head and a little forward
+    const at=(a,lift)=>{ const f=new THREE.Group(), wv=V(); f.position.set(Math.cos(a)*(R+lift),Math.sin(a)*(R+lift),0); rg.add(f);
+      f.getWorldPosition(wv); f.lookAt(wv.clone().add(wv.clone().setY(wv.y*.3).normalize().add(V(0,.25,.6)))); return f; };
+    for(let j=-2;j<=2;j++){ const a=-Math.PI/2+j*.37, f=at(a,.03), s=j?1.4:1.65; f.scale.setScalar(s);
+      for(let q=0;q<9;q++){ const pg=new THREE.Group(); pg.rotation.z=q/9*Math.PI*2+j; f.add(pg);
+        const pt=dot(.1,m('daisy'),.0035,[.1,.24,.07],8,5); pt.position.set(0,.026,.004); pt.rotation.x=.16; pg.add(pt); }
+      const c=dot(.017,m('crown'),.004,[1,1,.65],10,8); c.position.z=.012; f.add(c);
+      // a pair of leaves on the stem between this daisy and the next
+      if(j<2) for(const sd of [-1,1]){ const lf=at(a+.185,.014), l=dot(.1,m('leaf'),.0035,[.1,.26,.06],8,5);
+        l.position.set(0,.014*sd,.002); l.rotation.z=sd>0?.5:Math.PI-.5; lf.add(l); } } }
   else if(id==='bandana'){ // a spotted neckerchief: a roll round the bottom of the head (like the scarf), knotted at the back,
     // and a draped triangle in front
     const R=.33, rg=new THREE.Group(); rg.position.set(0,-.1,-.07); rg.rotation.x=-.93; rg.scale.x=.92; g.add(rg);

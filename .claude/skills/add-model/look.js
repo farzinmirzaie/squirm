@@ -3,7 +3,8 @@
 //   node .claude/skills/add-model/look.js <outDir> wardrobe '<list>' [--dark]
 //     list: [[name, hat id, extra id, {colour option by item id}, worm colour index], ...]
 //     e.g. '[["teacup","teacup","none",{"teacup":1},0],["patch","none","eyepatch",{},5]]'
-//     views: front, left, right, back and top (top is about the in-patch camera), on the wardrobe stage
+//     views: stage (the wardrobe's own camera, as players see it), then close front, left, right, back and top
+//     (top is about the in-patch camera)
 //   node .claude/skills/add-model/look.js <outDir> board '<list>' [--dark]
 //     list: [[name, {map, worm, exitLen, rain}, [x, y] tile to look at, "moves" to play first], ...]
 //     e.g. '[["gate",{"map":["P.p.E"],"worm":[[1,0],[0,0]],"exitLen":2},[2,0],"W"]]'
@@ -52,8 +53,9 @@ const idle = page => page.waitForFunction(() => !window.__squirm.busy(), null, {
       for (const [name, hat, extra, tints, col] of list) {
         await ev(page, `tints=${JSON.stringify(tints || {})}; hatId=${JSON.stringify(hat)}; extraId=${JSON.stringify(extra)}; wormCol=${col | 0}; applyWormColour(); dressHat(hHead); dressExtra(hHead);`);
         const shots = [];
-        for (const [v, yaw, el] of [['front', 0, .35], ['left', 1.1, .35], ['right', -1.1, .35], ['back', 2.6, .35], ['top', 0, 1.35]]) {
-          await ev(page, `{ const p=new THREE.Vector3(); hHead.getWorldPosition(p); const d=3.4; hCam.position.set(p.x+Math.sin(${yaw})*d*Math.cos(${el}),p.y+Math.sin(${el})*d,p.z+Math.cos(${yaw})*d*Math.cos(${el})); hCam.lookAt(p.x,p.y+.28,p.z); }`);
+        await ev(page, `window.__cam0=window.__cam0||[hCam.position.clone(),hCam.quaternion.clone()]`);
+        for (const [v, yaw, el] of [['stage', 0, 0], ['front', 0, .35], ['left', 1.1, .35], ['right', -1.1, .35], ['back', 2.6, .35], ['top', 0, 1.35]]) {
+          if (v === 'stage') await ev(page, `hCam.position.copy(__cam0[0]); hCam.quaternion.copy(__cam0[1]);`); else await ev(page, `{ const p=new THREE.Vector3(); hHead.getWorldPosition(p); const d=3.4; hCam.position.set(p.x+Math.sin(${yaw})*d*Math.cos(${el}),p.y+Math.sin(${el})*d,p.z+Math.cos(${yaw})*d*Math.cos(${el})); hCam.lookAt(p.x,p.y+.28,p.z); }`);
           await page.waitForTimeout(500);
           const f = path.join(outDir, `${name}-${v}.png`); await page.screenshot({ path: f, clip: box }); shots.push(f);
         }

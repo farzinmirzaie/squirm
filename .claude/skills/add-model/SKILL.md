@@ -83,7 +83,8 @@ node .claude/skills/add-model/look.js <outDir> board '[["gate",{"map":["P.y.Y"],
 ```
 
 Wardrobe entries are `[name, hat, extra, {colour option by item id}, worm colour index]` and render the
-front, both sides, the back and the top (about the in-patch angle) on the wardrobe stage. Board entries are
+wardrobe's own view (as players see it), then close-ups from the front, both sides, the back and the top
+(about the in-patch angle). Neck items (scarf, bowtie, daisy chain) are mostly judged in the first view. Board entries are
 `[name, level, [x, y] to look at, moves to play first]` and render the normal patch view plus close orbits
 from four sides. Each run also saves `<name>.png` with the views side by side; read those with the Read tool.
 Add `--dark` for dark mode. Put `<outDir>` in your scratchpad, and with a global Playwright prefix
