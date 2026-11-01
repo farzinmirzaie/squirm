@@ -4,6 +4,7 @@
 // add an entry on top. Returning players see the newest entry once as a card on the Play tab, new players never
 // do (squirm-news holds the last version seen); Settings > About lists them all.
 const NEWS=[
+  ['1.13.0','2026-11-01','A fresh wardrobe',['Every hat and extra got a careful makeover: more detail, softer shapes and tidy outlines from every side.','Look closer: the acorn has its scales, the brolly its ribs, the teacup steams, and the butterfly has real wings.','The goggles, scarf and walrus mustache are rebuilt too, and hats sit snugly without poking into your head.']],
   ['1.12.2','2026-10-31','Lighter on your phone',['Long play sessions stay smooth: the garden now tidies up after every snack, gate, sparkle and new patch.']],
   ['1.12.1','2026-10-31','A tidier wardrobe',['The bird\'s nest is properly woven now, and its eggs sit snug inside.','The sweatband hugs the head all the way round, the pirate patch covers its eye, and the daisy chain shows under the chin.','The ladybug friend is a little bigger.']],
   ['1.12.0','2026-10-31','Pick a colour',['Many hats and extras now come in five colours: wear one and pick its colour in the wardrobe.','Four new hats: a little sprout, a teacup, a bird\'s nest and a little rain cloud.','Four new extras: a pirate patch, a ladybug friend, a sweatband and a daisy chain.','Each one unlocks in its own playful way. Take a peek in the wardrobe!']],
