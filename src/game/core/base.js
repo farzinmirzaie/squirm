@@ -43,6 +43,7 @@ const C = {
   burrow:0x3A2A22, mound:0xB07B57, ready:0x8EDB72, line:0x5B4436,
   chef:0xFFFBF2, wizard:0x8E7BE0, cowboy:0xC98E52, cowboyBand:0x8A5A36, phones:0xF7A8C4, phonesBand:0x6E5F86,
   frame:0x4A3C52, lensDark:0x3E3548, heartFrame:0xF27DA2, starFrame:0xF5C14E, monocle:0xE0B04A, tash:0x6B4A35, tashLight:0xB08560,
+  glass:0xDDF2FF, glint:0xFFFFFF, brass:0xE8B85A, wingDeep:0xE57A9C, freckle:0xB27654, stitch:0x9C8676, seed:0xD9952E, tashDark:0x543826,
   portal:{ '1':0x7FCFEA, '2':0xC69CF7, '3':0xFFB877, '4':0x9BE39B }
 };
 // ---------- DOM helpers ----------
