@@ -48,7 +48,7 @@ npm run smoke        # debug build served under /squirm/, plays patch 1 in headl
 npm run check        # npm test + smoke: run before pushing
 npm run verify       # every level solvable, par correct, pacing respected
 npm run analyze      # par, state count, winnable % and a solution for every level
-npm run curate -- …  # generate candidate levels (see the add-levels skill)
+npm run curate -- …  # generate candidate levels (see the add-levels skill; tools/harden.js makes them harder)
 ```
 
 Node 22+ (CI uses `.nvmrc`). Every tool starts with a usage comment; read it before running one.
@@ -93,6 +93,7 @@ tools/analyze.js  BFS solver: par, state count, "winnable %" (share of reachable
 tools/verify-levels.js  solvable + par + pacing check for src/levels.js
 tools/load-generator.js runs src/game/endless/generator.js in Node (curate.js, tests)
 tools/curate.js   generates candidate levels with that generator, picks a difficulty spread -> gen/ (ignored)
+tools/harden.js   hill-climbs candidates to make them harder (big boards come out of the generator easy)
 test/logic.test.js      rules, unique level names, stateKey
 test/generator.test.js  daily and endless generation (daily patches must not change)
 test/news.test.js       What's new vs package.json version, semver order
@@ -298,7 +299,9 @@ Chapters (`CHAPTER_NAMES`, ten levels each; level `n` is in chapter `ceil(n/10)`
 | 19 | Pollen paths | pollen flowers and petal gates, mixed with earlier mechanics |
 | 20 | Soft soil | soft soil, mixed with earlier mechanics |
 | 21 | Tangled roots | pollen and soft soil with everything |
-| 22 | Far fields | big boards (8-10 wide), a few earlier mechanics each, the hardest in the game |
+| 22 | Far fields | big boards (8-10 wide), a few earlier mechanics each |
+| 23 | Moonlit meadow | the biggest boards (10-12 wide), hardened, a few earlier mechanics each |
+| 24 | Long way home | the biggest boards, the hardest patches in the game |
 
 Each chapter has a hat (`HATS`, by chapter index) and a map scene (`SCENE_COL`, `SCENE_DECO`).
 

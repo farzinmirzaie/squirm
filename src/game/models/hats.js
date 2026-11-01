@@ -433,6 +433,31 @@ function buildHat(id){ const h=new THREE.Group();
     const sm=hTorus(.013,.005,m('pupil'),0,Math.PI,6,10); sm.position.set(0,-.012,.12); sm.rotation.z=Math.PI; c.add(sm);
     const dg=hDropGeo(.022);
     for(const [x,y,z] of [[-.08,-.15,.03],[.02,-.19,.04],[.09,-.13,.02]]){ const d=new THREE.Mesh(dg,m('water')); d.position.set(x,y,z); hHull(d,.006); c.add(d); } }
+  else if(id==='owl'){ // a little owl perched on the head: a round body with a cream belly, big eyes, a beak, ear tufts,
+    // folded wings, a tail and toes gripping the crown
+    const body=new THREE.Mesh(hWarp(new THREE.SphereGeometry(1,32,24),v=>v.set(v.x*.15,v.y*.165*(v.y<0?.85:1),v.z*.14)),m('owl'));
+    body.position.y=.15; hHull(body,.011); h.add(body);
+    const belly=new THREE.Mesh(sph(.1,20,14),m('owlBelly')); belly.scale.set(.95,1.05,.5); belly.position.set(0,.11,.092); h.add(belly);
+    for(const [x,y] of [[-.035,.12],[.035,.12],[0,.09],[-.04,.07],[.04,.07],[0,.05]]) h.add(hTube([hV3(x-.012,y+.008,.142-Math.abs(x)*.25),hV3(x,y,.146-Math.abs(x)*.25),hV3(x+.012,y+.008,.142-Math.abs(x)*.25)],.0035,lineMat,{seg:6,rs:4}));
+    for(const sd of [-1,1]){ // the eyes: cream discs with dark pupils and a glint
+      const e=new THREE.Mesh(sph(.1,20,14),m('chef')); e.scale.set(.6,.6,.22); e.position.set(sd*.056,.205,.118); e.rotation.y=sd*.32; hHull(e,.008); h.add(e);
+      const pu=new THREE.Mesh(sph(.1,14,10),m('burrow')); pu.scale.set(.29,.31,.12); pu.position.set(sd*.06,.203,.137); pu.rotation.y=sd*.32; h.add(pu);
+      const gl=new THREE.Mesh(sph(.1,8,6),m('chef')); gl.scale.setScalar(.085); gl.position.set(sd*.066,.215,.146); h.add(gl);
+      const tuft=new THREE.Mesh(new THREE.ConeGeometry(.03,.075,12),m('owlDark')); tuft.position.set(sd*.088,.3,.01); tuft.rotation.set(-.15,0,-sd*.55); hHull(tuft,.008); h.add(tuft);
+      const wing=new THREE.Mesh(sph(.1,18,12),m('owlDark')); wing.scale.set(.42,1.05,.85); wing.position.set(sd*.132,.13,-.012); wing.rotation.z=sd*.16; hHull(wing,.008); h.add(wing);
+      for(let k=-1;k<=1;k++){ const toe=new THREE.Mesh(sph(.1,8,6),m('beak')); toe.scale.set(.11,.09,.2); toe.position.set(sd*.055+k*.017,.006,.1+(k?-.006:0)); toe.rotation.y=k*.35; hHull(toe,.005); h.add(toe); } }
+    const beak=new THREE.Mesh(new THREE.ConeGeometry(.02,.048,10),m('beak')); beak.position.set(0,.168,.142); beak.rotation.x=Math.PI-.35; hHull(beak,.006); h.add(beak);
+    const tail=new THREE.Mesh(sph(.1,14,10),m('owlDark')); tail.scale.set(.5,.22,.55); tail.position.set(0,.03,-.135); tail.rotation.x=-.5; hHull(tail,.007); h.add(tail); }
+  else if(id==='nightcap'){ // a sleepy nightcap: a soft striped cone flopping down to one side, a rolled cuff and a fluffy pompom
+    const H=.5, fl=t=>[.36*Math.pow(t,2.2),-.3*Math.pow(t,3),-.05*t*t], crumple=t=>1-.07*Math.exp(-Math.pow((t-.55)/.045,2))-.05*Math.exp(-Math.pow((t-.68)/.035,2));
+    // bends a cone or band whose vertices span t0..t1 of the cap's height
+    const bendGeo=(geo,len,t0,t1)=>{ const p=geo.attributes.position; for(let k=0;k<p.count;k++){ const t=t0+(p.getY(k)/len+.5)*(t1-t0), b=fl(t), f=crumple(t);
+      p.setXYZ(k,p.getX(k)*f+b[0],t*H+b[1],p.getZ(k)*f+b[2]); } geo.computeVertexNormals(); return geo; };
+    const cone=new THREE.Mesh(bendGeo(new THREE.ConeGeometry(.2,H,32,24),H,0,1),m('nightcap')); cone.position.y=.02; hHull(cone,.012); h.add(cone);
+    for(const [t0,t1] of [[.2,.3],[.42,.51],[.63,.71],[.82,.88]]){ const rT=.2*(1-t1)*1.02+.002, rB=.2*(1-t0)*1.02+.002, len=(t1-t0)*H;
+      const band=new THREE.Mesh(bendGeo(new THREE.CylinderGeometry(rT,rB,len,32,4,true),len,t0,t1),m('nightStripe')); band.position.y=.02; h.add(band); }
+    const cuff=new THREE.Mesh(new THREE.TorusGeometry(.205,.045,12,48),m('nightStripe')); cuff.rotation.x=Math.PI/2; cuff.scale.z=.85; cuff.position.y=.035; hHull(cuff,.01); h.add(cuff);
+    const tp=fl(1), pom=new THREE.Mesh(hPomGeo(.05,14,10),m('nightStripe')); pom.position.set(tp[0],.02+H+tp[1]-.01,tp[2]); hHull(pom,.008); h.add(pom); }
   return hBake(h); }
 let hatId=store.get('squirm-hat')||'none';
 const chapterCleared=k=>{ const ch=CHAPTERS[k]; if(!ch) return false; for(let i=ch.from;i<=ch.to;i++) if(!isCleared(i)) return false; return true; };

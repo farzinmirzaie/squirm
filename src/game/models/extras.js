@@ -280,6 +280,20 @@ function buildExtra(id){ // frames sit in front of the eyes even when they widen
     geo.scale(w,w*.78,w); const pos=geo.getAttribute('position'); for(let i=0;i<pos.count;i++){ const x=pos.getX(i);
       pos.setZ(i,pos.getZ(i)-x*x*1.5); } geo.computeVertexNormals();
     const t=new THREE.Mesh(geo,m('tash')); t.position.set(0,.026,.322); t.rotation.x=-.22; outline(t,.008); g.add(t); }
+  else if(id==='firefly'){ // a firefly friend hovering by the head: a little brown bug with a glowing tail, a soft halo,
+    // clear wings and curled antennae
+    const glow=MC.exFireGlow||(MC.exFireGlow=new THREE.MeshBasicMaterial({color:C.fireGlow}));
+    const halo=MC.exFireHalo||(MC.exFireHalo=new THREE.MeshBasicMaterial({color:C.fireGlow,transparent:true,opacity:.25,depthWrite:false}));
+    const f=new THREE.Group(); f.position.set(.37,.17,.15); f.rotation.set(.15,-.85,.12); f.scale.setScalar(1.7); g.add(f);
+    f.add(dot(.022,m('firefly'),.006,[1,.9,1.15],12,8));
+    const hd=dot(.017,m('firefly'),.006,[1,1,1],12,8); hd.position.set(0,.004,.03); f.add(hd);
+    for(const sd of [-1,1]){ const ey=dot(.006,m('daisy'),0,[1,1,1],8,6); ey.position.set(sd*.009,.01,.042); f.add(ey);
+      const ant=new THREE.CatmullRomCurve3([V(sd*.006,.016,.036),V(sd*.016,.04,.05),V(sd*.026,.05,.066)]);
+      f.add(new THREE.Mesh(new THREE.TubeGeometry(ant,8,.0026,5,false),lineMat)); const tip=dot(.005,lineMat); tip.position.set(sd*.026,.05,.066); f.add(tip);
+      const w=dot(.1,glass(),0,[.2,.025,.34],12,6); w.position.set(sd*.024,.024,-.012); w.rotation.set(-.2,sd*.5,sd*.35); f.add(w);
+      const wl=dot(.1,lineMat,0,[.215,.02,.355],12,6); wl.position.copy(w.position); wl.rotation.copy(w.rotation); wl.position.y-=.003; f.add(wl); }
+    const tail=dot(.026,glow,.006,[1,.95,1.5],14,10); tail.position.set(0,-.004,-.036); f.add(tail);
+    const hl=new THREE.Mesh(sph(.075,16,12),halo); hl.position.set(0,-.004,-.036); f.add(hl); }
   return g; }
 function dressExtra(g){ const slot=g&&g.userData.accSlot; if(!slot) return; slot.clear(); const id=extraOn(); if(id==='none') return;
   const k=id+'|'+tintOf(id); if(!extraProto[k]) extraProto[k]=tinted(id,buildExtra(id)); slot.add(extraProto[k].clone()); }

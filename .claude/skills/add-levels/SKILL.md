@@ -30,8 +30,13 @@ hat, unlockables) and build its models with the `add-model` skill.
    - A required feature must be used by the shortest solution. With `snails` or `soil` required, a
      candidate is also kept only if that mechanic makes the solution longer (removing the snails, or
      turning soft soil into grass, shortens it).
-   - Bigger boards: add `"size":{"w":[9,10],"h":[9,11]},"fill":0.42` to the features JSON and raise the
-     solver limit with `CAP=60000`. Big open boards tend to be easy; keys, dry patches and beetles make them hard.
+   - Bigger boards: add `"size":{"w":[10,12],"h":[10,12]},"fill":0.42` to the features JSON and raise the
+     solver limit with `CAP=500000`. Big open boards tend to be easy; keys, dry patches and beetles make them hard.
+   - **Harden** the best of a pool: `CAP=300000 node tools/harden.js gen/top.json gen/hard.json 90 7` (the input
+     is a list like curate's output; sort it by `d` and keep the top few first). It hill-climbs small edits (soil,
+     dry patches, moving flags and the burrow), keeping each only if the patch stays solvable, still uses its
+     mechanics and gets harder; `OPEN` keeps a share of the board open. A run of 90 steps takes a few minutes per
+     big board; run pools in parallel. It trims blank edges, so check that boards stay big.
    - Generated maps always start dry (`rain:false`). If a pool is small, try other seeds or more seconds.
 
 3. **Add entries** to `LEVELS` in `src/levels.js`, matching the existing style:

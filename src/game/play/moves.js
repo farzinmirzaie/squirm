@@ -152,7 +152,7 @@ function onWin(){ shareText=''; newBest=false; chapterDone=null; const coloursBe
     shareText=shareLine(`${DIFF_NAME[endlessDiff].toLowerCase()} endless patch, streak ${e.streak}`,mv,par,st);
     gift(art(DIFF_ICON_KEY[endlessDiff],26),`${DIFF_NAME[endlessDiff]} streak ${e.streak}`,`${e.cleared} cleared, best streak ${e.best}`,e.streak>1&&e.streak===e.best);
   }
-  { const hr=new Date().getHours(); if(hr>=15&&hr<17) bumpStat('teatime'); }
+  { const hr=new Date().getHours(); if(hr>=15&&hr<17) bumpStat('teatime'); if(hr>=19&&hr<22) bumpStat('evenings'); }
   if(mode==='garden'&&!hintsUsed) progress.clean[LEVELS[li].name]=true;
   save(); askPersist();
   const hatsBefore=winHats;

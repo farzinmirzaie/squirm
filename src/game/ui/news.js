@@ -4,6 +4,7 @@
 // add an entry on top. Returning players see the newest entry once as a card on the Play tab, new players never
 // do (squirm-news holds the last version seen); Settings > About lists them all.
 const NEWS=[
+  ['1.14.0','2026-11-01','The long way home',['Two new chapters, Moonlit meadow and Long way home: twenty of the biggest, trickiest patches yet.','Earn a little owl to perch on your head and a sleepy nightcap in five colours.','Finish patches in the evening to meet a firefly friend, and a new Dusk colour waits at the end of the stars.','Three new badges, including one for the really long patches.']],
   ['1.13.2','2026-11-01','A daisy necklace',['The daisy chain is a proper necklace now: five big daisies and little leaves on a green stem round the neck.']],
   ['1.13.1','2026-11-01','Puffier and tidier',['The chef\'s hat has its big puffy top back, billowing over the band.','The bushy mustache is back to its old cozy self, and the fancy one curls neatly at the tips.']],
   ['1.13.0','2026-11-01','A fresh wardrobe',['Every hat and extra got a careful makeover: more detail, softer shapes and tidy outlines from every side.','Look closer: the acorn has its scales, the brolly its ribs, the teacup steams, and the butterfly has real wings.','The goggles, scarf and walrus mustache are rebuilt too, and hats sit snugly without poking into your head.']],
