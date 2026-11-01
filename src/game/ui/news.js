@@ -4,6 +4,7 @@
 // add an entry on top. Returning players see the newest entry once as a card on the Play tab, new players never
 // do (squirm-news holds the last version seen); Settings > About lists them all.
 const NEWS=[
+  ['1.15.0','2026-11-01','Hint seeds',['Garden hints now use hint seeds from a little pouch. You start with a few, and it holds nine.','Grow more by playing: today\'s patch gives 2 and every meadow patch gives 1 (2 on hard), with a bonus for your first meadow patch of the day.','Hints stay free in the first chapter and out in the meadow, and asking again for the same hint never costs a seed.']],
   ['1.14.0','2026-11-01','The long way home',['Two new chapters, Moonlit meadow and Long way home: twenty of the biggest, trickiest patches yet.','Earn a little owl to perch on your head and a sleepy nightcap in five colours.','Finish patches in the evening to meet a firefly friend, and a new Dusk colour waits at the end of the stars.','Three new badges, including one for the really long patches.']],
   ['1.13.2','2026-11-01','A daisy necklace',['The daisy chain is a proper necklace now: five big daisies and little leaves on a green stem round the neck.']],
   ['1.13.1','2026-11-01','Puffier and tidier',['The chef\'s hat has its big puffy top back, billowing over the band.','The bushy mustache is back to its old cozy self, and the fancy one curls neatly at the tips.']],

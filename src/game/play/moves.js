@@ -121,6 +121,8 @@ function onWin(){ shareText=''; newBest=false; chapterDone=null; const coloursBe
   const par=curPar(), mv=state.moves; const st=starsFor(mv,par,hintsUsed>0); clearResume();
   const titles=['Snug as a bug!','Home sweet burrow!','Wiggle well done!','Cozy and curled up!'];
   const gifts=[], gift=(ico,t,sub,hot)=>gifts.push({ico,t,sub,hot});
+  const seedGift=(n,why)=>n?gift(art('hintseed',26),`+${n} hint ${n===1?'seed':'seeds'}`,`${why?why+'. ':''}${progress.seeds} in your pouch`,true)
+    :gift(art('hintseed',26),'Your pouch is full',`${SEED_MAX} hint seeds, ready for the garden`);
   if(mode==='garden'){
     const nm=LEVELS[li].name, best=progress.best[nm]; if(best==null) stat('clear/'+pad3(li+1)); if(best!=null&&mv<best) newBest=true;
       if(best==null||mv<best) progress.best[nm]=mv;
@@ -139,7 +141,8 @@ function onWin(){ shareText=''; newBest=false; chapterDone=null; const coloursBe
   } else if(L.daily){
     const D=progress.daily, k=L.daily, prev=D.results[k];
     if(!prev){ bumpStat('dailies'); stat('daily'); const y=new Date(); y.setDate(y.getDate()-1); const yk=dateKey(y);
-      D.streak = D.last===yk ? D.streak+1 : 1; D.best=Math.max(D.best,D.streak); D.last=k; }
+      D.streak = D.last===yk ? D.streak+1 : 1; D.best=Math.max(D.best,D.streak); D.last=k;
+      seedGift(addSeeds(hintsUsed?1:2)+(D.streak%7===0?addSeeds(1):0),D.streak%7===0?'With a streak bonus':''); }
     if(!prev||mv<prev.moves) D.results[k]={moves:mv,stars:Math.max(st,prev?prev.stars:0)};
     const old=new Date(); old.setDate(old.getDate()-90); const ok=dateKey(old); for(const d in D.results) if(d<ok) delete D.results[d];
     $('winTitle').textContent="Today's patch, done!"; $('winNext').textContent='Back home'; shareRemindState();
@@ -149,6 +152,9 @@ function onWin(){ shareText=''; newBest=false; chapterDone=null; const coloursBe
     const e=progress.endless[endlessDiff]; e.cleared++; stat('meadow/'+endlessDiff); e.streak++; e.best=Math.max(e.best,e.streak); e.stars+=st;
     $('winTitle').textContent = titles[e.cleared%titles.length];
     $('winNext').textContent = 'Grow another'; setTimeout(startPrefetch,900);
+    // seeds for a meadow patch solved without hints, and one more for the first of the day
+    if(hintsUsed) gift(art('hintseed',26),'No hint seeds this time','Solve a meadow patch without hints to earn them');
+    else { const first=progress.meadowDay!==todayKey(); progress.meadowDay=todayKey(); seedGift(addSeeds(endlessDiff==='hard'?2:1)+(first?addSeeds(1):0),first?'With a first-of-the-day bonus':''); }
     shareText=shareLine(`${DIFF_NAME[endlessDiff].toLowerCase()} endless patch, streak ${e.streak}`,mv,par,st);
     gift(art(DIFF_ICON_KEY[endlessDiff],26),`${DIFF_NAME[endlessDiff]} streak ${e.streak}`,`${e.cleared} cleared, best streak ${e.best}`,e.streak>1&&e.streak===e.best);
   }

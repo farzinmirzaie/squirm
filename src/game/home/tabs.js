@@ -20,10 +20,11 @@ function showTab(name,fromBack){ const prev=curTab; curTab=name;
   else if(layers[layers.length-1]!=='tab') pushLayer('tab'); }
 document.querySelectorAll('.tabbar .tab').forEach(b=>b.onclick=()=>{ ensureAudio(); if(b.dataset.tab!==curTab) showTab(b.dataset.tab); });
 function renderHome(){
-  $('homeStars').innerHTML=`${ICON.star}<span>${starTotal()}</span>`;
+  $('homeStars').innerHTML=`${ICON.star}<span>${starTotal()}</span>`; $('homeSeeds').innerHTML=`${art('hintseed',24)}<span>${progress.seeds}</span>`;
+  $('dailySeeds').innerHTML=seedChip(2); $('meadowSeeds').innerHTML=seedChip(progress.meadowDay!==todayKey()?2:1);
   const k=todayKey(), dr=progress.daily.results[k]; $('dailyDay').textContent=new Date().getDate();
   const mid=new Date(); mid.setHours(24,0,0,0); const left=Math.max(1,Math.ceil((mid-new Date())/60000)), wait=left>=60?`${Math.floor(left/60)}h ${left%60}m`:`${left}m`;
-  $('dailyBtn').classList.toggle('done',!!dr); $('dailySub').textContent = dr ? `Done in ${dr.moves} moves. Next one in ${wait}.` : (progress.daily.streak?`Keep your ${progress.daily.streak} day streak going`:'One patch for everyone today');
+  $('dailyBtn').classList.toggle('done',!!dr); $('dailySeeds').hidden=!!dr; $('dailySub').textContent = dr ? `Done in ${dr.moves} moves. Next one in ${wait}.` : (progress.daily.streak?`Keep your ${progress.daily.streak} day streak going`:'One patch for everyone today');
   $('dailyWeek').innerHTML=[6,5,4,3,2,1,0].map(n=>{ const d=new Date(); d.setDate(d.getDate()-n); return `<i class="${progress.daily.results[dateKey(d)]?'on':''} ${n?'':'today'}"></i>`; }).join('');
   const ni=nextGardenIndex(), started=LEVELS.some((l,i)=>isCleared(i));
   if(allCleared()){ const t=shineable().length; $('playTitle').textContent='Garden grown!'; $('playSub').textContent=t?`${t} ${t===1?'patch':'patches'} to shine up · what's next`:"All 3 stars · see what's next"; }

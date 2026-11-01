@@ -12,7 +12,7 @@ document.querySelector('.hud-stats').addEventListener('click',e=>{ const st=e.ta
 // one HUD tile: tip picks its statTip, v is the value row and k the caption under it; tappable unless tap is false
 const hudTile=(tip,cls,label,v,k,tap=true)=>`<span${tap?' role="button" tabindex="0"':''} class="stat${cls?' '+cls:''}" data-tip="${tip}" aria-label="${label}"><span class="v">${v}</span><span class="k">${k}</span></span>`;
 let shownStars=3;
-function updateHUD(silent){
+function updateHUD(silent){ renderSeeds();
   $('lvlNum').style.fontSize=String(mode==='garden'?li+1:0).length>2?'16px':'';
     $('lvlNum').textContent= mode==='garden' ? li+1 : L.daily ? new Date().getDate() : (progress.endless[endlessDiff].cleared+1);
     $('lvlName').textContent=L.name;

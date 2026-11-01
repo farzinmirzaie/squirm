@@ -1,5 +1,19 @@
 // ---------- hints ----------
-let hintsUsed=0, undosHere=0, hintMesh=null, hintBusy=false;
+let hintsUsed=0, undosHere=0, hintMesh=null, hintBusy=false, hintKey='';
+// hint seeds: a garden or daily hint costs one from the pouch (progress.seeds, at most SEED_MAX). The daily and the
+// meadow fill it (onWin). Hints are free in the first chapter and in the meadow, but a hinted meadow patch earns nothing.
+const SEED_MAX=9;
+const hintFree=()=>mode==='garden'?li<10:!(L&&L.daily);
+function addSeeds(n){ const got=Math.max(0,Math.min(SEED_MAX,progress.seeds+n)-progress.seeds); progress.seeds+=got; if(got) bumpStat('seedsGot',got); return got; }
+const seedChip=n=>`<span class="seed-chip">${art('hintseed',16)}+${n}</span>`;
+function renderSeeds(){ const b=$('hintBtn'), free=hintFree(), n=progress.seeds; $('seedN').hidden=free; $('seedN').textContent=n; b.classList.toggle('empty',!free&&n<=0);
+  b.setAttribute('aria-label',free?'Hint':`Hint, ${n} hint ${n===1?'seed':'seeds'} left`); }
+// the pouch is empty: offer the daily (unless it's done or being played) and the meadow; this patch is saved meanwhile
+function openSeeds(){ const daily=!progress.daily.results[todayKey()]&&!(L&&L.daily);
+  $('seedDaily').hidden=!daily; $('seedDaily').innerHTML=`Today's patch ${seedChip(2)}`; $('seedMeadow').innerHTML=`A meadow patch ${seedChip(1)}`;
+  $('seedMeadow').classList.toggle('primary',!daily); sfx('stuck'); show('seedOv'); pushLayer('seeds'); }
+const seedGo=f=>()=>{ hide('seedOv'); popLayer('seeds'); f(); };
+$('seedKeep').onclick=seedGo(()=>{}); $('seedDaily').onclick=seedGo(()=>$('dailyBtn').onclick()); $('seedMeadow').onclick=seedGo(()=>$('meadowBtn').onclick());
 function solveFrom(s0,cap=350000,ms=2500){ const until=performance.now()+ms;
   const seen=new Set([stateKey(s0)]); let q=[[s0,null]];
   while(q.length){ const nq=[];
@@ -11,12 +25,15 @@ function solveFrom(s0,cap=350000,ms=2500){ const until=performance.now()+ms;
 function clearHint(){ if(hintMesh){ removeObj(hintMesh); hintMesh=null; } }
 function showHint(){
   if(animating&&!hintBusy){ setTimeout(showHint,250); return; }
-  if(hintBusy||anyOverlay()||state.status!=='play') return; hintBusy=true; $('hintBtn').classList.add('busy');
+  if(hintBusy||anyOverlay()||state.status!=='play') return;
+  // the same hint again is free: just point at it once more
+  const key=stateKey(state); if(hintMesh&&hintKey===key){ pulse($('hintBtn')); return; }
+  if(!hintFree()&&progress.seeds<=0){ openSeeds(); return; } hintBusy=true; $('hintBtn').classList.add('busy');
   wormSays('Hmm, let me think...',1600);
   setTimeout(()=>{ const d=solveFrom(state); hintBusy=false; $('hintBtn').classList.remove('busy');
     if(d===null){ sfx('stuck'); toast('No way to win from here. Undo a few moves and try again.',3600); pulse($('undoBtn')); return; }
     if(d===undefined){ sfx('stuck'); toast('This one is too tangled to work out from here. Hold Undo to start over.',3200); return; }
-    hintsUsed++; saveResume(); clearHint(); const h=state.segs[0], dd=DIRS[d], tx=h[0]+dd[0], ty=h[1]+dd[1];
+    hintsUsed++; hintKey=key; if(!hintFree()){ progress.seeds--; if(!progress.seeds) stat('seeds/empty'); save(); renderSeeds(); } saveResume(); clearHint(); const h=state.segs[0], dd=DIRS[d], tx=h[0]+dd[0], ty=h[1]+dd[1];
     hintMesh=new THREE.Group(); const am=m('key');
     const cone=new THREE.Mesh(new THREE.ConeGeometry(.13,.26,20),am); cone.rotation.x=Math.PI; outline(cone,.02); hintMesh.add(cone);
     const ring=new THREE.Mesh(new THREE.TorusGeometry(.3,.04,10,32),new THREE.MeshBasicMaterial({color:0xFFD866,transparent:true,opacity:.9}));

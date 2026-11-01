@@ -325,6 +325,13 @@ says which file holds what, and a search for a function name finds it fast.
   There's no Restart button: a tap on Undo takes back one move, holding it fills a ring (`--hold` on
   `#undoBtn`, `HOLD_WAIT` + `HOLD_MS`) and then calls `restart()`; R still restarts. The hint solver
   `solveFrom` is a capped BFS over `stateKey`.
+- **Hint seeds** (`play/hints.js`): garden and daily hints cost one seed from the pouch (`progress.seeds`, at most
+  `SEED_MAX` 9; new players start with 3). `hintFree()`: the first chapter and the meadow are free, but a hinted
+  meadow patch earns nothing. `onWin` fills the pouch with `addSeeds`: the daily +2 (+1 if hinted, +1 more every
+  7th streak day), a meadow patch +1 (hard +2), +1 for the first meadow patch of the day (`progress.meadowDay`).
+  Asking again for the same position is free. An empty pouch opens `seedOv` (`openSeeds`), which sends the player
+  to the daily or the meadow; the garden patch keeps its own resume slot. The count shows on the hint button
+  (`#seedN`, `renderSeeds` from `updateHUD`), the home pill `#homeSeeds` and chips on the Daily and Meadow cards.
 - **HUD** (`play/hud.js`): `updateHUD` shows the moves meter with par and chips (`hudTile`) only for what isn't visible on
   the board: flags touched, keys held and length vs the burrow. Weather, hedges and pollen show in the
   scene, so they get no chip; keep the row to about four.

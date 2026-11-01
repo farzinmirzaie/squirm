@@ -14,6 +14,7 @@ function enterGame(){ const top=layers[layers.length-1];
 window.addEventListener('popstate',()=>{ if(ignorePop>0){ ignorePop--; return; } const top=layers.pop();
   if(top==='intro') closeIntro(true);
   else if(top==='reset') hide('resetOv');
+  else if(top==='seeds') hide('seedOv');
   else if(top==='finale') hide('finOv');
   else if(top==='settings') hide('setOv');
   else if(top==='tab') showTab('play',true);

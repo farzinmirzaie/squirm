@@ -182,6 +182,10 @@ button:focus-visible{outline:3px solid var(--honey);outline-offset:2px}
 .sheet h2{margin-bottom:12px;text-align:center}
 .sheet p.label{margin:4px 0 -4px}
 .sheet .label-row p.label{margin:0}
+/* out of hint seeds: where to grow more */
+.seeds .seed-art{display:block;margin:0 auto}
+.seed-go{display:flex;flex-direction:column;gap:10px}
+.seed-go .btn{flex:none}
 /* "something new": the intro keeps its button in view */
 /* meeting a mechanic: one illustrated card at a time, with dots when there are several */
 .intro{display:flex;flex-direction:column;align-items:stretch;overflow:hidden}
@@ -299,6 +303,10 @@ nav{display:flex;justify-content:center;align-items:flex-end;gap:12px}
 .gbtn:disabled .lbl{opacity:.7}
 .gbtn:focus-visible{outline:none}
 .gbtn .disc{position:relative}
+/* hint seeds left, on the hint button; a dim bulb when the pouch is empty */
+.seed-n{position:absolute;top:-8px;right:-10px;min-width:26px;height:26px;padding:0 6px;box-sizing:border-box;border-radius:999px;background:var(--paper);border:2px solid var(--outline);color:var(--ink);font:800 14px/22px var(--fd);text-align:center}
+.gbtn.hint.empty .disc{background-color:var(--paper-2);border-color:var(--edge);color:var(--ink-soft);box-shadow:0 5px 0 var(--edge),0 10px 22px var(--shadow)}
+.gbtn.hint.empty:active .disc{box-shadow:0 0 0 var(--edge)}
 #undoBtn .disc::after{content:"";position:absolute;inset:-8px;border-radius:50%;pointer-events:none;opacity:0;
   background:conic-gradient(var(--berry) calc(var(--hold,0)*360deg),transparent 0);
   -webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 7px),#000 calc(100% - 6px));mask:radial-gradient(farthest-side,transparent calc(100% - 7px),#000 calc(100% - 6px))}
@@ -318,6 +326,13 @@ nav{display:flex;justify-content:center;align-items:flex-end;gap:12px}
 .home-top{flex:none;display:flex;justify-content:space-between;align-items:center;gap:8px;padding:0 max(14px,env(safe-area-inset-right,0px)) 0 max(14px,env(safe-area-inset-left,0px));width:min(100%,560px);margin:0 auto}
 .home-top-tools{display:flex;gap:8px}
 .star-pill{display:inline-flex;align-items:center;gap:6px;height:40px;padding:0 14px 0 10px;border-radius:999px;background:var(--paper);border:3px solid var(--edge);box-shadow:0 3px 0 var(--edge);font:800 18px/1 var(--fd)}
+.home-pills{display:inline-flex;gap:8px}
+.seed-pill{padding:0 14px 0 8px;gap:4px}
+.seed-pill:empty{display:none}
+/* a little "+2" chip with a hint seed: on the Daily and Meadow cards and the out-of-seeds dialog */
+.seed-chip{display:inline-flex;align-items:center;gap:2px;margin-left:4px;padding:1px 8px 1px 4px;border-radius:999px;background:var(--tint-honey);border:2px solid var(--honey-dark);color:var(--deep);font:800 12px/1.2 var(--fd);vertical-align:middle}
+.home-duo .big{position:relative}
+.home-duo .seed-chip{position:absolute;top:12px;right:12px;margin:0}
 /* tab pages and the tab bar */
 .tab-pages{flex:1;min-height:0;position:relative}
 .tab-page{position:absolute;inset:0;overflow:auto;overscroll-behavior:contain;touch-action:pan-y;padding:10px max(14px,env(safe-area-inset-right,0px)) 16px max(14px,env(safe-area-inset-left,0px));display:flex;flex-direction:column;align-items:center}
@@ -735,7 +750,7 @@ nav .enter,.rise{animation:navIn var(--dur-slow) var(--ease-pop) var(--d,0ms) bo
     <nav>
       <button id="levelsBtn" class="gbtn" title="Home (Esc)"><span class="disc"><svg width="28" height="28" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.15" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-5h4v5"/></svg></span><span class="lbl">Home</span></button>
       <button id="undoBtn" class="gbtn" data-sfx="none" title="Undo (Z). Hold to start over (R)"><span class="disc"><svg width="28" height="28" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.15" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg></span><span class="lbl">Undo</span></button>
-      <button id="hintBtn" class="gbtn hint" data-sfx="none" title="Hint (H)"><span class="disc"><svg width="30" height="30" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z" style="fill:var(--sticker)"/></svg></span><span class="lbl">Hint</span></button>
+      <button id="hintBtn" class="gbtn hint" data-sfx="none" title="Hint (H)"><span class="disc"><span class="seed-n" id="seedN" aria-hidden="true" hidden></span><svg width="30" height="30" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z" style="fill:var(--sticker)"/></svg></span><span class="lbl">Hint</span></button>
       <button id="photoBtn" class="gbtn" title="Photo (P)"><span class="disc"><svg width="28" height="28" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.15" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8.5h3l1.6-2.5h6.8L17 8.5h3a1 1 0 0 1 1 1V18a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9.5a1 1 0 0 1 1-1z"/><circle cx="12" cy="13.5" r="3.4"/></svg></span><span class="lbl">Photo</span></button>
       <button id="skipBtn" class="gbtn" hidden><span class="disc"><svg width="28" height="28" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.15" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5l8 7-8 7z" fill="currentColor"/><path d="M18 5v14"/></svg></span><span class="lbl">Skip</span></button>
     </nav>
@@ -780,7 +795,7 @@ nav .enter,.rise{animation:navIn var(--dur-slow) var(--ease-pop) var(--d,0ms) bo
 <div class="petals" id="petals"></div>
 <div class="home ov show" id="homeOv">
   <div class="home-top">
-    <span class="star-pill" id="homeStars" aria-label="Stars"></span>
+    <span class="home-pills"><span class="star-pill" id="homeStars" aria-label="Stars"></span><span class="star-pill seed-pill" id="homeSeeds" aria-label="Hint seeds" title="Hint seeds for garden hints"></span></span>
     <span class="home-top-tools"><button class="round" id="homeSound"></button><button class="round" id="installBtn" aria-label="Install Squirm as an app" hidden><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7 10l5 5 5-5"/><path d="M5 19h14"/></svg></button><button class="round" id="settingsBtn" aria-label="Settings" title="Settings"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.8v2.4M12 18.8v2.4M2.8 12h2.4M18.8 12h2.4M5.5 5.5l1.7 1.7M16.8 16.8l1.7 1.7M5.5 18.5l1.7-1.7M16.8 7.2l1.7-1.7"/><circle cx="12" cy="12" r="6.6"/></svg></button></span>
   </div>
   <div class="tab-pages">
@@ -796,11 +811,11 @@ nav .enter,.rise{animation:navIn var(--dur-slow) var(--ease-pop) var(--d,0ms) bo
         <div class="home-duo">
         <button class="big card mini" id="dailyBtn">
     <span class="mode-ico daily-ico" aria-hidden="true"><span class="cal" id="dailyDay">11</span></span>
-    <span class="bt"><b>Daily patch</b><small id="dailySub">One patch for everyone today</small><span class="week" id="dailyWeek" aria-hidden="true"></span></span><span class="go" aria-hidden="true"><svg class="ui-ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 5.5L16 12l-6.5 6.5"/></svg></span>
+    <span class="bt"><b>Daily patch <span id="dailySeeds"></span></b><small id="dailySub">One patch for everyone today</small><span class="week" id="dailyWeek" aria-hidden="true"></span></span><span class="go" aria-hidden="true"><svg class="ui-ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 5.5L16 12l-6.5 6.5"/></svg></span>
   </button>
         <button class="big card mini" id="meadowBtn">
           <span class="mode-ico meadow-ico" aria-hidden="true" data-art="tulip" data-size="32"></span>
-          <span class="bt"><b>Meadow</b><small id="meadowSub">Fresh patches, grown for you</small></span>
+          <span class="bt"><b>Meadow <span id="meadowSeeds"></span></b><small id="meadowSub">Fresh patches, grown for you</small></span>
         </button>
         </div>
         <button class="card goal" id="goalCard" hidden></button>
@@ -911,6 +926,11 @@ nav .enter,.rise{animation:navIn var(--dur-slow) var(--ease-pop) var(--d,0ms) bo
 <div class="ov" id="resetOv"><div role="dialog" aria-modal="true" aria-labelledby="resetTitle" class="dialog card">
   <h2 id="resetTitle">Start over?</h2><p>This clears every star, best score, streak and setting. Your worm will forget everything.</p>
   <div class="row"><button class="btn" id="resetNo">Keep it</button><button class="btn danger" id="resetYes">Reset all</button></div>
+</div></div>
+<div class="ov" id="seedOv"><div role="dialog" aria-modal="true" aria-labelledby="seedTitle" class="dialog card seeds">
+  <span class="seed-art" aria-hidden="true" data-art="hintseed" data-size="64"></span>
+  <h2 id="seedTitle">Out of hint seeds</h2><p>Garden hints use hint seeds. Grow more in today's patch or out in the meadow. This patch will wait for you.</p>
+  <div class="seed-go"><button class="btn primary" id="seedDaily"></button><button class="btn" id="seedMeadow"></button><button class="btn" id="seedKeep">Keep trying</button></div>
 </div></div>
 <div class="ov" id="introOv"><div role="dialog" aria-modal="true" aria-labelledby="introTitle" class="dialog card intro">
   <div id="introBody" aria-live="polite"></div>
