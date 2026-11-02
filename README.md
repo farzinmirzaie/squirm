@@ -2,6 +2,8 @@
 
 [![Deploy](https://github.com/farzinmirzaie/squirm/actions/workflows/deploy.yml/badge.svg)](https://github.com/farzinmirzaie/squirm/actions/workflows/deploy.yml)
 
+[![Squirm: a pink worm peeking out of its burrow, beside the home screen and a garden patch](public/share.png)](https://farzinmirzaie.github.io/squirm/)
+
 A cozy, turn-based worm puzzle set in a little 3D garden. Steer a worm through garden patches, touch
 every flag, and slip into the burrow at exactly the right length.
 
@@ -15,7 +17,8 @@ every flag, and slip into the burrow at exactly the right length.
 - An endless meadow of generated patches, with the difficulty and mechanics you choose, and a daily
   patch that's the same for everyone.
 - Stars, badges and a wardrobe of hats, colours, patterns and extras to earn.
-- Photo mode, hints, undo, gentle generated music, light and dark themes, and reduced motion support.
+- Hints grown as hint seeds in the daily and the meadow, undo, and photo mode.
+- A little song for every patch, composed as you play, plus light and dark themes and reduced motion support.
 - No assets: every 3D model is built in code and every sound is synthesized.
 
 ## How to play
@@ -32,7 +35,7 @@ Needs Node 22 or newer. Plain JavaScript and [three.js](https://threejs.org/), n
 framework.
 
 ```
-npm install      # three.js and the fonts
+npm install      # three.js and the font
 npm run build    # build into dist/
 npm run serve    # serve dist/ locally
 npm run check    # unit tests, level checks, build and a headless smoke test

@@ -1,8 +1,8 @@
 # CLAUDE.md
 
 Guide for working on **Squirm**, a cozy turn-based worm puzzle PWA. This file is the single source of
-truth for agents; README.md is a short public overview without details that go stale (no counts, no
-screenshots). Three project skills cover the recurring workflows (in `.claude/skills/`): `add-levels`,
+truth for agents; README.md is a short public overview without details that go stale (no counts; its one picture is
+`public/share.png`, which `store-shots.js` keeps current). Three project skills cover the recurring workflows (in `.claude/skills/`): `add-levels`,
 `add-model` (build a 3D model and review it from every side) and `ui-check` (screenshots of the UI).
 When you change a system, update its part of this file in the same commit.
 
@@ -70,7 +70,7 @@ src/levels.js     LEVELS + CHAPTER_NAMES
 src/game/         everything else, in folders (map at the top of core/base.js), joined into one script:
   core/           base.js (store, DOM helpers, the C palette), three.js (renderer, materials, outlines),
                   state, tweens (kill, tween), loop (frame, quality), boot
-  audio/          sfx.js (effects), music.js (the generated tune)
+  audio/          sfx.js (effects), music.js (the song engine; haptics and birdsong at its end)
   models/         3D objects: garden.js (scenery, batching), visitors.js (ladybug, bird), board.js (tiles,
                   items, disposeTree, buildBoard), snails.js, beetles.js, pollen-soil.js, weather.js,
                   worm-head.js, worm-skin.js (tube material, pattern shader), worm-body.js (updateWorm),
@@ -227,7 +227,7 @@ outdated one misrepresents the game. The tool renders straight into `public/`:
 - `share.png`: 1200x630, the link preview (`og:image`, `twitter:card` `summary_large_image`).
 
 They aren't precached (only the install dialog and link previews use them, online). `shoot.js` is for checking a
-change in light and dark; the README has no screenshots.
+change in light and dark. The README shows `share.png`, so it stays current with it.
 
 ## Level format
 
@@ -447,7 +447,7 @@ from a tab replaces that layer with `game`.
   The daily patch (`startDaily`) uses a date seed, `DAILY_OPTS` and a fixed number of tries, so everyone gets
   the same one; it's cached in `squirm-daily-patch` for the day.
 - **Win card** (`onWin`, `play/moves.js`): big stars, a line about par or hints, Moves / Par / Time tiles (`New best` tag),
-  then `gifts`: rows for what was earned (badges, hats, colours, patterns: `hot`, honey) and progress notes
+  then `gifts`: rows for what was earned (badges, hats, colours, patterns, hint seeds: `hot`, honey) and progress notes
   (chapter, streaks, next chapter), in a `.fade-scroll`. Next is the big button; Replay, Home and Share sit
   under it. Badges earned by a win only play their jingle; the card lists them.
 - **Finale** (`ui/finale.js`): once every patch is cleared (`allCleared`), winning the last one offers "What's next?", which
@@ -528,7 +528,7 @@ from a tab replaces that layer with `game`.
   real host (so never in tests or local builds); players switch it off in Settings > About (`squirm-stats`,
   device-specific, in `SAVE_SKIP` with `squirm-stats-v`). It sends a visit on boot, `launch/app` or
   `launch/browser`, `version/<x.y.z>` once per version, `install`, and on first clears `clear/<037>`,
-  `chapter/<17>`, plus `daily` and `meadow/<difficulty>`. The service worker ignores cross-origin requests,
+  `chapter/<17>`, plus `daily`, `meadow/<difficulty>` and `seeds/empty` (the hint-seed pouch ran out). The service worker ignores cross-origin requests,
   so pings never hit the cache. Keep events few, anonymous and aggregate; never add identifiers.
 
 ## Conventions
