@@ -72,7 +72,7 @@ function makeTile(x,y,ch){
 }
 function numberTex(n){ return canvasTex(128,128,g=>{
   g.fillStyle='#FFF8EA'; g.beginPath(); g.arc(64,64,52,0,Math.PI*2); g.fill(); g.lineWidth=7; g.strokeStyle='#5B4436'; g.stroke();
-  g.fillStyle='#5B4436'; g.font='800 70px Grandstander, Nunito, sans-serif'; g.textAlign='center'; g.textBaseline='middle'; g.fillText(String(n),64,70);
+  g.fillStyle='#5B4436'; g.font='800 70px "Baloo 2", sans-serif'; g.textAlign='center'; g.textBaseline='middle'; g.fillText(String(n),64,70);
   }); }
 function faceCamera(o){ const yaw=(typeof camYaw==='number'?camYaw:0)*Math.PI/180;
   if(o.userData.faceCam){ o.rotation.y=yaw; if(o.userData.lean){ o.rotation.order='YXZ'; o.rotation.x=o.userData.lean; } }

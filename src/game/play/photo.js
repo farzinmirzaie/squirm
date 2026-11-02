@@ -21,7 +21,7 @@ async function snapPhoto(){ renderer.render(scene,camera); const src=renderer.do
   // caption: a cream plaque with the patch and its stars, and the game's name
   const css=getComputedStyle(document.documentElement), tok=k=>css.getPropertyValue(k).trim()||'#000', u=Math.min(W,H)/390;
   const title=photoInfo?photoInfo.title:'Squirm', st=photoInfo?photoInfo.st:0; if(!g.roundRect) g.roundRect=g.rect;
-  g.font=`800 ${Math.round(17*u)}px Grandstander, sans-serif`; const tw=g.measureText(title).width;
+  g.font=`800 ${Math.round(17*u)}px "Baloo 2", sans-serif`; const tw=g.measureText(title).width;
   const pw=Math.max(tw,64*u)+32*u, ph=64*u, px=16*u, py=H-ph-18*u, r=18*u;
   g.fillStyle='rgba(91,68,54,.22)'; g.beginPath(); g.roundRect(px,py+4*u,pw,ph,r); g.fill();
   g.fillStyle='#FFF8EA'; g.strokeStyle='#E7CFA8'; g.lineWidth=3*u; g.beginPath(); g.roundRect(px,py,pw,ph,r); g.fill(); g.stroke();
@@ -29,7 +29,7 @@ async function snapPhoto(){ renderer.render(scene,camera); const src=renderer.do
   const star=new Path2D('M12 2.8l2.8 5.8 6.3.9-4.6 4.4 1.1 6.3L12 17.2l-5.6 3 1.1-6.3L2.9 9.5l6.3-.9z');
   for(let i=0;i<3;i++){ g.save(); g.translate(px+14*u+i*21*u,py+33*u); g.scale(.85*u,.85*u); g.fillStyle=i<st?'#F5C14E':'#E7CFA8'; g.fill(star);
     g.lineWidth=1.6; g.strokeStyle='#5B4436'; g.stroke(star); g.restore(); }
-  g.font=`800 ${Math.round(13*u)}px Grandstander, sans-serif`; g.textAlign='right'; g.fillStyle='rgba(255,248,234,.92)'; g.strokeStyle='rgba(91,68,54,.55)'; g.lineWidth=4*u;
+  g.font=`800 ${Math.round(13*u)}px "Baloo 2", sans-serif`; g.textAlign='right'; g.fillStyle='rgba(255,248,234,.92)'; g.strokeStyle='rgba(91,68,54,.55)'; g.lineWidth=4*u;
   g.strokeText('Squirm',W-16*u,H-20*u); g.fillText('Squirm',W-16*u,H-20*u);
   sfx('shutter'); buzz(18); if(!reduceMotion) animOnce($('flash'),'go'); bumpStat('photos'); checkBadges(null); save();
   const blob=await new Promise(r=>c.toBlob(r,'image/png')); if(!blob){ toast('That photo didn\'t work. Try again?'); return; }

@@ -110,4 +110,5 @@ Fix, re-render and look again. A model that only looks right from the front isn'
   open and closed).
 - `npm run check`: the smoke test fails if GPU geometries or textures grow across patches.
 
-Then release it (CLAUDE.md, "Releasing") with a cozy `NEWS` line.
+Then ship it (CLAUDE.md, "Releasing"): a new unlockable or board piece is gameplay and gets a release with a cozy
+`NEWS` line; touching up an existing model is look-and-feel and gets neither a version bump nor a `NEWS` line.

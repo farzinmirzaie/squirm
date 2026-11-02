@@ -25,8 +25,7 @@
     "curate": "node tools/curate.js"
   },
   "devDependencies": {
-    "@fontsource/grandstander": "5.3.0",
-    "@fontsource/nunito": "5.3.0",
+    "@fontsource/baloo-2": "5.2.6",
     "playwright": "1.64.1",
     "three": "0.128.0"
   },

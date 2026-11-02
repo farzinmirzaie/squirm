@@ -1,7 +1,7 @@
 // Builds the game into dist/, ready for any static host (GitHub Pages included):
 //   dist/index.html          page, styles and game code (src/ joined together)
 //   dist/vendor/three.min.js three.js r128, self-hosted so the game works offline
-//   dist/fonts/              Grandstander and Nunito (latin subset)
+//   dist/fonts/              Baloo 2 (latin subset)
 //   dist/icons/, manifest    PWA install metadata (from public/)
 //   dist/sw.js               service worker that precaches all of the above
 // usage: node tools/build.js [--debug] [--out <dir>]
@@ -11,7 +11,7 @@ const dist=outArg>0?path.resolve(process.argv[outArg+1]):path.join(root,'dist');
 const src=f=>fs.readFileSync(path.join(root,'src',f),'utf8');
 const stripExports=s=>s.replace(/if\(typeof module!=='undefined'\)[^\n]*\n?/,'');
 
-const FONTS=[['Grandstander','grandstander',[600,800]],['Nunito','nunito',[600,700,800]]];
+const FONTS=[['Baloo 2','baloo-2',[600,700,800]]];
 
 fs.rmSync(dist,{recursive:true,force:true});
 fs.mkdirSync(path.join(dist,'vendor'),{recursive:true});

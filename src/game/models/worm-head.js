@@ -40,7 +40,7 @@ function makeSeg(i,parent){
 }
 const EXPRS=['grin','joy','wink','wow','sleepy','cheeky'];
 let reactT=0, zT=0;
-const zTex=canvasTex(64,64,c=>{ c.font='800 48px Grandstander, Nunito, sans-serif'; c.textAlign='center'; c.textBaseline='middle';
+const zTex=canvasTex(64,64,c=>{ c.font='800 48px "Baloo 2", sans-serif'; c.textAlign='center'; c.textBaseline='middle';
   c.lineWidth=8; c.strokeStyle='#FFF8EA'; c.strokeText('z',32,34); c.fillStyle='#5B4436'; c.fillText('z',32,34); });
 function snore(h){ const s=new THREE.Sprite(new THREE.SpriteMaterial({map:zTex,transparent:true,depthWrite:false}));
   s.position.copy(h.position).add(new THREE.Vector3(.15,.45,0)); s.scale.setScalar(.01); fx.add(s);

@@ -39,7 +39,7 @@ swipe controls (keyboard works too). Plain JavaScript and three.js, no framework
 ## Commands
 
 ```
-npm install          # three.js r128 + the two Fontsource font packages (+ playwright for the smoke test)
+npm install          # three.js r128 + the Baloo 2 Fontsource package (+ playwright for the smoke test)
 npm run build        # src/ + public/ -> dist/ (git-ignored)
 npm run build:debug  # same, plus window.__squirm hooks for browser automation
 npm run serve        # serve dist/ at http://localhost:8080/ (npm run serve -- --port 8081 --base /squirm/)
@@ -110,8 +110,8 @@ order inside one function wrapper, so they share one scope and any file can call
 
 - `index.html`: shell + logic + levels + game joined into one page, with the build id (`__BUILD__`:
   version and short git sha) shown in Settings > About.
-- `vendor/three.min.js` (UMD) and `fonts/` (Grandstander and Nunito woff2, latin subset), each with its
-  licence file.
+- `vendor/three.min.js` (UMD) and `fonts/` (Baloo 2 woff2 in weights 600, 700 and 800, latin subset), each with
+  its licence file.
 - `manifest.webmanifest`, `icons/`, `screenshots/` from `public/`.
 - `sw.js`: precaches every file above under `squirm-<content hash>`, so each deploy replaces the cache.
 
@@ -131,7 +131,10 @@ Every push that players will notice is a release:
 4. `npm run check`, commit and push. Tag the release (`git tag v<x.y.z> && git push origin v<x.y.z>`)
    where your access allows it; the version in `package.json` and `NEWS` is what counts.
 
-Changes players won't notice (tooling, docs, tests) need no release.
+**Only gameplay goes in the changelog.** A release (version bump and `NEWS` entry) is for what players play: new
+patches, chapters, mechanics, modes, unlockables, gameplay features, and fixes to things they run into. Refactors,
+cleanups, tooling, docs, tests and look-and-feel changes such as a font swap ship with neither: players don't need
+to hear about them. `test/news.test.js` ties the top `NEWS` entry to `package.json`, so no entry means no bump.
 
 ### Adding levels
 
@@ -544,7 +547,8 @@ from a tab replaces that layer with `game`.
   `--ink-soft`, `--paper`, `--paper-2`, `--edge`, `--leaf`, `--berry`, `--honey`, their `-dark` and `--tint-`
   variants, `--soil`, `--deep`, `--lilac`, `--petal`, `--outline`, `--sticker`, `--on-accent`, `--scrim`,
   `--shine`, ...), the top-light gradients `--glaze` (on paper) and `--glaze-accent` (on leaf, honey and
-  berry), and the fonts `--fd` (Grandstander, display) and `--fb` (Nunito, body). Need a new colour? Add a
+  berry), and the fonts `--fd` (display) and `--fb` (body), both Baloo 2 for now; keep using the two tokens so they can
+  differ again. Canvas text (burrow signs, the sleepy z, photo captions) names `"Baloo 2"` directly. Need a new colour? Add a
   token, with a dark-mode (and, if needed, more-contrast) value next to the others.
 - Inline SVG in markup is coloured with tokens: `style="fill:var(--x);stroke:var(--outline)"`. Stars
   are `--honey` everywhere. Decorative SVGs inside labelled controls get `aria-hidden="true"`.

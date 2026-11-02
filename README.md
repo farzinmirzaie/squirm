@@ -48,8 +48,7 @@ conventions. It's written for AI coding agents and works just as well for people
 ## Credits
 
 - [three.js](https://threejs.org/) r128 (MIT)
-- [Grandstander](https://github.com/Etcetera-Type-Co/Grandstander) and
-  [Nunito](https://github.com/googlefonts/nunito) fonts (SIL Open Font License 1.1), via
+- [Baloo 2](https://github.com/EkType/Baloo2) font (SIL Open Font License 1.1), via
   [Fontsource](https://fontsource.org/)
 
 ## License

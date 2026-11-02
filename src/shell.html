@@ -21,8 +21,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-<link rel="preload" href="fonts/grandstander-latin-800-normal.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="preload" href="fonts/nunito-latin-800-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/baloo-2-latin-800-normal.woff2" as="font" type="font/woff2" crossorigin>
 <style>
 /*__FONTS__*/
 /* Squirm's styles, in cascade order (later sections may rely on overriding earlier ones):
@@ -57,7 +56,7 @@
   /* motion: every UI transition uses these (see "UI feedback" in CLAUDE.md) */
   --dur-fast:.14s; --dur:.3s; --dur-slow:.48s;
   --ease-pop:cubic-bezier(.2,1.5,.4,1); --ease-out:cubic-bezier(.2,1,.4,1); --ease-in:cubic-bezier(.5,0,.9,.5);
-  --fd:"Grandstander",ui-rounded,system-ui,sans-serif; --fb:"Nunito",ui-rounded,system-ui,-apple-system,"Segoe UI",sans-serif;
+  --fd:"Baloo 2",ui-rounded,system-ui,sans-serif; --fb:"Baloo 2",ui-rounded,system-ui,-apple-system,"Segoe UI",sans-serif;
   box-sizing:border-box;
   padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
 }
@@ -924,7 +923,7 @@ nav .enter,.rise{animation:navIn var(--dur-slow) var(--ease-pop) var(--d,0ms) bo
       <div class="set-row" id="statsRow" hidden><span>Share anonymous stats</span><button class="switch" id="setStats" role="switch" aria-checked="true" aria-label="Share anonymous stats"><i></i></button></div>
       <p class="set-note small" id="statsNote" hidden>Only simple counts, like how many gardens grew today and which patches got finished, so we know what to make next. No cookies, nothing about you.</p>
       <details class="news-more"><summary>What's new<span class="chev" aria-hidden="true"><svg class="ui-ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 5.5L16 12l-6.5 6.5"/></svg></span></summary><div class="news-log" id="newsLog"></div></details>
-      <p class="set-note small">Made with three.js. Fonts: Grandstander and Nunito.</p>
+      <p class="set-note small">Made with three.js. Font: Baloo 2.</p>
       <p class="version">__BUILD__</p>
     </section>
   </div>
