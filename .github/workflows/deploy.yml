@@ -34,7 +34,7 @@ jobs:
           path: dist
 
   smoke:
-    # pinned: Playwright 1.56 can't install its browser on newer Ubuntu images
+    # pinned to an image Playwright's browser install supports (newer Ubuntu images have broken it before)
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:

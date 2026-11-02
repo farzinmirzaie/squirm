@@ -12,9 +12,6 @@ npm-debug.log*
 test-results/
 playwright-report/
 
-# Claude Code worktrees
-.claude/worktrees/
-
 # editors and OS
 .vscode/
 .idea/
@@ -22,4 +19,8 @@ playwright-report/
 *~
 .DS_Store
 Thumbs.db
+
+# Claude Code: worktrees of helper agents, personal settings, and shoot.js's default output folder
+.claude/worktrees/
+.claude/settings.local.json
 shots/

@@ -48,7 +48,9 @@ npm run smoke        # debug build served under /squirm/, plays patch 1 in headl
 npm run check        # npm test + smoke: run before pushing
 npm run verify       # every level solvable, par correct, pacing respected
 npm run analyze      # par, state count, winnable % and a solution for every level
-npm run curate -- …  # generate candidate levels (see the add-levels skill; tools/harden.js makes them harder)
+npm run curate -- …  # generate candidate levels (see the add-levels skill)
+npm run harden -- …  # make candidate levels harder (tools/harden.js)
+npm run shots        # refresh the install screenshots and link preview in public/ (after any visual change)
 ```
 
 Node 22+ (CI uses `.nvmrc`). Every tool starts with a usage comment; read it before running one.
@@ -98,6 +100,7 @@ tools/harden.js   hill-climbs candidates to make them harder (big boards come ou
 test/logic.test.js      rules, unique level names, stateKey
 test/generator.test.js  daily and endless generation (daily patches must not change)
 test/news.test.js       What's new vs package.json version, semver order
+test/pwa.test.js        manifest icons, shortcuts and screenshots exist at their declared sizes; head links ship
 test/smoke.js           headless Chromium: boot, win patch 1, saved stars, GPU memory while playing, offline reload
 .claude/skills/   add-levels; add-model (look.js: 3D model close-ups); ui-check (shoot.js: UI screenshots,
                   store-shots.js: the install screenshots and link preview in public/)

@@ -680,7 +680,7 @@ nav .enter,.rise{animation:navIn var(--dur-slow) var(--ease-pop) var(--d,0ms) bo
 .gbtn.pop .disc{animation:popin var(--dur) var(--ease-pop)}
 .gbtn.pop{animation:none}
 .nope{animation:nope var(--dur) var(--ease-out)}
-.spin{animation:spin 1.6s linear infinite}
+.gen-ico{display:block;margin:0 auto;border-radius:18px;animation:peek 1.6s var(--ease-out) infinite}
 .pick.swap{animation:popin var(--dur) var(--ease-pop)}
 #winNext{animation:beckon 1.8s ease-in-out 1.4s infinite}
 /* keyframes; animations that must stack on an element's own transform use the individual scale / translate properties */
@@ -704,7 +704,8 @@ nav .enter,.rise{animation:navIn var(--dur-slow) var(--ease-pop) var(--d,0ms) bo
 @keyframes swipe{0%{transform:translate(-60px,20px);opacity:0}15%{opacity:1}55%{transform:translate(60px,20px);opacity:1}75%,100%{transform:translate(60px,20px);opacity:0}}
 @keyframes squirm{0%,60%,100%{transform:none}20%{transform:translateY(-4px) rotate(-4deg)}40%{transform:translateY(2px) rotate(3deg)}}
 @keyframes halo{0%{transform:scale(.92);opacity:1}100%{transform:scale(1.22);opacity:0}}
-@keyframes spin{to{transform:rotate(360deg)}}
+/* the worm peeks up and looks around while a patch grows */
+@keyframes peek{0%,100%{transform:translateY(0) rotate(0)}25%{transform:translateY(-8px) rotate(-6deg)}50%{transform:translateY(-2px) rotate(0)}75%{transform:translateY(-8px) rotate(6deg)}}
 
 /* ==== 10. Small screens ==== */
 /* narrow phones with many goals: tighter tiles */
@@ -726,7 +727,7 @@ nav .enter,.rise{animation:navIn var(--dur-slow) var(--ease-pop) var(--d,0ms) bo
 
 /* ==== 11. Reduced motion: every animation and transition above stops ==== */
 @media (prefers-reduced-motion: reduce){
-  .dialog,.ov.show:not(.home),.ov.show.out,.ov.out .dialog,.pop,.enter,.rise,.nope,#flash.go,.bubble.say,.intro-art .ia,.intro-art i,#introBody.swap>*,.spin,.pick.swap,#winNext,
+  .dialog,.ov.show:not(.home),.ov.show.out,.ov.out .dialog,.pop,.enter,.rise,.nope,#flash.go,.bubble.say,.intro-art .ia,.intro-art i,#introBody.swap>*,.gen-ico,.pick.swap,#winNext,
   .tab.on.pop svg,.stat.cheer,.stat.cheer .ic,.stat.lost .mini,.gbtn.pop .disc,.gbtn.hint .disc svg,#hintBtn.busy svg,
   #tutorial .hand,.brand span,.node.cur::after{animation:none}
   .star{animation:none;transform:none}
@@ -946,7 +947,7 @@ nav .enter,.rise{animation:navIn var(--dur-slow) var(--ease-pop) var(--d,0ms) bo
   <button class="btn primary" id="introOk">Got it</button>
 </div></div>
 <div class="ov" id="genOv"><div role="dialog" aria-modal="true" aria-labelledby="genTitle" class="dialog card gen">
-  <svg class="spin" width="64" height="64" viewBox="0 0 52 52" aria-hidden="true"><g style="fill:var(--petal);stroke:var(--outline)" stroke-width="2"><circle cx="26" cy="11" r="10"/><circle cx="40.3" cy="21.4" r="10"/><circle cx="34.8" cy="38.2" r="10"/><circle cx="17.2" cy="38.2" r="10"/><circle cx="11.7" cy="21.4" r="10"/></g><circle cx="26" cy="26" r="13" style="fill:var(--honey);stroke:var(--outline)" stroke-width="2"/></svg>
+  <img class="gen-ico" src="icons/icon.svg" width="76" height="76" alt="">
   <h2 id="genTitle">Growing a patch</h2><p id="genText">Planting seeds...</p>
 </div></div>
 <div id="tutorial" aria-hidden="true"><div class="hand"><svg width="64" height="64" viewBox="0 0 24 24" style="fill:var(--sticker);stroke:var(--outline)" stroke-width="1.4" stroke-linejoin="round"><path d="M9 11V5.5a1.5 1.5 0 0 1 3 0V10l.2-1a1.5 1.5 0 0 1 3 .3V11l.2-.6a1.5 1.5 0 0 1 2.8 1V15c0 3.3-2.2 6-5.7 6-2.3 0-3.7-1-4.9-2.7L5 14.6a1.5 1.5 0 0 1 2.3-1.9L9 14.5z"/></svg></div><div class="tip card">Swipe in any direction to crawl</div></div>

@@ -7,9 +7,8 @@
 const fs=require('fs');
 const [ , , inF, outF, stepsS, seedS, maxParS, onlyS]=process.argv;
 if(!stepsS){ console.error('usage: [CAP=300000] node tools/harden.js <in.json> <out.json> <steps> [seed] [maxPar=60] [only i,j]'); process.exit(2); }
-const {analyzeCapped,usage}=require('./load-generator')();
+const {analyzeCapped,usage,rng}=require('./load-generator')();
 const cap=+process.env.CAP||300000, maxPar=+maxParS||60, minOpen=+process.env.OPEN||.36;
-const rng=s=>()=>{ s|=0; s=s+0x6D2B79F5|0; let t=Math.imul(s^s>>>15,1|s); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; };
 const r=rng(+seedS||1), pick=a=>a[Math.floor(r()*a.length)];
 const score=L=>{ const a=analyzeCapped(L,cap); if(!a||!a.par||a.par>maxPar) return null; return {a,d:a.par*(1-a.good/a.states)}; };
 // drop blank edge rows and columns, shifting the worm

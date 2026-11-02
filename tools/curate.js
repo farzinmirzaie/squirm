@@ -13,8 +13,7 @@ let allowed; try{ allowed=JSON.parse(allowedJ); }catch(e){ fail('allowedFeatures
 const diffs=diffsCSV.split(','), count=+countS; let seed=+seedS;
 if(diffs.some(d=>!['easy','medium','hard'].includes(d))) fail('difficulties must be easy, medium or hard');
 if(!(count>0)||!Number.isFinite(seed)) fail('count must be a positive number and seed a number');
-const {genCandidate,analyzeCapped,usage}=require('./load-generator')();
-const rng=s=>()=>{ s|=0; s=s+0x6D2B79F5|0; let t=Math.imul(s^s>>>15,1|s); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; };
+const {genCandidate,analyzeCapped,usage,rng}=require('./load-generator')();
 const pool=[]; const t0=Date.now(); const seen=new Set();
 while(Date.now()-t0<(+tl||60)*1000){
   const diff=diffs[pool.length%diffs.length]; const r=rng(seed++);

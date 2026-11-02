@@ -22,7 +22,9 @@
     "check": "npm test && npm run smoke",
     "verify": "node tools/verify-levels.js",
     "analyze": "node tools/analyze.js",
-    "curate": "node tools/curate.js"
+    "curate": "node tools/curate.js",
+    "harden": "node tools/harden.js",
+    "shots": "node .claude/skills/ui-check/store-shots.js"
   },
   "devDependencies": {
     "@fontsource/baloo-2": "5.2.6",
