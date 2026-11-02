@@ -1,7 +1,7 @@
 // ---------- the wardrobe: hats, extras and their colour options ----------
 // hats, earned by finishing chapters: [id, name, chapter index that unlocks it]. Each is built once and cloned.
 const HATS=[['none','No hat',-1],['crown','Flower crown',0],['mush','Mushroom cap',1],['straw','Straw hat',2],['tophat','Top hat',3],['leaf','Leaf cap',4],['rainhat','Rain hat',5],
-  ['acorn','Acorn cap',6],['bee','Bee antennae',7],['party','Party hat',8],['brolly','Tiny umbrella',9],['beret','Dewdrop beret',10],['bow','Ribbon bow',11],['gold','Garden crown',12],['beanie','Pompom beanie',13],['sunflower','Sunflower',14],['horn','Beetle horn',15],['shell','Snail shell',16],['pumpkin','Pumpkin hat',17],['bonnet','Petal bonnet',18],['miner','Miner\'s helmet',19],['gnome','Gnome hat',20],['explorer','Explorer\'s hat',21],['owl','Owl friend',22],['nightcap','Sleepy nightcap',23],
+  ['acorn','Acorn cap',6],['bee','Bee antennae',7],['party','Party hat',8],['brolly','Tiny umbrella',9],['beret','Dewdrop beret',10],['bow','Ribbon bow',11],['gold','Garden crown',12],['beanie','Pompom beanie',13],['sunflower','Sunflower',14],['horn','Beetle horn',15],['shell','Snail shell',16],['pumpkin','Pumpkin hat',17],['bonnet','Petal bonnet',18],['miner','Miner\'s helmet',19],['gnome','Gnome hat',20],['explorer','Explorer\'s hat',21],['owl','Owl friend',22],['nightcap','Sleepy nightcap',23],['twirl','Twirl-cap',24],['vane','Weathervane',25],
   ['sprout','Little sprout',-2,'Let the worm doze off 10 times',()=>(progress.stats.naps||0)>=10],
   ['teacup','Teacup',-2,'Finish a patch at tea time, 3 to 5 pm',()=>(progress.stats.teatime||0)>=1],
   ['nest','Bird\'s nest',-2,'Visit the garden on 7 different days',()=>(progress.stats.days||0)>=7],
@@ -33,7 +33,8 @@ const EXTRAS=[['none','Nothing','',()=>true],
   ['ladybug','Ladybug friend','Change your outfit 40 times',()=>(progress.stats.outfits||0)>=40],
   ['sweatband','Sweatband','Crawl 20,000 moves',()=>(progress.stats.moves||0)>=20000],
   ['daisies','Daisy chain','Wear all three pollens in one patch',()=>(progress.stats.allPollen||0)>=1],
-  ['firefly','Firefly friend','Finish 5 patches in the evening, 7 to 10 pm',()=>(progress.stats.evenings||0)>=5]];
+  ['firefly','Firefly friend','Finish 5 patches in the evening, 7 to 10 pm',()=>(progress.stats.evenings||0)>=5],
+  ['pinwheel','Pinwheel friend','Turn around 25 times',()=>(progress.stats.turns||0)>=25]];
 let extraId=store.get('squirm-extra')||'none';
 const extraOn=()=>{ const e=EXTRAS.find(x=>x[0]===extraId); return e&&e[3]()?extraId:'none'; };
 const extraArt=(id,size=36)=>tintArt(id,art(id==='none'?'hat-none':'extra-'+id,size));
@@ -51,6 +52,7 @@ const TINTS={
   rainhat:{keys:['rainHat'],art:['#FFD04A'],opts:[['Sunny',0xFFD04A],['Coral',0xF07A6A],['Sky',0x7FBFEA],['Mint',0x7FD3A8],['Lilac',0xB79CF2]]},
   mush:{keys:['mushRed'],art:['#F07A6A'],opts:[['Toadstool',0xF07A6A],['Lilac',0xB79CF2],['Butter',0xF5C84E],['Sky',0x7FBFEA],['Mint',0x7FD3A8]]},
   gnome:{keys:['gnome'],art:['#E4574C'],opts:TINT_SET.red},
+  twirl:{keys:['turnCap'],art:['#6FCFC0'],opts:[['Mint',0x6FCFC0],['Berry',0xE36A8C],['Sky',0x7FBFEA],['Butter',0xF5C84E],['Lilac',0xB79CF2]]},
   nightcap:{keys:['nightcap'],art:['#8FA6E8'],opts:[['Periwinkle',0x8FA6E8],['Berry',0xE36A8C],['Mint',0x7FD3A8],['Butter',0xF5C84E],['Lilac',0xB79CF2]]},
   teacup:{keys:['teacup','teacupDot'],art:['#9FD2F2','#FFFBF2'],opts:[['Sky',0x9FD2F2,0xFFFBF2],['Rose',0xF7A8C4,0xFFFBF2],['Butter',0xFFE08A,0xF27DA2],['Mint',0x9FE0BE,0xFFFBF2],['Lilac',0xCDB8F5,0xFFE08A]]},
   scarf:{keys:['mushRed','partyB'],art:['#F07A6A','#FFF1A8'],opts:[['Coral',0xF07A6A,0xFFF1A8],['Sky',0x7FBFEA,0xFFFBF2],['Mint',0x7FD3A8,0xFFF1A8],['Berry',0xE36A8C,0xFFE3EC],['Lilac',0xB79CF2,0xFFF1A8]]},

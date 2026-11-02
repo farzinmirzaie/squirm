@@ -82,7 +82,9 @@ function undo(){
     sfx('undo'); lastMoveT=idleT;
   clearDying(); clearHint(); const cur=state; state=history.pop(); syncBoard(false); syncWeather(false); syncSnails(false); snapBeetles(); syncHedges(false);
     updateHUD(true); saveResume();
-  if(reduceMotion||cur.segs.length!==state.segs.length||segMeshes.length!==state.segs.length){ snapWorm(); return; }
+  // a turnaround swapped the worm's ends, so gliding back would drag the head through the body: snap instead
+  const turned=Math.abs(cur.segs[0][0]-state.segs[0][0])+Math.abs(cur.segs[0][1]-state.segs[0][1])!==1;
+  if(reduceMotion||turned||cur.segs.length!==state.segs.length||segMeshes.length!==state.segs.length){ snapWorm(); return; }
   const n=state.segs.length, starts=segMeshes.map(s=>s.position.clone()), targets=state.segs.map((p,i)=>wp(p[0],p[1],segY(i,n)));
   const a=state.segs[0], b=state.segs[1]; if(b&&Math.abs(a[0]-b[0])+Math.abs(a[1]-b[1])===1) headDir=[a[0]-b[0],a[1]-b[1]];
   animating++;

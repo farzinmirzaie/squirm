@@ -95,6 +95,8 @@ function advance(s, dirKey){
   if(t==='K'){ ns.keys++; ns.grid[ny][nx]='.'; ev.eaten='K'; }
   if(t==='G'){ ns.keys--; ns.grid[ny][nx]='.'; ev.eaten='G'; }
   if(t==='+'||t==='-'){ ns.grid[ny][nx]='.'; ev.eaten=t; }
+  // a turnaround mushroom (T) is eaten and the worm turns around: its tail becomes the head
+  if(t==='T'){ ns.grid[ny][nx]='.'; ns.segs=newSegs.slice().reverse(); ev.eaten='T'; ev.turn=true; }
   if(t==='C'){ ns.grid[ny][nx]='c'; ev.eaten='C'; }
   if(t==='R'){ ns.raining=!s.raining; ev.rain=ns.raining; }
   if(POLLEN[t] && s.pollen!==t){ ns.pollen=t; ev.pollen=t; }
@@ -118,7 +120,8 @@ function step(s, dirKey){
   const slide = [];
   for(let n=0; n<s.w*s.h; n++){
     const h = r.state.segs[0];
-    if(tileAt(r.state,h[0],h[1])!=='i') break;
+    // a turnaround ends the move: the new head doesn't carry on sliding
+    if(r.ev.turn||tileAt(r.state,h[0],h[1])!=='i') break;
     const nx = advance(r.state,dirKey);
     if(nx.blocked) break;
     slide.push(r); r = nx;

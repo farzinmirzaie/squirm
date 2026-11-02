@@ -25,7 +25,7 @@ function finGo(k,el){
   layers[layers.length-1]='tab'; hide('finOv'); showTab(k,true); }
 $('finClose').onclick=()=>{ hide('finOv'); popLayer('finale'); renderHome(); };
 $('endlessGo').onclick=()=>{ newEndless(); };
-$('surprise').onclick=()=>{ const ks=['fruit','keys','portals','dry','rain','rivers','snails','buttons','leaves','beetles','pollen','soil'];
+$('surprise').onclick=()=>{ const ks=['fruit','keys','portals','dry','rain','rivers','snails','buttons','leaves','beetles','pollen','soil','turn'];
   ks.forEach(k=>endlessOpts[k]=false); endlessOpts.flags=Math.random()<.8;
   const n=2+Math.floor(Math.random()*2); for(let i=0;i<n;i++) endlessOpts[ks[Math.floor(Math.random()*ks.length)]]=true; renderEndless();
     qa($('featGrid'),'.mech.on').forEach(settle); };

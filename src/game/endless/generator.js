@@ -3,7 +3,7 @@
 function rng(seed){ return ()=>{ seed|=0; seed=seed+0x6D2B79F5|0; let t=Math.imul(seed^seed>>>15,1|seed); t=t+Math.imul(t^t>>>7,61|t)^t;
   return ((t^t>>>14)>>>0)/4294967296; }; }
 const DIFF_NAME={easy:'Easy',medium:'Medium',hard:'Hard'};
-const FEATURES=[['flags','Flags'],['buttons','Flower buttons'],['leaves','Wet leaves'],['fruit','Fruit'],['keys','Keys & gates'],['portals','Tunnels'],['dry','Dry patches'],['rain','Rain'],['rivers','Rivers'],['snails','Snails'],['beetles','Beetles'],['pollen','Pollen'],['soil','Soft soil']];
+const FEATURES=[['flags','Flags'],['buttons','Flower buttons'],['leaves','Wet leaves'],['fruit','Fruit'],['keys','Keys & gates'],['portals','Tunnels'],['dry','Dry patches'],['rain','Rain'],['rivers','Rivers'],['snails','Snails'],['beetles','Beetles'],['pollen','Pollen'],['soil','Soft soil'],['turn','Turnarounds']];
 const ADJ=['Clover','Mossy','Sunny','Dewy','Puddle','Bramble','Tulip','Daisy','Mint','Fern','Pebble','Willow','Honey','Petal','Thistle','Bluebell','Acorn','Buttercup'];
 const NOUN=['Corner','Patch','Hollow','Nook','Lane','Bend','Meadow','Path','Dell','Knoll','Row','Glade'];
 function analyzeCapped(Ld,cap){
@@ -95,6 +95,8 @@ function genCandidate(r,diff,o){
     for(let t=0;t<60&&placed<n;t++){ const f=floor().filter(p=>!used.has(p+'')); if(!f.length) break; const p=pick(f);
       if(D4.filter(d=>{ const ch=at(p[0]+d[0],p[1]+d[1]); return ch!==' '&&ch!=='~'; }).length<3) continue; g[p[1]][p[0]]='#'; used.add(p+''); placed++; }
     if(!placed) return null; }
+  // turnaround mushrooms, away from the head: the worm swaps ends to back out of a squeeze (drawn last, so other options keep their patches)
+  if(o.turn){ for(let i=0;i<(diff==='hard'?2:1);i++) if(!put('T',notNearHead)&&!i) return null; }
   return {name:pick(ADJ)+' '+pick(NOUN), exitLen, worm, map:g.map(row=>row.join('')), rain:false};
 }
 // which optional mechanics a solution actually needs, so the generator can prefer patches that use what was asked for
@@ -104,11 +106,11 @@ function usage(Ld,sol){ let s=initState(Ld); const u=new Set();
     if(h&&tileAt(s,h[0],h[1])==='H') u.add('buttons'); if(ev.portal) u.add('portals'); if(ev.rain!==undefined) u.add('rain');
     if(ev.swung&&ev.swung.length) u.add('rivers'); if(ev.eaten==='+'||ev.eaten==='-') u.add('fruit'); if(ev.eaten==='G') u.add('keys');
     if(h&&r.state.snails&&r.state.snails.some(n=>Math.abs(n.x-h[0])+Math.abs(n.y-h[1])<=1)) u.add('snails');
-    if(ev.crumbled&&ev.crumbled.length) u.add('dry'); if(h&&PETALS[tileAt(s,h[0],h[1])]) u.add('pollen'); if(ev.cross) u.add('soil'); s=r.state; }
+    if(ev.crumbled&&ev.crumbled.length) u.add('dry'); if(h&&PETALS[tileAt(s,h[0],h[1])]) u.add('pollen'); if(ev.cross) u.add('soil'); if(ev.turn) u.add('turn'); s=r.state; }
   return u; }
 async function generateEndless(diff,o,seed,fixedTries){
   const r=rng(seed); const budget={easy:1400,medium:2600,hard:4800}[diff]; const t0=performance.now(); let best=null, bestScore=-1e9, n=0;
-  const enabled=['fruit','keys','portals','dry','rain','rivers','snails','buttons','leaves','beetles','pollen','soil'].filter(k=>o[k]);
+  const enabled=['fruit','keys','portals','dry','rain','rivers','snails','buttons','leaves','beetles','pollen','soil','turn'].filter(k=>o[k]);
     const needUse=Math.min(enabled.length,diff==='easy'?1:2);
   while(true){ n++; const Ld=genCandidate(r,diff,o);
     if(Ld){ const cap={easy:4000,medium:10000,hard:12000}[diff]; const a=analyzeCapped(Ld,cap);
@@ -125,7 +127,7 @@ async function generateEndless(diff,o,seed,fixedTries){
     if(n>3) $('genText').textContent=['Planting seeds','Digging tunnels','Watering the soil','Checking every path'][Math.floor(el/700)%4]+'...';
     await new Promise(res=>setTimeout(res,0)); // let the page breathe between candidates
   }
-  const feats=FEATURES.filter(([k])=>k!=='flags'&&o[k]&&best.map.join('').match({buttons:/H/,leaves:/i/,fruit:/[+-]/,keys:/K/,portals:/1/,dry:/x/,rain:/R/,rivers:/L|=|\|/,snails:/[<>^v]/,beetles:/O/,pollen:/[PYU]/,soil:/#/}[k])).map(([,n])=>n.toLowerCase());
+  const feats=FEATURES.filter(([k])=>k!=='flags'&&o[k]&&best.map.join('').match({buttons:/H/,leaves:/i/,fruit:/[+-]/,keys:/K/,portals:/1/,dry:/x/,rain:/R/,rivers:/L|=|\|/,snails:/[<>^v]/,beetles:/O/,pollen:/[PYU]/,soil:/#/,turn:/T/}[k])).map(([,n])=>n.toLowerCase());
   best.tries=n; best.seed=seed; best.hint=feats.length?`A fresh ${DIFF_NAME[diff].toLowerCase()} patch with ${feats.join(', ')}.`:`A fresh ${DIFF_NAME[diff].toLowerCase()} patch.`;
   return best;
 }

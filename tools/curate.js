@@ -1,6 +1,6 @@
 // Generates candidate levels with the in-game generator, keeps only solvable ones
 // that use the required mechanic, and picks a spread by difficulty.
-// with snails or soil required, a candidate is kept only if that mechanic makes the solution longer
+// with snails, soil or turn required, a candidate is kept only if that mechanic makes the solution longer
 // CAP=60000 raises the solver's state limit (for big maps, passed as "size":{"w":[9,10],"h":[9,11]} in the features JSON)
 // usage: [LO=0.3 HI=0.9] node tools/curate.js <tag> <allowedFeaturesJSON> <required|none> <easy,medium,hard> <count> <seed> <seconds>
 // example: LO=.5 HI=.95 node tools/curate.js ch12 '{"flags":true,"snails":true}' snails medium 5 1401 90
@@ -23,6 +23,8 @@ while(Date.now()-t0<(+tl||60)*1000){
   // the only mechanics present must be allowed ones (generator guarantees) ; require flags if allowed.flags
   if(required.includes('snails')){ const L2={...L,map:L.map.map(r=>r.replace(/[<>^v]/g,'.'))}; const a2=analyzeCapped(L2,20000); if(!a2||!a2.par||a2.par>=a.par) continue; }
   // soft soil counts only if the patch gets longer (or impossible) when the soil is plain grass
+  // a turnaround counts only if the patch gets longer (or impossible) without the mushrooms
+  if(required.includes('turn')){ const L2={...L,map:L.map.map(r=>r.replace(/T/g,'.'))}; const a2=analyzeCapped(L2,20000); if(a2&&a2.par&&a2.par<=a.par) continue; }
   if(required.includes('soil')){ const L2={...L,map:L.map.map(r=>r.replace(/#/g,'.'))}; const a2=analyzeCapped(L2,20000); if(a2&&a2.par&&a2.par<=a.par) continue; }
   const win=a.good/a.states; const d=a.par*(1-win);
   pool.push({d:+d.toFixed(2),par:a.par,win:Math.round(win*100),exitLen:L.exitLen,worm:L.worm,map:L.map,diff});

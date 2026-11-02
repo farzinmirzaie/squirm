@@ -21,15 +21,15 @@ hat, unlockables) and build its models with the `add-model` skill.
    #   <tag> <allowed features JSON> <required feature(s) joined with +, or none> <easy,medium,hard> <count> <seed> <seconds>
    ```
 
-   - Feature keys: `flags fruit dry keys portals rain rivers snails buttons leaves beetles pollen soil`.
+   - Feature keys: `flags fruit dry keys portals rain rivers snails buttons leaves beetles pollen soil turn`.
      Every allowed feature is placed in every candidate, so for variety run several smaller mixes (in
      parallel, one per CPU) rather than one with everything.
    - Output goes to `gen/gen_<tag>.json` (git-ignored): entries with `d` (difficulty score), `par`, `win`
      (winnable %), `exitLen`, `worm`, `map`, `diff`. `LO`/`HI` pick from that slice of the pool sorted by
      difficulty. Generated maps have blank edge rows and columns: trim them (and shift `worm`) when adding.
-   - A required feature must be used by the shortest solution. With `snails` or `soil` required, a
+   - A required feature must be used by the shortest solution. With `snails`, `soil` or `turn` required, a
      candidate is also kept only if that mechanic makes the solution longer (removing the snails, or
-     turning soft soil into grass, shortens it).
+     turning soft soil or turnaround mushrooms into grass, shortens it; tools/harden.js keeps that true for turnarounds).
    - Bigger boards: add `"size":{"w":[10,12],"h":[10,12]},"fill":0.42` to the features JSON and raise the
      solver limit with `CAP=500000`. Big open boards tend to be easy; keys, dry patches and beetles make them hard.
    - **Harden** the best of a pool: `CAP=300000 node tools/harden.js gen/top.json gen/hard.json 90 7` (the input

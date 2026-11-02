@@ -13,6 +13,7 @@ const MECH={
   leaves:{t:'Wet leaves',d:'Dewy leaves are slippery. Crawl onto one and you slide along until you reach dry grass or bump into something.',k:/i/,i:art('wetleaf',40)},
   pollen:{t:'Pollen and petal gates',d:'Crawl over a flower to get dusted in its pollen. Petal gates only open for a worm wearing their colour, and the next flower you visit swaps your colour.',k:/[PYUpyu]/,i:art('pollenY',40)},
   soil:{t:'Soft soil',d:'Worms love loose earth! On soft soil you burrow under, so you can cross your own body there. Just never fold back onto yourself.',k:/#/,i:art('soil',40)},
+  turn:{t:'Turnaround mushrooms',d:'Nibble a twirl-cap and you turn around: your tail becomes your head, and off you crawl the other way. Each one works once.',k:/T/,i:art('turnshroom',40)},
   rivers:{t:'Rivers and bridges',d:'Water blocks the way. Bridges only go along their planks, and a crank swings every bridge you are not standing on.',k:/[~=|L]/,i:art('bridge',40)},
 };
 let seenMech=store.json('squirm-seen')||{};
@@ -42,7 +43,7 @@ function placeSay(){ const el=$('wormSayG'), h=segMeshes[0]; if(el.hidden) retur
   const v=h.position.clone(); v.y+=.45; v.project(camera); const W=window.innerWidth, H=window.innerHeight, x=(v.x+1)/2*W, y=(1-v.y)/2*H;
   const w=el.offsetWidth, left=x+30+w>W-8; el.classList.toggle('left',left);
   el.style.transform=`translate(${Math.round(Math.max(8,left?x-30-w:x+30))}px,${Math.round(Math.max(8,y-el.offsetHeight/2))}px)`; }
-const SAY={ '+':['Yum!','Peachy!','Nom nom!'], '-':['Whoa, smaller!','Shrinking!'], C:['Got it!','A flag!','Tagged!'], K:['A key!','Ooh, shiny!'], G:['Open sesame!'], pollen:['Achoo!','Tickles!','So fluffy!','Pretty colour!'] };
+const SAY={ '+':['Yum!','Peachy!','Nom nom!'], '-':['Whoa, smaller!','Shrinking!'], C:['Got it!','A flag!','Tagged!'], K:['A key!','Ooh, shiny!'], G:['Open sesame!'], T:['Wheee, other way!','Tail first? Head first!','All turned around!'], pollen:['Achoo!','Tickles!','So fluffy!','Pretty colour!'] };
 let sayN=0;
 let sayLast=-99;
 const sayFor=k=>{ const a=SAY[k]; if(!a||idleT-sayLast<40||Math.random()>.25) return null; sayLast=idleT; return a[sayN++%a.length]; };

@@ -3,7 +3,7 @@
 // Head and body share a hex: the head's toon sphere and the body's vertex colours render the same
 // colour under the same light, so any difference shows as a seam at the neck.
 const WORM_COLS=[['Blossom',0xFFB3C8,0xFFB3C8,0,0xEF6A8F],['Mint',0x7FD9B0,0x7FD9B0,15,0xFF6B99],['Butter',0xFFE58F,0xFFE58F,45,0xFF827C],['Lavender',0xCDB8F5,0xCDB8F5,90,0xF979A6],['Sky',0xA9D8F5,0xA9D8F5,150,0xFF6B91],
-  ['Peach',0xFFC29A,0xFFC29A,210,0xF87569],['Teal',0x74CCD2,0x74CCD2,270,0xFF718B],['Cocoa',0xD6AE8C,0xD6AE8C,330,0xD66161],['Twilight',0xA4A6E4,0xA4A6E4,400,0xFD75AE],['Golden',0xF7BE4F,0xF7BE4F,480,0xFB776D],['Moonlight',0xD7DDF0,0xD7DDF0,520,0xF27FA8],['Sprout',0xBCE38A,0xBCE38A,600,0xFF7F8F],['Sage',0xB4CBB0,0xB4CBB0,640,0xF27E93],['Dusk',0xE2B4CF,0xE2B4CF,700,0xEF6A8F]];
+  ['Peach',0xFFC29A,0xFFC29A,210,0xF87569],['Teal',0x74CCD2,0x74CCD2,270,0xFF718B],['Cocoa',0xD6AE8C,0xD6AE8C,330,0xD66161],['Twilight',0xA4A6E4,0xA4A6E4,400,0xFD75AE],['Golden',0xF7BE4F,0xF7BE4F,480,0xFB776D],['Moonlight',0xD7DDF0,0xD7DDF0,520,0xF27FA8],['Sprout',0xBCE38A,0xBCE38A,600,0xFF7F8F],['Sage',0xB4CBB0,0xB4CBB0,640,0xF27E93],['Dusk',0xE2B4CF,0xE2B4CF,700,0xEF6A8F],['Seafoam',0x9EDFD0,0x9EDFD0,760,0xF2708E]];
 const starTotal=()=>LEVELS.reduce((a,l)=>a+(progress.stars[l.name]||0),0);
 const coloursUnlocked=()=>WORM_COLS.filter(c=>starTotal()>=c[3]).length;
 let wormCol=Math.max(0,Math.min(WORM_COLS.length-1,parseInt(store.get('squirm-colour')||'0',10)||0));
@@ -15,7 +15,8 @@ const PATTERNS=[['plain','Plain','',()=>true],
   ['rainbow','Rainbow tail','Finish 8 chapters',()=>CHAPTERS.filter((ch,k)=>chapterCleared(k)).length>=8],
   ['bands','Bands','Crawl 2,000 moves',()=>(progress.stats.moves||0)>=2000],
   ['sunset','Sunset','Finish 10 chapters',()=>CHAPTERS.filter((ch,k)=>chapterCleared(k)).length>=10],
-  ['glitter','Glitter','Earn 25 badges',()=>Object.keys(progress.badges).length>=25]];
+  ['glitter','Glitter','Earn 25 badges',()=>Object.keys(progress.badges).length>=25],
+  ['twotone','Two-tone','Finish a patch after turning around 3 times in it',()=>(progress.stats.twistyWins||0)>=1]];
 const patternsUnlocked=()=>PATTERNS.filter(p=>p[3]()).map(p=>p[0]);
 let wormPat=store.get('squirm-pattern')||'plain';
 const patOn=()=>PATTERNS.some(p=>p[0]===wormPat&&p[3]())?wormPat:'plain';

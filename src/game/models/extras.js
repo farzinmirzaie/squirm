@@ -294,6 +294,15 @@ function buildExtra(id){ // frames sit in front of the eyes even when they widen
       const wl=dot(.1,lineMat,0,[.215,.02,.355],12,6); wl.position.copy(w.position); wl.rotation.copy(w.rotation); wl.position.y-=.003; f.add(wl); }
     const tail=dot(.026,glow,.006,[1,.95,1.5],14,10); tail.position.set(0,-.004,-.036); f.add(tail);
     const hl=new THREE.Mesh(sph(.075,16,12),halo); hl.position.set(0,-.004,-.036); f.add(hl); }
+  else if(id==='pinwheel'){ // a pinwheel friend tucked beside the head: four curled pastel blades on a little stick
+    const f=new THREE.Group(); f.position.set(.44,.2,.02); f.rotation.set(0,-.5,.2); f.scale.setScalar(1.35); g.add(f);
+    const stick=new THREE.Mesh(new THREE.CylinderGeometry(.009,.009,.3,8),m('stem')); stick.position.y=-.12; f.add(stick);
+    const stL=new THREE.Mesh(new THREE.CylinderGeometry(.015,.015,.3,8),lineMat); stL.position.y=-.12; f.add(stL);
+    const cols=['turnCap','heartFrame','starFrame','glass'];
+    for(let k=0;k<4;k++){ const sh=new THREE.Shape(); sh.moveTo(0,0); sh.lineTo(.13,-.03); sh.quadraticCurveTo(.15,.08,.06,.13); sh.quadraticCurveTo(.05,.06,0,0);
+      const geo=new THREE.ExtrudeGeometry(sh,{depth:.006,bevelEnabled:false}); const b=new THREE.Mesh(geo,m(cols[k])); b.rotation.z=k*Math.PI/2; b.position.z=k*.002; f.add(b);
+      const bl=new THREE.Mesh(geo,lineMat); bl.scale.set(1.12,1.12,1); bl.position.z=-.004; bl.rotation.z=k*Math.PI/2; f.add(bl); }
+    const hub=dot(.02,m('brass'),.006,[1,1,.7],10,8); hub.position.z=.012; f.add(hub); }
   return g; }
 function dressExtra(g){ const slot=g&&g.userData.accSlot; if(!slot) return; slot.clear(); const id=extraOn(); if(id==='none') return;
   const k=id+'|'+tintOf(id); if(!extraProto[k]) extraProto[k]=tinted(id,buildExtra(id)); slot.add(extraProto[k].clone()); }

@@ -32,6 +32,8 @@ function nudge(dir){ // the head leans toward the blocked spot and springs back
 let slideSteps=[];
 function animateMove(prev,ev,dir,sliding){
   animating++;
+  // a turnaround crawls onto the mushroom in the old order first; turnAround then swaps the ends
+  let turned=null; if(ev.turn){ turned=state; state={...state,segs:state.segs.slice().reverse()}; }
   const d=DIRS[dir]; headDir=[d[0],d[1]];
   sfx(ev.portal?'portal':sliding?'slide':'move',state.moves);
   if(sliding) bumpStat('slides'); if(ev.eaten==='+'||ev.eaten==='-') bumpStat('fruit');
@@ -80,6 +82,8 @@ function animateMove(prev,ev,dir,sliding){
     crawlK=-1; extras.forEach(removeObj); tailExtras=[]; squishTile(state.segs[0]);
     segMeshes.forEach(s=>s.scale.setScalar(1));
     if(ev.portal) burst(wp(ev.via[0],ev.via[1],.3),C.portal[tileAt(state,ev.via[0],ev.via[1])]||0xffffff);
+    if(turned){ state=turned; turnAround(after); } else after(); });
+  function after(){
     animating--; lastMoveT=idleT;
     if(slideSteps.length){ const p=state, nx=slideSteps.shift(); state=nx.state; animateMove(p,nx.ev,dir,true); return; }
     updateHUD(); if(state.status!=='won'&&checkBadges(null).length===0) save();
@@ -87,8 +91,17 @@ function animateMove(prev,ev,dir,sliding){
     if(ev.exitNote) toast(ev.exitNote==='flags'?'The burrow opens once every flag is touched.':`This burrow fits a length of ${state.exitLen}. You're ${state.segs.length}.`);
     else if(!canMove()){ queue.length=0; sfx('stuck'); pulse($('undoBtn')); toast('No way forward from here. Undo, or hold Undo to start over.',3600); }
     if(queue.length) tryMove(queue.shift());
-  });
+  }
 }
+// after a turnaround mushroom: the head ducks down in a swirl where it is and pops up where the tail was
+let turnsHere=0;
+function turnAround(done){ const h=segMeshes[0], n=state.segs.length, at=h.position.clone(); sfx('turn'); bumpStat('turns'); turnsHere++;
+  const a=state.segs[0], b=state.segs[1]; if(b) headDir=[a[0]-b[0],a[1]-b[1]];
+  const place=()=>{ state.segs.forEach((p,i)=>segMeshes[i].position.copy(wp(p[0],p[1],segY(i,n)))); h.rotation.y=Math.atan2(headDir[0],headDir[1]); };
+  burst(at,C.turnCap); if(reduceMotion){ place(); done(); return; }
+  tween(150,(e)=>{ h.scale.setScalar(1-.9*e); h.position.y=at.y-e*.3; h.rotation.y+=.35; },()=>{
+    place(); const to=h.position.clone(); burst(to,C.turnCap);
+    tween(230,(e,k)=>{ h.scale.setScalar(.1+.9*e); h.position.y=to.y+Math.sin(k*Math.PI)*.14; },()=>{ h.scale.setScalar(1); h.position.copy(to); react('wow',700); done(); }); }); }
 function squishTile(p){ if(reduceMotion) return; const c=cells[p[1]]&&cells[p[1]][p[0]]; if(!c||!c.tile) return; const t=c.tile, y0=0;
   tween(260,(e,k)=>{ t.position.y=y0-Math.sin(k*Math.PI)*.045; },()=>{ t.position.y=y0; }); }
 function winSeq(){
@@ -158,6 +171,7 @@ function onWin(){ shareText=''; newBest=false; chapterDone=null; const coloursBe
     shareText=shareLine(`${DIFF_NAME[endlessDiff].toLowerCase()} endless patch, streak ${e.streak}`,mv,par,st);
     gift(art(DIFF_ICON_KEY[endlessDiff],26),`${DIFF_NAME[endlessDiff]} streak ${e.streak}`,`${e.cleared} cleared, best streak ${e.best}`,e.streak>1&&e.streak===e.best);
   }
+  if(turnsHere>=3) bumpStat('twistyWins');
   { const hr=new Date().getHours(); if(hr>=15&&hr<17) bumpStat('teatime'); if(hr>=19&&hr<22) bumpStat('evenings'); }
   if(mode==='garden'&&!hintsUsed) progress.clean[LEVELS[li].name]=true;
   save(); askPersist();

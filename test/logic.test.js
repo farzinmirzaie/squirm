@@ -231,3 +231,31 @@ test('stateKey ignores the order of identical beetles but not where they are', (
   const moved = play(s, ['E']).state; // the head pushes the first beetle one tile on
   assert.notEqual(stateKey(moved), stateKey(s));
 });
+
+test('a turnaround mushroom is eaten and the worm turns around: its tail becomes the head', () => {
+  const s = initState(level(['...T.', '.....'], [[2, 0], [1, 0], [0, 0]]));
+  const r = play(s, ['E']);
+  assert.equal(r.ev.eaten, 'T');
+  assert.ok(r.ev.turn);
+  assert.equal(tileAt(r.state, 3, 0), '.');
+  assert.deepEqual(r.state.segs, [[1, 0], [2, 0], [3, 0]]);
+  // the new head crawls away from its old end; the old head is now the tail
+  const r2 = play(r.state, ['S']);
+  assert.deepEqual(r2.state.segs, [[1, 1], [1, 0], [2, 0]]);
+  assert.equal(step(r.state, 'E').blocked, 'body');
+  // the input state is untouched
+  assert.equal(tileAt(s, 3, 0), 'T');
+  assert.deepEqual(s.segs, [[2, 0], [1, 0], [0, 0]]);
+});
+
+test('a turnaround ends a wet-leaf slide, and the turned worm can win at the burrow', () => {
+  // the head slides onto the mushroom; the new head stands on a leaf but doesn't slide on
+  const s = initState(level(['iiTi.'], [[1, 0], [0, 0]]));
+  const r = play(s, ['E']);
+  assert.ok(r.ev.turn);
+  assert.deepEqual(r.state.segs, [[1, 0], [2, 0]]);
+  // back to the burrow behind it, tail first in spirit, head first in rules
+  const w = play(initState(level(['E.T'], [[1, 0], [0, 0]])), ['E']);
+  assert.deepEqual(w.state.segs, [[1, 0], [2, 0]]);
+  assert.equal(play(w.state, ['W']).state.status, 'won');
+});

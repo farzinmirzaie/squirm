@@ -43,7 +43,7 @@ $('dressRandom').onclick=()=>{ const pick=(a,cur)=>{ const o=a.filter(x=>x!==cur
   if(hHead) homeReact('wow'); renderWardrobe(); };
 const DIFF_ICON_KEY={easy:'sprout',medium:'tulip',hard:'tree'};
 // short names for the mechanic tiles; the full name goes in the label
-const FEAT_SHORT={flags:'Flags',buttons:'Flowers',leaves:'Leaves',fruit:'Fruit',keys:'Keys',portals:'Tunnels',dry:'Dry',rain:'Rain',rivers:'Rivers',snails:'Snails',beetles:'Beetles',pollen:'Pollen',soil:'Soil'};
+const FEAT_SHORT={flags:'Flags',buttons:'Flowers',leaves:'Leaves',fruit:'Fruit',keys:'Keys',portals:'Tunnels',dry:'Dry',rain:'Rain',rivers:'Rivers',snails:'Snails',beetles:'Beetles',pollen:'Pollen',soil:'Soil',turn:'Turns'};
 const DIFF_DESC={easy:'Small patches. A gentle stroll.',medium:'Roomier patches with a few more twists.',hard:'Big patches, longer worms, real head-scratchers.'};
 function renderEndless(anim){ const e=progress.endless[endlessDiff];
   const h=$('mHero'); h.dataset.d=endlessDiff;

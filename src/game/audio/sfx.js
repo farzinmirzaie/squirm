@@ -41,6 +41,7 @@ const SFX={
   off:()=>{ tone(760,.06,{type:'triangle',vol:.06,slide:.75}); tone(520,.09,{vol:.04,delay:.05}); },
   win:()=>{ [523,659,784,1046].forEach((f,i)=>tone(f,.28,{type:'triangle',vol:.14,delay:i*.11})); tone(1318,.6,{vol:.1,delay:.46});
     tone(1568,.7,{vol:.08,delay:.5}); },
+  turn:()=>{ tone(520,.12,{type:'triangle',vol:.1,slide:1.6}); tone(830,.16,{type:'triangle',vol:.08,slide:.6,delay:.12}); noise(.18,{freq:2400,vol:.03,q:1.5,slide:.5,delay:.04}); },
   ready:()=>{ tone(880,.15,{vol:.08}); tone(1320,.25,{vol:.07,delay:.08}); },
   slide:()=>{ noise(.16,{freq:2600,slide:.5,vol:.05,q:1.5}); tone(620,.14,{type:'sine',vol:.05,slide:1.4}); },
   hedgeOpen:()=>{ noise(.3,{freq:900,vol:.09,q:1.2,slide:.5}); tone(392,.2,{type:'triangle',vol:.06,slide:.8}); },

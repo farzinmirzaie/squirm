@@ -262,6 +262,7 @@ change in light and dark. The README shows `share.png`, so it stays current with
 | `P` `Y` `U` | pollen flower (poppy, buttercup, bluebell): dusts the worm in that colour |
 | `p` `y` `u` | petal gate: the head may enter only while the worm wears the matching pollen |
 | `#` | soft soil: the worm burrows under it, so the head may cross its own body there |
+| `T` | turnaround mushroom (twirl-cap): eaten when the head enters, then the worm turns around (tail becomes head) |
 
 `rain` sets whether it starts raining. Rule details that the table doesn't capture:
 
@@ -284,6 +285,10 @@ change in light and dark. The README shows `share.png`, so it stays current with
 - **Soft soil:** when the head enters a `#` tile it may share it with exactly one body segment, and only one
   at least four behind the head (the neck is index 2 in the new body, so folding back is still blocked).
   Crossing sets `ev.cross`. A worm needs a length of five or more to cross itself at all.
+- **Turnaround mushrooms:** the head crawls onto `T` as a normal move (the body follows), the mushroom is eaten, then
+  `segs` are reversed, so the old tail is the new head; `ev.turn`. A turn ends a wet-leaf slide. Nothing new in the
+  solver key (the order of `segs` already is). The game animates the crawl in the old order, then `turnAround`
+  (`play/moves.js`) shrinks the head away in a swirl and pops it up at the other end; `stats.turns` counts them.
 
 ### Rules for levels
 
@@ -320,6 +325,8 @@ Chapters (`CHAPTER_NAMES`, ten levels each; level `n` is in chapter `ceil(n/10)`
 | 22 | Far fields | big boards (8-10 wide), a few earlier mechanics each |
 | 23 | Moonlit meadow | the biggest boards (10-12 wide), hardened, a few earlier mechanics each |
 | 24 | Long way home | the biggest boards, the hardest patches in the game |
+| 25 | Twirl-caps | turnaround mushrooms, gently, with a few early mechanics |
+| 26 | Topsy-turvy | turnaround mushrooms mixed with the later mechanics, hardened, ending hard |
 
 Each chapter has a hat (`HATS`, by chapter index) and a map scene (`SCENE_COL`, `SCENE_DECO`).
 

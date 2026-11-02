@@ -44,9 +44,13 @@ function rainbowFrom(base){ let b=0, bd=9; RAINBOW.forEach((c,i)=>{ const d=(c.r
 function sunsetTo(base){ base.getHSL(hsA); SUNSET.getHSL(hsB); const dh=Math.abs(hsA.h-hsB.h); return Math.min(dh,1-dh)<.05?SUNROSE:SUNSET; }
 // body colour at place g (0 head, n-1 tail tip) as vertex colours: the tints that run along the body. Edges
 // (rings, stripes, bands, spots, glitter) are drawn per pixel by tubeMat
+const hsT={};
+function twoTone(base){ base.getHSL(hsT); return new THREE.Color().setHSL((hsT.h+.45)%1,hsT.s*.82,Math.min(.86,hsT.l+.05)); }
 function colorAt(g,n,pat=curPat,base=COL_A){ const c=base.clone(); if(n<=1) return c; const t=Math.min(1,Math.max(0,g/(n-1)));
   if(pat==='fade') c.lerp(WHITE,.6*t);
   else if(pat==='sunset') hueMix(c,sunsetTo(base),.75*t,t);
+  // two-tone: the tail half takes the colour's opposite hue, blended softly across the middle
+  else if(pat==='twotone') c.lerp(twoTone(base),Math.min(1,Math.max(0,(t-.4)/.2)));
   else if(pat==='rainbow'){ const g0=(n-1)*.4; if(g>g0){ const u=(g-g0)*2, k=rainbowFrom(base)+Math.floor(u);
     c.lerp(tmpC.copy(RAINBOW[k%5]).lerp(RAINBOW[(k+1)%5],u%1),Math.min(1,(g-g0)*1.5)); } }
   return c; }

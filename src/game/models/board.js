@@ -105,6 +105,15 @@ function makeItem(x,y,ch){
     const dm=toon(0xFFFFFF);
     [[0,.35],[1.2,.75],[2.4,.7],[3.6,.8],[4.8,.72],[.6,1.05],[3,1.1]].forEach(([az,el])=>{ const R=.22, x=Math.cos(az)*Math.sin(el)*R, z=Math.sin(az)*Math.sin(el)*R, y=Math.cos(el)*R*.85;
       const d=new THREE.Mesh(sph(.04,12,8),dm); d.position.set(x,.22+y,z); d.lookAt(x*3,.22+y*3,z*3); d.scale.set(1,1,.35); b.add(d); }); }
+  else if(ch==='T'){ const b=new THREE.Group(); g.add(b); g.userData.bob=b; // a turnaround mushroom: a mint twirl-cap with a cream spiral
+    mk(new THREE.CylinderGeometry(.075,.1,.22,18),m('stem'),b,[0,.13,0]);
+    const cap=mk(new THREE.SphereGeometry(.23,32,16,0,Math.PI*2,0,Math.PI/2),m('turnCap'),b,[0,.22,0]); cap.scale.y=.9;
+    const gills=new THREE.Mesh(new THREE.CircleGeometry(.21,28),toon(0xD9F3EE)); gills.rotation.x=Math.PI/2; gills.position.y=.215; b.add(gills);
+    // the swirl: a cream ribbon winding from the top of the cap down to its rim, two and a half turns
+    const pts=[]; for(let i=0;i<=60;i++){ const t=i/60, el=.12+t*1.38, az=t*Math.PI*5, R=.236;
+      pts.push(new THREE.Vector3(Math.cos(az)*Math.sin(el)*R,.22+Math.cos(el)*R*.9,Math.sin(az)*Math.sin(el)*R)); }
+    b.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts),90,.024,6,false),m('turnSwirl')));
+    const tip=mk(sph(.045,12,10),m('turnSwirl'),b,[0,.43,0],.012); tip.scale.y=.8; }
   else if(ch==='K'){ const b=new THREE.Group(); g.add(b); g.userData.bob=b; g.userData.noSpin=true; g.userData.faceCam=true; const km=m('key');
     const k=new THREE.Group(); k.position.y=.36; k.rotation.x=-.75; b.add(k); g.userData.keyBody=k;
     mk(new THREE.TorusGeometry(.12,.05,14,30),km,k,[0,.16,0],.016);

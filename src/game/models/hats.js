@@ -474,6 +474,26 @@ function buildHat(id){ const h=new THREE.Group();
     h.add(hTube([onGlass(-.07,C0+.04),onGlass(-.082,C0+.005),onGlass(-.075,C0-.03)],.009,m('glint'),{seg:10,rs:5}));
     h.add(hTube([onGlass(-.03,C0-.045),onGlass(-.018,C0-.01),onGlass(-.006,C0-.035),onGlass(.006,C0-.01),onGlass(.018,C0-.035),onGlass(.03,C0-.01)].map(v=>v.setZ(v.z+.001)),.005,m('tash'),{seg:20,rs:4}));
     h.rotation.z=-.1; }
+  else if(id==='twirl'){ // a turnaround mushroom to wear: a mint toadstool cap with a cream swirl from the top down to the rim
+    const cap=new THREE.Mesh(hWarp(new THREE.SphereGeometry(1,40,12,0,hTAU,0,Math.PI/2),v=>{ const s=Math.hypot(v.x,v.z); v.set(v.x*.27*(1+.04*Math.pow(s,6)),v.y*.23+.008,v.z*.27*(1+.04*Math.pow(s,6))); }),m('turnCap'));
+    hHull(cap,.012); h.add(cap);
+    h.add(hRing(.272,.024,m('turnCap'),.009,.006,8,40));
+    const gills=hLathe([[.06,.03],[.27,-.004]],64,m('stem')); hWarp(gills.geometry,v=>{ const a=Math.atan2(v.z,v.x), r=Math.hypot(v.x,v.z); v.y+=.006*Math.cos(a*32)*Math.min(1,r/.15); });
+    h.add(gills);
+    const pts=[]; for(let i=0;i<=80;i++){ const t=i/80, th=.1+t*1.38, a=t*hTAU*2.4; pts.push(hV3(Math.sin(th)*Math.cos(a)*.277,Math.cos(th)*.237+.008,Math.sin(th)*Math.sin(a)*.277)); }
+    h.add(hTube(pts,.019,m('turnSwirl'),{seg:120,rs:6,line:.006}));
+    const tip=new THREE.Mesh(sph(.04,14,10),m('turnSwirl')); tip.position.y=.245; tip.scale.y=.75; hHull(tip,.007); h.add(tip); }
+  else if(id==='vane'){ // a little weathervane: a brass pole on a round base, a mint ball, and an arrow that points the way
+    const pole=new THREE.Mesh(new THREE.CylinderGeometry(.014,.018,.36,12),m('brass')); pole.position.y=.18; hHull(pole,.007); h.add(pole);
+    const base=hLathe([[0,.05],[.07,.04],[.085,.012],[.08,0],[0,0]],24,m('brass')); hHull(base,.008); h.add(base);
+    const ball=new THREE.Mesh(sph(.032,14,10),m('turnCap')); ball.position.y=.25; hHull(ball,.007); h.add(ball);
+    // the arrow: a flat shaft with a pointed head and a feathered tail, slightly turned
+    const ar=new THREE.Group(); ar.position.y=.33; ar.rotation.y=.5; h.add(ar);
+    const sh=new THREE.Shape(); sh.moveTo(-.2,-.012); sh.lineTo(.12,-.012); sh.lineTo(.12,-.045); sh.lineTo(.2,0); sh.lineTo(.12,.045); sh.lineTo(.12,.012); sh.lineTo(-.14,.012);
+      sh.lineTo(-.2,.06); sh.lineTo(-.24,.06); sh.lineTo(-.18,0); sh.lineTo(-.24,-.06); sh.lineTo(-.2,-.06); sh.lineTo(-.14,-.012);
+    const ag=new THREE.ExtrudeGeometry(sh,{depth:.018,bevelEnabled:true,bevelThickness:.006,bevelSize:.006,bevelSegments:1}); ag.translate(0,0,-.009);
+    const arrow=new THREE.Mesh(ag,m('turnCap')); hHull(arrow,.007); ar.add(arrow);
+    const tip=new THREE.Mesh(sph(.018,10,8),m('brass')); tip.position.y=.375; h.add(tip); }
   return hBake(h); }
 let hatId=store.get('squirm-hat')||'none';
 const chapterCleared=k=>{ const ch=CHAPTERS[k]; if(!ch) return false; for(let i=ch.from;i<=ch.to;i++) if(!isCleared(i)) return false; return true; };

@@ -38,6 +38,8 @@ for(const L0 of list){ let L={exitLen:L0.exitLen,worm:L0.worm,map:L0.map.slice()
     if(L2.map.join('').replace(/ /g,'').length<W*H*minOpen) continue;
     const s2=score(L2); if(!s2||s2.d<cur.d) continue;
     const u=usage(L2,s2.a.sol); if(![...need].every(f=>u.has(f))) continue;
+    // turnaround mushrooms must still matter: without them the patch is longer or impossible
+    if(need.has('turn')){ const a2=analyzeCapped({...L2,map:L2.map.map(r=>r.replace(/T/g,'.'))},cap); if(a2&&a2.par&&a2.par<=s2.a.par) continue; }
     L=L2; cur=s2; }
   L=trim(L); const win=Math.round(cur.a.good/cur.a.states*100);
   out.push({d:+cur.d.toFixed(2),par:cur.a.par,win,states:cur.a.states,exitLen:L.exitLen,worm:L.worm,map:L.map,rain:L.rain});
