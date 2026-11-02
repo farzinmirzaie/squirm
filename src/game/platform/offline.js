@@ -10,7 +10,7 @@ if('serviceWorker' in navigator && /^https?:$/.test(location.protocol)){
   navigator.serviceWorker.addEventListener('controllerchange',()=>{
     if(!controlled){ controlled=true; return; } // first install taking over, same version as this page
     if(updateReady) return; updateReady=true;
-    if(calmMoment()) location.reload(); else toast('New patches arrived. They load when you head home.',4000); });
+    if(calmMoment()) location.reload(); else toast('Squirm just got a little update. It loads when you head home.',4000); });
   navigator.serviceWorker.ready.then(()=>{ const told=store.get('squirm-offline-told')==='1'; store.set('squirm-offline-told','1');
     if(!told&&!hadWorker) setTimeout(()=>toast('Squirm is saved on this device. It plays offline too.',3200),1500); });
   window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>{ reg=r; }).catch(()=>{}));

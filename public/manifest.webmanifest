@@ -2,10 +2,13 @@
   "name": "Squirm",
   "short_name": "Squirm",
   "description": "A cozy turn-based worm puzzle in a little 3D garden. Handmade patches, an endless meadow and a daily patch, fully offline.",
+  "lang": "en",
+  "dir": "ltr",
   "id": "./",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
+  "orientation": "portrait",
   "background_color": "#8CC673",
   "theme_color": "#8CC673",
   "categories": [
@@ -40,14 +43,40 @@
   ],
   "shortcuts": [
     {
+      "name": "Continue",
+      "short_name": "Continue",
+      "description": "Play your next garden patch",
+      "url": "./?play=continue",
+      "icons": [
+        {
+          "src": "icons/shortcut-continue.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
       "name": "Daily patch",
       "short_name": "Daily",
       "description": "Play today's patch",
       "url": "./?play=daily",
       "icons": [
         {
-          "src": "icons/icon-192.png",
-          "sizes": "192x192",
+          "src": "icons/shortcut-daily.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Meadow",
+      "short_name": "Meadow",
+      "description": "Grow a fresh meadow patch",
+      "url": "./?play=meadow",
+      "icons": [
+        {
+          "src": "icons/shortcut-meadow.png",
+          "sizes": "96x96",
           "type": "image/png"
         }
       ]
@@ -77,6 +106,27 @@
       "type": "image/png",
       "form_factor": "narrow",
       "label": "The garden map"
+    },
+    {
+      "src": "screenshots/wardrobe.png",
+      "sizes": "390x844",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "The wardrobe"
+    },
+    {
+      "src": "screenshots/home-wide.png",
+      "sizes": "1280x800",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Home screen"
+    },
+    {
+      "src": "screenshots/game-wide.png",
+      "sizes": "1280x800",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Pushing a beetle toward the burrow"
     }
   ]
 }

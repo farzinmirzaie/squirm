@@ -11,6 +11,12 @@ const start=()=>{ const i=currentGardenIndex();
   mode='garden'; li=i; showHome(true);
   // the home screen is already up; the garden and the home worm are built on the next frame and fade in
   requestAnimationFrame(()=>{ startLevel(LEVELS[i],false); initHomeWorm(); requestAnimationFrame(frame);
-    if(new URLSearchParams(location.search).get('play')==='daily'){ try{ window.history.replaceState(null,'',location.pathname);
-      }catch(e){} $('dailyBtn').onclick(); } }); };
+    const ask=new URLSearchParams(location.search).get('play'); if(ask){ try{ window.history.replaceState(null,'',location.pathname); }catch(e){} launchPlay(ask); } }); };
+// what a launch URL asks for (?play=daily|meadow|continue): the app shortcuts and the reminder use these
+function launchPlay(what){ ensureAudio(); if(what==='daily') $('dailyBtn').onclick(); else if(what==='meadow') $('meadowBtn').onclick(); else if(what==='continue') $('homePlay').onclick(); }
+// an installed app reuses its open window (launch_handler focus-existing), so a shortcut used while it's running
+// arrives here instead of reloading the page; the launch that opened the page is handled above
+{ const bootURL=location.href; let first=true;
+  if('launchQueue' in window) window.launchQueue.setConsumer(p=>{ const u=p&&p.targetURL, initial=first&&u===bootURL; first=false; if(!u||initial) return;
+    const ask=new URL(u).searchParams.get('play'); if(ask) launchPlay(ask); }); }
 (document.fonts&&document.fonts.ready? document.fonts.ready : Promise.resolve()).then(start);

@@ -34,4 +34,15 @@ description: Visually check a Squirm UI or 3D change in headless Chromium - debu
    `look.js` for close-ups from every side. Use it for any model change, then come back here for the
    screens around it.
 
-5. **Finish** with `npm run check` (unit tests, verify, build, smoke).
+5. **Refresh the install screenshots** whenever the change is visible in the game (CLAUDE.md, "Screenshots"):
+
+   ```
+   node .claude/skills/ui-check/store-shots.js [--game 155] [--moves 8]
+   ```
+
+   It renders straight into `public/`: `screenshots/{home,game,garden,wardrobe}.png` (390x844, the manifest's
+   phone shots), `screenshots/{home,game}-wide.png` (1280x800, desktop install) and `share.png` (1200x630, the
+   link preview), from a garden with progress and an outfit on, in light mode at late morning. Look at every
+   one with the Read tool before committing them with the change.
+
+6. **Finish** with `npm run check` (unit tests, verify, build, smoke).

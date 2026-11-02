@@ -85,7 +85,8 @@ src/game/         everything else, in folders (map at the top of core/base.js), 
   endless/        generator.js (rng, genCandidate, analyzeCapped, usage, generateEndless), daily.js
   platform/       stats.js, offline.js (service worker, install), reminder.js
 src/sw.js         service worker template (version and file list filled in by the build)
-public/           manifest, icons, install screenshots: copied as-is into dist/
+public/           manifest, icons (icon.svg is the source art; maskable, Apple and shortcut PNGs), install
+                  screenshots, share.png (link preview): copied as-is into dist/
 tools/build.js    builds dist/ and syntax-checks the game script; --debug adds window.__squirm; --out <dir>
 tools/game-files.js  the order the src/game/ files are joined in
 tools/serve.js    tiny static server (also used by smoke): [dir] --port --base
@@ -98,7 +99,8 @@ test/logic.test.js      rules, unique level names, stateKey
 test/generator.test.js  daily and endless generation (daily patches must not change)
 test/news.test.js       What's new vs package.json version, semver order
 test/smoke.js           headless Chromium: boot, win patch 1, saved stars, GPU memory while playing, offline reload
-.claude/skills/   add-levels; add-model (look.js: 3D model close-ups); ui-check (shoot.js: UI screenshots)
+.claude/skills/   add-levels; add-model (look.js: 3D model close-ups); ui-check (shoot.js: UI screenshots,
+                  store-shots.js: the install screenshots and link preview in public/)
 ```
 
 `logic.js` and `levels.js` are plain scripts in the browser and CommonJS modules in Node (a guarded
@@ -112,8 +114,9 @@ order inside one function wrapper, so they share one scope and any file can call
   version and short git sha) shown in Settings > About.
 - `vendor/three.min.js` (UMD) and `fonts/` (Baloo 2 woff2 in weights 600, 700 and 800, latin subset), each with
   its licence file.
-- `manifest.webmanifest`, `icons/`, `screenshots/` from `public/`.
-- `sw.js`: precaches every file above under `squirm-<content hash>`, so each deploy replaces the cache.
+- `manifest.webmanifest`, `icons/`, `screenshots/`, `share.png` from `public/`.
+- `sw.js`: precaches every file above except the screenshots, `share.png` and licence texts (only needed online)
+  under `squirm-<content hash>`, so each deploy replaces the cache.
 
 All paths are relative, so the site works from any sub-path (it's served from `/squirm/` on Pages).
 
@@ -197,6 +200,7 @@ Touch these, in order:
 - Use the tokens, scales, icon sets and the UI feedback system (conventions below). New animations go
   in the one reduced-motion block (section 11).
 - Check it visually with the `ui-check` skill (light and dark, phone size) before committing.
+- Then refresh the install screenshots and link preview (`store-shots.js`, see "Screenshots") and commit them too.
 
 ### Seeing the game in a browser
 
@@ -213,9 +217,17 @@ Touch these, in order:
 
 ### Screenshots
 
-`public/screenshots/*.png` are the manifest's install screenshots, shipped. They must stay 390x844 to match
-`sizes` in `manifest.webmanifest`. `node .claude/skills/ui-check/shoot.js <dir> --scale 1` takes 390x844
-shots of every home tab and a patch in light and dark to pick from. The README has no screenshots.
+**Keep them current: whenever a change is visible in the game (UI, fonts, colours, the HUD, a model on the
+home or patch screens, the board), run `node .claude/skills/ui-check/store-shots.js`, look at every image, and
+commit them with the change.** They're what people see before installing and when the link is shared, so an
+outdated one misrepresents the game. The tool renders straight into `public/`:
+
+- `screenshots/{home,game,garden,wardrobe}.png`: 390x844, the manifest's `narrow` shots (sizes must match it).
+- `screenshots/{home,game}-wide.png`: 1280x800, `wide`, for the richer desktop install dialog.
+- `share.png`: 1200x630, the link preview (`og:image`, `twitter:card` `summary_large_image`).
+
+They aren't precached (only the install dialog and link previews use them, online). `shoot.js` is for checking a
+change in light and dark; the README has no screenshots.
 
 ## Level format
 
@@ -501,7 +513,10 @@ from a tab replaces that layer with `game`.
 - **Offline, install and updates** (`platform/offline.js`): `sw.js` is registered at boot (http/https only) and checked for updates
   when the app returns to the foreground and every 30 minutes. A new worker takes over right away; the page
   reloads into it at a calm moment (immediately on the home screen, otherwise the next time the player heads
-  home). The home screen shows an install button on `beforeinstallprompt`.
+  home), with a toast that an update is waiting. The home screen shows an install button on `beforeinstallprompt`.
+  Launch links: `?play=continue|daily|meadow` (the manifest's three shortcuts, the daily reminder) go through
+  `launchPlay` in `core/boot.js`, at boot and, since `launch_handler` reuses an open window, from `launchQueue`.
+  The manifest asks for portrait (`orientation`).
 - **Daily reminder** (`platform/reminder.js`): no server, so no push. Where `PeriodicSyncManager` exists (installed Chrome on
   Android) the page registers periodic sync `squirm-daily`, and `sw.js` shows one notification a day if
   today's daily isn't done and it's past the chosen hour (quiet while the game is on screen). The worker
