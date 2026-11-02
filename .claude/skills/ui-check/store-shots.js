@@ -72,13 +72,13 @@ function progress() {
       const font = b64(require.resolve('@fontsource/baloo-2/files/baloo-2-latin-800-normal.woff2', { paths: [root] }));
       const html = `<style>@font-face{font-family:B;src:url(data:font/woff2;base64,${font})}
         body{margin:0;width:1200px;height:630px;overflow:hidden;background:radial-gradient(circle at 30% 40%,#A6D98C,#8CC673 60%,#7DB866);font-family:B}
-        .t{position:absolute;left:72px;top:150px;width:520px;color:#5B4436}
+        .t{position:absolute;left:72px;top:150px;width:500px;color:#5B4436}
         .t img{width:132px;height:132px;display:block;margin-bottom:22px;filter:drop-shadow(0 6px 0 rgba(91,68,54,.25))}
         h1{margin:0;font-size:104px;line-height:1;color:#FFF8EA;-webkit-text-stroke:10px #5B4436;paint-order:stroke fill;letter-spacing:1px}
-        p{margin:16px 0 0;font-size:34px;line-height:1.2}
+        p{margin:16px 0 0;font-size:31px;line-height:1.25}
         .ph{position:absolute;top:66px;width:262px;height:567px;border-radius:30px;border:8px solid #5B4436;overflow:hidden;box-shadow:0 14px 0 rgba(91,68,54,.25)}
         .ph img{width:100%;height:100%;display:block}</style>
-        <div class="t"><img src="data:image/svg+xml;base64,${b64(path.join(root, 'public/icons/icon.svg'))}"><h1>Squirm</h1><p>A cozy worm puzzle in a little 3D garden</p></div>
+        <div class="t"><img src="data:image/svg+xml;base64,${b64(path.join(root, 'public/icons/icon.svg'))}"><h1>Squirm</h1><p>A cozy worm puzzle<br>in a little 3D garden</p></div>
         <div class="ph" style="left:612px;transform:rotate(-5deg)"><img src="data:image/png;base64,${b64(path.join(shots, 'home.png'))}"></div>
         <div class="ph" style="left:892px;top:40px;transform:rotate(4deg)"><img src="data:image/png;base64,${b64(path.join(shots, 'game.png'))}"></div>`;
       const page = await browser.newPage({ viewport: { width: 1200, height: 630 } });

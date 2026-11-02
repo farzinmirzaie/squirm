@@ -2,7 +2,7 @@
 
 [![Deploy](https://github.com/farzinmirzaie/squirm/actions/workflows/deploy.yml/badge.svg)](https://github.com/farzinmirzaie/squirm/actions/workflows/deploy.yml)
 
-[![Squirm: a pink worm peeking out of its burrow, beside the home screen and a garden patch](public/share.png)](https://farzinmirzaie.github.io/squirm/)
+[![Squirm: a smiling pink worm peeking up, beside the home screen and a garden patch](public/share.png)](https://farzinmirzaie.github.io/squirm/)
 
 A cozy, turn-based worm puzzle set in a little 3D garden. Steer a worm through garden patches, touch
 every flag, and slip into the burrow at exactly the right length.
