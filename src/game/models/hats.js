@@ -1,6 +1,7 @@
 // ---------- hats: models, built once per hat and colour option and cloned onto the head ----------
 // Each hat is built from the small helpers below (lathes, tubes, leaves, drops, outline hulls), then baked: hBake merges
-// its meshes into one per material, so a detailed hat costs only a few draw calls. Hats never animate their parts.
+// its meshes into one per material, so a detailed hat costs only a few draw calls. A part with userData.anim ("wear motion" in extras.js) is baked on its
+// own and kept as a child, so it can move.
 const hatProto={};
 const hV2=(x,y)=>new THREE.Vector2(x,y), hV3=(x,y,z)=>new THREE.Vector3(x,y,z), hTAU=Math.PI*2;
 // normals averaged over vertices that share a position (seams, poles, hard rims), so an offset never cracks open
@@ -51,6 +52,9 @@ function hBow(s,loop,knot,line=.007){ const g=new THREE.Group();
   const k=new THREE.Mesh(sph(Math.max(.01,.32*s),10,8),knot); k.scale.set(.95,1.1,.85); hHull(k,line); g.add(k); return g; }
 // merges a finished hat's meshes into one mesh per material (transforms baked in), keeping the hat's own transform
 function hBake(h){ h.updateMatrixWorld(true); const inv=h.matrixWorld.clone().invert(), parts=new Map(), mt=new THREE.Matrix4(), nm=new THREE.Matrix3(), v=hV3(0,0,0);
+  // parts that move (userData.anim, see "wear motion") are baked on their own and kept as children at their pose
+  const movers=[]; h.traverse(o=>{ if(o!==h&&o.userData.anim){ let a=o.parent; while(a&&a!==h&&!a.userData.anim) a=a.parent; if(a===h) movers.push(o); } });
+  const poses=movers.map(o=>inv.clone().multiply(o.matrixWorld)); movers.forEach(o=>o.parent.remove(o));
   h.traverse(o=>{ if(o.isMesh){ if(!parts.has(o.material)) parts.set(o.material,[]); parts.get(o.material).push(o); } });
   const out=new THREE.Group(); out.position.copy(h.position); out.rotation.copy(h.rotation); out.scale.copy(h.scale);
   for(const [mat,list] of parts){ const geos=list.map(o=>o.geometry.index?o.geometry.toNonIndexed():o.geometry), n=geos.reduce((a,g)=>a+g.attributes.position.count,0);
@@ -62,6 +66,7 @@ function hBake(h){ h.updateMatrixWorld(true); const inv=h.matrixWorld.clone().in
       off+=pa.count; if(g!==o.geometry) g.dispose(); });
     const geo=new THREE.BufferGeometry(); geo.setAttribute('position',new THREE.BufferAttribute(P,3)); geo.setAttribute('normal',new THREE.BufferAttribute(N,3));
     const me=new THREE.Mesh(geo,mat); me.castShadow=mat!==lineMat&&!mat.transparent; out.add(me); }
+  movers.forEach((o,i)=>{ const b=hBake(o); poses[i].decompose(b.position,b.quaternion,b.scale); b.userData.anim=o.userData.anim; out.add(b); });
   return out; }
 // a point on an ellipsoid (radii a, b, a) in direction d
 const hOnEllipsoid=(d,a,b)=>{ const k=1/Math.sqrt(d.x*d.x/(a*a)+d.y*d.y/(b*b)+d.z*d.z/(a*a)); return d.clone().multiplyScalar(k); };
@@ -212,11 +217,13 @@ function buildHat(id){ const h=new THREE.Group();
   else if(id==='bee'){ // a headband hugging the head from side to side (the head's centre is .27 below the hat slot), springy antennae with fuzzy tips
     const band=hTorus(.355,.026,m('pupil'),0,Math.PI-.7,8,30); band.rotation.z=.35; band.position.y=-.27; h.add(band);
     for(const a of [.35,Math.PI-.35]){ const e=new THREE.Mesh(sph(.026,8,6),m('pupil')); e.position.set(Math.cos(a)*.355,-.27+Math.sin(a)*.355,0); h.add(e); }
-    for(const sd of [-1,1]){ const pts=[hV3(sd*.2,.01,0),hV3(sd*.215,.1,.01),hV3(sd*.225,.19,.03),hV3(sd*.27,.27,.03),hV3(sd*.31,.32,.01)];
-      h.add(hTube(pts,.014,m('pupil'),{seg:14,rs:5}));
-      const ball=new THREE.Mesh(sph(.056,14,10),m('crown')); ball.position.set(sd*.325,.345,.005); hHull(ball,.01); h.add(ball);
-      const stripe=hTorus(.054,.011,m('pupil'),0,hTAU,6,20); stripe.position.copy(ball.position); stripe.rotation.set(Math.PI/2,0,sd*.6); h.add(stripe);
-      const sh=new THREE.Mesh(sph(.014,6,4),m('chef')); sh.position.copy(ball.position).add(hV3(-sd*.018,.03,.035)); h.add(sh); } }
+    for(const sd of [-1,1]){ const pv=hV3(sd*.2,.01,0), ag=new THREE.Group(); ag.position.copy(pv); h.add(ag);
+      ag.userData.anim={r:[.07,0,.11],f:3.2,ph:sd,env:.55}; const put=o=>{ o.position.sub(pv); ag.add(o); }; // springy antennae
+      const pts=[hV3(sd*.2,.01,0),hV3(sd*.215,.1,.01),hV3(sd*.225,.19,.03),hV3(sd*.27,.27,.03),hV3(sd*.31,.32,.01)];
+      put(hTube(pts,.014,m('pupil'),{seg:14,rs:5}));
+      const ball=new THREE.Mesh(sph(.056,14,10),m('crown')); ball.position.set(sd*.325,.345,.005); hHull(ball,.01);
+      const stripe=hTorus(.054,.011,m('pupil'),0,hTAU,6,20); stripe.position.copy(ball.position); stripe.rotation.set(Math.PI/2,0,sd*.6);
+      const sh=new THREE.Mesh(sph(.014,6,4),m('chef')); sh.position.copy(ball.position).add(hV3(-sd*.018,.03,.035)); put(ball); put(stripe); put(sh); } }
   else if(id==='party'){ // a striped cone with a ruffle round its base and a fluffy pompom on top
     const cone=new THREE.Mesh(new THREE.ConeGeometry(.17,.44,32,4),m('partyA')); cone.position.y=.24; hHull(cone,.012); h.add(cone);
     const sp=[]; for(let i=0;i<=40;i++){ const t=.08+i/40*.74, a=t*2.6*hTAU, r=.17*(1-t)+.004; sp.push(hV3(Math.cos(a)*r,.02+t*.44,Math.sin(a)*r)); }
@@ -409,12 +416,13 @@ function buildHat(id){ const h=new THREE.Group();
     const ft=new THREE.Mesh(lg,m('leaf')); ft.position.copy(fs[3]); ft.rotation.set(Math.PI/2,0,Math.PI/2+.4); ft.scale.setScalar(.7); hHull(ft,.005); fern.add(ft);
     h.rotation.x=.07; h.position.y=.006; }
   else if(id==='sprout'){ // a seedling growing out of the top of the head: a curved stem, two cupped leaves with veins, a new leaf unfurling
-    h.add(hTube([hV3(0,-.02,0),hV3(.014,.08,0),hV3(-.01,.17,0),hV3(0,.25,0)],.022,m('leaf'),{seg:12,rs:6,line:.008,taper:t=>1-.25*t}));
+    const sw=new THREE.Group(); sw.userData.anim={r:[.035,0,.07],f:1.3,env:.35}; h.add(sw); // sways from its root
+    sw.add(hTube([hV3(0,-.02,0),hV3(.014,.08,0),hV3(-.01,.17,0),hV3(0,.25,0)],.022,m('leaf'),{seg:12,rs:6,line:.008,taper:t=>1-.25*t}));
     const lg=hLeafGeo(.22,.145,{cup:.045,tip:.8,ws:16,hs:6});
-    for(const sd of [-1,1]){ const l=new THREE.Mesh(lg,m(sd<0?'leaf':'lawn')); l.position.set(0,.245,0); l.rotation.set(0,sd<0?Math.PI:0,.45); if(sd>0) l.scale.setScalar(.92); hHull(l,.009); h.add(l);
+    for(const sd of [-1,1]){ const l=new THREE.Mesh(lg,m(sd<0?'leaf':'lawn')); l.position.set(0,.245,0); l.rotation.set(0,sd<0?Math.PI:0,.45); if(sd>0) l.scale.setScalar(.92); hHull(l,.009); sw.add(l);
       const vn=hTube([hV3(.02,.016,0),hV3(.09,.026,0),hV3(.17,.04,0)],.006,m('leafVein'),{seg:5,rs:4}); vn.position.copy(l.position); vn.rotation.copy(l.rotation); vn.scale.copy(l.scale);
-      h.add(vn); }
-    const bud=new THREE.Mesh(hLeafGeo(.075,.045,{cup:.025}),m('leaf')); bud.position.set(0,.25,0); bud.rotation.set(0,Math.PI/2,1.35); hHull(bud,.007); h.add(bud); }
+      sw.add(vn); }
+    const bud=new THREE.Mesh(hLeafGeo(.075,.045,{cup:.025}),m('leaf')); bud.position.set(0,.25,0); bud.rotation.set(0,Math.PI/2,1.35); hHull(bud,.007); sw.add(bud); }
   else if(id==='teacup'){ // a teacup on its saucer: a round bowl on a foot with gold lines, polka dots, tea with a shine, a teabag
     // tag over the rim, an ear-shaped handle, curls of steam, and a sugar cube and a little spoon on the saucer
     // the saucer: a foot, a shallow well and a raised rim, its underside sloping down so the edge rests on the head
@@ -444,8 +452,9 @@ function buildHat(id){ const h=new THREE.Group();
     const td=new THREE.Mesh(sph(.017,10,6),m('teacup')); hStick(td,hV3(ca*.18,.155,sa*.18),hV3(ca,-.38,sa).normalize()); td.scale.z=.35; h.add(td);
     // steam: two soft curls side by side, waving the same way so they never cross
     const sm=MC.hatSteam||(MC.hatSteam=new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:.75}));
-    for(const [x,z,n,ph] of [[-.05,.01,.19,0],[.04,-.03,.15,.6]]){ const st=[]; for(let k=0;k<=8;k++){ const t=k/8; st.push(hV3(x+Math.sin(t*5.5+ph)*.03,.27+t*n,z+Math.cos(t*4+ph)*.01)); }
-      h.add(hTube(st,.016,sm,{seg:20,rs:6,taper:t=>1-.6*t})); }
+    const steam=new THREE.Group(); steam.position.y=.27; steam.userData.anim={spin:[0,.5,0],s:[.06,.12,.06],f:1.7}; h.add(steam); // curls slowly turn and breathe
+    for(const [x,z,n,ph] of [[-.05,.01,.19,0],[.04,-.03,.15,.6]]){ const st=[]; for(let k=0;k<=8;k++){ const t=k/8; st.push(hV3(x+Math.sin(t*5.5+ph)*.03,t*n,z+Math.cos(t*4+ph)*.01)); }
+      steam.add(hTube(st,.016,sm,{seg:20,rs:6,taper:t=>1-.6*t})); }
     // a sugar cube and a little spoon resting on the saucer
     const cube=new THREE.Mesh(new THREE.BoxGeometry(.046,.046,.046),m('chef')); cube.position.set(.08,.08,.165); cube.rotation.set(.08,.6,.05); hHull(cube,.007); h.add(cube);
     const sp=new THREE.Group(); sp.position.set(-.1,.062,-.16); sp.rotation.set(0,1.08,-.06); h.add(sp);
@@ -470,7 +479,7 @@ function buildHat(id){ const h=new THREE.Group();
     fe.add(hTube([hV3(-.03,0,0),hV3(.08,.004,.008),hV3(.2,.012,.012)],.005,m('chef'),{seg:6,rs:4}));
     for(const [x,sd] of [[.1,1],[.14,-1]]){ const nt=new THREE.Mesh(new THREE.BoxGeometry(.008,.012,.03),lineMat); nt.position.set(x,.008,sd*.024); nt.rotation.y=sd*.6; fe.add(nt); } }
   else if(id==='cloud'){ // a little rain cloud hovering over the head, a sleepy smile and rosy cheeks, a few drops falling from it
-    const c=new THREE.Group(); c.position.y=.24; h.add(c);
+    const c=new THREE.Group(); c.position.y=.24; c.userData.anim={p:[.006,.014,0],r:[0,0,.04],f:1.6}; h.add(c); // bobs, dripping
     [[0,.01,0,.12],[-.11,-.02,.0,.09],[.11,-.02,0,.09],[.055,.065,-.01,.085],[-.06,.06,-.01,.08],[.0,-.01,-.07,.1],[.15,-.04,-.03,.06],[-.155,-.04,-.03,.06]].forEach(p=>{
       const s=new THREE.Mesh(sph(p[3],12,8),m('cloud')); s.position.set(p[0],p[1],p[2]); s.scale.y=.92; hHull(s,.01); c.add(s); });
     const base=new THREE.Mesh(sph(.12,16,7),m('cloud')); base.scale.set(1.45,.42,.85); base.position.set(0,-.045,-.01); hHull(base,.01); c.add(base);
@@ -478,7 +487,8 @@ function buildHat(id){ const h=new THREE.Group();
       const ck=new THREE.Mesh(sph(.019,10,6),m('cheek')); hStick(ck,hV3(sd*.072,-.008,.106),hV3(sd*.4,0,1)); ck.scale.set(1.2,.75,.3); c.add(ck); }
     const sm=hTorus(.013,.005,m('pupil'),0,Math.PI,6,10); sm.position.set(0,-.012,.12); sm.rotation.z=Math.PI; c.add(sm);
     const dg=hDropGeo(.022);
-    for(const [x,y,z] of [[-.08,-.15,.03],[.02,-.19,.04],[.09,-.13,.02]]){ const d=new THREE.Mesh(dg,m('water')); d.position.set(x,y,z); hHull(d,.006); c.add(d); } }
+    [[-.08,-.11,.03],[.02,-.11,.04],[.09,-.11,.02]].forEach(([x,y,z],i)=>{ const d=new THREE.Mesh(dg,m('water')); d.position.set(x,y,z); hHull(d,.006);
+      d.userData.anim={drip:[.12,.55+i*.13],ph:i*.37}; c.add(d); }); }
   else if(id==='owl'){ // a little owl perched on the head: a round body with a cream belly, big eyes, a beak, ear tufts,
     // folded wings, a tail and toes gripping the crown
     const body=new THREE.Mesh(hWarp(new THREE.SphereGeometry(1,32,24),v=>v.set(v.x*.15,v.y*.165*(v.y<0?.85:1),v.z*.14)),m('owl'));
@@ -507,18 +517,19 @@ function buildHat(id){ const h=new THREE.Group();
   else if(id==='idea'){ // a bright idea: a little lightbulb on a springy stalk, like the hint button's bulb
     const cap=hLathe([[0,.03],[.06,.026],[.075,.01],[.078,-.004],[0,-.004]],28,m('ideaBase')); hHull(cap,.008); h.add(cap);
     // the spring: a coil from the cap up to the bulb's screw base
+    const spr=new THREE.Group(); spr.userData.anim={r:[.1,0,.1],f:2.3,env:.5}; h.add(spr); // boings on its spring
     const coil=[]; for(let i=0;i<=72;i++){ const t=i/72, a=t*hTAU*3.5; coil.push(hV3(Math.cos(a)*.026,.03+t*.15,Math.sin(a)*.026)); }
-    h.add(hTube(coil,.008,m('ideaBase'),{seg:110,rs:6,line:.006}));
-    const screw=hLathe([[0,.18],[.044,.18],[.05,.192],[.044,.204],[.05,.216],[.044,.228],[.05,.24],[.046,.252],[0,.252]],28,m('ideaBase')); hHull(screw,.008); h.add(screw);
+    spr.add(hTube(coil,.008,m('ideaBase'),{seg:110,rs:6,line:.006}));
+    const screw=hLathe([[0,.18],[.044,.18],[.05,.192],[.044,.204],[.05,.216],[.044,.228],[.05,.24],[.046,.252],[0,.252]],28,m('ideaBase')); hHull(screw,.008); spr.add(screw);
     // the glass: a pear-shaped lathe, glowing butter yellow, with a glint and a little filament showing through
     // the glass: a round globe on a short neck (a lathe), glowing butter yellow, with a glint and a filament showing through
     const C0=.4, R=.1, pts=[[0,.252],[.045,.252],[.05,.27],[.058,.29],[.066,.31]];
     for(let i=0;i<=18;i++){ const th=-.8+i/18*(Math.PI/2+.8); pts.push([R*Math.cos(th),C0+R*Math.sin(th)]); }
     pts[pts.length-1][0]=0;
-    const glass=hLathe(pts,40,m('idea')); hHull(glass,.011); h.add(glass);
+    const glass=hLathe(pts,40,m('idea')); hHull(glass,.011); spr.add(glass);
     const onGlass=(x,y)=>{ const z=Math.sqrt(Math.max(0,R*R-x*x-(y-C0)*(y-C0)))+.003; return hV3(x,y,z); };
-    h.add(hTube([onGlass(-.07,C0+.04),onGlass(-.082,C0+.005),onGlass(-.075,C0-.03)],.009,m('glint'),{seg:10,rs:5}));
-    h.add(hTube([onGlass(-.03,C0-.045),onGlass(-.018,C0-.01),onGlass(-.006,C0-.035),onGlass(.006,C0-.01),onGlass(.018,C0-.035),onGlass(.03,C0-.01)].map(v=>v.setZ(v.z+.001)),.005,m('tash'),{seg:20,rs:4}));
+    spr.add(hTube([onGlass(-.07,C0+.04),onGlass(-.082,C0+.005),onGlass(-.075,C0-.03)],.009,m('glint'),{seg:10,rs:5}));
+    spr.add(hTube([onGlass(-.03,C0-.045),onGlass(-.018,C0-.01),onGlass(-.006,C0-.035),onGlass(.006,C0-.01),onGlass(.018,C0-.035),onGlass(.03,C0-.01)].map(v=>v.setZ(v.z+.001)),.005,m('tash'),{seg:20,rs:4}));
     h.rotation.z=-.1; }
   else if(id==='twirl'){ // a turnaround mushroom to wear: a mint toadstool cap with a cream swirl from the top down to the rim
     const cap=new THREE.Mesh(hWarp(new THREE.SphereGeometry(1,40,12,0,hTAU,0,Math.PI/2),v=>{ const s=Math.hypot(v.x,v.z); v.set(v.x*.27*(1+.04*Math.pow(s,6)),v.y*.23+.008,v.z*.27*(1+.04*Math.pow(s,6))); }),m('turnCap'));
@@ -534,7 +545,7 @@ function buildHat(id){ const h=new THREE.Group();
     const base=hLathe([[0,.05],[.07,.04],[.085,.012],[.08,0],[0,0]],24,m('brass')); hHull(base,.008); h.add(base);
     const ball=new THREE.Mesh(sph(.032,14,10),m('turnCap')); ball.position.y=.25; hHull(ball,.007); h.add(ball);
     // the arrow: a flat shaft with a pointed head and a feathered tail, slightly turned
-    const ar=new THREE.Group(); ar.position.y=.33; ar.rotation.y=.5; h.add(ar);
+    const ar=new THREE.Group(); ar.position.y=.33; ar.rotation.y=.5; ar.userData.anim={r:[0,.8,0],f:.5,env:.21}; h.add(ar); // turns with the wind
     const sh=new THREE.Shape(); sh.moveTo(-.2,-.012); sh.lineTo(.12,-.012); sh.lineTo(.12,-.045); sh.lineTo(.2,0); sh.lineTo(.12,.045); sh.lineTo(.12,.012); sh.lineTo(-.14,.012);
       sh.lineTo(-.2,.06); sh.lineTo(-.24,.06); sh.lineTo(-.18,0); sh.lineTo(-.24,-.06); sh.lineTo(-.2,-.06); sh.lineTo(-.14,-.012);
     const ag=new THREE.ExtrudeGeometry(sh,{depth:.018,bevelEnabled:true,bevelThickness:.006,bevelSize:.006,bevelSegments:1}); ag.translate(0,0,-.009);
@@ -546,4 +557,4 @@ const chapterCleared=k=>{ const ch=CHAPTERS[k]; if(!ch) return false; for(let i=
 const hatUnlocked=h=>h[4]?h[4]():h[2]<0||chapterCleared(h[2]);
 function dressHat(g){ const slot=g&&g.userData.hatSlot; if(!slot) return; slot.clear();
   const h=HATS.find(x=>x[0]===hatId); if(!h||h[0]==='none'||!hatUnlocked(h)) return;
-  const k=hatId+'|'+tintOf(hatId); if(!hatProto[k]) hatProto[k]=tinted(hatId,buildHat(hatId)); slot.add(hatProto[k].clone()); }
+  const k=hatId+'|'+tintOf(hatId); if(!hatProto[k]) hatProto[k]=tinted(hatId,buildHat(hatId)); slot.add(wearAdd(hatProto[k].clone())); }

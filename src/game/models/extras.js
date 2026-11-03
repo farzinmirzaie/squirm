@@ -243,6 +243,7 @@ function buildExtra(id){ // frames sit in front of the eyes even when they widen
     for(const s of [-1,1]){ b.add(tube([V(s*.006,.054,.01),V(s*.018,.086,.022),V(s*.036,.106,.018)],.0035,bm,.003,10,4,false));
       const tp=dot(.008,bm,.004); tp.position.set(s*.036,.106,.018); b.add(tp);
       const wg=new THREE.Group(); wg.position.set(s*.01,.004,.002); wg.rotation.y=-s*.5; wg.scale.x=s; b.add(wg);
+      wg.userData.anim={r:[0,-s*.75,0],f:9,one:true,env:.45}; // flaps now and then, both wings together
       const wing=(mk,sc,mat,zz)=>{ const geo=new THREE.ExtrudeGeometry(mk(),{depth:.08,bevelEnabled:true,bevelThickness:.04,bevelSize:.03,bevelSegments:2,curveSegments:9});
         geo.translate(0,0,-.04); geo.scale(sc,sc,sc); const w=new THREE.Mesh(geo,m(mat)); w.position.z=zz; hull(w,.006); wg.add(w); return w; };
       const flat=(mk,k,sc,mat,ox=0,oy=0)=>{ const sh=new THREE.Shape(mk().getPoints(16).map(p=>p.multiplyScalar(k).add(new THREE.Vector2(ox,oy))));
@@ -285,24 +286,60 @@ function buildExtra(id){ // frames sit in front of the eyes even when they widen
     const glow=MC.exFireGlow||(MC.exFireGlow=new THREE.MeshBasicMaterial({color:C.fireGlow}));
     const halo=MC.exFireHalo||(MC.exFireHalo=new THREE.MeshBasicMaterial({color:C.fireGlow,transparent:true,opacity:.25,depthWrite:false}));
     const f=new THREE.Group(); f.position.set(.37,.17,.15); f.rotation.set(.15,-.85,.12); f.scale.setScalar(1.7); g.add(f);
+    f.userData.anim={p:[.012,.018,.008],r:[.08,.1,.06],f:2.1}; // hovers
     f.add(dot(.022,m('firefly'),.006,[1,.9,1.15],12,8));
     const hd=dot(.017,m('firefly'),.006,[1,1,1],12,8); hd.position.set(0,.004,.03); f.add(hd);
     for(const sd of [-1,1]){ const ey=dot(.006,m('daisy'),0,[1,1,1],8,6); ey.position.set(sd*.009,.01,.042); f.add(ey);
       const ant=new THREE.CatmullRomCurve3([V(sd*.006,.016,.036),V(sd*.016,.04,.05),V(sd*.026,.05,.066)]);
       f.add(new THREE.Mesh(new THREE.TubeGeometry(ant,8,.0026,5,false),lineMat)); const tip=dot(.005,lineMat); tip.position.set(sd*.026,.05,.066); f.add(tip);
-      const w=dot(.1,glass(),0,[.2,.025,.34],12,6); w.position.set(sd*.024,.024,-.012); w.rotation.set(-.2,sd*.5,sd*.35); f.add(w);
-      const wl=dot(.1,lineMat,0,[.215,.02,.355],12,6); wl.position.copy(w.position); wl.rotation.copy(w.rotation); wl.position.y-=.003; f.add(wl); }
+      const wp=new THREE.Group(); wp.position.set(sd*.024,.024,-.012); wp.rotation.set(-.2,sd*.5,sd*.35); wp.userData.anim={r:[0,0,sd*.35],f:28}; f.add(wp); // buzzing wings
+      const w=dot(.1,glass(),0,[.2,.025,.34],12,6); wp.add(w);
+      const wl=dot(.1,lineMat,0,[.215,.02,.355],12,6); wl.position.y=-.003; wp.add(wl); }
     const tail=dot(.026,glow,.006,[1,.95,1.5],14,10); tail.position.set(0,-.004,-.036); f.add(tail);
-    const hl=new THREE.Mesh(sph(.075,16,12),halo); hl.position.set(0,-.004,-.036); f.add(hl); }
-  else if(id==='pinwheel'){ // a pinwheel friend tucked beside the head: four curled pastel blades on a little stick
-    const f=new THREE.Group(); f.position.set(.44,.2,.02); f.rotation.set(0,-.5,.2); f.scale.setScalar(1.35); g.add(f);
-    const stick=new THREE.Mesh(new THREE.CylinderGeometry(.009,.009,.3,8),m('stem')); stick.position.y=-.12; f.add(stick);
-    const stL=new THREE.Mesh(new THREE.CylinderGeometry(.015,.015,.3,8),lineMat); stL.position.y=-.12; f.add(stL);
+    const hl=new THREE.Mesh(sph(.075,16,12),halo); hl.position.set(0,-.004,-.036); hl.userData.anim={s:[.22,.22,.22],f:2.6}; f.add(hl); }
+  else if(id==='pinwheel'){ // a pinwheel friend tucked behind the head like a pencil behind an ear: a wooden stick rising from
+    // a little ribbon bow at the head, and a wheel of four curled pastel sails that spins in the breeze
+    const top=V(.5,.13,-.01), low=V(.21,-.17,-.14), dir=V().subVectors(top,low).normalize();
+    // where the stick comes out of the head: the point on the line at the head's radius
+    const b0=low.dot(dir), into=low.clone().addScaledVector(dir,-b0+Math.sqrt(b0*b0-low.lengthSq()+HEAD_R*HEAD_R));
+    g.add(rod(low,top,.011,m('stem'),.006,10));
+    const bow=hBow(.058,m('heartFrame'),m('heartFrame'),.006); bow.position.copy(into).addScaledVector(into.clone().normalize(),.012);
+    bow.lookAt(bow.position.clone().multiplyScalar(2)); bow.rotateZ(-.7); g.add(bow);
+    const wheel=new THREE.Group(); wheel.position.copy(top).add(V(0,0,.028)); wheel.rotation.y=-.35; g.add(wheel);
+    const spin=new THREE.Group(); spin.userData.anim={spin:[0,0,-3.2],gust:.55,gf:.45}; wheel.add(spin);
     const cols=['turnCap','heartFrame','starFrame','glass'];
-    for(let k=0;k<4;k++){ const sh=new THREE.Shape(); sh.moveTo(0,0); sh.lineTo(.13,-.03); sh.quadraticCurveTo(.15,.08,.06,.13); sh.quadraticCurveTo(.05,.06,0,0);
-      const geo=new THREE.ExtrudeGeometry(sh,{depth:.006,bevelEnabled:false}); const b=new THREE.Mesh(geo,m(cols[k])); b.rotation.z=k*Math.PI/2; b.position.z=k*.002; f.add(b);
-      const bl=new THREE.Mesh(geo,lineMat); bl.scale.set(1.12,1.12,1); bl.position.z=-.004; bl.rotation.z=k*Math.PI/2; f.add(bl); }
-    const hub=dot(.02,m('brass'),.006,[1,1,.7],10,8); hub.position.z=.012; f.add(hub); }
+    for(let k=0;k<4;k++){ const sh=new THREE.Shape(); sh.moveTo(.012,-.004); sh.lineTo(.165,-.004); sh.quadraticCurveTo(.175,.1,.115,.15); sh.quadraticCurveTo(.06,.075,.012,-.004);
+      const geo=new THREE.ExtrudeGeometry(sh,{depth:.006,bevelEnabled:true,bevelThickness:.003,bevelSize:.003,bevelSegments:1,curveSegments:10});
+      // curl the free corner toward the viewer, as a folded paper sail does
+      hWarp(geo,v=>{ const k2=Math.max(0,v.y/.15), r=Math.min(1,Math.hypot(v.x,v.y)/.17); v.z+=.06*k2*k2*r; });
+      const bl=new THREE.Mesh(geo,m(cols[k])); bl.rotation.z=k*Math.PI/2; hHull(bl,.006); spin.add(bl); }
+    const hub=dot(.024,m('brass'),.006,[1,1,.75],12,8); hub.position.z=.016; spin.add(hub);
+    const pin=dot(.011,m('daisy'),0,[1,1,.6],8,6); pin.position.z=.032; spin.add(pin); }
   return g; }
 function dressExtra(g){ const slot=g&&g.userData.accSlot; if(!slot) return; slot.clear(); const id=extraOn(); if(id==='none') return;
-  const k=id+'|'+tintOf(id); if(!extraProto[k]) extraProto[k]=tinted(id,buildExtra(id)); slot.add(extraProto[k].clone()); }
+  const k=id+'|'+tintOf(id); if(!extraProto[k]) extraProto[k]=tinted(id,buildExtra(id)); slot.add(wearAdd(extraProto[k].clone())); }
+
+// ---------- wear motion ----------
+// A few hats and extras have a part that moves (the pinwheel spins, the butterfly flaps, the bee's antennae bob). The part
+// carries userData.anim, read every frame by wearTick round the pose it was built in:
+//   r:[x,y,z] swing (radians) and p:[x,y,z] sway (units), each axis a little out of step; f: speed (rad/s); ph: phase;
+//   one: swing to one side only; env: a slow swell (rad/s) so it rests now and then; s:[x,y,z] a scale pulse;
+//   spin:[x,y,z] (rad/s) with gust (0-1, how much the speed breathes) and gf (its speed); drip:[fall, speed]: falls and fades, again
+// Only parts of a worn clone in a scene move: a handful of transforms a frame. Reduced motion keeps them still.
+const wearMoving=new Set();
+function wearAdd(root){ root.userData.worn=true; root.traverse(o=>{ if(o.userData.anim) wearMoving.add(o); }); return root; }
+function wearTick(t){ if(!wearMoving.size) return;
+  for(const o of wearMoving){ let r=o; while(r.parent) r=r.parent;
+    if(r.userData.worn){ wearMoving.delete(o); continue; } // taken off: its clone is no longer on a head
+    if(!r.isScene) continue;
+    const a=o.userData.anim, b=o.userData.b0||(o.userData.b0=[o.position.toArray(),[o.rotation.x,o.rotation.y,o.rotation.z],o.scale.toArray()]);
+    o.position.fromArray(b[0]); o.rotation.set(b[1][0],b[1][1],b[1][2]); o.scale.fromArray(b[2]);
+    if(reduceMotion) continue;
+    const f=a.f||1, ph=a.ph||0, env=a.env?Math.pow(.5+.5*Math.sin(t*a.env+ph*1.3),2):1;
+    const w=k=>{ const x=Math.sin(t*f+ph+k*1.7); return (a.one?.5+.5*x:x)*env; };
+    if(a.r){ o.rotation.x+=a.r[0]*w(0); o.rotation.y+=a.r[1]*w(1); o.rotation.z+=a.r[2]*w(2); }
+    if(a.p){ o.position.x+=a.p[0]*w(0); o.position.y+=a.p[1]*w(1); o.position.z+=a.p[2]*w(2); }
+    if(a.s){ const x=Math.sin(t*f+ph); o.scale.x*=1+a.s[0]*x; o.scale.y*=1+a.s[1]*x; o.scale.z*=1+a.s[2]*x; }
+    if(a.spin){ const g=a.gust||0, gf=a.gf||1, k=t+(g?-g/gf*Math.cos(t*gf+ph):0);
+      o.rotation.x+=a.spin[0]*k; o.rotation.y+=a.spin[1]*k; o.rotation.z+=a.spin[2]*k; }
+    if(a.drip){ const u=((t*a.drip[1]+ph)%1+1)%1; o.position.y-=u*a.drip[0]; o.scale.multiplyScalar(u<.15?u/.15:u>.75?(1-u)/.25:1); } } }

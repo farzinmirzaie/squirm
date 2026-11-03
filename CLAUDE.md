@@ -431,9 +431,14 @@ from a tab replaces that layer with `game`.
   `BADGE_GROUPS` group (ungrouped ones land in the last).
 - **Hats:** `HATS` entries are `[id, name, chapter index]` (unlocked by finishing that chapter) or
   `[id, name, -2, how to earn, test]` for milestone hats. Each is built once (`buildHat`) and cloned into
-  the head's `hatSlot`.
+  the head's `hatSlot`. `hBake` merges a hat into one mesh per material, except parts marked to move.
 - **Extras:** `EXTRAS` (`[id, name, how to earn, test]`) work the same way through `buildExtra` into the
-  head's `accSlot`, saved in `squirm-extra`. Every hat and extra needs a sticker in `ART` (`hat-<id>` /
+  head's `accSlot`, saved in `squirm-extra`.
+- **Wear motion** (end of `models/extras.js`): a few items have a part that moves (pinwheel, butterfly, firefly,
+  bee antennae, lightbulb, weathervane, teacup steam, rain cloud, sprout). Put `userData.anim` on the part
+  (swing `r`, sway `p`, scale pulse `s`, `spin` with gusts, `drip`; the comment there lists them); `hBake` keeps it
+  as its own child, `dressHat` / `dressExtra` register worn clones with `wearAdd`, and `wearTick` (from `frame`)
+  moves them round their rest pose. Reduced motion keeps them still. Keep it to items where motion fits. Every hat and extra needs a sticker in `ART` (`hat-<id>` /
   `extra-<id>`).
 - **Colour options:** `TINTS` gives some hats and extras five colours. `keys` are the item's `C` materials,
   swapped by `tinted()` when its proto is built (protos are cached per id and option); `art` are the sticker
