@@ -61,7 +61,7 @@ function radAt(g,n,anchors){ const i=Math.min(Math.floor(g),anchors.length-2), f
   if(g>.4) r*=1+.04*Math.cos(g*4*Math.PI);
   if(crawlK>=0 && n>1){ const pos=(1-crawlK)*(n-1); r*=1+.15*Math.sin(Math.PI*crawlK)*Math.exp(-((g-pos)*(g-pos))/.35); }
   return r*sc; }
-const CORNER=.25, TIP_LEN=.17, TIP_K=.55;
+const CORNER=.25, TIP_LEN=.24, TIP_K=.42;
 function portalAt(p){ const c=tileAt(state,p[0],p[1]); return c>='1'&&c<='9'; }
 function updateWorm(){
   const anchors=segMeshes.concat(tailExtras); const n=anchors.length; let ti=0, ci=0;

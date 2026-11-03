@@ -2,7 +2,7 @@
 const tubeMat=new THREE.MeshToonMaterial({color:0xffffff,vertexColors:true,gradientMap:gradTex});
 // patterns with edges are drawn per pixel from 'pg' (place along the worm, then the ring direction scaled by the
 // radius), so they stay crisp and keep their size on the stage and in a patch, at any length: the soft groove
-// between body rings (every pattern), Stripes, Bands, Spots (round pale spots on the back, alternating left and
+// between body rings with a faint sheen on top of each ring and a paler belly (every pattern), Stripes, Bands, Spots (round pale spots on the back, alternating left and
 // right of the spine, two to a segment) and Glitter (specks a fixed size in the world, a whole number of them
 // around the body so there's no seam). fwidth(g) is about one pixel on the body, for edges that don't shimmer
 const patU={value:0}, PAT_ID={stripes:1,spots:2,bands:3,glitter:4};
@@ -11,7 +11,9 @@ tubeMat.onBeforeCompile=sh=>{ sh.uniforms.uPat=patU;
   sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nattribute vec3 pg; varying vec3 vPg;').replace('#include <begin_vertex>','#include <begin_vertex>\nvPg=pg;');
   sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nuniform float uPat; varying vec3 vPg;').replace('#include <color_fragment>',`#include <color_fragment>
     float g=vPg.x, r=max(length(vPg.yz),.001), an=atan(vPg.z,vPg.y), px=max(fwidth(g),.0005), q=abs(fract(g*2.+.5)-.5)*.5, m=abs(.25-q);
-    if(g>.4) diffuseColor.rgb*=1.-.07*(1.-smoothstep(0.,.05+px,q));
+    float up=vPg.z/r;
+    diffuseColor.rgb=mix(diffuseColor.rgb,vec3(1.),.16*(1.-smoothstep(-.75,-.2,up)));
+    if(g>.4) diffuseColor.rgb*=(1.-.07*(1.-smoothstep(0.,.05+px,q)))*(1.+.05*smoothstep(.1,.25,q)*max(up,0.));
     if(g>.55 && uPat>.5 && uPat<1.5) diffuseColor.rgb=mix(diffuseColor.rgb,vec3(1.),.5*(1.-smoothstep(.085-.012-px,.085+.012+px,m)));
     if(g>.55 && uPat>2.5 && uPat<3.5) diffuseColor.rgb*=1.-.18*(1.-smoothstep(.026-px,.026+px,m));
     if(uPat>1.5 && uPat<2.5){ float k=floor(g*2.+.5); if(k>1.5){ float a=an-1.5708-(mod(k,2.)>.5?.7:-.7); a=abs(mod(a+3.14159,6.28318)-3.14159);
