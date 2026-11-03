@@ -136,6 +136,11 @@ const ART={
   const bud=c=>`<path d="M4.5 20.6h15" stroke-width="2.2"/><path d="M12 20c-4.6 0-6.6-3.6-6.6-8 0-4 2.4-7.4 6.6-9.4 4.2 2 6.6 5.4 6.6 9.4 0 4.4-2 8-6.6 8z" fill="${c}"/><path d="M12 20c-2-1.6-2.8-4.4-2.8-8 0-3 1-5.6 2.8-7.6M12 20c2-1.6 2.8-4.4 2.8-8 0-3-1-5.6-2.8-7.6" stroke-width="1.2"/><path d="M6.4 19.4c-1.6-.4-2.9-1.5-3.4-3.1 1.7-.4 3.3.2 4.4 1.4M17.6 19.4c1.6-.4 2.9-1.5 3.4-3.1-1.7-.4-3.3.2-4.4 1.4" fill="#6CC97A" stroke-width="1.2"/>`;
   for(const k in POLL){ const P=POLL[k]; ART['pollen'+k]=flower(hx(P.col),hx(P.light),hx(P.dark)); ART['petals'+k]=bud(hx(P.col)); }
   ART.pollen0=flower('#EFE6DA','#FFF8EA','#C9BBA8');
+  // the colour helpers' marks (see markPath): a cream disc with the colour's shape
+  const disc='<circle cx="12" cy="12" r="10" fill="#FFF8EA"/>';
+  ART.markP=disc+`<circle cx="12" cy="12.2" r="4.8" fill="${hx(POLL.P.col)}"/>`;
+  ART.markY=disc+`<path d="M12 6.6l5.6 9.4H6.4z" fill="${hx(POLL.Y.col)}"/>`;
+  ART.markU=disc+`<rect x="7.6" y="7.8" width="8.8" height="8.8" rx=".8" fill="${hx(POLL.U.col)}"/>`;
   // soft soil: a tilled heap with the worm arching out of it and diving back in
   ART.soil='<path d="M5.6 16.4c-.6-5.6 1.8-9.6 6-9.6" stroke-width="4.6"/><path d="M5.6 16.4c-.6-5.6 1.8-9.6 6-9.6" stroke="#FFB3C8" stroke-width="2.4"/><circle cx="14.2" cy="7.6" r="3" fill="#FFB3C8"/><circle cx="15.1" cy="7" r=".75" fill="#5B4436" stroke="none"/><path d="M1.8 21c.9-4.6 4.9-7.6 10.2-7.6S21.3 16.4 22.2 21z" fill="#B07850"/><g fill="#8A5A3A" stroke="none"><circle cx="8" cy="18" r="1"/><circle cx="13.4" cy="16.4" r="1"/><circle cx="17.4" cy="18.8" r="1"/></g>';
     }

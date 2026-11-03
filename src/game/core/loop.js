@@ -52,8 +52,8 @@ function frame(now){
         if(u&&c.item.userData.kind==='K'&&Math.random()<.08) sparkle(c.item.position); }
       if(wet>.5) for(let i=0;i<3;i++) splash(); } }
   // wind: a steady sway with an occasional soft gust rolling through
-  windU.value=idleT; gustU.value=reduceMotion?1:1+1.2*Math.pow(Math.max(0,Math.sin(idleT*.21)),4);
-  for(const s of swayers){ const a=(s.amp||1)*.07; s.o.rotation.z=Math.sin(idleT*1.6+s.ph)*a; s.o.rotation.x=Math.cos(idleT*1.3+s.ph)*a*.5; }
+  if(!reduceMotion) windU.value=idleT; gustU.value=reduceMotion?1:1+1.2*Math.pow(Math.max(0,Math.sin(idleT*.21)),4);
+  if(!reduceMotion) for(const s of swayers){ const a=(s.amp||1)*.07; s.o.rotation.z=Math.sin(idleT*1.6+s.ph)*a; s.o.rotation.x=Math.cos(idleT*1.3+s.ph)*a*.5; }
   const hp0=segMeshes[0]&&segMeshes[0].position;
   updateBeetles(dt); updatePollen(dt); wearTick(now/1000); if(!reduceMotion) patT.value=idleT;
   snailMeshes.forEach((s,i)=>{ let lean=0; if(hp0){ const a=Math.atan2(hp0.x-s.position.x,hp0.z-s.position.z)-s.rotation.y; lean=-Math.sin(a)*.35; }

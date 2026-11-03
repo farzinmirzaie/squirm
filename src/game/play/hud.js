@@ -27,6 +27,9 @@ function updateHUD(silent){ renderSeeds();
   if(flagsTotal){ const left=countChar(state,'C');
     chips.push(hudTile('flags',left===0&&'done',`Flags ${flagsTotal-left} of ${flagsTotal}`,`${sticker(ICON.flag)}<b>${flagsTotal-left}</b><small>/${flagsTotal}</small>`,left?'Flags':'All flags')); }
   if(map.includes('K')) chips.push(hudTile('keys','',`${state.keys} ${state.keys===1?'key':'keys'}`,`${sticker(ICON.key)}<b>${state.keys}</b>`,state.keys===1?'Key':'Keys',false));
+  // colour helpers: the pollen the worm wears, as its shape
+  if(colourMarks&&/[PYUpyu]/.test(map)){ const k=state.pollen, n=k?POLL[k].n:'';
+    chips.push(hudTile('pollen','',k?`Wearing ${n} pollen`:'No pollen yet',sticker(art(k?'mark'+k:'pollen0',22)),'Pollen',false)); }
   const ok=state.segs.length===state.exitLen;
   chips.push(hudTile('length',ok&&'done',`Length ${state.segs.length}, burrow fits ${state.exitLen}`,
     `${sticker(ICON.worm)}<b>${state.segs.length}</b><span class="to" aria-hidden="true">${ok?'=':'&rarr;'}</span><b>${state.exitLen}</b>`,ok?'Fits!':'Length'));

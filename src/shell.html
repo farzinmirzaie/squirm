@@ -724,8 +724,13 @@ nav .enter,.rise{animation:navIn var(--dur-slow) var(--ease-pop) var(--d,0ms) bo
   nav{gap:10px}.disc{width:48px;height:48px}.disc svg{width:22px;height:22px}
   .lbl{display:none}
 }
+/* bigger text (Settings > Comfort): the HUD, the home pages and every dialog drawn a little larger */
+body.big-text #app,body.big-text .ov>*,body.big-text #toast{zoom:1.12}
+/* except the HUD's stat row, which has to fit up to five tiles across a phone */
+body.big-text .hud-stats{zoom:.9}
 
 /* ==== 11. Reduced motion: every animation and transition above stops ==== */
+/* Calm motion (Settings > Comfort) applies the same rules under body.calm: calmCSS in core/boot.js copies this block */
 @media (prefers-reduced-motion: reduce){
   .dialog,.ov.show:not(.home),.ov.show.out,.ov.out .dialog,.pop,.enter,.rise,.nope,#flash.go,.bubble.say,.intro-art .ia,.intro-art i,#introBody.swap>*,.gen-ico,.pick.swap,#winNext,
   .tab.on.pop svg,.stat.cheer,.stat.cheer .ic,.stat.lost .mini,.gbtn.pop .disc,.gbtn.hint .disc svg,#hintBtn.busy svg,
@@ -751,7 +756,7 @@ nav .enter,.rise{animation:navIn var(--dur-slow) var(--ease-pop) var(--d,0ms) bo
         </div>
         <div class="title"><h1 id="lvlName">First wiggle</h1><p class="sub" id="lvlSub">First sprouts</p></div>
       </div>
-      <div class="toggles"><button id="hapticBtn" class="round" aria-pressed="true" hidden></button><button id="muteBtn" class="round" aria-pressed="false" title="Sound (M)"></button></div>
+      <div class="toggles"><button id="muteBtn" class="round" aria-pressed="false" title="Sound (M)"></button></div>
     </div>
     <div class="hud-stats"><span class="stat moves" id="moves" data-tip="moves" role="button" tabindex="0"></span><span class="chips" id="chips" aria-live="polite"></span></div>
   </header>
@@ -891,7 +896,10 @@ nav .enter,.rise{animation:navIn var(--dur-slow) var(--ease-pop) var(--d,0ms) bo
       <div class="set-row"><span>Music</span><button class="switch" id="setMusic" role="switch" aria-checked="true" aria-label="Music"><i></i></button></div>
       <div class="set-row vol" id="volRow"><span>Volume</span><input type="range" id="setMusicVol" min="0" max="100" step="5" value="70" aria-label="Music volume"></div>
       <div class="set-row"><span>Sound effects</span><button class="switch" id="setSound" role="switch" aria-checked="true" aria-label="Sound effects"><i></i></button></div>
-      <div class="set-row"><span>Vibration</span><button class="switch" id="setHaptic" role="switch" aria-checked="true" aria-label="Vibration"><i></i></button></div>
+      <p class="label">Vibration</p>
+      <div class="seg" id="setHaptic" role="radiogroup" aria-label="Vibration">
+        <button role="radio" data-h="0"><b>Off</b><small>Quiet hands</small></button><button role="radio" data-h="1"><b>Gentle</b><small>Soft taps</small></button><button role="radio" data-h="2"><b>Full</b><small>Every bump</small></button>
+      </div>
     </section>
     <section class="set-card" aria-labelledby="hLook">
       <h3 class="set-h" id="hLook"><span data-art="palette" data-size="26"></span>Look</h3>
@@ -903,6 +911,13 @@ nav .enter,.rise{animation:navIn var(--dur-slow) var(--ease-pop) var(--d,0ms) bo
       <div class="seg" id="setGfx" role="radiogroup" aria-label="Graphics">
         <button role="radio" data-g="auto"><b>Auto</b><small>Adjusts itself</small></button><button role="radio" data-g="saver"><b>Saver</b><small>Easy on battery</small></button><button role="radio" data-g="best"><b>Sharp</b><small>Best looks</small></button>
       </div>
+    </section>
+    <section class="set-card" aria-labelledby="hComfort">
+      <h3 class="set-h" id="hComfort"><span data-art="heart" data-size="26"></span>Comfort</h3>
+      <div class="set-row"><span>Calm motion</span><button class="switch" id="setCalm" role="switch" aria-checked="false" aria-label="Calm motion"><i></i></button></div>
+      <div class="set-row"><span>Bigger text</span><button class="switch" id="setBig" role="switch" aria-checked="false" aria-label="Bigger text"><i></i></button></div>
+      <div class="set-row"><span>Colour helpers</span><button class="switch" id="setMarks" role="switch" aria-checked="false" aria-label="Colour helpers"><i></i></button></div>
+      <p class="set-note">Calm motion keeps the screen still: no bouncing, gliding or swaying. Colour helpers add a shape to each pollen colour: a circle for poppy, a triangle for buttercup and a square for bluebell.</p>
     </section>
     <section class="set-card" aria-labelledby="hRemind">
       <h3 class="set-h" id="hRemind"><span data-art="bell" data-size="26"></span>Reminders</h3>

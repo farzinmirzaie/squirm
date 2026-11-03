@@ -14,9 +14,6 @@
 //   platform/ anonymous stats, offline and install, the daily reminder
 // Inside the wrapper `history` is the undo stack; the browser's is always window.history.
 
-const motionQuery = window.matchMedia ? matchMedia('(prefers-reduced-motion: reduce)') : null;
-let reduceMotion = !!(motionQuery && motionQuery.matches);
-if(motionQuery && motionQuery.addEventListener) motionQuery.addEventListener('change',e=>{ reduceMotion=e.matches; });
 // ---------- saved data ----------
 // every key starts with squirm- and must never be renamed; storage can be missing or full, so none of these ever throw
 const store={
@@ -26,6 +23,17 @@ const store={
   json:k=>{ try{ return JSON.parse(localStorage.getItem(k)||'null'); }catch(e){ return null; } },
   keys:()=>{ try{ return Object.keys(localStorage).filter(k=>k.startsWith('squirm-')); }catch(e){ return []; } }
 };
+// ---------- comfort ----------
+// Settings > Comfort, all device-specific (SAVE_SKIP). Calm motion (squirm-calm) works like the system's reduce-motion
+// setting: reduceMotion gates scripted motion, and body.calm gets a copy of the CSS reduced-motion block (made at boot by
+// calmCSS). Bigger text (squirm-bigtext): body.big-text. Colour helpers (squirm-marks): a shape for each pollen colour on
+// flowers and petal gates (syncMarks) and a pollen chip in the HUD.
+let calmMotion=store.get('squirm-calm')==='1', bigText=store.get('squirm-bigtext')==='1', colourMarks=store.get('squirm-marks')==='1';
+const motionQuery = window.matchMedia ? matchMedia('(prefers-reduced-motion: reduce)') : null;
+let reduceMotion = calmMotion || !!(motionQuery && motionQuery.matches);
+if(motionQuery && motionQuery.addEventListener) motionQuery.addEventListener('change',e=>{ reduceMotion=calmMotion||e.matches; });
+function applyComfort(){ reduceMotion=calmMotion||!!(motionQuery&&motionQuery.matches);
+  document.body.classList.toggle('calm',calmMotion); document.body.classList.toggle('big-text',bigText); }
 const C = {
   turf1:0xB9E49E, turf2:0xAADB8E, dry:0xEBD59C, soil:0x9A6A4C, soilDark:0x7E543B, wood:0xD29A62, lawn:0x8CC673,
   head:0xFFB3C8, riverWater:0x8CCFEA, plank:0xD9A56E, plankDark:0xB98352, leafBig:0x7CC95F, water:0x9ED6EF, mud:0x8A5E43, cloud:0xFFFFFF, rainCloud:0xAEBBD2, eye:0xFFFFFF, pupil:0x3B2A22, cheek:0xFF6F96,

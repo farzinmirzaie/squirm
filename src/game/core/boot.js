@@ -1,4 +1,9 @@
 // ---------- boot ----------
+// Calm motion: a copy of the CSS reduced-motion block under body.calm, so the setting needs no second list of rules
+(function calmCSS(){ for(const sh of document.styleSheets){ let rules; try{ rules=[...sh.cssRules]; }catch(e){ continue; }
+  for(const r of rules) if(r.media&&/prefers-reduced-motion/.test(r.media.mediaText)) for(const x of [...r.cssRules]) try{
+    sh.insertRule(x.selectorText.split(',').map(s=>'body.calm '+s.trim()).join(',')+'{'+x.style.cssText+'}',sh.cssRules.length); }catch(e){} } })();
+applyComfort();
 qa(document,'.fade-scroll').forEach(fadeScroll);
 document.querySelectorAll('[data-art]').forEach(e=>e.insertAdjacentHTML('afterbegin',art(e.dataset.art,+e.dataset.size||24)));
 // upload the shared effect textures once up front: otherwise each one is first sent to the GPU

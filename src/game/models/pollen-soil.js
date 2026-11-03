@@ -5,6 +5,15 @@
 const POLL={P:{n:'poppy',col:C.pollenP,light:C.pollenPLight,dark:C.pollenPDark},Y:{n:'buttercup',col:C.pollenY,light:C.pollenYLight,dark:C.pollenYDark},U:{n:'bluebell',col:C.pollenU,light:C.pollenULight,dark:C.pollenUDark}};
 const polMat=(ch,k='col')=>MC['pol'+ch+k]||(MC['pol'+ch+k]=toon(POLL[ch][k]));
 let polItems=[];
+// colour helpers (Settings > Comfort): a shape for each pollen colour, floating over its flowers and gates and in the HUD
+// chip: a circle for poppy, a triangle for buttercup, a square for bluebell. markPath draws one on a canvas
+function markPath(c,k,cx,cy,r){ c.beginPath(); if(k==='P') c.arc(cx,cy,r,0,7);
+  else if(k==='Y'){ c.moveTo(cx,cy-r*1.15); c.lineTo(cx+r*1.1,cy+r*.8); c.lineTo(cx-r*1.1,cy+r*.8); c.closePath(); } else c.rect(cx-r*.85,cy-r*.85,r*1.7,r*1.7); }
+const markMat=k=>MC['mark'+k]||(MC['mark'+k]=new THREE.SpriteMaterial({map:canvasTex(96,96,c=>{ c.lineJoin='round';
+  c.beginPath(); c.arc(48,48,42,0,7); c.fillStyle='#FFF8EA'; c.fill(); c.lineWidth=6; c.strokeStyle='#5B4436'; c.stroke();
+  markPath(c,k,48,50,23); c.fillStyle='#'+new THREE.Color(POLL[k].col).getHexString(); c.fill(); c.lineWidth=6; c.stroke(); })}));
+function addMark(g,k,y){ const s=new THREE.Sprite(markMat(k)); s.scale.setScalar(.4); s.position.y=y; s.userData.mark=true; s.visible=colourMarks; g.add(s); }
+function syncMarks(){ board.traverse(o=>{ if(o.userData.mark) o.visible=colourMarks; }); }
 // each colour has its own bloom, so they tell apart by shape too: poppy four wide petals round a dark seed head,
 // buttercup five round glossy cups, bluebell six slim pointed petals in a star; gates bud and open the same way
 const BLOOM={P:{n:4,w:1.35,l:1.2,cup:.36,gw:1.7,gh:2.15},Y:{n:5,w:1.12,l:1.12,cup:.55,gw:1.38,gh:2.2},U:{n:6,w:.64,l:1.42,cup:.45,gw:1.02,gh:2.45}};
@@ -12,7 +21,7 @@ const BLOOM={P:{n:4,w:1.35,l:1.2,cup:.36,gw:1.7,gh:2.15},Y:{n:5,w:1.12,l:1.12,cu
 function hullFit(mesh,t,r0){ if(!mesh.geometry.boundingSphere) mesh.geometry.computeBoundingSphere(); const r=r0||mesh.geometry.boundingSphere.radius, s=mesh.scale;
   const o=mesh.userData.hull||(mesh.userData.hull=new THREE.Mesh(mesh.geometry,lineMat)); o.scale.set(1+t/(r*s.x),1+t/(r*s.y),1+t/(r*s.z)); if(!o.parent) mesh.add(o); return o; }
 const polGloss=()=>MC.polGloss||(MC.polGloss=new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:.6,depthWrite:false}));
-function makePollenFlower(g,ch,x,y){ const fl=new THREE.Group(); fl.position.y=.02; fl.rotation.y=(x*3+y*5)%6*.5; g.add(fl); g.userData.pollenFlower=fl;
+function makePollenFlower(g,ch,x,y){ const fl=new THREE.Group(); fl.position.y=.02; fl.rotation.y=(x*3+y*5)%6*.5; g.add(fl); g.userData.pollenFlower=fl; addMark(g,ch,.6);
   g.userData.pcol=ch; const B=BLOOM[ch], st=new THREE.Group();
   // three leaves with a paler midrib
   for(let i=0;i<3;i++){ const a=i/3*Math.PI*2+.5, lf=new THREE.Mesh(sph(.12,14,8),m('leaf')); lf.scale.set(1.7,.16,.62);
@@ -37,7 +46,7 @@ function makePollenFlower(g,ch,x,y){ const fl=new THREE.Group(); fl.position.y=.
   fl.add(merged(st,1));
   const motes=[]; for(let i=0;i<4;i++){ const mo=new THREE.Mesh(sph(.026,8,6),polMat(ch,'light')); mo.userData.ph=i*1.6+x+y*.7; fl.add(mo); motes.push(mo); }
   polItems.push({motes,fl}); }
-function makePetalGate(g,ch,x,y){ const P=ch.toUpperCase(), B=BLOOM[P], gt=new THREE.Group(); gt.rotation.y=(x+y)%2*.5; g.add(gt); g.userData.petalGate=gt;
+function makePetalGate(g,ch,x,y){ const P=ch.toUpperCase(), B=BLOOM[P], gt=new THREE.Group(); gt.rotation.y=(x+y)%2*.5; g.add(gt); g.userData.petalGate=gt; addMark(g,P,.95);
   g.userData.pcol=P;
   // a ring of the colour on the grass, so even a folded gate says whose it is, a leafy cushion and sepals (merged: they never move)
   const st=new THREE.Group();

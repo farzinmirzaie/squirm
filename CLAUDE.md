@@ -494,6 +494,12 @@ from a tab replaces that layer with `game`.
   switch, What's new folded into a `<details>`, the build id). A save code is `SQUIRM1:` + base64 JSON of
   every `squirm-` key except the throwaway ones in `SAVE_SKIP`; restoring replaces those keys and reloads.
   Starting over is only the secret reset: hold the home worm's head for 3 s, which clears every `squirm-` key.
+- **Comfort** (Settings, `core/base.js`): three device-specific switches. Calm motion (`calmMotion`, `squirm-calm`) sets
+  `reduceMotion` like the system setting and adds `body.calm`, which gets a copy of the CSS reduced-motion block made at
+  boot (`calmCSS` in `core/boot.js`), so that block stays the one list. Bigger text (`squirm-bigtext`, `body.big-text`)
+  zooms the app column and dialogs by 1.12 (not the HUD stat row). Colour helpers (`colourMarks`, `squirm-marks`): a
+  shape per pollen colour (circle poppy, triangle buttercup, square bluebell) on a sprite over every flower and petal
+  gate (`addMark`, `syncMarks`, `ART.mark*`) and a Pollen chip in the HUD showing the worn one.
 - **Layers and the back button** (`ui/layers.js`): a small layer stack mirrored to `window.history` (`pushLayer` /
   `popLayer` / `swapLayers`). `popLayer`'s `history.go` is async, so use `swapLayers` when replacing a layer
   right after closing another (the finale does this coming from the win dialog).
@@ -501,7 +507,10 @@ from a tab replaces that layer with `game`.
 ### Sound, performance and the platform
 
 - **Music and sound** (`audio/`): `sfx(name)` plays synthesized effects (`sfx.js`; haptics and birdsong sit at the end
-  of `music.js`). The music is little songs composed on the fly: `musicTick` calls `musicSchedule`, which plans
+  of `music.js`). Every effect can carry a vibration rhythm in `HAPTIC` (ms on, off, ...; one distinct pattern per
+  event, ambient sounds none), played by `buzz` at the player's strength (`hapticLvl`: Off / Gentle / Full,
+  `squirm-haptics`; Gentle shortens the pulses); iOS, which has no `navigator.vibrate`, gets one switch tick per pulse
+  on the pattern's own timing. The music is little songs composed on the fly: `musicTick` calls `musicSchedule`, which plans
   notes a bar at a time a little ahead on the Web Audio clock. Each patch has its own song (`makeSong`, seeded by
   `songKey()`: the patch name or meadow seed, so a replay brings its tune back); home plays the hand-written
   `THEME`. A song is 16 bars, A A B A', over seventh-chord `PROGS`, its melody a motif (`RHY` rhythm + steps)

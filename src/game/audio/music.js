@@ -124,17 +124,29 @@ function musicTick(){ if(!ac||!mBus) return; const want=musicOn&&!muted&&!docume
   if(mNext<ac.currentTime){ mNext=ac.currentTime+.15; mPos=0; }
   musicSchedule(ac.currentTime+.7); }
 setInterval(musicTick,200);
-let hapticsOn=store.get('squirm-haptics')!=='0';
-const HAPTIC={push:16,move:8,grow:[10,30,14],shrink:[14,30,10],key:[8,25,8,25,12],gate:22,flag:[12,40,16],portal:[10,30,24],crumble:28,bump:[14,30,14],stuck:[40,70,40],undo:6,
-  tap:6,on:8,off:8,badge:[15,40,15,40,30],win:[30,60,30,60,90],ready:[10,40,10],turn:[8,30,12],slide:6,hedgeOpen:[12,30,12],hedgeClose:14,rainOn:[30,50,15],creak:[20,40,20,40,20],rainOff:[15,50,30]};
+// ---------- haptics ----------
+// Vibration speaks a small rhythm language, one pattern per effect (ms on, off, on, ...): light ticks for crawling,
+// rising pulses for growing and falling ones for shrinking, a sparkle for keys and pollen, a thunk for gates and
+// pushes, a speeding swirl for a turnaround, a fanfare for a win. Ambient sounds (a yawn, a snail) stay quiet.
+// 'squirm-haptics': '0' off, 'gentle' (shorter, softer pulses), anything else full.
+let hapticLvl=(v=>v==='0'?0:v==='gentle'?1:2)(store.get('squirm-haptics'));
+const HAPTIC={move:6,slide:[4,22,4],push:[18,26,8],grow:[8,26,12,26,18],shrink:[18,26,12,26,8],key:[6,18,6,18,6,18,14],
+  gate:[26,40,10],flag:[10,50,22],portal:[6,16,10,16,14,16,22],crumble:[8,12,8,12,8,12,20],bump:[14,40,10],stuck:[40,80,40],
+  undo:5,tap:5,on:[6,30,10],off:[10,30,6],badge:[12,40,12,40,40],win:[20,50,20,50,20,90,60],ready:[8,60,16],
+  turn:[6,24,8,20,10,16,14,12,22],hedgeOpen:[10,30,16],hedgeClose:[16,30,10],rainOn:[4,40,4,40,4,40,4],rainOff:[4,60,4],
+  creak:[20,40,20,40,20],pollen:[4,16,4,16,4,16,8],bloom:[8,30,16],bud:12,dig:[18,20,10,20,6],shutter:[10,30,6]};
 const iosHaptic=(()=>{ try{ const l=document.createElement('label'); l.setAttribute('aria-hidden','true'); l.style.cssText='position:fixed;left:-200px;top:0;width:1px;height:1px;opacity:0;pointer-events:none';
   const i=document.createElement('input'); i.type='checkbox'; i.setAttribute('switch',''); i.tabIndex=-1; l.appendChild(i); document.body.appendChild(l);
     return l; }catch(e){ return null; } })();
 // what the current press has already done (see the press handler under input), so it never doubles up
 const fbNow={s:false,b:false};
-function buzz(p){ if(p!=null) fbNow.b=true; if(!hapticsOn||p==null) return;
-  try{ if(navigator.vibrate){ navigator.vibrate(p); return; }
-    if(iosHaptic){ const n=Array.isArray(p)?Math.ceil(p.length/2):1; for(let i=0;i<n;i++) setTimeout(()=>iosHaptic.click(),i*110); } }catch(e){} }
+function buzz(p){ if(p!=null) fbNow.b=true; if(!hapticLvl||p==null) return;
+  const pat=(Array.isArray(p)?p:[p]).map((v,i)=>i%2||hapticLvl>1?v:Math.max(3,Math.round(v*.55)));
+  try{ if(navigator.vibrate){ navigator.vibrate(pat); return; }
+    // iOS has no vibrate, only a fixed tick from a switch: one tick at the start of each pulse, on the pattern's own timing
+    if(iosHaptic){ let t=0; pat.forEach((v,i)=>{ if(!(i%2)&&(hapticLvl>1||v>=6||i===0)) setTimeout(()=>iosHaptic.click(),t); t+=v; }); } }catch(e){} }
+function setHaptics(lvl){ hapticLvl=lvl; store.set('squirm-haptics',['0','gentle','1'][lvl]); }
+// ---------- birdsong ----------
 let birdT=8;
 let birdSong=0;
 function ambient(dt){ birdT-=dt/1000; if(birdT>0) return; birdT=7+Math.random()*9; birdSong=.9; if(!ac||muted||!state||state.raining||document.hidden) return;

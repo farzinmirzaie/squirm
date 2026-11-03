@@ -35,7 +35,7 @@ function renderHome(){
   const em=progress.endless[endlessDiff], er=readResume('endless'), canResume=er&&er.def&&!er.def.daily;
   $('meadowSub').textContent=canResume?'Pick up where you left off':`${DIFF_NAME[endlessDiff]}${em.streak?` · streak ${em.streak}`:em.cleared?` · ${em.cleared} cleared`:''}`;
   renderGoal(); sayHello();
-  renderMute(); renderHaptic(); renderNews();
+  renderMute(); renderNews();
   // what the page shows before the game has loaded next time (see the boot script in shell.html)
   store.set('squirm-boot',JSON.stringify({stars:$('homeStars').innerHTML,title:$('playTitle').textContent,sub:$('playSub').textContent,daily:$('dailySub').textContent,done:!!dr,day:new Date().toDateString()}));
 }

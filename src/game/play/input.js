@@ -93,10 +93,4 @@ function toggleMute(el){ ensureAudio(); muted=!muted; if(el) settle(el); store.s
   sfx(muted?'off':'on'); }
 $('muteBtn').onclick=()=>toggleMute($('muteBtn'));
 renderMute();
-function renderHaptic(){ const b=$('hapticBtn'); b.setAttribute('aria-pressed',String(hapticsOn));
-  b.setAttribute('aria-label',hapticsOn?'Turn vibration off':'Turn vibration on');
-  b.innerHTML='<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round"><rect x="7.5" y="4" width="9" height="16" rx="2.5"/>'+(hapticsOn?'<path d="M4 9v6M20 9v6M1.5 10.5v3M22.5 10.5v3"/>':'<path d="M3 3l18 18"/>')+'</svg>';
-    }
-$('hapticBtn').onclick=()=>{ hapticsOn=!hapticsOn; store.set('squirm-haptics',hapticsOn?'1':'0'); renderHaptic(); sfx(hapticsOn?'on':'off'); };
-renderHaptic();
 
