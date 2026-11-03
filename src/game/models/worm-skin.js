@@ -4,12 +4,14 @@ const tubeMat=new THREE.MeshToonMaterial({color:0xffffff,vertexColors:true,gradi
 // radius), so they stay crisp and keep their size on the stage and in a patch, at any length: the soft groove
 // between body rings with a faint sheen on top of each ring and a paler belly (every pattern), Stripes, Bands, Spots (round pale spots on the back, alternating left and
 // right of the spine, two to a segment) and Glitter (specks a fixed size in the world, a whole number of them
-// around the body so there's no seam). fwidth(g) is about one pixel on the body, for edges that don't shimmer
-const patU={value:0}, PAT_ID={stripes:1,spots:2,bands:3,glitter:4};
+// around the body so there's no seam). Three move with uT (seconds, held still under reduced motion): Shimmer (a
+// gloss that sweeps from head to tail), Glow worm (warm lights on the back twinkling down the body in turn) and
+// Prism (soft rainbow hues flowing along the body). fwidth(g) is about one pixel on the body, for edges that don't shimmer
+const patU={value:0}, patT={value:0}, PAT_ID={stripes:1,spots:2,bands:3,glitter:4,shimmer:5,glow:6,prism:7};
 tubeMat.extensions={derivatives:true};
-tubeMat.onBeforeCompile=sh=>{ sh.uniforms.uPat=patU;
+tubeMat.onBeforeCompile=sh=>{ sh.uniforms.uPat=patU; sh.uniforms.uT=patT;
   sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nattribute vec3 pg; varying vec3 vPg;').replace('#include <begin_vertex>','#include <begin_vertex>\nvPg=pg;');
-  sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nuniform float uPat; varying vec3 vPg;').replace('#include <color_fragment>',`#include <color_fragment>
+  sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nuniform float uPat; uniform float uT; varying vec3 vPg;').replace('#include <color_fragment>',`#include <color_fragment>
     float g=vPg.x, r=max(length(vPg.yz),.001), an=atan(vPg.z,vPg.y), px=max(fwidth(g),.0005), q=abs(fract(g*2.+.5)-.5)*.5, m=abs(.25-q);
     float up=vPg.z/r;
     diffuseColor.rgb=mix(diffuseColor.rgb,vec3(1.),.16*(1.-smoothstep(-.75,-.2,up)));
@@ -18,7 +20,18 @@ tubeMat.onBeforeCompile=sh=>{ sh.uniforms.uPat=patU;
     if(g>.55 && uPat>2.5 && uPat<3.5) diffuseColor.rgb*=1.-.18*(1.-smoothstep(.026-px,.026+px,m));
     if(uPat>1.5 && uPat<2.5){ float k=floor(g*2.+.5); if(k>1.5){ float a=an-1.5708-(mod(k,2.)>.5?.7:-.7); a=abs(mod(a+3.14159,6.28318)-3.14159);
       float d=length(vec2(g-k*.5,a*r)), R=.36*r; diffuseColor.rgb=mix(diffuseColor.rgb,vec3(1.),.6*(1.-smoothstep(R-px,R+px,d))); } }
-    if(uPat>3.5){ vec2 c=vec2(g*8.,an*1.909859), id=floor(c), fr=fract(c)-.5; float h=fract(sin(dot(id,vec2(12.9898,78.233)))*43758.5453);
+    if(uPat>4.5 && uPat<5.5){ float s=fract(g*.24-uT*.45), b=exp(-pow((s-.5)*8.,2.));
+      diffuseColor.rgb=mix(diffuseColor.rgb,vec3(1.),.68*b*smoothstep(.3,.9,g)*(.55+.45*max(up,0.))); }
+    if(uPat>5.5 && uPat<6.5 && g>.6){ float lit=0.;
+      for(int j=0;j<3;j++){ float off=j==0?0.:.5, ang=j==0?0.:(j==1?1.45:-1.45), kk=floor(g-off+.5)+off;
+        float a=abs(mod(an-1.5708-ang+3.14159,6.28318)-3.14159), d=length(vec2(g-kk,a*r)), R=.34*r;
+        float p=pow(.5+.5*sin(uT*2.4-kk*1.1+float(j)*.9),4.);
+        lit=max(lit,(1.-smoothstep(R-px,R+px,d))*(.3+.7*p)+.45*(1.-smoothstep(R,R*2.6,d))*p); }
+      diffuseColor.rgb=mix(diffuseColor.rgb,vec3(1.,.94,.58),.92*min(lit,1.)); }
+    if(uPat>6.5){ vec3 hu=clamp(abs(mod(fract(g*.11-uT*.07)*6.+vec3(0.,4.,2.),6.)-3.)-1.,0.,1.);
+      float lum=max(max(diffuseColor.r,diffuseColor.g),diffuseColor.b);
+      diffuseColor.rgb=mix(diffuseColor.rgb,mix(vec3(1.),hu,.42)*lum,.75*smoothstep(.4,1.4,g)); }
+    if(uPat>3.5 && uPat<4.5){ vec2 c=vec2(g*8.,an*1.909859), id=floor(c), fr=fract(c)-.5; float h=fract(sin(dot(id,vec2(12.9898,78.233)))*43758.5453);
       if(id.x>3.5 && h>.55){ vec2 o=vec2(fract(h*7.31),fract(h*13.7))-.5, cs=vec2(.125,r*.5236);
         float R=min(.016+.008*fract(h*3.7),.3*cs.y), d=length((fr-o*.4)*cs);
         diffuseColor.rgb=mix(diffuseColor.rgb,vec3(1.),.9*(1.-smoothstep(R-px,R+px,d))); } }`); };

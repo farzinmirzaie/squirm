@@ -433,13 +433,13 @@ from a tab replaces that layer with `game`.
   `[id, name, -2, how to earn, test]` for milestone hats. Each is built once (`buildHat`) and cloned into
   the head's `hatSlot`. `hBake` merges a hat into one mesh per material, except parts marked to move.
 - **Extras:** `EXTRAS` (`[id, name, how to earn, test]`) work the same way through `buildExtra` into the
-  head's `accSlot`, saved in `squirm-extra`.
+  head's `accSlot`, saved in `squirm-extra`. Every hat and extra needs a sticker in `ART` (`hat-<id>` /
+  `extra-<id>`).
 - **Wear motion** (end of `models/extras.js`): a few items have a part that moves (pinwheel, butterfly, firefly,
   bee antennae, lightbulb, weathervane, teacup steam, rain cloud, sprout). Put `userData.anim` on the part
   (swing `r`, sway `p`, scale pulse `s`, `spin` with gusts, `drip`; the comment there lists them); `hBake` keeps it
   as its own child, `dressHat` / `dressExtra` register worn clones with `wearAdd`, and `wearTick` (from `frame`)
-  moves them round their rest pose. Reduced motion keeps them still. Keep it to items where motion fits. Every hat and extra needs a sticker in `ART` (`hat-<id>` /
-  `extra-<id>`).
+  moves them round their rest pose. Reduced motion keeps them still. Keep it to items where motion fits.
 - **Colour options:** `TINTS` gives some hats and extras five colours. `keys` are the item's `C` materials,
   swapped by `tinted()` when its proto is built (protos are cached per id and option); `art` are the sticker
   hexes `tintArt()` recolours; option 0 is the item's own look. The wardrobe shows a picker row
@@ -453,7 +453,8 @@ from a tab replaces that layer with `game`.
   (the body-ring groove, stripes, bands, spots, glitter) is drawn per pixel by `tubeMat`'s shader (`patU` /
   `PAT_ID`) from the tube's `pg` attribute: the place along the worm `g` (one unit per segment, continued
   down the tail tip and through tunnel dives) and the ring direction scaled by the radius, so patterns keep
-  their size on the stage and in a patch. `patArt` draws the wardrobe preview in the current colour.
+  their size on the stage and in a patch. Shimmer, Glow worm and Prism move: the shader reads `uT` (`patT`, set
+  from `idleT` in `frame`, held still under reduced motion). `patArt` draws the wardrobe preview in the current colour.
 - **Milestones** for unlocks and badges come from `progress.stats` counters (`moves`, `fruit`, `naps`,
   `rains`, `restarts`, `outfits`, `days`, `teatime`, `allPollen`, `burrows`, ...); bump new ones with
   `bumpStat`. A few keep a best instead of a count: `pokeRun` (the longest run of quick taps on the worm in a

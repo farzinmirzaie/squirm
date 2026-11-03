@@ -16,7 +16,11 @@ const PATTERNS=[['plain','Plain','',()=>true],
   ['bands','Bands','Crawl 2,000 moves',()=>(progress.stats.moves||0)>=2000],
   ['sunset','Sunset','Finish 10 chapters',()=>CHAPTERS.filter((ch,k)=>chapterCleared(k)).length>=10],
   ['glitter','Glitter','Earn 25 badges',()=>Object.keys(progress.badges).length>=25],
-  ['twotone','Two-tone','Finish a patch after turning around 3 times in it',()=>(progress.stats.twistyWins||0)>=1]];
+  ['twotone','Two-tone','Finish a patch after turning around 3 times in it',()=>(progress.stats.twistyWins||0)>=1],
+  // these three move (tubeMat's shader, uT)
+  ['shimmer','Shimmer','3 stars on 100 patches',()=>LEVELS.filter(l=>progress.stars[l.name]===3).length>=100],
+  ['glow','Glow worm','Finish 15 patches in the evening, 7 to 10 pm',()=>(progress.stats.evenings||0)>=15],
+  ['prism','Prism','Finish 30 daily patches',()=>(progress.stats.dailies||0)>=30]];
 const patternsUnlocked=()=>PATTERNS.filter(p=>p[3]()).map(p=>p[0]);
 let wormPat=store.get('squirm-pattern')||'plain';
 const patOn=()=>PATTERNS.some(p=>p[0]===wormPat&&p[3]())?wormPat:'plain';
