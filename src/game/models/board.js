@@ -80,7 +80,7 @@ function makeTile(x,y,ch){
     const heap=mk(sph(.17,18,10),m('soilDark'),sp,[0,0,0],.014); heap.scale.set(1,.3,.9); heap.receiveShadow=true;
     mk(new THREE.CylinderGeometry(.016,.024,.13,8),m('leaf'),sp,[0,.065,0],.01);
     for(const sd of [-1,1]){ const lg=new THREE.Group(); lg.position.y=.125; lg.rotation.set(0,sd>0?0:Math.PI,.2); sp.add(lg);
-      mk(bladeGeo(),m('leafBig'),lg,[.1,0,0],.012).scale.setScalar(1.2); }
+      mk(leafletGeo(),m('leafBig'),lg,[.1,0,0],.012).scale.setScalar(1.2); }
     const bud=mk(sph(.035,12,8),m('leaf'),sp,[0,.15,0],.01); bud.scale.set(.8,1.2,.8);
     const leaf=new THREE.Group(); const lm=m('leafBig');
     const pad=new THREE.Mesh(leafPadGeo(),lm); pad.scale.set(1.04,1.6,1.04); pad.castShadow=true; pad.receiveShadow=true; outline(pad,.02); leaf.add(pad);
@@ -141,10 +141,10 @@ function peachGeo(){ if(GC.peach) return GC.peach; const g=new THREE.SphereGeome
     if(v.y>0) v.y-=.05*Math.exp(-(v.x*v.x+v.z*v.z)/(.075*.075)); v.y*=.94; pa.setXYZ(i,v.x,v.y,v.z); }
   g.computeVertexNormals(); return GC.peach=g; }
 // a leaf blade: rounded at the stalk, pointed at the tip (+x), with its edges curling up a little
-function bladeGeo(){ if(GC.blade) return GC.blade; const g=new THREE.SphereGeometry(.1,20,10), pa=g.attributes.position;
+function leafletGeo(){ if(GC.leaflet) return GC.leaflet; const g=new THREE.SphereGeometry(.1,20,10), pa=g.attributes.position;
   for(let i=0;i<pa.count;i++){ const x=pa.getX(i), t=x/.1, z=pa.getZ(i);
     const zz=z*(1-.45*Math.max(0,t))*.6; pa.setXYZ(i,x*1.15,pa.getY(i)*.22+zz*zz*2.2+.012*t*t,zz); }
-  g.computeVertexNormals(); return GC.blade=g; }
+  g.computeVertexNormals(); return GC.leaflet=g; }
 function mk(geo,mt,parent,pos,ol=.022){ const o=new THREE.Mesh(geo,mt); if(pos) o.position.set(...pos); o.castShadow=true; if(ol) outline(o,ol); parent.add(o);
   return o; }
 function makeItem(x,y,ch){
@@ -155,10 +155,10 @@ function makeItem(x,y,ch){
     const st=new THREE.Mesh(new THREE.CylinderGeometry(.016,.022,.1,8),m('stalk')); st.position.set(0,.49,0); st.rotation.z=-.25; b.add(st);
       st.castShadow=true; outline(st,.01);
     const lf=new THREE.Group(); lf.position.set(.03,.52,0); lf.rotation.set(.3,-.6,.35); b.add(lf);
-    const bl=mk(bladeGeo(),m('leaf'),lf,[.1,0,0],.014); bl.scale.setScalar(1.05);
+    const bl=mk(leafletGeo(),m('leaf'),lf,[.1,0,0],.014); bl.scale.setScalar(1.05);
     const rib=new THREE.Mesh(new THREE.BoxGeometry(.17,.008,.012),m('leafRib')); rib.position.set(.1,.024,0); lf.add(rib);
     const lf2=new THREE.Group(); lf2.position.set(-.02,.5,.01); lf2.rotation.set(-.2,2.5,.45); b.add(lf2);
-    const bl2=mk(bladeGeo(),m('leaf'),lf2,[.08,0,0],.012); bl2.scale.setScalar(.7);
+    const bl2=mk(leafletGeo(),m('leaf'),lf2,[.08,0,0],.012); bl2.scale.setScalar(.7);
     // a rosy blush on the cheek beside the crease (it sits on the skin: radius .2, squashed to .94 in y)
     const blush=new THREE.Mesh(sph(.09,14,10),MC.peachBlushFx||(MC.peachBlushFx=new THREE.MeshBasicMaterial({color:C.peachBlush,transparent:true,opacity:.4,depthWrite:false})));
       const bn=new THREE.Vector3(.55,.15,.82).normalize(); blush.position.copy(bn).multiplyScalar(.192); blush.position.y*=.94;
