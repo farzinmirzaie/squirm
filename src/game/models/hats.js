@@ -287,22 +287,45 @@ function buildHat(id){ const h=new THREE.Group();
     const core=new THREE.Mesh(sph(.085,18,10),m('sunCore')); core.scale.y=.42; core.position.y=.018; hHull(core,.008); g.add(core);
     for(let i=0;i<16;i++){ const r=.068*Math.sqrt((i+.5)/16), a=i*2.39996, d=new THREE.Mesh(sph(.011,6,4),m('acornNut'));
       d.position.set(Math.cos(a)*r,.018+.085*.42*Math.sqrt(Math.max(0,1-r*r/(.085*.085)))+.002,Math.sin(a)*r); g.add(d); } }
-  else if(id==='horn'){ // a headband hugging the head side to side, with a curved, ridged beetle horn on top
-    const band=hTorus(.355,.03,m('beetleDark'),.008,Math.PI-.7,8,30); band.rotation.z=.35; band.position.y=-.27; h.add(band);
-    for(const a of [.35,Math.PI-.35]){ const e=new THREE.Mesh(sph(.03,8,6),m('beetleDark')); e.position.set(Math.cos(a)*.355,-.27+Math.sin(a)*.355,0); hHull(e,.008); h.add(e); }
-    // a shiny shell plate on top of the head, the horn rising from it and hooking forward, ridged at the base, forked at the tip
-    const base=hLathe([[.12,-.02],[.125,.005],[.11,.035],[.075,.06],[.03,.072],[0,.074]],24,m('beetleDark')); base.position.z=-.04; hHull(base,.01); h.add(base);
-    const pts=[]; for(let k=0;k<=8;k++){ const t=k/8, a=t*1.45; pts.push(hV3(0,.05+Math.sin(a)*.25,-.06+(1-Math.cos(a))*.22)); }
-    const path=new THREE.CatmullRomCurve3(pts), rad=t=>.068*(1-t*.72);
-    h.add(hTube(pts,.068,m('beetle'),{seg:16,rs:12,line:.011,taper:t=>1-t*.72}));
-    for(const t of [.12,.26,.4]){ const c=path.getPointAt(t), tg=path.getTangentAt(t), r=new THREE.Mesh(new THREE.TorusGeometry(rad(t)+.002,.01,6,18),m('beetleDark'));
+  else if(id==='horn'){ // the beetles' shell worn as a cap: two wing covers split by a seam, pale spots and a shine, a dark rim,
+    // a dark front plate and a big rhino horn rising from it, curling forward into a forked tip (like the board beetle's)
+    // the head's centre in hat space; the cap hugs it, reaching lower at the sides and back than at the front (clear of the eyes)
+    const O=hV3(0,-.269,-.029), R=.357, lim=a=>.68+.43*(1-Math.cos(a))/2+.17*Math.sin(a)**2, swell=u=>.03*(1-u*u);
+    const onCap=(a,pol,lift=0)=>{ const u=Math.min(1,pol/lim(a)), r=R+swell(u)+lift; return hV3(Math.sin(pol)*Math.sin(a)*r,Math.cos(pol)*r,Math.sin(pol)*Math.cos(a)*r).add(O); };
+    const cap=new THREE.Mesh(hWarp(new THREE.SphereGeometry(1,48,12,0,hTAU,0,Math.PI/2),v=>{ const u=Math.acos(Math.max(-1,Math.min(1,v.y)))/(Math.PI/2), a=Math.atan2(v.x,v.z);
+      v.copy(onCap(a,u*lim(a))); }),m('beetle')); hHull(cap,.011); h.add(cap);
+    const rim=[]; for(let i=0;i<64;i++){ const a=i/64*hTAU; rim.push(onCap(a,lim(a),-.004)); }
+    h.add(hTube(rim,.024,m('beetleDark'),{closed:true,seg:72,rs:7,line:.009}));
+    // the seam between the wing covers, from behind the front plate down to the rim at the back
+    const seam=[]; for(let k=0;k<=10;k++){ const p=.2+k/10*(lim(Math.PI)-.22); seam.push(onCap(Math.PI,p,.002)); }
+    h.add(hTube(seam,.011,m('beetleDark'),{seg:20,rs:5}));
+    // pale spots on both wing covers, and a long shine on each
+    for(const sd of [-1,1]){
+      for(const [a,p,r] of [[1.65,.62,.04],[2.4,.45,.034],[2.45,.86,.028],[1.25,.88,.026]]){ const pos=onCap(sd*a,p,.001), sp=new THREE.Mesh(sph(r,12,8),m('beetleSpot'));
+        hStick(sp,pos,pos.clone().sub(O).normalize()); sp.scale.z=.3; h.add(sp); }
+      const sh=[]; for(let k=0;k<=5;k++) sh.push(onCap(sd*(1.5+k*.12),.56-k*.03,.004));
+      h.add(hTube(sh,.011,m('beetleSpot'),{seg:10,rs:4,taper:t=>.5+.6*Math.sin(t*Math.PI)})); }
+    // the front plate: a dark shield lying on the cap's top front, curving with it, edged with a rolled rim
+    const shield=v=>{ const d=v.clone().normalize(), a=Math.atan2(d.x,d.z); return onCap(a,Math.min(Math.acos(d.y),lim(a)-.035),.009); };
+    const pg=new THREE.SphereGeometry(1,40,6,0,hTAU,0,.44); pg.rotateX(.26);
+    const plate=new THREE.Mesh(hWarp(pg,v=>v.copy(shield(v))),m('beetleDark')); hHull(plate,.008); h.add(plate);
+    const pe=[]; for(let i=0;i<48;i++){ const f=i/48*hTAU; pe.push(shield(hV3(Math.sin(.44)*Math.cos(f),Math.cos(.44),Math.sin(.44)*Math.sin(f)).applyAxisAngle(hV3(1,0,0),.26))); }
+    h.add(hTube(pe,.013,m('beetleDark'),{closed:true,seg:60,rs:6,line:.008}));
+    // the horn: thick at the plate, rising and curling forward, ringed at the base, thinning to a fork
+    const b0=onCap(0,.2,-.01), pts=[]; for(let k=0;k<=8;k++){ const t=k/8, a=t*1.5; pts.push(hV3(0,b0.y+Math.sin(a)*.23,b0.z-.03+(1-Math.cos(a))*.16-.02*Math.sin(t*Math.PI))); }
+    const path=new THREE.CatmullRomCurve3(pts), rad=t=>.078*(1-t*.6)*(1+.55*Math.exp(-t*12));
+    h.add(hTube(pts,.078,m('beetleHead'),{seg:28,rs:14,line:.011,taper:t=>rad(t)/.078}));
+    for(const t of [.2,.3,.4]){ const c=path.getPointAt(t), tg=path.getTangentAt(t), r=new THREE.Mesh(new THREE.TorusGeometry(rad(t)-.002,.012,6,20),m('beetleHead'));
       r.position.copy(c); r.lookAt(c.clone().add(tg)); h.add(r); }
-    const c8=path.getPointAt(.8), pr=[c8,c8.clone().add(hV3(0,.05,-.005)),c8.clone().add(hV3(0,.085,-.03))];
-    h.add(hTube(pr,.022,m('beetle'),{seg:6,rs:8,line:.009,taper:t=>1-t*.7}));
-    const tip=new THREE.Mesh(sph(.02,8,6),m('beetle')); tip.position.copy(pts[8]); hHull(tip,.008); h.add(tip);
-    const hl=[]; for(let k=0;k<=6;k++){ const t=.5+k/6*.32, c=path.getPointAt(t); hl.push(c.add(hV3(-.018,.02*(1-t),rad(t)*.75))); }
-    h.add(hTube(hl,.009,m('beetleSpot'),{seg:8,rs:4,taper:t=>1-.5*t}));
-    for(const [x,z] of [[.06,.05],[-.065,.03]]){ const sp=new THREE.Mesh(sph(.016,8,6),m('beetleSpot')); hStick(sp,hV3(x,.052,z-.04),hV3(x,.6,z).normalize()); sp.scale.z=.4; h.add(sp); } }
+    // the fork: two rounded prongs splitting sideways and up from the tip
+    const e=pts[8], te=path.getTangentAt(1);
+    for(const sd of [-1,1]){ const pr=[e.clone().addScaledVector(te,-.02),e.clone().add(hV3(sd*.03,.03,.01)),e.clone().add(hV3(sd*.055,.068,-.005))];
+      h.add(hTube(pr,.03,m('beetleHead'),{seg:8,rs:10,line:.009,taper:t=>1-t*.4}));
+      const tip=new THREE.Mesh(sph(.018,10,8),m('beetleHead')); tip.position.copy(pr[2]); hHull(tip,.009); h.add(tip); }
+    // a pale shine running up the horn's front left
+    const hl=[]; for(let k=0;k<=6;k++){ const t=.18+k/6*.6, c=path.getPointAt(t), tg=path.getTangentAt(t), side=hV3(-1,0,0), out=hV3(0,0,0).crossVectors(side,tg).normalize();
+      hl.push(c.clone().addScaledVector(side,rad(t)*.45).addScaledVector(out,-rad(t)*.86)); }
+    h.add(hTube(hl,.011,m('beetleSpot'),{seg:10,rs:4,taper:t=>.5+.6*Math.sin(t*Math.PI)})); }
   else if(id==='shell'){ // the snails' lilac shell, worn like a cap: a round shell whose whorls swell out in a spiral on both faces, the front one to the front
     // on each face the whorls step out from the middle: s counts turns along the spiral, and each turn bulges between its seams
     const A=.235, B=.215, Cz=.175, P=.36, wh=(v,s)=>{ const f=s-Math.floor(s); return 1+.07*(Math.pow(Math.sin(Math.PI*f),.6)-.55)*Math.pow(Math.abs(v.z),1.4); };
@@ -392,19 +415,42 @@ function buildHat(id){ const h=new THREE.Group();
       const vn=hTube([hV3(.02,.016,0),hV3(.09,.026,0),hV3(.17,.04,0)],.006,m('leafVein'),{seg:5,rs:4}); vn.position.copy(l.position); vn.rotation.copy(l.rotation); vn.scale.copy(l.scale);
       h.add(vn); }
     const bud=new THREE.Mesh(hLeafGeo(.075,.045,{cup:.025}),m('leaf')); bud.position.set(0,.25,0); bud.rotation.set(0,Math.PI/2,1.35); hHull(bud,.007); h.add(bud); }
-  else if(id==='teacup'){ // a teacup on its saucer: a rolled gold-lined rim, tea inside, spots, a curl of steam and a sugar cube
-    const sau=hLathe([[0,0],[.12,0],[.16,.005],[.2,.02],[.226,.034],[.232,.045],[.222,.048],[.19,.033],[.15,.022],[.12,.02],[0,.02]],36,m('chef')); hHull(sau,.01); h.add(sau);
-    const cup=hLathe([[.07,.02],[.088,.02],[.094,.03],[.106,.05],[.128,.085],[.146,.13],[.154,.172],[.153,.184],[.146,.188],[.14,.18],[.135,.15]],36,m('teacup'));
-    hHull(cup,.01); h.add(cup);
-    h.add(hRing(.153,.0055,m('crown'),0,.168,4,36));
-    const tea=new THREE.Mesh(new THREE.CircleGeometry(.14,28),m('tea')); tea.rotation.x=-Math.PI/2; tea.position.y=.166; h.add(tea);
-    const hd=hTorus(.048,.015,m('teacup'),.007,Math.PI*1.3,8,16); hd.position.set(.158,.105,0); hd.rotation.z=-Math.PI*.65; h.add(hd);
-    for(let i=0;i<7;i++){ const a=i/7*hTAU+.3+(i===0?.2:0), r=.137, d=new THREE.Mesh(sph(.019,8,5),m('teacupDot'));
-      hStick(d,hV3(Math.cos(a)*r,.11,Math.sin(a)*r),hV3(Math.cos(a),-.35,Math.sin(a))); d.scale.z=.35; h.add(d); }
+  else if(id==='teacup'){ // a teacup on its saucer: a round bowl on a foot with gold lines, polka dots, tea with a shine, a teabag
+    // tag over the rim, an ear-shaped handle, curls of steam, and a sugar cube and a little spoon on the saucer
+    // the saucer: a foot, a shallow well and a raised rim, its underside sloping down so the edge rests on the head
+    const sau=hLathe([[0,.02],[.1,.024],[.16,.034],[.2,.046],[.218,.062],[.222,.074],[.215,.08],[.195,.07],[.16,.058],[.11,.054],[0,.054]],48,m('chef'));
+    hHull(sau,.01); h.add(sau);
+    h.add(hRing(.207,.006,m('teacup'),0,.072,4,48)); h.add(hRing(.219,.005,m('crown'),0,.077,4,48));
+    // the cup: a ring foot, a round bowl widening to a rolled lip; the inside wall shows above the tea
+    const prof=[[.06,.054],[.082,.054],[.088,.064],[.08,.074],[.092,.082],[.118,.105],[.142,.14],[.158,.18],[.166,.22],[.169,.25],[.172,.262],[.168,.27],[.16,.268],[.155,.258],[.15,.236]];
+    const cup=hLathe(prof,48,m('teacup')); hHull(cup,.01); h.add(cup);
+    h.add(hRing(.171,.0055,m('crown'),0,.258,4,48)); h.add(hRing(.088,.005,m('crown'),0,.066,4,32));
+    const tea=new THREE.Mesh(new THREE.CircleGeometry(.152,36),m('tea')); tea.rotation.x=-Math.PI/2; tea.position.y=.238; h.add(tea);
+    const gl=new THREE.Mesh(sph(.03,12,6),m('teaLight')); gl.position.set(-.06,.24,-.06); gl.scale.set(1.6,.08,.7); gl.rotation.y=.7; h.add(gl);
+    // the cup's radius at height y, read off its profile (outer wall)
+    const rAt=y=>{ for(let i=4;i<10;i++){ const [r0,y0]=prof[i], [r1,y1]=prof[i+1]; if(y<=y1) return r0+(r1-r0)*(y-y0)/(y1-y0); } return .169; };
+    // polka dots in two rows, kept off the handle and the tag
+    for(let i=0;i<14;i++){ const row=i%2, a=(i+.5)/14*hTAU+(row?0:.22), y=row?.135:.192, r=rAt(y), sl=row?-.62:-.3;
+      if(Math.abs(Math.sin(a))<.3&&Math.cos(a)>0||Math.abs(a-2.1)<.28) continue;
+      const d=new THREE.Mesh(sph(row?.017:.022,10,6),m('teacupDot')); hStick(d,hV3(Math.cos(a)*r,y,Math.sin(a)*r),hV3(Math.cos(a),sl,Math.sin(a)).normalize()); d.scale.z=.35; h.add(d); }
+    // the handle: an ear-shaped loop with a little thumb rest on top
+    const hp=[hV3(.15,.215,0),hV3(.205,.232,0),hV3(.245,.205,0),hV3(.243,.16,0),hV3(.205,.125,0),hV3(.135,.115,0)];
+    h.add(hTube(hp,.019,m('teacup'),{seg:22,rs:8,line:.008}));
+    const th=new THREE.Mesh(sph(.022,10,8),m('teacup')); th.position.set(.205,.238,0); th.scale.set(1.3,.6,.9); hHull(th,.008); h.add(th);
+    // a teabag: its string from the tea over the lip, down to a white tag with a dot on it
+    const ta=2.1, ca=Math.cos(ta), sa=Math.sin(ta), str=[[.1,.24],[.155,.272],[.18,.262],[.185,.22],[.18,.19]].map(([r,y])=>hV3(ca*r,y,sa*r));
+    h.add(hTube(str,.005,m('stem'),{seg:12,rs:4,line:.004}));
+    const tag=new THREE.Mesh(new THREE.BoxGeometry(.074,.086,.012),m('chef')); hStick(tag,hV3(ca*.172,.155,sa*.172),hV3(ca,-.38,sa).normalize()); hHull(tag,.007); h.add(tag);
+    const td=new THREE.Mesh(sph(.017,10,6),m('teacup')); hStick(td,hV3(ca*.18,.155,sa*.18),hV3(ca,-.38,sa).normalize()); td.scale.z=.35; h.add(td);
+    // steam: two soft curls side by side, waving the same way so they never cross
     const sm=MC.hatSteam||(MC.hatSteam=new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:.75}));
-    for(const [x,z,ph,n] of [[-.02,0,0,.16],[.04,-.03,2,.12]]){ const st=[]; for(let k=0;k<=6;k++){ const t=k/6; st.push(hV3(x+Math.sin(t*5+ph)*.028,.2+t*n,z)); }
-      h.add(hTube(st,.012,sm,{seg:16,rs:6,taper:t=>1-.55*t})); }
-    const cube=new THREE.Mesh(new THREE.BoxGeometry(.05,.05,.05),m('chef')); cube.position.set(-.08,.048,.19); cube.rotation.set(.1,.5,.06); hHull(cube,.007); h.add(cube); }
+    for(const [x,z,n,ph] of [[-.05,.01,.19,0],[.04,-.03,.15,.6]]){ const st=[]; for(let k=0;k<=8;k++){ const t=k/8; st.push(hV3(x+Math.sin(t*5.5+ph)*.03,.27+t*n,z+Math.cos(t*4+ph)*.01)); }
+      h.add(hTube(st,.016,sm,{seg:20,rs:6,taper:t=>1-.6*t})); }
+    // a sugar cube and a little spoon resting on the saucer
+    const cube=new THREE.Mesh(new THREE.BoxGeometry(.046,.046,.046),m('chef')); cube.position.set(.08,.08,.165); cube.rotation.set(.08,.6,.05); hHull(cube,.007); h.add(cube);
+    const sp=new THREE.Group(); sp.position.set(-.1,.062,-.16); sp.rotation.set(0,1.08,-.06); h.add(sp);
+    sp.add(hTube([hV3(-.02,.006,0),hV3(.05,.012,0),hV3(.11,.024,0)],.009,m('brass'),{seg:8,rs:6,line:.006,taper:t=>.8+.4*t}));
+    const bowl=new THREE.Mesh(sph(.028,12,8),m('brass')); bowl.position.set(-.045,.006,0); bowl.scale.set(1.25,.35,.9); hHull(bowl,.007); sp.add(bowl); }
   else if(id==='nest'){ // a nest woven from thin twig rings in two browns, a few loose ends, two speckled eggs and a feather tucked in
     // the hollow inside, facing up, so the head never shows through the middle
     h.add(hLathe([[.19,.088],[.13,.084],[.06,.08],[0,.079]],20,m('acornCap')));
