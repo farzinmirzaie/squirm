@@ -2,6 +2,18 @@
 const HEAD_R=.34;
 function segR(i,n){ if(i===0) return .22; const t=(i-1)/Math.max(1,n-2); return .27-.1*t; }
 function segY(i,n){ return i===0?HEAD_R:segR(i,n); }
+// the face's shared pieces: geometries in GC and materials in MC, so a new head (each patch, each turnaround)
+// reuses them and disposeTree never frees them
+const eyeShine=MC.eyeShine=new THREE.MeshBasicMaterial({color:C.eye});
+const faceGeo=(k,make)=>GC['face_'+k]||(GC['face_'+k]=make());
+// small face spheres at their exact size (sph rounds radii to .01, which would swallow a .014 cap)
+const fsph=(r,ws,hs)=>faceGeo('s'+r+'_'+ws+'_'+hs,()=>new THREE.SphereGeometry(r,ws,hs));
+// a group on the head's skin in the direction (x,y,z), facing outwards, for face parts that lie on the surface
+function onHead(face,x,y,z,gap){ const p=new THREE.Group(), n=new THREE.Vector3(x,y,z).normalize();
+  p.position.copy(n).multiplyScalar(HEAD_R+gap); p.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,1),n); face.add(p); return p; }
+// round ends for a half torus of radius R (or a bar of half length R along its axis) with tube radius t
+function capEnds(mesh,R,t){ for(const k of [-1,1]){ const c=new THREE.Mesh(fsph(t,10,8),mesh.material);
+  if(mesh.geometry.type==='CylinderGeometry') c.position.y=k*R; else c.position.x=k*R; mesh.add(c); } }
 function makeSeg(i,parent){
   const g=new THREE.Group();
   if(i===0){
@@ -12,25 +24,44 @@ function makeSeg(i,parent){
     const dark=m('pupil');
     for(const s of [-1,1]){
       const e=new THREE.Mesh(sph(.11,24,18),m('eye')); e.position.set(s*.13,.14,.24); outline(e,.018); face.add(e); F.eyes.push(e);
-      const pu=new THREE.Mesh(sph(.062,18,14),dark); pu.position.set(0,0,.064); e.add(pu); F.pupils.push(pu);
-      const hl=new THREE.Mesh(sph(.022,10,8),new THREE.MeshBasicMaterial({color:0xffffff})); hl.position.set(.024,.03,.048); pu.add(hl);
-      const arc=new THREE.Mesh(new THREE.TorusGeometry(.06,.016,8,18,Math.PI),dark); arc.position.set(s*.13,.13,.31); arc.visible=false; face.add(arc);
-        F.arcs.push(arc);
+      // the pupil is a lens lying on the eye (a warm iris round a dark centre, two glints), so it doesn't poke out
+      // of the eye's outline when seen from the side
+      const pu=new THREE.Mesh(sph(.062,20,14),m('wormIris')); pu.position.set(0,0,.086); pu.scale.z=.42; e.add(pu); F.pupils.push(pu);
+      const pc=new THREE.Mesh(fsph(.042,16,12),dark); pc.position.z=.03; pu.add(pc);
+      const hl=new THREE.Mesh(fsph(.024,10,8),eyeShine); hl.position.set(.022,.026,.075); pu.add(hl);
+      const hl2=new THREE.Mesh(fsph(.012,8,6),eyeShine); hl2.position.set(-.024,-.026,.07); pu.add(hl2);
+      // closed eyes lie on the skin where the eye was, so their ends don't stick out past the head's side
+      const lid=onHead(face,s*.13,.14,.24,.002);
+      const arc=new THREE.Mesh(faceGeo('arc',()=>new THREE.TorusGeometry(.06,.016,8,18,Math.PI)),dark); arc.visible=false; lid.add(arc);
+        capEnds(arc,.06,.016); F.arcs.push(arc);
       // squeezed shut, > <, for a bump
-      const sq=new THREE.Group(); sq.position.set(s*.13,.14,.315); sq.visible=false; face.add(sq); F.squints.push(sq);
-      for(const sy of [-1,1]){ const dx=s*.07, dy=sy*.035, bar=new THREE.Mesh(new THREE.CylinderGeometry(.016,.016,Math.hypot(dx,dy)+.016,8),dark);
-        bar.position.set(0,dy/2,0); bar.rotation.z=Math.atan2(-dx,dy); sq.add(bar); }
-      const ck=new THREE.Mesh(sph(.055,14,10),cheekMat); ck.position.set(s*.21,-.04,.25); ck.scale.set(1,.55,.4); face.add(ck);
+      const sq=new THREE.Group(); sq.visible=false; lid.add(sq); F.squints.push(sq);
+      for(const sy of [-1,1]){ const dx=s*.07, dy=sy*.035;
+        const bar=new THREE.Mesh(faceGeo('sqBar',()=>new THREE.CylinderGeometry(.016,.016,Math.hypot(dx,dy),8,1,true)),dark);
+        bar.position.set(0,dy/2,0); bar.rotation.z=Math.atan2(-dx,dy); sq.add(bar);
+        // round joints: the point of the > and both open ends
+        if(sy<0){ const c=new THREE.Mesh(fsph(.016,10,8),dark); c.position.x=-dx/2; sq.add(c); }
+        const c=new THREE.Mesh(fsph(.016,10,8),dark); c.position.set(dx/2,dy,0); sq.add(c); }
+      // the blush lies on the cheek's curve instead of facing straight ahead
+      const ck=new THREE.Mesh(sph(.055,16,10),cheekMat); ck.position.set(s*.21,-.04,.25);
+        ck.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,1),ck.position.clone().normalize()); ck.scale.set(1,.55,.4); face.add(ck);
     }
-    const smile=new THREE.Mesh(new THREE.TorusGeometry(.055,.014,8,18,Math.PI),dark); smile.position.set(0,-.06,.325); smile.rotation.z=Math.PI;
-      face.add(smile); F.mouths.smile=smile;
+    const smile=new THREE.Mesh(faceGeo('smile',()=>new THREE.TorusGeometry(.055,.014,8,18,Math.PI)),dark); smile.position.set(0,-.06,.325); smile.rotation.z=Math.PI;
+      capEnds(smile,.055,.014); face.add(smile); F.mouths.smile=smile;
+    // the open grin: a rosy mouth with a dark rim and a tongue
     const grin=new THREE.Group(); grin.position.set(0,-.05,.31); face.add(grin); F.mouths.grin=grin;
-    const gm=new THREE.Mesh(new THREE.SphereGeometry(.075,20,12,0,Math.PI*2,Math.PI/2,Math.PI/2),dark); gm.scale.set(1,.85,.5); grin.add(gm);
-    const tg=new THREE.Mesh(sph(.04,14,10),toon(0xFF6F8E)); tg.position.set(0,-.045,.015); tg.scale.set(1,.55,.6); grin.add(tg);
-    const o=new THREE.Mesh(new THREE.TorusGeometry(.03,.014,8,18),dark); o.position.set(0,-.07,.33); face.add(o); F.mouths.o=o;
-    const flat=new THREE.Mesh(new THREE.CylinderGeometry(.013,.013,.075,8),dark); flat.rotation.z=Math.PI/2; flat.position.set(0,-.06,.33); face.add(flat);
-      F.mouths.flat=flat;
-    const tongue=new THREE.Mesh(sph(.035,14,10),toon(0xFF7A98)); tongue.position.set(.02,-.1,.31); tongue.scale.set(1,1.2,.5); tongue.visible=false;
+    const gm=new THREE.Mesh(faceGeo('grin',()=>new THREE.SphereGeometry(.075,20,12,0,Math.PI*2,Math.PI/2,Math.PI/2)),m('wormMouth')); gm.scale.set(1,.85,.5);
+      grin.add(gm);
+    const lip=new THREE.Mesh(faceGeo('lip',()=>new THREE.TorusGeometry(.075,.012,6,24,Math.PI)),dark); lip.rotation.z=Math.PI; lip.scale.set(1,.85,1);
+      grin.add(lip);
+    const lipTop=new THREE.Mesh(faceGeo('lipTop',()=>new THREE.CylinderGeometry(.012,.012,.15,8,1,true)),dark); lipTop.rotation.z=Math.PI/2; lipTop.position.z=.012;
+      capEnds(lipTop,.075,.012); grin.add(lipTop);
+    const tg=new THREE.Mesh(sph(.04,14,10),m('wormTongue')); tg.position.set(0,-.045,.015); tg.scale.set(1,.55,.6); grin.add(tg);
+    const o=new THREE.Mesh(faceGeo('o',()=>new THREE.TorusGeometry(.03,.014,8,18)),dark); o.position.set(0,-.07,.33); face.add(o); F.mouths.o=o;
+    const oIn=new THREE.Mesh(fsph(.024,12,8),m('wormMouth')); oIn.scale.z=.3; o.add(oIn);
+    const flat=new THREE.Mesh(faceGeo('flat',()=>new THREE.CylinderGeometry(.013,.013,.075,8,1,true)),dark); flat.rotation.z=Math.PI/2; flat.position.set(0,-.06,.33);
+      for(const k of [-1,1]){ const c=new THREE.Mesh(fsph(.013,8,6),dark); c.position.y=k*.0375; flat.add(c); } face.add(flat); F.mouths.flat=flat;
+    const tongue=new THREE.Mesh(sph(.035,14,10),m('wormTongue')); tongue.position.set(.02,-.1,.31); tongue.scale.set(1,1.2,.5); tongue.visible=false;
       face.add(tongue); F.tongue=tongue;
     const hat=new THREE.Group(); hat.position.set(0,.27,-.02); hat.rotation.x=-.18; head.add(hat); g.userData.hatSlot=hat; dressHat(g);
     const acc=new THREE.Group(); head.add(acc); g.userData.accSlot=acc; dressExtra(g);
@@ -61,7 +92,7 @@ function applyExpr(g,name){ const F=g.userData.face; if(!F) return; g.userData.e
   F.eyes.forEach((e,i)=>{ e.visible=open[i]; e.userData.baseY=eyeY[i]; e.userData.baseS=name==='wow'?1.15:1; });
   // closed eyes: happy arcs, relaxed upside-down arcs when sleepy, or squeezed > < for a bump
   const squeeze=name==='oops', relaxed=name==='sleepy';
-  F.arcs.forEach((a,i)=>{ a.visible=!open[i]&&!squeeze; a.rotation.z=relaxed?Math.PI:0; a.position.y=relaxed?.17:.13; });
+  F.arcs.forEach((a,i)=>{ a.visible=!open[i]&&!squeeze; a.rotation.z=relaxed?Math.PI:0; a.position.y=relaxed?.03:-.01; });
   if(F.squints) F.squints.forEach(q=>q.visible=squeeze);
   F.pupils.forEach(p=>p.position.y=pupilY);
   for(const k in F.mouths) F.mouths[k].visible=(k===mouth);
