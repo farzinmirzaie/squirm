@@ -391,7 +391,10 @@ says which file holds what, and a search for a function name finds it fast.
 - **Scenery batching** (`models/garden.js`): the plants, bushes and trees around the bed are built into a temporary group and
   merged by `batchScenery` into a few chunked meshes (vertex colours, one for outlines). Their sway runs in
   the vertex shader (`windify`, uniforms `windU` / `gustU`, per-vertex `sway`), so the lawn costs a handful
-  of draw calls. Critters use the same merge (`merged`).
+  of draw calls. Lawn chunks are 6 units wide; the optional `ground` argument darkens vertices near the lawn so
+  plants look rooted (garden and trees, not critters). Lawn pieces (flower drifts, mossy stones, tufts) keep room
+  round each other and register in `lawnObstacles`. Rain also drops rings on the lawn (one instanced mesh, kept),
+  and fireflies hover in a ring just outside the bed. Critters use the same merge (`merged`).
 - **Garden visitors** (`models/visitors.js`): `buildCritters` adds a ladybug on the wooden border and, above the lowest quality,
   a bird on the lawn in front of the bed (placed once the camera is fitted). `birdSpot` only picks spots
   clear of `lawnObstacles` / `treeObstacles` and reachable in a straight line. It bobs when the ambient
