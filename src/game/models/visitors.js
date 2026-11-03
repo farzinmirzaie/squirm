@@ -1,6 +1,6 @@
 // ---------- little garden visitors: a ladybug on the wooden border, a bird hopping on the lawn ----------
 let critters=[];
-function ladybug(){ const g=new THREE.Group(), red=toon(0xE8544E), dark=m('pupil');
+function ladybug(){ const g=new THREE.Group(), red=m('gdBug'), dark=m('pupil');
   const shell=new THREE.Mesh(sph(.075,16,12),red); shell.scale.set(1,.55,1.2); shell.position.y=.03; outline(shell,.012); g.add(shell);
   const head=new THREE.Mesh(sph(.04,12,10),dark); head.position.set(0,.025,.085); g.add(head);
   for(const [x,z] of [[.035,.02],[-.035,.02],[.03,-.045],[-.03,-.045],[0,-.01]]){ const d=new THREE.Mesh(sph(.017,8,6),dark); d.scale.y=.4;
@@ -10,15 +10,20 @@ function ladybug(){ const g=new THREE.Group(), red=toon(0xE8544E), dark=m('pupil
   return merged(g,1.5); }
 // a critter's parts are merged into one mesh (plus outline), like the scenery
 function merged(src,scale){ const g=new THREE.Group(); batchScenery(src,g); g.scale.setScalar(scale); return g; }
-function birdie(){ const g=new THREE.Group(), body=toon(0x7DB4E8), belly=toon(0xFFE9C9), beak=toon(0xFFB24A), dark=m('pupil');
+// a round little bluebird: tucked wings, a fanned tail, a blush on its cheeks like the worm's
+function birdie(){ const g=new THREE.Group(), body=m('gdBird'), wing=m('gdBirdWing'), belly=m('gdBirdBelly'), beak=m('gdBirdBeak'), dark=m('pupil');
   const b=new THREE.Mesh(sph(.14,18,14),body); b.scale.set(1,.9,1.15); b.position.y=.17; outline(b,.016); g.add(b);
   const bl=new THREE.Mesh(sph(.1,14,10),belly); bl.position.set(0,.14,.07); bl.scale.set(1,.9,.8); g.add(bl);
+  for(const sd of [-1,1]){ const w=new THREE.Mesh(sph(.09,12,9),wing); w.scale.set(.38,.72,1.3); w.position.set(sd*.118,.19,-.03); w.rotation.set(-.25,sd*.12,sd*.1);
+    outline(w,.012); g.add(w); }
+  const tail=new THREE.Mesh(sph(.07,12,8),wing); tail.scale.set(.95,.28,1.35); tail.rotation.x=-.6; tail.position.set(0,.235,-.18); outline(tail,.012); g.add(tail);
   const head=new THREE.Group();
   const hd=new THREE.Mesh(sph(.095,16,12),body); outline(hd,.014); head.add(hd);
   const bk=new THREE.Mesh(new THREE.ConeGeometry(.03,.08,8),beak); bk.rotation.x=Math.PI/2; bk.position.set(0,-.01,.1); head.add(bk);
-  for(const sd of [-1,1]){ const e=new THREE.Mesh(sph(.017,8,6),dark); e.position.set(sd*.055,.02,.07); head.add(e); }
-  const tail=new THREE.Mesh(new THREE.ConeGeometry(.06,.14,8),body); tail.rotation.x=-2.2; tail.position.set(0,.2,-.17); g.add(tail);
-  for(const sd of [-1,1]){ const leg=new THREE.Mesh(new THREE.CylinderGeometry(.008,.008,.06,5),beak); leg.position.set(sd*.04,.03,0); g.add(leg); }
+  for(const sd of [-1,1]){ const e=new THREE.Mesh(sph(.017,8,6),dark); e.position.set(sd*.055,.02,.07); head.add(e);
+    const ck=new THREE.Mesh(sph(.022,8,6),m('cheek')); ck.scale.set(1,.6,.5); ck.position.set(sd*.066,-.02,.064); ck.rotation.y=sd*.75; head.add(ck); }
+  for(const sd of [-1,1]){ const leg=new THREE.Mesh(new THREE.CylinderGeometry(.008,.008,.06,5),beak); leg.position.set(sd*.04,.03,0); g.add(leg);
+    const foot=new THREE.Mesh(sph(.016,8,5),beak); foot.scale.set(1,.35,1.8); foot.position.set(sd*.04,.004,.015); g.add(foot); }
   const bird=merged(g,1.7), hg=merged(head,1); hg.position.set(0,.3,.08); bird.add(hg); bird.userData.head=hg; return bird; }
 function buildCritters(r,cx,cz,bw,bd){ critters=[];
   // the ladybug walks the top of the wooden border, now and then stopping for a rest
