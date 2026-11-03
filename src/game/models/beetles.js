@@ -38,23 +38,28 @@ function makeBeetle(){ const g=new THREE.Group(), size=new THREE.Group(), inner=
     const pu=new THREE.Mesh(sph(.03,10,8),m('pupil')); pu.position.set(0,0,.042); e.add(pu); const hl=new THREE.Mesh(sph(.011,6,4),m('eye'));
       hl.position.set(.012,.012,.026); pu.add(hl);
     const arc=new THREE.Mesh(new THREE.TorusGeometry(.036,.009,6,12,Math.PI),m('pupil')); arc.position.set(sd*.062,.03,.04); arc.visible=false; face.add(arc);
-    const ck=new THREE.Mesh(sph(.028,8,6),new THREE.MeshBasicMaterial({color:C.cheek,transparent:true,opacity:.55})); ck.position.set(sd*.1,-.04,.0);
+    const ck=new THREE.Mesh(sph(.028,8,6),MC.critterCheek||(MC.critterCheek=new THREE.MeshBasicMaterial({color:C.cheek,transparent:true,opacity:.55}))); ck.position.set(sd*.1,-.04,.0);
       ck.scale.set(1,.55,.4); face.add(ck);
     F.eyes.push(e); F.pupils.push(pu); F.arcs.push(arc); }
   const smile=new THREE.Mesh(new THREE.TorusGeometry(.022,.007,6,12,Math.PI),m('pupil')); smile.position.set(0,-.045,.05); smile.rotation.z=Math.PI;
     face.add(smile); F.smile=smile;
   const oo=new THREE.Mesh(new THREE.TorusGeometry(.016,.007,6,12),m('pupil')); oo.position.set(0,-.05,.05); oo.visible=false; face.add(oo); F.oo=oo;
-  // antennae and six stubby legs, each on a pivot so they can wiggle
+  // antennae with clubbed tips, and six bent legs (thigh out to a knee, shin down to a round foot), each on a pivot so they can wiggle
   const ants=[]; for(const sd of [-1,1]){ const a=new THREE.Group(); a.position.set(sd*.09,.27,.38); a.rotation.set(-.2,0,-sd*.75); inner.add(a);
-    const st=new THREE.Mesh(new THREE.CylinderGeometry(.009,.011,.1,6),m('beetleLeg')); st.position.y=.05; a.add(st);
-    const bl=new THREE.Mesh(sph(.022,8,6),m('beetleSpot')); bl.position.y=.105; outline(bl,.008); a.add(bl); ants.push(a); }
+    const st=new THREE.Mesh(new THREE.CylinderGeometry(.011,.014,.11,6),m('beetleLeg')); st.position.y=.055; outline(st,.006); a.add(st);
+    const bl=new THREE.Mesh(sph(.026,10,8),m('beetleSpot')); bl.position.y=.115; bl.scale.set(1,1.25,1); outline(bl,.008); a.add(bl); ants.push(a); }
   g.userData.ants=ants;
-  const legs=[]; for(const sd of [-1,1]) for(const z of [.15,-.02,-.19]){ const lg=new THREE.Group(); lg.position.set(sd*.21,.08,z); lg.rotation.z=sd*1.15;
+  const legs=[]; for(const sd of [-1,1]) for(const z of [.15,-.02,-.19]){ const lg=new THREE.Group(); lg.position.set(sd*.2,.1,z); lg.rotation.z=sd*1.15;
     lg.rotation.y=sd*z*1.2; inner.add(lg);
-    const l=new THREE.Mesh(new THREE.CylinderGeometry(.032,.028,.09,8),m('beetleLeg')); l.position.y=-.045; lg.add(l);
-    const ft=new THREE.Mesh(sph(.036,10,8),m('beetleLeg')); ft.position.y=-.095; ft.scale.set(1,.65,1.25); lg.add(ft); lg.userData.sd=sd; legs.push(lg); }
+    const parts=new THREE.Group();
+    const th=new THREE.Mesh(new THREE.CylinderGeometry(.03,.025,.075,8),m('beetleLeg')); th.position.y=-.035; outline(th,.009); parts.add(th);
+    const kn=new THREE.Mesh(sph(.029,10,8),m('beetleLeg')); kn.position.y=-.075; parts.add(kn);
+    const sh=new THREE.Group(); sh.position.y=-.075; sh.rotation.z=-sd*1.4; parts.add(sh);
+    const sn=new THREE.Mesh(new THREE.CylinderGeometry(.024,.02,.06,8),m('beetleLeg')); sn.position.y=-.03; outline(sn,.009); sh.add(sn);
+    const ft=new THREE.Mesh(sph(.032,10,8),m('beetleDark')); ft.position.y=-.064; ft.scale.set(1,.6,1.35); outline(ft,.009); sh.add(ft);
+    lg.add(merged(parts,1)); lg.userData.sd=sd; legs.push(lg); }
   g.userData.legs=legs; g.userData.blink=2+Math.random()*3; g.userData.ph=Math.random()*6;
-  g.traverse(o=>{ if(o.isMesh&&o.material!==lineMat&&o.material!==MC.beetleGloss) o.castShadow=true; });
+  g.traverse(o=>{ if(o.isMesh&&o.material!==lineMat&&o.material!==batchLine&&!o.material.transparent) o.castShadow=true; });
   board.add(g); return g; }
 function beetleFace(b,mode){ const F=b.userData.face; if(!F) return; b.userData.mood=mode;
   const shut=mode==='oof'||mode==='happy'; F.eyes.forEach(e=>e.visible=!shut); F.arcs.forEach(a=>{ a.visible=shut; a.rotation.z=mode==='happy'?0:Math.PI; });
