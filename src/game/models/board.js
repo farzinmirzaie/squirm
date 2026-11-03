@@ -6,6 +6,35 @@ const flowTex=canvasTex(64,64,g=>{ g.fillStyle='#fff'; g.fillRect(0,0,64,64);
 flowTex.anisotropy=turfTex.anisotropy; const flowH=flowTex, flowV=flowTex.clone(); flowV.needsUpdate=true; flowV.center.set(.5,.5); flowV.rotation=Math.PI/2;
 const waterMatH=toon(C.riverWater,{map:flowH}), waterMatV=toon(C.riverWater,{map:flowV});
 const WATER=new THREE.BoxGeometry(1,.1,1);
+// the burrow's tile: a grass slab with a round hole through it, and the shaft below
+const BURROW_R=.25, TURF_HOLE=(()=>{ const b=.08, sh=rrShape(.94-2*b,.94-2*b,.16), hp=new THREE.Path(); hp.absarc(0,0,BURROW_R+b,0,Math.PI*2,true);
+  sh.holes.push(hp); const g=new THREE.ExtrudeGeometry(sh,{depth:.3-2*b,bevelEnabled:true,bevelThickness:b,bevelSize:b,bevelSegments:5,curveSegments:24});
+  g.rotateX(-Math.PI/2); g.center(); g.computeVertexNormals(); return g; })();
+const WELL=new THREE.CylinderGeometry(BURROW_R+.004,BURROW_R-.03,.26,28,4,true), WELL_FLOOR=new THREE.CircleGeometry(BURROW_R,28);
+// the shaft fades from earth at the lip to black at the bottom, so it reads as deep from any angle
+{ const pa=WELL.attributes.position, top=new THREE.Color(C.burrowWall), bot=new THREE.Color(C.burrow), c=new THREE.Color(), col=[];
+  for(let i=0;i<pa.count;i++){ const k=Math.pow((pa.getY(i)+.13)/.26,1.6); c.copy(bot).lerp(top,k); col.push(c.r,c.g,c.b); }
+  WELL.setAttribute('color',new THREE.Float32BufferAttribute(col,3)); }
+// a dry patch's cracks: a network of dark splits between plates, each plate lit along its upper edge
+const dryTex=canvasTex(256,256,g=>{ const L=[[[28,80],[92,116],[120,184],[200,220]],[[92,116],[168,80],[224,40]],[[120,184],[52,220]],[[168,80],[192,144],[240,164]],
+    [[192,144],[120,184]],[[92,116],[72,40]],[[52,220],[30,170],[28,80]]];
+  const path=o=>{ g.beginPath(); for(const l of L){ g.moveTo(l[0][0]+o,l[0][1]+o); for(const p of l.slice(1)) g.lineTo(p[0]+o,p[1]+o); } };
+  g.lineCap='round'; g.lineJoin='round';
+  path(-3); g.strokeStyle='rgba(255,247,222,.75)'; g.lineWidth=5; g.stroke();
+  path(0); g.strokeStyle='rgba(150,104,62,.95)'; g.lineWidth=10; g.stroke();
+  path(1); g.strokeStyle='rgba(98,64,40,.95)'; g.lineWidth=4; g.stroke(); });
+const DRY_DEC=new THREE.PlaneGeometry(.8,.8); dryTex.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());
+// a big leaf lying flat (wet leaves, grown seedlings): rounded at the stalk end (-x), pointed at the tip, its rim curling up a little
+function leafPadGeo(){ if(GC.leafPad) return GC.leafPad; const g=new THREE.SphereGeometry(.45,40,14), pa=g.attributes.position;
+  for(let i=0;i<pa.count;i++){ const x=pa.getX(i), t=x/.45, z=pa.getZ(i)*(1-.5*Math.pow(Math.max(0,t),1.3))*.94, e=z/.42;
+    pa.setXYZ(i,x+.02,pa.getY(i)*.075+.05*e*e+.03*Math.max(0,t)*Math.max(0,t),z); }
+  g.computeVertexNormals(); return GC.leafPad=g; }
+// a midrib from the stalk to the tip and side veins sweeping forward, laid on that leaf
+function leafVeins(leaf,mt,y){ const rib=new THREE.Mesh(VEIN,mt); rib.scale.set(.74,1,1.3); rib.position.set(.02,y,0); leaf.add(rib);
+  for(const sd of [-1,1]) for(const [t,l] of [[-.2,.26],[0,.24],[.18,.17]]){ const v=new THREE.Mesh(VEIN,mt); v.scale.set(l,1,.85);
+    v.position.set(t+l*.4,y+.004,sd*l*.32); v.rotation.y=-sd*.62; leaf.add(v); }
+  const st=new THREE.Mesh(new THREE.CylinderGeometry(.018,.026,.1,8),mt); st.rotation.z=Math.PI/2; st.position.set(-.39,y-.008,0); leaf.add(st); }
+const VEIN=new THREE.BoxGeometry(1,.012,.024);
 function riverAt(x,y){ const c=tileAt(state,x,y); return c==='~'||c==='='||c==='|'; }
 const glintMat=new THREE.MeshBasicMaterial({color:0xFFFFFF,transparent:true,opacity:.9}), glintGeo=new THREE.CircleGeometry(.05,12), rippleGeo=new THREE.RingGeometry(.1,.13,28);
 let flowTiles=[];
@@ -15,13 +44,13 @@ function waterTile(g,x,y){ const horiz=riverAt(x-1,y)||riverAt(x+1,y); const ver
   const along=vert&&!horiz?'z':'x', f={w,along,ph:(x*1.7+y*2.9)%6.28,glints:[],leaf:null};
   if((x*7+y*13)%3===0){ const leaf=new THREE.Group(); leaf.position.y=-.125; g.add(leaf); f.leaf=leaf;
     const pad=new THREE.Mesh(sph(.1,14,8),m('leaf')); pad.scale.set(1.3,.2,.75); pad.castShadow=true; outline(pad,.012); leaf.add(pad);
-    const vein=new THREE.Mesh(new THREE.BoxGeometry(.2,.01,.012),toon(0x4E9A3E)); vein.position.y=.022; leaf.add(vein); }
+    const vein=new THREE.Mesh(new THREE.BoxGeometry(.2,.01,.012),m('leafRib')); vein.position.y=.022; leaf.add(vein); }
   f.rippleMat=new THREE.MeshBasicMaterial({color:0xFFFFFF,transparent:true,opacity:0,depthWrite:false});
   f.ripple=new THREE.Mesh(rippleGeo,f.rippleMat); f.ripple.rotation.x=-Math.PI/2; f.ripple.position.y=-.13; g.add(f.ripple);
   for(let i=0;i<2;i++){ const gl=new THREE.Mesh(glintGeo,glintMat); gl.rotation.x=-Math.PI/2; gl.position.set((i-.5)*.36,-.132,((x+y+i)%3-1)*.22);
     gl.scale.set(1,.45,1); gl.userData.ph=f.ph+i*2.1; g.add(gl); f.glints.push(gl); }
   flowTiles.push(f);
-  for(let i=0;i<2;i++){ const st=new THREE.Mesh(sph(.05+Math.random()*.03,12,8),toon(0xC9BFB2)); st.scale.y=.5;
+  for(let i=0;i<2;i++){ const st=new THREE.Mesh(sph(.05+Math.random()*.03,12,8),m('stone')); st.scale.y=.5;
     const sx=(Math.random()<.5?-1:1)*.42, sz=(Math.random()-.5)*.8; st.position.set(vert&&!horiz?sx:sz,-.14,vert&&!horiz?sz:sx); g.add(st); } }
 function makeBridge(ch){ const br=new THREE.Group(); const wm=m('plank'), dm=m('plankDark');
   for(let i=0;i<5;i++){ const p=new THREE.Mesh(new THREE.BoxGeometry(.17,.07,.8),i%2?wm:dm); p.position.set(-.4+i*.2,-.03,0); p.castShadow=true;
@@ -38,30 +67,44 @@ function makeTile(x,y,ch){
   if(ch==='i'){ // a big wet leaf lying on the grass: slippery
     const top=new THREE.Mesh(TURF,m('turf2')); top.position.y=-.15; top.receiveShadow=true; outlineBox(top,.02,.94,.3,.94); g.add(top);
     const leaf=new THREE.Group(); leaf.position.y=.01; leaf.rotation.y=(x*5+y*3)%4*.35; g.add(leaf);
-    const pad=new THREE.Mesh(sph(.44,32,14),m('wetLeaf')); pad.scale.set(1.05,.07,.95); pad.receiveShadow=true; outline(pad,.02); leaf.add(pad);
-    const vein=new THREE.Mesh(new THREE.BoxGeometry(.72,.012,.03),m('leafVein')); vein.position.y=.032; leaf.add(vein);
-    for(const sd of [-1,1]) for(const t of [-.16,.14]){ const v=new THREE.Mesh(new THREE.BoxGeometry(.22,.012,.022),m('leafVein'));
-      v.position.set(t,.032,sd*.09); v.rotation.y=sd*.7; leaf.add(v); }
-    const shine=new THREE.Mesh(new THREE.CircleGeometry(.2,20),new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:.35,depthWrite:false}));
-      shine.rotation.x=-Math.PI/2; shine.scale.set(1.3,.35,1); shine.position.set(-.08,.036,-.12); leaf.add(shine);
+    const pad=new THREE.Mesh(leafPadGeo(),m('wetLeaf')); pad.receiveShadow=true; pad.castShadow=true; outline(pad,.018); leaf.add(pad);
+    leafVeins(leaf,m('leafVein'),.034);
+    const shine=new THREE.Mesh(new THREE.CircleGeometry(.2,20),MC.leafShine||(MC.leafShine=new THREE.MeshBasicMaterial({color:C.glint,transparent:true,opacity:.35,depthWrite:false})));
+      shine.rotation.x=-Math.PI/2; shine.scale.set(1.3,.35,1); shine.position.set(-.08,.04,-.13); leaf.add(shine);
     for(let i=0;i<3;i++){ const dw=new THREE.Mesh(sph(.035,10,8),m('dew')); dw.scale.y=.6; dw.position.set(Math.cos(i*2.3+x)*.22,.045,Math.sin(i*2.3+y)*.2);
       leaf.add(dw); }
     g.userData.wetLeaf=leaf; g.position.copy(wp(x,y)); board.add(g); return g; }
   if(ch==='s'){ // a seedling in the soil; rain grows it into a big leaf you can crawl on
-    const sp=sprout(Math.random); sp.position.y=-.22; sp.scale.setScalar(1.6); g.add(sp); g.userData.sprout=sp;
+    // a little heap of fresh earth with a seedling in it: two round seed leaves and a curled bud, kept low enough to hide under the grown leaf
+    const sp=new THREE.Group(); sp.position.y=-.22; sp.rotation.y=(x*3+y*7)%5*.6; g.add(sp); g.userData.sprout=sp;
+    const heap=mk(sph(.17,18,10),m('soilDark'),sp,[0,0,0],.014); heap.scale.set(1,.3,.9); heap.receiveShadow=true;
+    mk(new THREE.CylinderGeometry(.016,.024,.13,8),m('leaf'),sp,[0,.065,0],.01);
+    for(const sd of [-1,1]){ const lg=new THREE.Group(); lg.position.y=.125; lg.rotation.set(0,sd>0?0:Math.PI,.2); sp.add(lg);
+      mk(bladeGeo(),m('leafBig'),lg,[.1,0,0],.012).scale.setScalar(1.2); }
+    const bud=mk(sph(.035,12,8),m('leaf'),sp,[0,.15,0],.01); bud.scale.set(.8,1.2,.8);
     const leaf=new THREE.Group(); const lm=m('leafBig');
-    const pad=new THREE.Mesh(sph(.47,32,16),lm); pad.scale.set(1,.12,1); pad.castShadow=true; pad.receiveShadow=true; outline(pad,.025); leaf.add(pad);
-    const vein=new THREE.Mesh(new THREE.BoxGeometry(.7,.012,.03),toon(0x5FAE48)); vein.position.y=.058; leaf.add(vein);
-    for(const s of [-1,1]) for(const t of [-.18,.12]){ const v=new THREE.Mesh(new THREE.BoxGeometry(.24,.012,.025),toon(0x5FAE48)); v.position.set(t,.058,s*.1);
-      v.rotation.y=s*.7; leaf.add(v); }
+    const pad=new THREE.Mesh(leafPadGeo(),lm); pad.scale.set(1.04,1.6,1.04); pad.castShadow=true; pad.receiveShadow=true; outline(pad,.02); leaf.add(pad);
+    leafVeins(leaf,m('leafBigRib'),.052);
     leaf.position.y=-.03; leaf.rotation.y=(x*7+y*3)%4*.4; leaf.scale.setScalar(.01); leaf.visible=false; g.add(leaf); g.userData.leaf=leaf;
     g.position.copy(wp(x,y)); board.add(g); return g; }
-  const top=new THREE.Mesh(TURF, dry?m('dry'):((x+y)%2?m('turf1'):m('turf2')));
+  const holed=ch==='E'||(ch>='1'&&ch<='9');
+  const top=new THREE.Mesh(holed?TURF_HOLE:TURF, dry?m('dry'):((x+y)%2?m('turf1'):m('turf2')));
   top.position.y=-.15; top.receiveShadow=true; top.castShadow=true; outlineBox(top,.02,.94,.3,.94); g.add(top);
-  if(dry){ const dec=new THREE.Mesh(new THREE.PlaneGeometry(.76,.76),new THREE.MeshBasicMaterial({map:crackTex,transparent:true,depthWrite:false}));
-    dec.rotation.x=-Math.PI/2; dec.position.y=.004; g.add(dec); }
+  if(holed){ // the burrow and tunnels go down into the dark: an earthy shaft with a black floor, so the worm really crawls in
+    const wall=new THREE.Mesh(WELL,MC.burrowWall||(MC.burrowWall=new THREE.MeshBasicMaterial({vertexColors:true,side:THREE.BackSide}))); wall.position.y=-.13; wall.receiveShadow=true;
+      g.add(wall);
+    const floor=new THREE.Mesh(WELL_FLOOR,MC.burrowFloor||(MC.burrowFloor=new THREE.MeshBasicMaterial({color:C.burrow}))); floor.rotation.x=-Math.PI/2;
+      floor.position.y=-.255; g.add(floor); }
+  if(dry){ // baked earth split into plates, a few flakes curling up at the cracks
+    const dec=new THREE.Mesh(DRY_DEC,MC.dryDecal||(MC.dryDecal=new THREE.MeshBasicMaterial({map:dryTex,transparent:true,depthWrite:false})));
+    dec.rotation.x=-Math.PI/2; dec.rotation.z=(x*3+y*5)%4*Math.PI/2; dec.position.y=.004; g.add(dec);
+    for(let i=0;i<3;i++){ const a=i*2.2+x*1.3+y*.7, r=.18+(i%2)*.14, fl=new THREE.Mesh(sph(.06,12,8),m('dry')); fl.scale.set(1,.16,.7);
+      fl.position.set(Math.cos(a)*r,.012,Math.sin(a)*r); fl.rotation.set(.35,a,.25); fl.castShadow=true; outline(fl,.01); g.add(fl); } }
   if(ch==='w'){ // a dip that fills with water when it rains
-    const mud=new THREE.Mesh(new THREE.CircleGeometry(.37,32),toon(C.mud)); mud.rotation.x=-Math.PI/2; mud.position.y=.004; mud.receiveShadow=true; g.add(mud);
+    const mud=new THREE.Mesh(new THREE.CircleGeometry(.37,32),m('mud')); mud.rotation.x=-Math.PI/2; mud.position.y=.004; mud.receiveShadow=true; g.add(mud);
+    // a ring of pebbles round the dip, so it reads as a hollow even while it's dry
+    for(let i=0;i<7;i++){ const a=i/7*Math.PI*2+(x+y)*.5, p=new THREE.Mesh(sph(i%3?.045:.06,12,8),i%2?m('stone'):m('stoneDark'));
+      p.position.set(Math.cos(a)*.38,.012,Math.sin(a)*.38); p.scale.set(1,.5,.8); p.rotation.y=a; p.castShadow=true; outline(p,.01); g.add(p); }
     const water=new THREE.Group(); water.position.y=.012; g.add(water);
     const wm=new THREE.Mesh(new THREE.CircleGeometry(.4,32),new THREE.MeshBasicMaterial({color:C.water,transparent:true,opacity:.92}));
       wm.rotation.x=-Math.PI/2; water.add(wm);
@@ -79,47 +122,69 @@ function faceCamera(o){ const yaw=(typeof camYaw==='number'?camYaw:0)*Math.PI/18
   if(o.userData.signs) o.userData.signs.forEach(s=>{ s.rotation.y=yaw-o.rotation.y; s.position.set(-Math.sin(yaw)*.36+Math.cos(yaw)*.26,0,-Math.cos(yaw)*.36-Math.sin(yaw)*.26); });
     }
 // the soil heaped around a tunnel: a low torus whose thickness wobbles, so it reads as dug-up earth
-function moundGeo(seed){ const R=.32, g=new THREE.TorusGeometry(R,.095,10,40), pa=g.attributes.position, v=new THREE.Vector3();
+function lumpyTorus(R,r,seed,amp=1){ const g=new THREE.TorusGeometry(R,r,10,44), pa=g.attributes.position, v=new THREE.Vector3();
   for(let i=0;i<pa.count;i++){ v.fromBufferAttribute(pa,i); const u=Math.atan2(v.y,v.x), cx=Math.cos(u)*R, cy=Math.sin(u)*R;
-    const f=1+.1*Math.sin(5*u+seed)+.05*Math.sin(11*u+seed*1.7); pa.setXYZ(i,cx+(v.x-cx)*f,cy+(v.y-cy)*f,v.z*f*.8); }
-  g.rotateX(-Math.PI/2); g.computeVertexNormals(); return g; }
+    const f=1+amp*(.1*Math.sin(5*u+seed)+.05*Math.sin(11*u+seed*1.7)); pa.setXYZ(i,cx+(v.x-cx)*f,cy+(v.y-cy)*f,v.z*f*.8); }
+  g.computeVertexNormals(); return g; }
+function moundGeo(seed){ const g=lumpyTorus(.32,.095,seed); g.rotateX(-Math.PI/2); g.computeVertexNormals(); return g; }
+// a mushroom cap as one closed shape (dome, rolled rim, shallow underside), so its outline hugs it and it casts a solid shadow
+// (an open half sphere let the light through its open side and drew a thin crescent of shadow on the grass)
+function capGeo(R,H){ const k='cap_'+R+'_'+H; if(GC[k]) return GC[k]; const p=[[0,.04],[R*.5,.034],[R*.82,.016],[R*.95,.008],[R*1.01,.022]];
+  for(let i=0;i<=14;i++){ const a=i/14*Math.PI/2; p.push([Math.max(.0001,R*1.03*Math.cos(a)),.045+(H-.045)*Math.sin(a)]); }
+  return GC[k]=new THREE.LatheGeometry(p.map(q=>new THREE.Vector2(q[0],q[1])),36); }
+// a point on that cap's dome, el from the top (0) to the rim (pi/2), lifted off the surface by `up`
+const capPt=(R,H,az,el,up=0)=>new THREE.Vector3(Math.cos(az)*Math.sin(el)*(R*1.03+up),.045+(H-.045+up)*Math.cos(el),Math.sin(az)*Math.sin(el)*(R*1.03+up));
+// a peach: a round fruit with a dimple where the stalk sits and a soft crease down its front
+function peachGeo(){ if(GC.peach) return GC.peach; const g=new THREE.SphereGeometry(.2,40,28), pa=g.attributes.position, v=new THREE.Vector3();
+  for(let i=0;i<pa.count;i++){ v.fromBufferAttribute(pa,i); const r=v.length(), w=Math.min(1,Math.max(0,(v.z+.1)/.14));
+    const crease=.026*Math.exp(-(v.x*v.x)/(.032*.032))*w*(.35+.65*(v.y+.2)/.4); v.multiplyScalar((r-crease)/r);
+    if(v.y>0) v.y-=.05*Math.exp(-(v.x*v.x+v.z*v.z)/(.075*.075)); v.y*=.94; pa.setXYZ(i,v.x,v.y,v.z); }
+  g.computeVertexNormals(); return GC.peach=g; }
+// a leaf blade: rounded at the stalk, pointed at the tip (+x), with its edges curling up a little
+function bladeGeo(){ if(GC.blade) return GC.blade; const g=new THREE.SphereGeometry(.1,20,10), pa=g.attributes.position;
+  for(let i=0;i<pa.count;i++){ const x=pa.getX(i), t=x/.1, z=pa.getZ(i);
+    const zz=z*(1-.45*Math.max(0,t))*.6; pa.setXYZ(i,x*1.15,pa.getY(i)*.22+zz*zz*2.2+.012*t*t,zz); }
+  g.computeVertexNormals(); return GC.blade=g; }
 function mk(geo,mt,parent,pos,ol=.022){ const o=new THREE.Mesh(geo,mt); if(pos) o.position.set(...pos); o.castShadow=true; if(ol) outline(o,ol); parent.add(o);
   return o; }
 function makeItem(x,y,ch){
   const g=new THREE.Group(); g.position.copy(wp(x,y)); g.userData.kind=ch;
   if(ch==='+'){ const b=new THREE.Group(); g.add(b); g.userData.bob=b;
-    const f=mk(sph(.2,28,20),m('peach'),b,[0,.3,0]); f.scale.set(1,.92,1);
-    mk(new THREE.CylinderGeometry(.018,.022,.1,8),toon(0x8A5A3C),b,[0,.52,0],0);
-    const lf=mk(sph(.09,16,10),m('leaf'),b,[.08,.53,0],.016); lf.scale.set(1,.35,.6); lf.rotation.z=-.5;
-    const lf2=mk(sph(.07,16,10),m('leaf'),b,[-.06,.52,.02],.014); lf2.scale.set(1,.35,.6); lf2.rotation.z=.6;
-    // the crease and the blush sit on the skin (a sphere of radius .2, squashed to .92 in y)
-    const crease=new THREE.Mesh(new THREE.TorusGeometry(.2,.009,6,40,Math.PI),toon(0xF07F5E)); crease.position.set(0,.3,.0); crease.rotation.y=Math.PI/2;
-      crease.scale.y=.92; b.add(crease);
-    const blush=new THREE.Mesh(sph(.08,14,10),new THREE.MeshBasicMaterial({color:0xFF7C6E,transparent:true,opacity:.45,depthWrite:false}));
-      const bn=new THREE.Vector3(.45,.15,.88).normalize(); blush.position.set(0,.3,0).addScaledVector(bn,.196);
-      blush.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,1),bn); blush.scale.set(1,1,.25); b.add(blush); }
-  else if(ch==='-'){ const b=new THREE.Group(); g.add(b); g.userData.bob=b;
-    mk(new THREE.CylinderGeometry(.08,.1,.22,18),m('stem'),b,[0,.13,0]);
-    const cap=mk(new THREE.SphereGeometry(.22,30,14,0,Math.PI*2,0,Math.PI/2),m('cap'),b,[0,.22,0]); cap.scale.y=.85;
-    const gills=new THREE.Mesh(new THREE.CircleGeometry(.2,28),toon(0xF4E3F7)); gills.rotation.x=Math.PI/2; gills.position.y=.215; b.add(gills);
-    const dm=toon(0xFFFFFF);
-    [[0,.35],[1.2,.75],[2.4,.7],[3.6,.8],[4.8,.72],[.6,1.05],[3,1.1]].forEach(([az,el])=>{ const R=.22, x=Math.cos(az)*Math.sin(el)*R, z=Math.sin(az)*Math.sin(el)*R, y=Math.cos(el)*R*.85;
-      const d=new THREE.Mesh(sph(.04,12,8),dm); d.position.set(x,.22+y,z); d.lookAt(x*3,.22+y*3,z*3); d.scale.set(1,1,.35); b.add(d); }); }
-  else if(ch==='T'){ const b=new THREE.Group(); g.add(b); g.userData.bob=b; // a turnaround mushroom: a mint twirl-cap with a cream spiral
-    mk(new THREE.CylinderGeometry(.075,.1,.22,18),m('stem'),b,[0,.13,0]);
-    const cap=mk(new THREE.SphereGeometry(.23,32,16,0,Math.PI*2,0,Math.PI/2),m('turnCap'),b,[0,.22,0]); cap.scale.y=.9;
-    const gills=new THREE.Mesh(new THREE.CircleGeometry(.21,28),toon(0xD9F3EE)); gills.rotation.x=Math.PI/2; gills.position.y=.215; b.add(gills);
-    // the swirl: a cream ribbon winding from the top of the cap down to its rim, two and a half turns
-    const pts=[]; for(let i=0;i<=60;i++){ const t=i/60, el=.12+t*1.38, az=t*Math.PI*5, R=.236;
-      pts.push(new THREE.Vector3(Math.cos(az)*Math.sin(el)*R,.22+Math.cos(el)*R*.9,Math.sin(az)*Math.sin(el)*R)); }
-    b.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts),90,.024,6,false),m('turnSwirl')));
-    const tip=mk(sph(.045,12,10),m('turnSwirl'),b,[0,.43,0],.012); tip.scale.y=.8; }
+    const f=mk(peachGeo(),m('peach'),b,[0,.3,0],.022); f.rotation.y=.5;
+    // a curved woody stalk out of the dimple, and a pointed leaf with a darker rib
+    const st=new THREE.Mesh(new THREE.CylinderGeometry(.016,.022,.1,8),m('stalk')); st.position.set(0,.49,0); st.rotation.z=-.25; b.add(st);
+      st.castShadow=true; outline(st,.01);
+    const lf=new THREE.Group(); lf.position.set(.03,.52,0); lf.rotation.set(.3,-.6,.35); b.add(lf);
+    const bl=mk(bladeGeo(),m('leaf'),lf,[.1,0,0],.014); bl.scale.setScalar(1.05);
+    const rib=new THREE.Mesh(new THREE.BoxGeometry(.17,.008,.012),m('leafRib')); rib.position.set(.1,.024,0); lf.add(rib);
+    const lf2=new THREE.Group(); lf2.position.set(-.02,.5,.01); lf2.rotation.set(-.2,2.5,.45); b.add(lf2);
+    const bl2=mk(bladeGeo(),m('leaf'),lf2,[.08,0,0],.012); bl2.scale.setScalar(.7);
+    // a rosy blush on the cheek beside the crease (it sits on the skin: radius .2, squashed to .94 in y)
+    const blush=new THREE.Mesh(sph(.09,14,10),MC.peachBlushFx||(MC.peachBlushFx=new THREE.MeshBasicMaterial({color:C.peachBlush,transparent:true,opacity:.4,depthWrite:false})));
+      const bn=new THREE.Vector3(.55,.15,.82).normalize(); blush.position.copy(bn).multiplyScalar(.192); blush.position.y*=.94;
+      blush.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,1),bn); blush.scale.set(1,1.15,.25); f.add(blush); }
+  else if(ch==='-'){ const b=new THREE.Group(); g.add(b); g.userData.bob=b; const R=.22, H=.2;
+    mk(new THREE.CylinderGeometry(.075,.1,.24,18),m('stem'),b,[0,.12,0],.018);
+    const cap=mk(capGeo(R,H),m('cap'),b,[0,.215,0],.02);
+    const gills=new THREE.Mesh(new THREE.CircleGeometry(R*.88,28),m('gills')); gills.rotation.x=Math.PI/2; gills.position.y=.215+.012; b.add(gills);
+    // white spots pressed into the dome
+    const dm=m('stem'); [[0,0],[1.2,.75],[2.4,.7],[3.6,.8],[4.8,.72],[.6,1.12],[3,1.15],[5.4,1.2],[1.9,1.25]].forEach(([az,el],i)=>{
+      const p=capPt(R,H,az,el,-.012), n=capPt(R,H,az,el,.1).sub(p).normalize(); const d=new THREE.Mesh(sph(i?.042:.05,12,8),dm);
+      d.position.copy(p).y+=.215; d.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,1),n); d.scale.set(1,1,.42); b.add(d); }); }
+  else if(ch==='T'){ const b=new THREE.Group(); g.add(b); g.userData.bob=b; const R=.23, H=.22; // a turnaround mushroom: a mint twirl-cap with a cream spiral
+    mk(new THREE.CylinderGeometry(.072,.1,.24,18),m('stem'),b,[0,.12,0],.018);
+    const cap=mk(capGeo(R,H),m('turnCap'),b,[0,.215,0],.02);
+    const gills=new THREE.Mesh(new THREE.CircleGeometry(R*.88,28),m('turnGills')); gills.rotation.x=Math.PI/2; gills.position.y=.215+.012; b.add(gills);
+    // the swirl: a cream ribbon winding from the top of the cap down to its rim, two and a half turns, half sunk into the dome
+    const pts=[]; for(let i=0;i<=72;i++){ const t=i/72; const q=capPt(R,H,t*Math.PI*5,.14+t*1.36,.002); q.y+=.215; pts.push(q); }
+    const sw=new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts),110,.026,7,false),m('turnSwirl')); b.add(sw);
+    const tip=mk(sph(.05,14,10),m('turnSwirl'),b,[0,.215+H+.004,0],.014); tip.scale.y=.75; }
   else if(ch==='K'){ const b=new THREE.Group(); g.add(b); g.userData.bob=b; g.userData.noSpin=true; g.userData.faceCam=true; const km=m('key');
     const k=new THREE.Group(); k.position.y=.36; k.rotation.x=-.75; b.add(k); g.userData.keyBody=k;
     mk(new THREE.TorusGeometry(.12,.05,14,30),km,k,[0,.16,0],.016);
     mk(new THREE.CylinderGeometry(.035,.035,.3,12),km,k,[0,-.05,0],.016).rotation.z=0;
     mk(new THREE.BoxGeometry(.11,.05,.05),km,k,[.07,-.17,0],.014); mk(new THREE.BoxGeometry(.08,.05,.05),km,k,[.06,-.09,0],.014);
-    const gem=new THREE.Mesh(sph(.04,12,10),toon(0xFF8FB1)); gem.position.set(0,.16,0); gem.scale.z=.6; k.add(gem); }
+    const gem=new THREE.Mesh(sph(.04,12,10),m('keyGem')); gem.position.set(0,.16,0); gem.scale.z=.6; k.add(gem); }
   else if(ch==='G'){ const gm=m('gateWood'); // little wooden garden gate
     for(const sx of [-.38,.38]){ mk(new THREE.CylinderGeometry(.06,.065,.72,14),gm,g,[sx,.36,0]); mk(sph(.075,16,12),gm,g,[sx,.74,0]); }
     const door=new THREE.Group(); door.position.x=-.32; g.add(door); g.userData.door=door;
@@ -143,19 +208,15 @@ function makeItem(x,y,ch){
     g.userData.flag=fl; g.userData.flagBase=Float32Array.from(fg.attributes.position.array);
     mk(new THREE.CylinderGeometry(.11,.14,.05,18),m('pole'),g,[0,.025,0],.014); }
   else if(ch>='1'&&ch<='9'){ const col=C.portal[ch]||0x9fd8e8; // a tunnel dug into the soil, marked with flowers of its pair colour
-    const hole=new THREE.Mesh(new THREE.CircleGeometry(.27,32),new THREE.MeshBasicMaterial({color:0x2E2019})); hole.rotation.x=-Math.PI/2; hole.position.y=.012;
-      g.add(hole);
-    const inner=new THREE.Mesh(new THREE.RingGeometry(.15,.27,32),new THREE.MeshBasicMaterial({color:0x4A3226})); inner.rotation.x=-Math.PI/2;
-      inner.position.y=.014; g.add(inner);
-    const dm=MC.tunnelSoil||(MC.tunnelSoil=toon(0xA9744F)), dm2=MC.tunnelClod||(MC.tunnelClod=toon(0x96633F));
+    // the hole itself is cut through the tile (see makeTile); here the dug-up earth round it and the pair's flowers
+    const dm=m('tunnelSoil'), dm2=m('tunnelClod');
     const ring=new THREE.Mesh(moundGeo(x*3+y*5),dm); ring.position.y=-.03; ring.castShadow=true; ring.receiveShadow=true; outline(ring,.014,.4); g.add(ring);
     for(let i=0;i<4;i++){ const a=i*1.9+x+y*2, c=new THREE.Mesh(sph(.045,10,8),dm2); c.position.set(Math.cos(a)*.33,.065,Math.sin(a)*.33); c.scale.set(1,.6,.8);
       c.rotation.y=a; g.add(c); }
     const fm=toon(col); for(let i=0;i<3;i++){ const a=i/3*Math.PI*2+.6; const f=new THREE.Group(); f.position.set(Math.cos(a)*.36,.075,Math.sin(a)*.36);
-      for(let k=0;k<5;k++){ const pt=new THREE.Mesh(sph(.032,10,8),fm); const b=k/5*Math.PI*2; pt.position.set(Math.cos(b)*.04,.04,Math.sin(b)*.04);
-        pt.scale.y=.5; f.add(pt); }
-      const c=new THREE.Mesh(sph(.024,10,8),toon(0xFFD866)); c.position.y=.05; f.add(c); g.add(f); }
-    g.userData.tunnel=hole; }
+      for(let k=0;k<5;k++){ const pt=new THREE.Mesh(sph(.044,12,8),fm); const b=k/5*Math.PI*2+a; pt.position.set(Math.cos(b)*.052,.035,Math.sin(b)*.052);
+        pt.scale.set(1,.42,.75); pt.rotation.y=-b; pt.castShadow=true; f.add(pt); }
+      const c=new THREE.Mesh(sph(.03,12,8),m('key')); c.position.y=.05; c.scale.y=.7; f.add(c); g.add(f); } }
   else if(ch==='B'){ // a big flower lying flat: a button that holds the hedges open while the worm rests on it
     const fl=new THREE.Group(); fl.position.y=.02; g.add(fl); g.userData.flower=fl;
     const base=mk(new THREE.CylinderGeometry(.36,.38,.04,24),m('leaf'),fl,[0,.0,0],.014); base.receiveShadow=true;
@@ -168,13 +229,13 @@ function makeItem(x,y,ch){
     for(let i=0;i<9;i++){ const b=new THREE.Mesh(sph(.17,14,10),i%2?m('hedge'):m('hedgeDark'));
       b.position.set(((i%3)-1)*.27,.5+((i*7)%3)*.02,(Math.floor(i/3)-1)*.27); b.castShadow=true; outline(b,.012); hg.add(b); }
     for(let i=0;i<4;i++){ const fl=new THREE.Mesh(sph(.04,10,8),m('petalB')); fl.position.set(Math.cos(i*1.7)*.3,.62,Math.sin(i*1.7)*.3); hg.add(fl); } }
-  else if(ch==='L'){ mk(new THREE.CylinderGeometry(.14,.17,.1,18),toon(0xD8CFC4),g,[0,.05,0],.014);
+  else if(ch==='L'){ mk(new THREE.CylinderGeometry(.14,.17,.1,18),m('stone'),g,[0,.05,0],.014);
     mk(new THREE.BoxGeometry(.09,.5,.09),m('plankDark'),g,[0,.3,0],.014);
     const wheel=new THREE.Group(); wheel.position.set(0,.5,.07); wheel.rotation.x=-.6; g.add(wheel); g.userData.wheel=wheel; g.userData.faceCam=true;
     mk(new THREE.TorusGeometry(.17,.03,10,28),m('plank'),wheel,null,.012);
     for(let i=0;i<3;i++){ const sp=new THREE.Mesh(new THREE.BoxGeometry(.34,.035,.035),m('plankDark')); sp.rotation.z=i*Math.PI/3; wheel.add(sp); }
     mk(sph(.045,12,10),m('key'),wheel,[0,0,.02],.012); mk(new THREE.CylinderGeometry(.02,.02,.12,8),m('key'),wheel,[.17,0,.06],.01).rotation.x=Math.PI/2; }
-  else if(ch==='R'){ const st=mk(sph(.22,20,14),toon(0xC9C0B4),g,[0,.04,0],.016); st.scale.set(1,.45,.9);
+  else if(ch==='R'){ const st=mk(sph(.22,20,14),m('stone'),g,[0,.04,0],.016); st.scale.set(1,.45,.9);
     const moss=new THREE.Mesh(sph(.16,16,10),m('leaf')); moss.scale.set(1,.3,.8); moss.position.set(-.04,.11,0); g.add(moss);
     const cl=new THREE.Group(); cl.position.y=.76; cl.scale.setScalar(1.6); cl.rotation.x=-.6; g.add(cl); g.userData.bob=cl; g.userData.bobBase=.76;
       g.userData.at=[x,y]; g.userData.noSpin=true; g.userData.cloud=cl; g.userData.faceCam=true; const cm=toon(C.cloud);
@@ -190,10 +251,10 @@ function makeItem(x,y,ch){
     const drops=new THREE.Group(); drops.visible=false; cl.add(drops); g.userData.drops=drops;
     for(let i=0;i<3;i++){ const d=new THREE.Mesh(sph(.025,10,8),toon(C.water)); d.scale.y=1.6; d.position.set((i-1)*.1,-.15,0); d.userData.ph=i*.33;
       drops.add(d); } }
-  else if(ch==='E'){
-    const hole=new THREE.Mesh(new THREE.CircleGeometry(.28,32),new THREE.MeshBasicMaterial({color:C.burrow})); hole.rotation.x=-Math.PI/2; hole.position.y=.01;
-      g.add(hole);
-    const rim=mk(new THREE.TorusGeometry(.33,.09,14,36),toon(C.mound),g,[0,.05,0],.018); rim.rotation.x=-Math.PI/2; rim.scale.z=.8;
+  else if(ch==='E'){ // the burrow: a real hole in the tile (see makeTile) ringed by a heap of dug-up earth
+    const rim=mk(lumpyTorus(.335,.09,x*2+y*3,.7),toon(C.mound),g,[0,.05,0],.018); rim.rotation.x=-Math.PI/2; rim.scale.z=.8; rim.receiveShadow=true;
+    for(let i=0;i<4;i++){ const a=i*1.55+x+y*2.3, c=new THREE.Mesh(sph(.04,10,8),m('tunnelClod')); c.position.set(Math.cos(a)*.44,.025,Math.sin(a)*.44);
+      c.scale.set(1,.6,.8); c.rotation.y=a; c.castShadow=true; g.add(c); }
     const sign=new THREE.Group(); sign.position.set(.3,0,-.34); sign.scale.setScalar(1.55); g.add(sign); sign.userData.faceCam=true;
     mk(new THREE.CylinderGeometry(.03,.035,.5,10),m('pole'),sign,[0,.25,0],.014);
     const face=new THREE.Group(); face.position.y=.55; face.rotation.x=-.35; sign.add(face);
@@ -211,9 +272,9 @@ function makeItem(x,y,ch){
 // Each patch builds its own meshes; free their GPU memory when the next patch replaces them.
 // Cached and module-level geometries, materials and textures are shared, so they are kept.
 function disposeTree(root){
-  const keepG=new Set([...Object.values(GC),TURF,HEDGE,WATER,spriteGeo,ringGeo,glintGeo,rippleGeo]);
+  const keepG=new Set([...Object.values(GC),TURF,HEDGE,WATER,TURF_HOLE,WELL,WELL_FLOOR,DRY_DEC,VEIN,spriteGeo,ringGeo,glintGeo,rippleGeo]);
   const keepM=new Set([...Object.values(MC),lineMat,flatLineMat,batchMat,batchLine,tubeMat,capMat,waterMatH,waterMatV,lawnMat,sparkMat,glintMat]);
-  const keepT=new Set([gradTex,glowTex,sparkTex,turfTex,crackTex,swirlTex,lawnTex,flowH,flowV,blobTex,zTex,slimeTex]);
+  const keepT=new Set([gradTex,glowTex,sparkTex,turfTex,crackTex,dryTex,swirlTex,lawnTex,flowH,flowV,blobTex,zTex,slimeTex]);
   root.traverse(o=>{ if(o.geometry&&!keepG.has(o.geometry)) o.geometry.dispose();
     for(const mt of o.material?[].concat(o.material):[]){ if(keepM.has(mt)) continue; if(mt.map&&!keepT.has(mt.map)) mt.map.dispose(); mt.dispose(); } }); }
 function buildBoard(){
