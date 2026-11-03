@@ -374,8 +374,8 @@ says which file holds what, and a search for a function name finds it fast.
   move), `pushBeetle` (turns to face the worm, scoots along its path with eyes shut), `beetleNope` (shakes
   its head at a blocked push), `updateBeetles` (blinks, watches the worm, scrabbles, looks content on a
   flower). Open hedges pull in from the tile edges so the change reads from above.
-- **Pollen and soft soil** (`models/pollen-soil.js`): `makePollenFlower` (cupped bloom, fuzzy dome, floating
-  motes in `polItems`), `makePetalGate` (six tall petals closed into a bud; `setPetals(u,o)` folds them
+- **Pollen and soft soil** (`models/pollen-soil.js`): `makePollenFlower` (each colour its own bloom: four-petal poppy, cupped buttercup, starry bluebell; floating
+  motes in `polItems`), `makePetalGate` (a bud with that colour's petal count; `setPetals(u,o)` folds them
   flat, `syncPetals` opens a gate while the worm wears its colour or lies in it, `petalsNope` shakes it at
   a blocked move), `POLL` / `polMat` for the three colours. The worm's tint: `updatePollen` eases `dustCol` /
   `dustAmt`, `dusty()` blends the tube's vertex colours, and the patch worm's head has its own material

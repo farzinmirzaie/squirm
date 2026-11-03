@@ -17,7 +17,7 @@ function makePollenFlower(g,ch,x,y){ const fl=new THREE.Group(); fl.position.y=.
   // three leaves with a paler midrib
   for(let i=0;i<3;i++){ const a=i/3*Math.PI*2+.5, lf=new THREE.Mesh(sph(.12,14,8),m('leaf')); lf.scale.set(1.7,.16,.62);
     lf.position.set(Math.cos(a)*.31,0,Math.sin(a)*.31); lf.rotation.y=-a; hullFit(lf,.011); st.add(lf);
-    const rib=new THREE.Mesh(sph(.12,10,6),m('leafRib')); rib.scale.set(1.25,.17,.08); rib.position.set(Math.cos(a)*.33,.006,Math.sin(a)*.33); rib.rotation.y=-a; st.add(rib); }
+    const rib=new THREE.Mesh(sph(.12,10,6),m('polRib')); rib.scale.set(1.25,.17,.08); rib.position.set(Math.cos(a)*.33,.006,Math.sin(a)*.33); rib.rotation.y=-a; st.add(rib); }
   // cupped petals, tips turned up, each with a paler heart
   for(let i=0;i<B.n;i++){ const pv=new THREE.Group(); pv.rotation.y=-i/B.n*Math.PI*2; st.add(pv);
     const pt=new THREE.Mesh(sph(.13,18,12),polMat(ch)); pt.scale.set(B.l,.3,B.w); pt.position.set(.075+.13*B.l*.85,.08,0); pt.rotation.z=B.cup; hullFit(pt,.012); pv.add(pt);
@@ -43,7 +43,7 @@ function makePetalGate(g,ch,x,y){ const P=ch.toUpperCase(), B=BLOOM[P], gt=new T
   const st=new THREE.Group();
   const ring=new THREE.Mesh(new THREE.RingGeometry(.3,.43,36),polMat(P,'light')); ring.rotation.x=-Math.PI/2; ring.position.y=.006; st.add(ring);
   const base=new THREE.Mesh(new THREE.CylinderGeometry(.2,.24,.07,20),m('leaf')); base.position.y=.035; outline(base,.012); st.add(base);
-  const top=new THREE.Mesh(sph(.2,20,8),m('leafRib')); top.scale.set(1,.2,1); top.position.y=.07; st.add(top);
+  const top=new THREE.Mesh(sph(.2,20,8),m('polRib')); top.scale.set(1,.2,1); top.position.y=.07; st.add(top);
   for(let i=0;i<6;i++){ const a=(i+.5)/6*Math.PI*2, se=new THREE.Mesh(sph(.08,10,8),m('leaf')); se.scale.set(1.5,.3,.7);
     se.position.set(Math.cos(a)*.26,.03,Math.sin(a)*.26); se.rotation.y=-a; hullFit(se,.009); st.add(se); }
   gt.add(merged(st,1));
