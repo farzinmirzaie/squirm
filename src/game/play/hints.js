@@ -15,11 +15,11 @@ function openSeeds(){ const daily=!progress.daily.results[todayKey()]&&!(L&&L.da
   $('seedDaily').hidden=!daily; $('seedDaily').innerHTML=`Today's patch ${seedChip(2)}`; $('seedMeadow').innerHTML=`A meadow patch ${seedChip(1)}`;
   $('seedMeadow').classList.toggle('primary',!daily); sfx('stuck'); show('seedOv'); pushLayer('seeds'); }
 // the explainer, from the seed pill on the home screen
-function seedInfo(){ const n=progress.seeds, row=(t,v)=>`<li>${art('hintseed',20)}<span>${t}</span><b>${v}</b></li>`;
+function seedInfo(){ const n=progress.seeds, row=(t,v)=>`<li><span class="ic" aria-hidden="true">${art('hintseed',18)}</span><span>${t}</span><b>${v}</b></li>`;
   $('seedTitle').textContent='Hint seeds'; $('seedText').textContent=`Each hint in the garden uses one seed. You have ${n} of ${SEED_MAX}; your pouch holds ${SEED_MAX}. Grow more by playing:`;
   $('seedHow').innerHTML=row("Today's patch",'+2')+row('A meadow patch','+1')+row('A hard meadow patch','+2')+row('First meadow patch of the day','+1 more')+row('Every 7 days in a row','+1 more')
-    +`<li>${art('bulb',20)}<span>Hints stay free in the first chapter and the meadow, and the same hint twice never costs a seed.</span></li>`
-    +((progress.stats.seedsGot||0)<30?`<li>${hatArt('idea',20)}<span>Grow 30 seeds to earn the Bright idea hat</span><b>${progress.stats.seedsGot||0} of 30</b></li>`:'');
+    +`<li><span class="ic" aria-hidden="true">${art('bulb',18)}</span><span>Hints stay free in the first chapter and the meadow, and the same hint twice never costs a seed.</span></li>`
+    +((progress.stats.seedsGot||0)<30?`<li><span class="ic" aria-hidden="true">${hatArt('idea',18)}</span><span>Grow 30 seeds to earn the Bright idea hat</span><b>${progress.stats.seedsGot||0} of 30</b></li>`:'');
   $('seedHow').hidden=false; $('seedDaily').hidden=true; $('seedMeadow').hidden=true; $('seedKeep').textContent='Got it'; show('seedOv'); pushLayer('seeds'); }
 $('homeSeeds').onclick=()=>{ ensureAudio(); seedInfo(); };
 const seedGo=f=>()=>{ hide('seedOv'); popLayer('seeds'); f(); };

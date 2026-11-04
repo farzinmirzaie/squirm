@@ -2,7 +2,7 @@
 function renderSettings(){ renderNews(); $('setMusic').setAttribute('aria-checked',String(musicOn)); $('setMusicVol').value=Math.round(musicVol*100);
   $('volRow').hidden=!musicOn;
   // a little summary of the garden at the top
-  $('setHero').innerHTML=[[art('star',22),starTotal(),'stars'],[art('medal',22),Object.keys(progress.badges).length,'badges'],[art('sprout',22),LEVELS.filter((l,i)=>isCleared(i)).length,'patches']].map(([i,n,l])=>`<span>${i}${n}<small>${l}</small></span>`).join('');
+  $('setHero').innerHTML=[[art('star',26),starTotal(),'stars'],[art('medal',26),Object.keys(progress.badges).length,'badges'],[art('sprout',26),LEVELS.filter((l,i)=>isCleared(i)).length,'patches']].map(([i,n,l])=>`<span><span class="ic" aria-hidden="true">${i}</span>${n}<small>${l}</small></span>`).join('');
   qa($('setGfx'),'button').forEach(b=>{ const on=b.dataset.g===gfx; b.classList.toggle('on',on); b.setAttribute('aria-checked',String(on)); });
     $('setSound').setAttribute('aria-checked',String(!muted)); applyTheme();
   qa($('setHaptic'),'button').forEach(b=>{ const on=+b.dataset.h===hapticLvl; b.classList.toggle('on',on); b.setAttribute('aria-checked',String(on)); });

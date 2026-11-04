@@ -112,7 +112,7 @@ button:focus-visible{outline:3px solid var(--honey);outline-offset:2px}
 /* ==== 3. Shared pieces ==== */
 .card{background:var(--paper);border:3px solid var(--edge);border-radius:26px;box-shadow:0 5px 0 var(--edge),0 12px 26px var(--shadow)}
 /* a round cream sticker behind a small icon (HUD tiles, toast, meadow stats) */
-.ic{flex:none;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;background:var(--sticker);border:2px solid var(--sticker-edge)}
+.ic{flex:none;width:26px;height:26px;border-radius:10px;display:grid;place-items:center;background:var(--sticker);border:2px solid var(--sticker-edge)}
 .ic svg{width:19px;height:19px}
 .round{width:46px;height:46px;flex:none;border-radius:50%;border:3px solid var(--edge);background:var(--paper) var(--glaze);color:var(--ink);
   display:grid;place-items:center;cursor:pointer;box-shadow:0 4px 0 var(--edge),0 8px 18px var(--shadow);padding:0}
@@ -185,7 +185,7 @@ button:focus-visible{outline:3px solid var(--honey);outline-offset:2px}
 .sheet p.label{margin:4px 0 -4px}
 .sheet .label-row p.label{margin:0}
 /* out of hint seeds: where to grow more */
-.seeds .seed-art{display:flex;justify-content:center}
+.seeds .seed-art{flex:none;align-self:center;width:84px;height:84px;margin:2px auto 0;border-radius:22px;display:grid;place-items:center;background:var(--tint-honey);border:3px solid var(--honey-dark);box-shadow:0 4px 0 var(--honey-dark);--art-halo:none}
 /* the explainer from the home pill: how seeds work, one row each */
 .seed-how{display:flex;flex-direction:column;gap:8px;margin:0 0 16px;padding:0;list-style:none;text-align:left}
 .seed-how[hidden]{display:none}
@@ -199,8 +199,8 @@ button.seed-pill{cursor:pointer;color:var(--ink);font:800 18px/1 var(--fd)}
 .intro{display:flex;flex-direction:column;align-items:stretch;overflow:hidden}
 #introBody{display:flex;flex-direction:column;align-items:center;gap:8px;min-height:0;overflow:auto;overscroll-behavior:contain;margin:0 -6px 6px;padding:0 6px}
 #introBody .label{margin:0}
-.intro-art{--tint:var(--tint-leaf);position:relative;width:132px;height:132px;margin:4px 0 6px;border-radius:50%;display:grid;place-items:center;background:var(--tint);border:3px solid var(--edge);box-shadow:0 5px 0 var(--edge)}
-.intro-art .ia{display:grid;place-items:center;width:92px;height:92px;border-radius:50%;background:var(--sticker);border:3px solid var(--sticker-edge);--art-halo:none;animation:bob 2.6s ease-in-out infinite}
+.intro-art{--tint:var(--tint-leaf);position:relative;width:132px;height:132px;margin:4px 0 6px;border-radius:26px;display:grid;place-items:center;background:var(--tint);border:3px solid var(--edge);box-shadow:0 5px 0 var(--edge)}
+.intro-art .ia{display:grid;place-items:center;width:92px;height:92px;border-radius:26px;background:var(--sticker);border:3px solid var(--sticker-edge);--art-halo:none;animation:bob 2.6s ease-in-out infinite}
 .intro-art i{position:absolute;width:12px;height:12px;border-radius:50%;background:var(--sticker);border:2px solid var(--sticker-edge);animation:twinkle 2.6s ease-in-out infinite}
 .intro-art i:nth-of-type(1){top:10px;right:14px}.intro-art i:nth-of-type(2){bottom:18px;left:6px;width:9px;height:9px;animation-delay:1.1s}.intro-art i:nth-of-type(3){top:28px;left:12px;width:7px;height:7px;animation-delay:.5s}
 #introBody h2{margin:0!important}
@@ -228,7 +228,7 @@ button.seed-pill{cursor:pointer;color:var(--ink);font:800 18px/1 var(--fd)}
 .win-gifts{flex:0 1 auto;min-height:0;display:flex;flex-direction:column;gap:6px;margin:0 -6px;padding:2px 6px}
 .win-gifts:empty{display:none}
 .gift{flex:none;display:flex;align-items:center;gap:10px;padding:6px 10px 6px 6px;border-radius:16px;background:var(--paper-2);border:2px solid var(--edge);text-align:left}
-.gift .gi{flex:none;width:38px;height:38px;border-radius:12px;display:grid;place-items:center;background:var(--sticker);border:2px solid var(--sticker-edge);--art-halo:none}
+.gift .gi{flex:none;width:38px;height:38px;border-radius:14px;display:grid;place-items:center;background:var(--sticker);border:2px solid var(--sticker-edge);--art-halo:none}
 .gift b{display:block;font:800 15px/1.15 var(--fd);color:var(--ink)}
 .gift small{font:700 12px/1.2 var(--fb);color:var(--ink-soft)}
 .gift.hot{background:var(--tint-honey);border-color:var(--honey-dark)}
@@ -530,7 +530,7 @@ body.photo .wsay{display:none}
 /* -- Meadow: endless setup -- */
 .m-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
 .m-stat{display:flex;flex-direction:column;align-items:center;gap:2px;padding:9px 4px 8px;border-radius:18px;background:var(--paper-2);border:2px solid var(--edge)}
-.m-stat .ic{width:36px;height:36px;margin-bottom:2px}.m-stat .ic svg{width:24px;height:24px}
+.m-stat .ic,.set-hero .ic{width:36px;height:36px;border-radius:14px;margin-bottom:2px}.m-stat .ic svg,.set-hero .ic svg{width:24px;height:24px}
 .m-stat b{font:800 21px/1.1 var(--fd)}
 .m-stat small{font-size:11px;font-weight:800;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.04em}
 .m-diffs{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
@@ -541,7 +541,7 @@ body.photo .wsay{display:none}
 /* the chosen difficulty: its picture, what it's like, and its own record */
 .m-hero{--acc:var(--leaf);--tint:var(--tint-leaf);flex:none;display:flex;align-items:center;gap:14px;padding:12px 14px;border-radius:22px;background:var(--tint);border:3px solid var(--acc);box-shadow:0 4px 0 var(--acc);color:var(--deep)}
 .m-hero[data-d=medium]{--acc:var(--honey-dark);--tint:var(--tint-honey)} .m-hero[data-d=hard]{--acc:var(--berry);--tint:var(--tint-berry)}
-.m-hero .m-em{flex:none;width:68px;height:68px;border-radius:50%;display:grid;place-items:center;background:var(--sticker);border:3px solid var(--sticker-edge)}
+.m-hero .m-em{flex:none;width:68px;height:68px;border-radius:22px;display:grid;place-items:center;background:var(--sticker);border:3px solid var(--sticker-edge)}
 .m-hero .m-info{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
 .m-hero b{font:800 21px/1.1 var(--fd)}
 .m-hero .m-desc{font:700 13px/1.25 var(--fb);color:var(--deep);opacity:.8}
@@ -623,8 +623,8 @@ body.photo .wsay{display:none}
 .settings{max-height:min(760px,calc(100% - 24px));padding-bottom:6px}
 .set-scroll{flex:1;min-height:0;display:flex;flex-direction:column;gap:12px;margin:0 -16px;padding:2px 16px 14px}
 .set-hero{flex:none;display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-.set-hero span{display:flex;flex-direction:column;align-items:center;gap:3px;padding:9px 4px 8px;border-radius:18px;background:var(--paper-2);border:2px solid var(--edge);font:800 21px/1 var(--fd);color:var(--ink)}
-.set-hero small{font:800 11px/1 var(--fb);color:var(--ink-soft);text-transform:uppercase;letter-spacing:.04em}
+.set-hero>span{display:flex;flex-direction:column;align-items:center;gap:3px;padding:9px 4px 8px;border-radius:18px;background:var(--paper-2);border:2px solid var(--edge);font:800 21px/1 var(--fd);color:var(--ink)}
+.set-hero>span>small{font:800 11px/1 var(--fb);color:var(--ink-soft);text-transform:uppercase;letter-spacing:.04em}
 .set-card{flex:none;display:flex;flex-direction:column;gap:12px;padding:12px 14px 14px;border-radius:22px;background:var(--paper-2);border:3px solid var(--edge)}
 .set-h{display:flex;align-items:center;gap:10px;margin:0;font:800 18px/1.1 var(--fd);color:var(--ink)}
 .set-h [data-art]{width:38px;height:38px;border-radius:14px;place-items:center;background:var(--sticker);border:2px solid var(--sticker-edge);--art-halo:none;vertical-align:0}
@@ -650,7 +650,7 @@ body.photo .wsay{display:none}
 
 /* ==== 8. Finale: "What's next?" once the whole garden is grown ==== */
 .finale{gap:12px;text-align:center}
-.fin-emb{align-self:center;width:76px;height:76px;border-radius:50%;place-items:center;margin:2px 0 0;background:var(--tint-honey);border:3px solid var(--honey-dark);box-shadow:0 4px 0 var(--honey-dark)}
+.fin-emb{flex:none;align-self:center;width:76px;height:76px;border-radius:22px;place-items:center;margin:2px 0 0;background:var(--tint-honey);border:3px solid var(--honey-dark);box-shadow:0 4px 0 var(--honey-dark)}
 .finale h2{margin:0}
 .fin-sub{margin:-4px 0 0;font-size:15px;color:var(--ink-soft)}
 .finale p.label{text-align:left;margin:4px 0 -4px}
@@ -960,7 +960,7 @@ body.big-text .hud-stats{zoom:.9}
   <div class="row"><button class="btn" id="resetNo">Keep it</button><button class="btn danger" id="resetYes">Reset all</button></div>
 </div></div>
 <div class="ov" id="seedOv"><div role="dialog" aria-modal="true" aria-labelledby="seedTitle" class="dialog card seeds">
-  <span class="seed-art" aria-hidden="true" data-art="hintseed" data-size="64"></span>
+  <span class="seed-art" aria-hidden="true" data-art="hintseed" data-size="54"></span>
   <h2 id="seedTitle">Out of hint seeds</h2><p id="seedText"></p><ul class="seed-how" id="seedHow"></ul>
   <div class="seed-go"><button class="btn primary" id="seedDaily"></button><button class="btn" id="seedMeadow"></button><button class="btn" id="seedKeep"></button></div>
 </div></div>
