@@ -565,7 +565,7 @@ from a tab replaces that layer with `game`.
   when the app returns to the foreground and every 30 minutes. A new worker takes over right away; the page
   reloads into it at a calm moment (immediately on the home screen, otherwise the next time the player heads
   home), with a toast that an update is waiting. The home screen shows an install button on `beforeinstallprompt`.
-  Launch links: `?play=continue|daily|meadow` (the manifest's three shortcuts, the daily reminder) go through
+  Launch links: `?play=continue|daily|meadow|race` (the manifest's four shortcuts, the daily reminder) go through
   `launchPlay` in `core/boot.js`, at boot and, since `launch_handler` reuses an open window, from `launchQueue`.
   The manifest asks for portrait (`orientation`).
 - **Daily reminder** (`platform/reminder.js`): no server, so no push. Where `PeriodicSyncManager` exists (installed Chrome on

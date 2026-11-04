@@ -24,7 +24,7 @@ test('the manifest has what an install needs', () => {
 test('manifest icons exist at their declared sizes', () => manifest.icons.forEach(i => check(i, 'icon')));
 test('shortcuts point at launch links the game handles, with icons that exist', () => {
   for (const s of manifest.shortcuts || []) {
-    assert.match(s.url, /^\.\/\?play=(continue|daily|meadow)$/, `shortcut ${s.name}`);
+    assert.match(s.url, /^\.\/\?play=(continue|daily|meadow|race)$/, `shortcut ${s.name}`);
     (s.icons || []).forEach(i => check(i, 'shortcut icon'));
   }
 });

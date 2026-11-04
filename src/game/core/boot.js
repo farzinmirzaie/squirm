@@ -18,8 +18,8 @@ const start=()=>{ const i=currentGardenIndex();
   requestAnimationFrame(()=>{ startLevel(LEVELS[i],false); initHomeWorm(); requestAnimationFrame(frame);
     const inv=location.hash.match(/^#race=([A-Za-z0-9_-]+)/); if(inv){ try{ window.history.replaceState(null,'',location.pathname+location.search); }catch(e){} setTimeout(()=>raceJoin(inv[1]),400); }
     const ask=new URLSearchParams(location.search).get('play'); if(ask){ try{ window.history.replaceState(null,'',location.pathname); }catch(e){} launchPlay(ask); } }); };
-// what a launch URL asks for (?play=daily|meadow|continue): the app shortcuts and the reminder use these
-function launchPlay(what){ ensureAudio(); if(what==='daily') $('dailyBtn').onclick(); else if(what==='meadow') $('meadowBtn').onclick(); else if(what==='continue') $('homePlay').onclick(); }
+// what a launch URL asks for (?play=daily|meadow|continue|race): the app shortcuts and the reminder use these
+function launchPlay(what){ ensureAudio(); if(what==='daily') $('dailyBtn').onclick(); else if(what==='meadow') $('meadowBtn').onclick(); else if(what==='continue') $('homePlay').onclick(); else if(what==='race') raceOpen(); }
 // an installed app reuses its open window (launch_handler focus-existing), so a shortcut used while it's running
 // arrives here instead of reloading the page; the launch that opened the page is handled above
 { const bootURL=location.href; let first=true;

@@ -80,6 +80,19 @@
           "type": "image/png"
         }
       ]
+    },
+    {
+      "name": "Race a friend",
+      "short_name": "Race",
+      "description": "Race a friend to the burrow",
+      "url": "./?play=race",
+      "icons": [
+        {
+          "src": "icons/shortcut-race.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        }
+      ]
     }
   ],
   "launch_handler": {
