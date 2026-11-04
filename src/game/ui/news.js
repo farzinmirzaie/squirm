@@ -4,6 +4,7 @@
 // add an entry on top. Returning players see the newest entry once as a card on the Play tab, new players never
 // do (squirm-news holds the last version seen); Settings > About lists them all.
 const NEWS=[
+  ['1.22.0','2026-11-04','Race ghosts',['When you race a friend you now see their worm on your patch: a see-through ghost crawling where they crawl, in their own colours, hat and extra.']],
   ['1.21.0','2026-11-04','Race a friend',['Race a friend to the burrow! Tap Race a friend, send the invite, paste the reply your friend sends back, and you both get the same freshly grown patch.','Watch their moves tick up as you crawl, then go again with a rematch.','It works best on the same Wi-Fi, or with one phone joined to the other\'s hotspot.']],
   ['1.20.0','2026-11-04','Shine them up',['The garden map now shows where stars are missing: each chapter counts its patches below 3 stars, and turns gold once every patch shines.','A new Shine button takes you straight to the next patch that could use another star, and its card tells you what 3 stars needs.']],
   ['1.19.0','2026-11-03','Comfy settings',['A new Comfort card in Settings: Calm motion keeps the screen still, Bigger text makes everything easier to read, and Colour helpers put a shape on each pollen colour (circle, triangle, square) with a chip showing the one you wear.','Vibration has its own little language now: a rising tap when you grow, a sparkle for keys and pollen, a swirl when you turn around, a fanfare when you win. Pick Gentle or Full in Settings.']],

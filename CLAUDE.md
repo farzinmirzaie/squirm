@@ -517,7 +517,12 @@ from a tab replaces that layer with `game`.
   "Go" (`raceSecs`, so a restart doesn't reset it), a Friend chip in the HUD (`raceChip`, `raceTick` sends our move
   count), and `onWin` hands over to `raceWin` / `raceResult` (who got home first, both moves, Rematch once both ask,
   the host grows the next round). Leaving (home, back, closing) sends `bye`; the friend sees "wandered off" and keeps
-  playing. `stats.raceWins` counts wins.
+  playing. `stats.raceWins` counts wins. The friend's ghost: on connect each phone sends `look` (`myLook`: colour,
+  pattern, hat and extra with their colour options), and every `mv` carries our segments, so `raceGhostBuild` makes a
+  see-through worm in their outfit (`makeSeg` plus their hat and extra protos, `tinted` with their option; see-through
+  copies of each material cached in `MC` by `ghostMat`) and `raceGhostTick` (from `frame`) eases it after their moves,
+  snapping on tunnels and turnarounds. Gradient patterns show on it; shader patterns (stripes, spots...) don't.
+  `raceGhostDrop` frees it when the friend finishes or leaves and when the race ends.
 - **Layers and the back button** (`ui/layers.js`): a small layer stack mirrored to `window.history` (`pushLayer` /
   `popLayer` / `swapLayers`). `popLayer`'s `history.go` is async, so use `swapLayers` when replacing a layer
   right after closing another (the finale does this coming from the win dialog).

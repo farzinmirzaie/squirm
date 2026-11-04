@@ -4,7 +4,8 @@
 // host pastes. Public STUN servers (only while connecting) let phones on different networks find each other; some
 // strict mobile networks still can't, and the dialog says so. Codes are deflated JSON in base64url (a few hundred
 // characters) and carry the phone's network addresses, so the dialog asks to share them only with friends.
-// Over the data channel (JSON): hi, start {def, round} (the host grows the patch and sends it whole), mv {n},
+// Over the data channel (JSON): hi, look (the outfit for the ghost), start {def, round} (the host grows the patch and
+// sends it whole), mv {n, s: our segments},
 // won {mv, secs}, again (wants a rematch), bye. The race itself is mode 'race': no hints, no resume, no meadow or
 // garden progress; a Friend chip in the HUD, and onWin hands over to raceWin for the result card.
 const RACE_ICE={iceServers:[{urls:['stun:stun.l.google.com:19302','stun:stun1.l.google.com:19302']},{urls:'stun:stun.cloudflare.com:3478'}]};
@@ -84,22 +85,24 @@ async function raceJoin(code){ if(!raceOK()){ toast("This browser can't race. Tr
 const raceSend=m=>{ try{ if(race&&race.dc&&race.dc.readyState==='open') race.dc.send(JSON.stringify(m)); }catch(e){} };
 function raceWire(dc){ race.dc=dc;
   dc.onopen=()=>{ if(!race) return; race.open=true; clearTimeout(race.failT); raceSend({t:'hi',v:NEWS[0][0]}); sfx('on');
-    if(race.host){ stat('race/start'); raceGrow(); } else raceStep('grow'); };
+    raceSend({t:'look',look:myLook()}); if(race.host){ stat('race/start'); raceGrow(); } else raceStep('grow'); };
   dc.onclose=()=>{ if(race&&race.dc===dc&&race.open) raceGone(); };
   dc.onmessage=e=>{ let m; try{ m=JSON.parse(e.data); }catch(err){ return; } if(!race) return;
     if(m.t==='start'&&!race.host&&m.def&&Array.isArray(m.def.map)) raceStart(m.def,m.round);
-    else if(m.t==='mv'){ race.friend.n=m.n|0; if(mode==='race') updateHUD(true); }
+    else if(m.t==='look'&&m.look&&Array.isArray(m.look.c)){ race.look=m.look; if(mode==='race'&&!ghost) raceGhostBuild(); }
+    else if(m.t==='mv'){ race.friend.n=m.n|0; if(Array.isArray(m.s)) race.friend.segs=m.s; if(mode==='race'){ raceGhostTo(m.s); updateHUD(true); } }
     else if(m.t==='won'){ race.friend.done=true; race.friend.mv=m.mv|0; race.friend.secs=+m.secs||0;
       if(mode==='race'&&!race.me.done){ toast(`Your friend reached the burrow in ${race.friend.mv} moves!`,2600); sfx('flag'); updateHUD(true); }
+      setTimeout(()=>{ if(race&&race.friend.done) raceGhostDrop(); },700);
       if(isOpen('winOv')&&mode==='race') raceResult(); }
     else if(m.t==='again'){ race.want.friend=true; if(isOpen('winOv')){ if(!race.want.me) toast('Your friend wants a rematch!',2400); raceResult(); } if(race.host&&race.want.me) raceGrow(); }
     else if(m.t==='bye') raceGone(); }; }
-function raceGone(){ if(!race||race.friend.gone) return; race.friend.gone=true; race.open=false;
+function raceGone(){ if(!race||race.friend.gone) return; race.friend.gone=true; race.open=false; raceGhostDrop();
   if(isOpen('raceOv')&&!race.def){ raceFail("Your friend's garden went quiet. Try a fresh invite."); return; }
   if(isOpen('raceOv')) raceClose();
   toast("Your friend's worm wandered off. Keep crawling!",2800); if(mode==='race') updateHUD(true); if(isOpen('winOv')&&mode==='race') raceResult(); }
 // leaving: tell the friend, close the line
-function raceEnd(){ if(!race) return; raceSend({t:'bye'}); clearTimeout(race.failT); clearTimeout(race.goneT); clearTimeout(race.countT);
+function raceEnd(){ raceGhostDrop(); if(!race) return; raceSend({t:'bye'}); clearTimeout(race.failT); clearTimeout(race.goneT); clearTimeout(race.countT);
   try{ race.pc&&race.pc.close(); }catch(e){} race=null; }
 function raceCancel(fromBack){ raceEnd(); if(fromBack) hide('raceOv'); else raceClose(); }
 
@@ -114,10 +117,10 @@ function raceStart(def,round){ if(!race) return; def.name='Race patch'; def.hint
   let n=3; const tick=()=>{ if(!race) return; if(n>0){ $('raceCount').textContent=n; sfx('tap'); n--; race.countT=setTimeout(tick,800); return; }
     $('raceCount').textContent='Go!'; sfx('ready');
     race.countT=setTimeout(()=>{ if(!race) return; hide('raceOv'); hideAll(); if(layers[layers.length-1]==='race') swapLayers('race','game');
-      mode='race'; startLevel(def,false); enterGame(); race.t0=performance.now(); },500); };
+      mode='race'; startLevel(def,false); enterGame(); race.t0=performance.now(); if(!race.friend.gone) raceGhostBuild(); },500); };
   tick(); }
 // from updateHUD: send our move count when it changes
-function raceTick(){ if(!race||!state) return; if(state.moves!==race.sent){ race.sent=state.moves; raceSend({t:'mv',n:state.moves}); } }
+function raceTick(){ if(!race||!state) return; const key=state.moves+':'+state.segs.join(';'); if(key!==race.sent){ race.sent=key; raceSend({t:'mv',n:state.moves,s:state.segs}); } }
 function raceChip(){ const f=race?race.friend:{gone:true}, n=f.done?f.mv:(f.n||0);
   return hudTile('friend',f.done?'done':'',f.gone?'Your friend left the race':f.done?`Your friend finished in ${f.mv} moves`:`Your friend has made ${n} moves`,
     `${sticker(art('worm',22))}<b>${f.gone&&!f.done?'–':n}</b>`,f.gone&&!f.done?'Left':f.done?'Home!':'Friend'); }
@@ -155,3 +158,49 @@ $('raceAlt').onclick=()=>{ if(!race) return; const st=$('raceOv').querySelector(
 $('raceCancel').onclick=()=>raceCancel(false);
 $('raceCode').addEventListener('input',()=>{ if(race&&race.host) raceUseReply($('raceCode').value); });
 qa($('raceDiff'),'button').forEach(b=>b.onclick=()=>{ if(!race) return; race.diff=b.dataset.d; raceStep('start'); settle(b); });
+
+// ---- the friend's ghost: a see-through worm in their colours, pattern, hat and extra, crawling where they crawl ----
+// Their look comes with hi; their worm with every mv (s: its segments). The ghost eases toward each new position and
+// snaps when a part jumps (a tunnel, a turnaround). Its materials are see-through copies cached in MC, so they are
+// kept across patches; the ghost's own geometry is freed by raceGhostDrop.
+let ghost=null;
+function myLook(){ const c=WORM_COLS[wormCol], h=HATS.find(x=>x[0]===hatId&&hatUnlocked(x)), e=extraOn();
+  return {c:[c[1],c[2],c[4]],p:patOn(),h:h?h[0]:'none',ht:h?tintOf(h[0]):0,e,et:tintOf(e)}; }
+function ghostMat(mt,hex){ const key='ghost'+(hex!=null?'#'+hex:mt.uuid);
+  return MC[key]||(MC[key]=(()=>{ const g=mt.clone(); if(hex!=null) g.color.setHex(hex); g.transparent=true; g.opacity=mt===lineMat?.45:.75; g.depthWrite=false; return g; })()); }
+function ghostLook(root,look){ const skin=look.c[1], cheek=look.c[2];
+  root.traverse(o=>{ if(!o.material||Array.isArray(o.material)) return; const mt=o.material;
+    o.material=mt===m('head')||mt===MC.gameHead?ghostMat(mt,skin):mt===cheekMat?ghostMat(mt,cheek):ghostMat(mt); o.renderOrder=2; o.castShadow=false; }); }
+function raceGhostBuild(){ raceGhostDrop(); if(!race||!race.look||!race.def) return; const look=race.look, gg=new THREE.Group(); scene.add(gg);
+  const head=makeSeg(0,gg), u=head.userData; u.hatSlot.clear(); u.accSlot.clear();
+  if(look.h!=='none'&&HATS.some(x=>x[0]===look.h)){ const k=look.h+'|'+look.ht; if(!hatProto[k]) hatProto[k]=tinted(look.h,buildHat(look.h),look.ht); u.hatSlot.add(wearAdd(hatProto[k].clone())); }
+  if(look.e!=='none'&&EXTRAS.some(x=>x[0]===look.e)){ const k=look.e+'|'+look.et; if(!extraProto[k]) extraProto[k]=tinted(look.e,buildExtra(look.e),look.et); u.accSlot.add(wearAdd(extraProto[k].clone())); }
+  applyExpr(head,'smile'); ghostLook(head,look);
+  const bodyMat=MC.ghostBody||(MC.ghostBody=new THREE.MeshToonMaterial({color:0xffffff,vertexColors:true,gradientMap:gradTex,transparent:true,opacity:.75,depthWrite:false}));
+  const lineG=ghostMat(lineMat);
+  ghost={g:gg,head,tubes:[],bodyMat,lineG,base:new THREE.Color(look.c[0]),pat:look.p,cur:[],tgt:[]};
+  raceGhostTo(race.def.worm,true); }
+function raceGhostDrop(){ if(!ghost) return; dropSeg(ghost.head); ghost.tubes.forEach(t=>{ t.body.geometry.dispose(); t.line.geometry.dispose(); });
+  scene.remove(ghost.g); ghost=null; }
+// where the friend's worm is now
+function raceGhostTo(segs,snap){ if(!ghost||!state||!Array.isArray(segs)||!segs.length) return; const n=segs.length;
+  const T=segs.map((p,i)=>wp(p[0],p[1],segY(i,n)));
+  const jump=snap||T.length!==ghost.cur.length||T.some((t,i)=>t.distanceTo(ghost.cur[i])>1.6);
+  ghost.tgt=T; if(jump) ghost.cur=T.map(t=>t.clone()); ghost.dirty=true; }
+// from frame: ease toward the target and redraw while moving
+function raceGhostTick(dt){ if(!ghost) return; const k=1-Math.exp(-dt/1000*12); let moving=ghost.dirty;
+  ghost.cur.forEach((c,i)=>{ const t=ghost.tgt[i]; if(t&&c.distanceToSquared(t)>1e-6){ c.lerp(t,k); moving=true; } });
+  if(moving){ ghost.dirty=false; raceGhostDraw(); } }
+function raceGhostDraw(){ const P=ghost.cur, n=P.length; if(!n) return; ghost.head.position.copy(P[0]);
+  if(n>1){ const dx=P[0].x-P[1].x, dz=P[0].z-P[1].z; if(dx*dx+dz*dz>.01) ghost.head.rotation.y=Math.atan2(dx,dz); }
+  // the body: one tube per unbroken run (a tunnel splits it), coloured like the friend's worm
+  const chains=[]; let cur=[0]; for(let i=1;i<n;i++){ if(P[i].distanceTo(P[i-1])>1.3){ chains.push(cur); cur=[i]; } else cur.push(i); } chains.push(cur);
+  let ti=0;
+  for(const ch of chains){ if(ch.length<2) continue; const pts=ch.map(i=>i===0?P[i].clone().setY(P[i].y-.08):P[i]);
+    const curve=new THREE.CatmullRomCurve3(pts,false,'centripetal'), S=(pts.length-1)*6+1, sp=[], rr=[], cc=[], gs=[];
+    for(let j=0;j<S;j++){ const u=j/(S-1), g=ch[0]+u*(ch.length-1), i0=Math.min(Math.floor(g),n-1), f=g-i0;
+      sp.push(curve.getPoint(u)); rr.push(segR(i0,n)*(1-f)+segR(Math.min(i0+1,n-1),n)*f); cc.push(colorAt(g,n,ghost.pat,ghost.base)); gs.push(g); }
+    if(!ghost.tubes[ti]){ const body=new THREE.Mesh(new THREE.BufferGeometry(),ghost.bodyMat), line=new THREE.Mesh(new THREE.BufferGeometry(),ghost.lineG);
+      body.renderOrder=line.renderOrder=2; ghost.g.add(body,line); ghost.tubes[ti]={body,line}; }
+    const tb=ghost.tubes[ti++]; tb.body.visible=tb.line.visible=true; tubeGeo(tb.body.geometry,sp,rr,cc,0,gs); tubeGeo(tb.line.geometry,sp,rr.map(r=>r+.03),null,0); }
+  for(let i=ti;i<ghost.tubes.length;i++) ghost.tubes[i].body.visible=ghost.tubes[i].line.visible=false; }

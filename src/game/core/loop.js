@@ -55,7 +55,7 @@ function frame(now){
   if(!reduceMotion) windU.value=idleT; gustU.value=reduceMotion?1:1+1.2*Math.pow(Math.max(0,Math.sin(idleT*.21)),4);
   if(!reduceMotion) for(const s of swayers){ const a=(s.amp||1)*.07; s.o.rotation.z=Math.sin(idleT*1.6+s.ph)*a; s.o.rotation.x=Math.cos(idleT*1.3+s.ph)*a*.5; }
   const hp0=segMeshes[0]&&segMeshes[0].position;
-  updateBeetles(dt); updatePollen(dt); wearTick(now/1000); if(!reduceMotion) patT.value=idleT;
+  updateBeetles(dt); updatePollen(dt); wearTick(now/1000); if(mode==='race') raceGhostTick(dt); if(!reduceMotion) patT.value=idleT;
   snailMeshes.forEach((s,i)=>{ let lean=0; if(hp0){ const a=Math.atan2(hp0.x-s.position.x,hp0.z-s.position.z)-s.rotation.y; lean=-Math.sin(a)*.35; }
     s.userData.eyes.forEach((e,j)=>{ e.rotation.z=(j?-.25:.25)+lean+Math.sin(idleT*3+i+j)*.08; }); });
   if(hintMesh){ hintMesh.children[0].position.y=Math.sin(idleT*5)*.08; hintMesh.rotation.y+=dt*.002; }

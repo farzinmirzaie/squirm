@@ -65,7 +65,7 @@ const tintOf=id=>{ const t=TINTS[id]; return t?Math.min(t.opts.length-1,Math.max
 const hexStr=n=>'#'+n.toString(16).padStart(6,'0').toUpperCase();
 function tintArt(id,svg){ const t=TINTS[id], k=tintOf(id); if(!t||!k) return svg;
   t.art.forEach((h,i)=>{ if(t.opts[k][i+1]!=null) svg=svg.split(h).join(hexStr(t.opts[k][i+1])); }); return svg; }
-// swaps the tinted materials in a freshly built hat or extra
-function tinted(id,proto){ const t=TINTS[id], k=tintOf(id); if(!t||!k) return proto;
+// swaps the tinted materials in a freshly built hat or extra (option k: your own choice unless given, as for a race ghost)
+function tinted(id,proto,k=tintOf(id)){ const t=TINTS[id]; k=t?Math.min(t.opts.length-1,Math.max(0,k|0)):0; if(!t||!k) return proto;
   const map=new Map(t.keys.map((key,i)=>[m(key),MC['tint'+t.opts[k][i+1]]||(MC['tint'+t.opts[k][i+1]]=toon(t.opts[k][i+1]))]).filter((e,i)=>t.opts[k][i+1]!=null));
   proto.traverse(o=>{ if(o.material&&map.has(o.material)) o.material=map.get(o.material); }); return proto; }
