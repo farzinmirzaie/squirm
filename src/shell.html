@@ -69,14 +69,14 @@
     --scene-mix:24%;
     --ink:#FBEFDD; --ink-soft:#D9C2A8; --paper:#4A372D; --paper-2:#5A4436; --edge:#6D5444; --shadow:rgba(0,0,0,.35); --done:#4F6B3F; --title:#FFB4C6; --gloss:rgba(255,255,255,.1); --sticker-edge:#C9AE8A; --deep:#2A1E17;
     --art-halo:drop-shadow(0 0 .6px rgba(255,241,222,.95)) drop-shadow(0 0 1.6px rgba(255,241,222,.55));
-    --tint-berry:#E6C3CD; --tint-honey:#E8D6A4; --tint-leaf:#C3D8AE; --tint-lilac:#D3C8E8; --tint-lilac:#D3C8E8;
+    --tint-berry:#E6C3CD; --tint-honey:#E8D6A4; --tint-leaf:#C3D8AE; --tint-lilac:#D3C8E8;
   }
 }
 :root[data-theme="dark"]{
   --scene-mix:24%;
   --ink:#FBEFDD; --ink-soft:#D9C2A8; --paper:#4A372D; --paper-2:#5A4436; --edge:#6D5444; --shadow:rgba(0,0,0,.35); --done:#4F6B3F; --title:#FFB4C6; --gloss:rgba(255,255,255,.1); --sticker-edge:#C9AE8A; --deep:#2A1E17;
     --art-halo:drop-shadow(0 0 .6px rgba(255,241,222,.95)) drop-shadow(0 0 1.6px rgba(255,241,222,.55));
-    --tint-berry:#E6C3CD; --tint-honey:#E8D6A4; --tint-leaf:#C3D8AE;
+    --tint-berry:#E6C3CD; --tint-honey:#E8D6A4; --tint-leaf:#C3D8AE; --tint-lilac:#D3C8E8;
 }
 /* players who ask for more contrast get darker secondary text and stronger edges */
 @media (prefers-contrast: more){
@@ -402,7 +402,7 @@ nav{display:flex;justify-content:center;align-items:flex-end;gap:12px}
 .big .go{flex:none;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:var(--leaf);border:3px solid var(--leaf-dark);color:var(--on-accent);font:800 26px/1 var(--fd);padding-bottom:3px;box-shadow:0 3px 0 var(--leaf-dark)}
 .mode-ico{flex:none;width:52px;height:52px;border-radius:18px;display:grid;place-items:center;border:2px solid var(--edge)}
 .daily-ico{background:var(--tint-berry)}
-#dailyBtn.done .daily-ico{background:var(--done)}
+#dailyBtn.done .daily-ico{background:var(--tint-leaf)}
 .week{display:flex;gap:6px;margin-top:3px}
 /* Play: the worm's speech bubble, chapter pips on Continue, Daily and Meadow side by side, the closest badge */
 .logo{position:relative}
@@ -850,10 +850,10 @@ body.big-text .hud-stats{zoom:.9}
           <span class="bt"><b>Meadow <span id="meadowSeeds"></span></b><small id="meadowSub">Fresh patches, grown for you</small></span>
         </button>
         </div>
-        <button class="card goal race-card" id="raceBtn"><span class="mode-ico race-ico" aria-hidden="true" data-art="race" data-size="34"></span><span class="gt"><b>Race a friend</b><em>Grow a patch together and see who reaches the burrow first</em></span></button>
+        <button class="card goal race-card" id="raceBtn"><span class="mode-ico race-ico" aria-hidden="true" data-art="race" data-size="32"></span><span class="gt"><b>Race a friend</b><em>Grow a patch together and see who reaches the burrow first</em></span></button>
         <button class="card goal" id="goalCard" hidden></button>
         <div class="card news" id="newsCard" hidden>
-          <span class="mode-ico news-ico" aria-hidden="true" data-art="sparkles" data-size="30"></span>
+          <span class="mode-ico news-ico" aria-hidden="true" data-art="news" data-size="32"></span>
           <div class="bt"><b id="newsTitle">New in the garden</b><ul id="newsList"></ul></div>
           <button class="icon-btn" id="newsClose" aria-label="Got it, hide what's new"><svg class="ui-ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></svg></button>
         </div>

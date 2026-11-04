@@ -66,6 +66,8 @@ const ART={
   mushroom:'<path d="M9.6 13.2v5.3a2.4 2.4 0 0 0 4.8 0v-5.3" fill="#FFF1DE"/><path d="M3.6 13.2a8.4 7.6 0 0 1 16.8 0z" fill="#B79CF2"/><circle cx="9" cy="9.4" r="1.3" fill="#fff" stroke="none"/><circle cx="14.6" cy="8.4" r="1" fill="#fff" stroke="none"/><circle cx="16.4" cy="11.2" r=".9" fill="#fff" stroke="none"/>',
   moon:'<path d="M15.4 3.6a8.5 8.5 0 1 0 5 13.2 7 7 0 0 1-5-13.2z" fill="#F5C14E"/><circle cx="18.6" cy="6.2" r=".6" fill="#5B4436" stroke="none"/>',
   bolt:'<path d="M13.6 2.6L5.6 13.5h5.6L9.8 21.4l8-11h-5.6z" fill="#F5C14E"/>',
+  // what's new: a letter from the garden, sealed with a heart
+  news:'<rect x="3.2" y="6" width="17.6" height="13" rx="2.4" fill="#FFF8EA"/><path d="M3.9 7.1l8.1 6.3 8.1-6.3"/><path d="M12 16.4c-1.8-1.2-2.9-2.1-2.9-3.3 0-.9.6-1.5 1.5-1.5.6 0 1.1.3 1.4.8.3-.5.8-.8 1.4-.8.9 0 1.5.6 1.5 1.5 0 1.2-1.1 2.1-2.9 3.3z" fill="#F27DA2"/>',
   // race a friend: a checkered race flag with a gold knob on its pole
   race:'<path d="M6.6 21.4V4.4" stroke-width="2.2"/><path d="M4.4 21.4h4.4" stroke-width="2"/><path d="M6.6 5h11.6a1.6 1.6 0 0 1 1.6 1.6v6a1.6 1.6 0 0 1-1.6 1.6H6.6z" fill="#F27DA2"/><g fill="#FFF8EA" stroke="none"><rect x="9.9" y="5.9" width="3.3" height="3.7"/><rect x="16.5" y="5.9" width="3.2" height="3.7" rx=".4"/><rect x="6.6" y="9.6" width="3.3" height="4.2"/><rect x="13.2" y="9.6" width="3.3" height="4.2"/></g><path d="M6.6 5h11.6a1.6 1.6 0 0 1 1.6 1.6v6a1.6 1.6 0 0 1-1.6 1.6H6.6z"/><circle cx="6.6" cy="3.6" r="1.6" fill="#F5C14E"/>',
   flag:'<path d="M5.2 21V3.8"/><path d="M5.2 4h12.2l-3 4 3 4H5.2" fill="#F27DA2"/>',
