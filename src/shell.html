@@ -392,7 +392,6 @@ nav{display:flex;justify-content:center;align-items:flex-end;gap:12px}
 .big .go{flex:none;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:var(--leaf);border:3px solid var(--leaf-dark);color:var(--on-accent);font:800 26px/1 var(--fd);padding-bottom:3px;box-shadow:0 3px 0 var(--leaf-dark)}
 .mode-ico{flex:none;width:52px;height:52px;border-radius:18px;display:grid;place-items:center;border:2px solid var(--edge)}
 .daily-ico{background:var(--tint-berry)}
-.daily-ico .cal{width:34px;height:36px;border-radius:10px;background:var(--on-accent);border:2px solid var(--deep);border-top:8px solid var(--berry);display:grid;place-items:center;font:800 16px/1 var(--fd);color:var(--deep)}
 #dailyBtn.done .daily-ico{background:var(--done)}
 .week{display:flex;gap:6px;margin-top:3px}
 /* Play: the worm's speech bubble, chapter pips on Continue, Daily and Meadow side by side, the closest badge */
@@ -833,7 +832,7 @@ body.big-text .hud-stats{zoom:.9}
         <button class="play" id="homePlay"><span class="play-ico" aria-hidden="true"><svg width="30" height="30" viewBox="0 0 24 24"><path d="M8 5.5v13l10.5-6.5z" style="fill:var(--on-accent);stroke:var(--on-accent)" stroke-width="2" stroke-linejoin="round"/></svg></span><span class="pt"><b id="playTitle">Play</b><small id="playSub">Patch 1</small><span class="ch-pips" id="playPips" aria-hidden="true"></span></span></button>
         <div class="home-duo">
         <button class="big card mini" id="dailyBtn">
-    <span class="mode-ico daily-ico" aria-hidden="true"><span class="cal" id="dailyDay">11</span></span>
+    <span class="mode-ico daily-ico" aria-hidden="true" data-art="calendar" data-size="32"></span>
     <span class="bt"><b>Daily patch <span id="dailySeeds"></span></b><small id="dailySub">One patch for everyone today</small><span class="week" id="dailyWeek" aria-hidden="true"></span></span><span class="go" aria-hidden="true"><svg class="ui-ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 5.5L16 12l-6.5 6.5"/></svg></span>
   </button>
         <button class="big card mini" id="meadowBtn">
@@ -985,7 +984,6 @@ body.big-text .hud-stats{zoom:.9}
 // The home screen is in the page from the start, so it shows before three.js and the garden are ready.
 // Fill in the numbers the game left last time; the game redraws them properly a moment later.
 try{ var b=JSON.parse(localStorage.getItem('squirm-boot')||'null'), $b=function(i){ return document.getElementById(i); };
-  $b('dailyDay').textContent=new Date().getDate();
   if(b){ $b('homeStars').innerHTML=b.stars||''; $b('playTitle').textContent=b.title; $b('playSub').textContent=b.sub; if(b.day===new Date().toDateString()){ $b('dailySub').textContent=b.daily; $b('dailyBtn').classList.toggle('done',!!b.done); } } }catch(e){}
 </script>
 <script src="vendor/three.min.js"></script>
