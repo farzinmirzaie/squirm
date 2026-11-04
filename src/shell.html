@@ -52,7 +52,7 @@
   /* accents and fixed colours: use these instead of writing colours inline */
   --swatch-light:#FFF8EA; --swatch-dark:#4A372D; --berry-dark:#C95C73; --on-accent:#fff; --soil:#9A6A4C; --deep:#5B4436; --petal:#F7B3C5; --lilac:#B79CF2;
   /* tints back stickers, so in dark mode they dim but stay light enough for the brown outlines */
-  --tint-berry:#FFE3EC; --tint-honey:#FFF1C4; --tint-leaf:#DDF1C9;
+  --tint-berry:#FFE3EC; --tint-honey:#FFF1C4; --tint-leaf:#DDF1C9; --tint-lilac:#ECE3FF;
   --scrim:rgba(70,50,35,.35); --shine:rgba(255,255,255,.35);
   /* the soft top-light on raised pieces: --glaze on paper, --glaze-accent on leaf, honey and berry */
   --glaze:linear-gradient(180deg,var(--gloss),transparent 60%); --glaze-accent:linear-gradient(180deg,var(--shine),transparent 60%);
@@ -69,7 +69,7 @@
     --scene-mix:24%;
     --ink:#FBEFDD; --ink-soft:#D9C2A8; --paper:#4A372D; --paper-2:#5A4436; --edge:#6D5444; --shadow:rgba(0,0,0,.35); --done:#4F6B3F; --title:#FFB4C6; --gloss:rgba(255,255,255,.1); --sticker-edge:#C9AE8A; --deep:#2A1E17;
     --art-halo:drop-shadow(0 0 .6px rgba(255,241,222,.95)) drop-shadow(0 0 1.6px rgba(255,241,222,.55));
-    --tint-berry:#E6C3CD; --tint-honey:#E8D6A4; --tint-leaf:#C3D8AE;
+    --tint-berry:#E6C3CD; --tint-honey:#E8D6A4; --tint-leaf:#C3D8AE; --tint-lilac:#D3C8E8; --tint-lilac:#D3C8E8;
   }
 }
 :root[data-theme="dark"]{
@@ -186,6 +186,15 @@ button:focus-visible{outline:3px solid var(--honey);outline-offset:2px}
 .sheet .label-row p.label{margin:0}
 /* out of hint seeds: where to grow more */
 .seeds .seed-art{flex:none;align-self:center;width:84px;height:84px;margin:2px auto 0;border-radius:22px;display:grid;place-items:center;background:var(--tint-honey);border:3px solid var(--honey-dark);box-shadow:0 4px 0 var(--honey-dark);--art-halo:none}
+/* race a friend: the invite, reply, connecting and countdown steps share one dialog (race.js sets data-step) */
+.race-ico{background:var(--tint-lilac)}
+body[data-mode="race"] #hintBtn{display:none}
+.race .race-art{flex:none;align-self:center;width:84px;height:84px;margin:2px auto 8px;border-radius:22px;display:grid;place-items:center;background:var(--tint-lilac);border:3px solid var(--lilac);box-shadow:0 4px 0 var(--lilac);--art-halo:none}
+.race .seg{margin:0 0 14px}
+.race textarea{width:100%;margin:0 0 14px;border-radius:14px;border:2px solid var(--edge);background:var(--paper-2);color:var(--ink);font:600 12px/1.35 ui-monospace,monospace;padding:8px 10px;resize:none}
+.race .race-count{display:block;margin:0 0 12px;font:800 52px/1 var(--fd);color:var(--title);text-shadow:0 3px 0 var(--edge)}
+.race .set-note{margin:12px 0 0;font-size:12px}
+.race [hidden]{display:none!important}
 /* the explainer from the home pill: how seeds work, one row each */
 .seed-how{display:flex;flex-direction:column;gap:8px;margin:0 0 16px;padding:0;list-style:none;text-align:left}
 .seed-how[hidden]{display:none}
@@ -840,6 +849,7 @@ body.big-text .hud-stats{zoom:.9}
           <span class="bt"><b>Meadow <span id="meadowSeeds"></span></b><small id="meadowSub">Fresh patches, grown for you</small></span>
         </button>
         </div>
+        <button class="card goal race-card" id="raceBtn"><span class="mode-ico race-ico" aria-hidden="true" data-art="flag" data-size="30"></span><span class="gt"><b>Race a friend</b><em>Grow a patch together and see who reaches the burrow first</em></span></button>
         <button class="card goal" id="goalCard" hidden></button>
         <div class="card news" id="newsCard" hidden>
           <span class="mode-ico news-ico" aria-hidden="true" data-art="sparkles" data-size="30"></span>
@@ -963,6 +973,16 @@ body.big-text .hud-stats{zoom:.9}
   <span class="seed-art" aria-hidden="true" data-art="hintseed" data-size="54"></span>
   <h2 id="seedTitle">Out of hint seeds</h2><p id="seedText"></p><ul class="seed-how" id="seedHow"></ul>
   <div class="seed-go"><button class="btn primary" id="seedDaily"></button><button class="btn" id="seedMeadow"></button><button class="btn" id="seedKeep"></button></div>
+</div></div>
+<div class="ov" id="raceOv"><div role="dialog" aria-modal="true" aria-labelledby="raceTitle" class="dialog card race">
+  <span class="race-art" aria-hidden="true" data-art="flag" data-size="48"></span>
+  <h2 id="raceTitle">Race a friend</h2>
+  <p id="raceText"></p>
+  <div class="seg" id="raceDiff" role="radiogroup" aria-label="Patch size"><button role="radio" data-d="easy"><b>Easy</b><small>Small and quick</small></button><button role="radio" data-d="medium"><b>Medium</b><small>A good race</small></button><button role="radio" data-d="hard"><b>Hard</b><small>Long and twisty</small></button></div>
+  <textarea id="raceCode" rows="3" spellcheck="false" autocomplete="off" aria-label="Reply code"></textarea>
+  <b class="race-count" id="raceCount" aria-live="assertive"></b>
+  <div class="seed-go"><button class="btn primary" id="raceGo"></button><button class="btn" id="raceAlt"></button><button class="btn" id="raceCancel">Not now</button></div>
+  <p class="set-note small" id="raceNote"></p>
 </div></div>
 <div class="ov" id="introOv"><div role="dialog" aria-modal="true" aria-labelledby="introTitle" class="dialog card intro">
   <div id="introBody" aria-live="polite"></div>

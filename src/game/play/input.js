@@ -86,7 +86,7 @@ $('skipBtn').onclick=()=>{ if(mode!=='endless'||animating) return; const e=progr
 $('winShare').onclick=async()=>{ try{ if(navigator.share){ await navigator.share({text:shareText}); return; } }catch(e){ return; }
   try{ await navigator.clipboard.writeText(shareText); toast('Result copied. Paste it anywhere.',2200); }catch(e){ toast(shareText,5000); } };
 $('winReplay').onclick=()=>{ hideAll(); popLayer('win'); if(mode==='garden') loadLevel(li,false); else startLevel(L,false); };
-$('winNext').onclick=()=>{ hideAll(); if(L.daily){ popLayer('game'); showHome(); return; }
+$('winNext').onclick=()=>{ if(mode==='race'){ raceNext(); return; } hideAll(); if(L.daily){ popLayer('game'); showHome(); return; }
   if(mode==='garden'&&li===LEVELS.length-1&&allCleared()){ swapLayers(layers.includes('game')?'game':'win','finale'); showHome(true); showFinale(false); return;
     } popLayer('win'); if(mode==='garden') loadLevel(li===LEVELS.length-1?0:li+1); else newEndless(); };
 function toggleMute(el){ ensureAudio(); muted=!muted; if(el) settle(el); store.set('squirm-muted',muted?'1':'0'); renderMute(); if(state) syncWeather(false);

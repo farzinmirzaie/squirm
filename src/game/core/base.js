@@ -12,6 +12,7 @@
 //   endless/  the generator (also run in Node by tools/load-generator.js, so it must not touch the page
 //             beyond $()) and the daily patch
 //   platform/ anonymous stats, offline and install, the daily reminder
+//   (play/race.js, racing a friend, comes after platform/: it needs GAME_URL, NEWS and the dialogs)
 // Inside the wrapper `history` is the undo stack; the browser's is always window.history.
 
 // ---------- saved data ----------

@@ -51,5 +51,6 @@ module.exports = [
   'platform/stats.js',
   'platform/offline.js',
   'platform/reminder.js',
+  'play/race.js',
   'core/boot.js',
 ];

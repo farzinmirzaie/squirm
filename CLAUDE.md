@@ -19,7 +19,8 @@ swipe controls (keyboard works too). Plain JavaScript and three.js, no framework
 ## Never do
 
 - **No bundler, no runtime dependencies besides three.js, no network requests at runtime** except the
-  anonymous stats pings (see "Anonymous stats"). Every 3D model is built in code and every sound is
+  anonymous stats pings (see "Anonymous stats") and, only while two phones connect for a race, public STUN servers
+  (see "Race a friend"); there is no game server. Every 3D model is built in code and every sound is
   synthesized with Web Audio; keep it that way.
 - **Don't upgrade three.js** (pinned at r128, `three@0.128.0`) casually: later versions change colour
   management and lighting, which shifts the whole look.
@@ -80,7 +81,7 @@ src/game/         everything else, in folders (map at the top of core/base.js), 
   rewards/        wardrobe.js (HATS, EXTRAS, TINTS), colours.js (WORM_COLS, PATTERNS), badges.js
   play/           worm-life.js (idle acts), moves.js (tryMove, win), photo.js, hints.js, resume.js, hud.js,
                   intro.js (mechanic cards, the worm talks, tutorial), levels.js (startLevel, garden map),
-                  camera.js, input.js
+                  camera.js, input.js, race.js (race a friend; joined after platform/)
   ui/             feedback.js, stickers.js (ART), dialogs.js, layers.js (back button), news.js (NEWS),
                   finale.js, settings.js
   home/           tabs.js, wardrobe.js (the tab), worm.js (home worm, secret reset)
@@ -88,9 +89,7 @@ src/game/         everything else, in folders (map at the top of core/base.js), 
   platform/       stats.js, offline.js (service worker, install), reminder.js
 src/sw.js         service worker template (version and file list filled in by the build)
 public/           manifest, icons (icon.svg is the source art; maskable, Apple and shortcut PNGs), install
-                  screenshots, share.png (link preview): copied as-is into dist/; race-test.html is a throwaway two-phone WebRTC
-                  test (invite and reply swapped as links or pasted text, Google's public STUN server), not linked
-                  from the game and not precached; delete it once race mode is built or dropped
+                  screenshots, share.png (link preview): copied as-is into dist/
 tools/build.js    builds dist/ and syntax-checks the game script; --debug adds window.__squirm; --out <dir>
 tools/game-files.js  the order the src/game/ files are joined in
 tools/serve.js    tiny static server (also used by smoke): [dir] --port --base
@@ -505,6 +504,20 @@ from a tab replaces that layer with `game`.
   zooms the app column and dialogs by 1.12 (not the HUD stat row). Colour helpers (`colourMarks`, `squirm-marks`): a
   shape per pollen colour (circle poppy, triangle buttercup, square bluebell) on a sprite over every flower and petal
   gate (`addMark`, `syncMarks`, `ART.mark*`) and a Pollen chip in the HUD showing the worn one.
+- **Race a friend** (`play/race.js`, `raceOv`, the home `#raceBtn`): two phones race on one patch, connected straight
+  to each other over a WebRTC data channel with no server. The host's offer goes out as an invite link
+  (`GAME_URL#race=<code>`, read at boot and from `launchQueue`, then `raceJoin`); the friend's answer comes back as a
+  reply code the host pastes (`raceUseReply`, also on input). Codes are deflated JSON in base64url (`racePack` /
+  `raceUnpack`, a few hundred characters) and carry network addresses, so the dialog says to share them only with
+  friends. Public STUN servers (`RACE_ICE`) are contacted only while connecting; some strict mobile networks still
+  can't connect (`raceFail` after 25 s of checking, suggesting the same Wi-Fi or a hotspot). Messages: `hi`, `start`
+  (the host grows the patch with `generateEndless(diff, RACE_OPTS)` and sends it whole), `mv`, `won`, `again`, `bye`.
+  One dialog walks the steps (`raceStep`: start with a difficulty, wait, reply, link, grow, count, fail). The race is
+  mode `race`: no hints (the button is hidden), no resume slot, no meadow or garden progress, its own clock from
+  "Go" (`raceSecs`, so a restart doesn't reset it), a Friend chip in the HUD (`raceChip`, `raceTick` sends our move
+  count), and `onWin` hands over to `raceWin` / `raceResult` (who got home first, both moves, Rematch once both ask,
+  the host grows the next round). Leaving (home, back, closing) sends `bye`; the friend sees "wandered off" and keeps
+  playing. `stats.raceWins` counts wins.
 - **Layers and the back button** (`ui/layers.js`): a small layer stack mirrored to `window.history` (`pushLayer` /
   `popLayer` / `swapLayers`). `popLayer`'s `history.go` is async, so use `swapLayers` when replacing a layer
   right after closing another (the finale does this coming from the win dialog).
@@ -564,7 +577,8 @@ from a tab replaces that layer with `game`.
   `chapter/<17>`, plus `daily`, `meadow/<difficulty>` and `seeds/empty` (the hint-seed pouch ran out), `start/new` (a
   new device, once), `days/<N>` (played on 2, 3, 7, 14, 30, 60 different days), `quit/<037>` (a never-cleared garden patch
   left after 3+ moves without winning, once per patch per session: `noteQuit` from `loadLevel`, `showHome` and
-  `pagehide`) and `hint/<NN>` / `hint/daily` / `hint/meadow` per new hint (`noteHint`). Funnels and retention come from
+  `pagehide`) and `hint/<NN>` / `hint/daily` / `hint/meadow` per new hint (`noteHint`), `race/start` (the host's
+  phone, once connected) and `race/won`. Funnels and retention come from
   these once-per-device milestones (compare counts), never from an id. The service worker ignores cross-origin requests,
   so pings never hit the cache. Keep events few, anonymous and aggregate; never add identifiers.
 

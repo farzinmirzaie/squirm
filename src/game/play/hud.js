@@ -1,10 +1,11 @@
 // ---------- HUD ----------
-function hudSub(){ if(mode==='garden'){ const ch=CHAPTERS.find(c=>li>=c.from&&li<=c.to); return ch?`${ch.name} · ${li-ch.from+1} of ${ch.to-ch.from+1}`:''; }
+function hudSub(){ if(mode==='race') return `Race with a friend · round ${race?race.round:1}`; if(mode==='garden'){ const ch=CHAPTERS.find(c=>li>=c.from&&li<=c.to); return ch?`${ch.name} · ${li-ch.from+1} of ${ch.to-ch.from+1}`:''; }
   if(L.daily) return 'Daily patch'; const k=progress.endless[endlessDiff].streak; return 'Endless · '+DIFF_NAME[endlessDiff]+(k?` · streak ${k}`:''); }
 function statTip(k){ const par=curPar(), len=state.segs.length, fruit=/[+-]/.test(state.grid.map(r=>r.join('')).join(''));
   if(k==='moves') return `Par is ${par}. Finish in ${par} moves for 3 stars, or within ${Math.ceil(par*1.3)} for 2.`;
   if(k==='flags') return 'Touch every flag before the burrow will let you in.';
   if(k==='keys') return 'Each key opens one gate, then it is used up.';
+  if(k==='friend') return race&&race.friend.done?`Your friend reached the burrow in ${race.friend.mv} moves. You can still finish!`:'Your friend is racing on the same patch. First worm into the burrow wins.';
   if(len===state.exitLen) return 'You are just the right length for the burrow.';
   return `The burrow fits a worm of ${state.exitLen}. You are ${len}.`+(fruit?(len<state.exitLen?' A peach makes you longer.':' A mushroom makes you shorter.'):''); }
 document.querySelector('.hud-stats').addEventListener('keydown',e=>{ if((e.key==='Enter'||e.key===' ')&&e.target.closest('.stat')){ e.preventDefault(); e.target.click(); } });
@@ -14,7 +15,7 @@ const hudTile=(tip,cls,label,v,k,tap=true)=>`<span${tap?' role="button" tabindex
 let shownStars=3;
 function updateHUD(silent){ renderSeeds();
   $('lvlNum').style.fontSize=String(mode==='garden'?li+1:0).length>2?'16px':'';
-    $('lvlNum').textContent= mode==='garden' ? li+1 : L.daily ? new Date().getDate() : (progress.endless[endlessDiff].cleared+1);
+    $('lvlNum').textContent= mode==='race' ? (race?race.round:1) : mode==='garden' ? li+1 : L.daily ? new Date().getDate() : (progress.endless[endlessDiff].cleared+1);
     $('lvlName').textContent=L.name;
   $('lvlSub').textContent=hudSub(); document.body.dataset.mode=mode;
   const tabTitle=(mode==='garden'?`${li+1} · `:'')+L.name+' · Squirm'; if(document.title!==tabTitle&&!$('homeOv').classList.contains('show')) document.title=tabTitle;
@@ -30,6 +31,7 @@ function updateHUD(silent){ renderSeeds();
   // colour helpers: the pollen the worm wears, as its shape
   if(colourMarks&&/[PYUpyu]/.test(map)){ const k=state.pollen, n=k?POLL[k].n:'';
     chips.push(hudTile('pollen','',k?`Wearing ${n} pollen`:'No pollen yet',sticker(art(k?'mark'+k:'pollen0',22)),'Pollen',false)); }
+  if(mode==='race'){ chips.push(raceChip()); raceTick(); }
   const ok=state.segs.length===state.exitLen;
   chips.push(hudTile('length',ok&&'done',`Length ${state.segs.length}, burrow fits ${state.exitLen}`,
     `${sticker(ICON.worm)}<b>${state.segs.length}</b><span class="to" aria-hidden="true">${ok?'=':'&rarr;'}</span><b>${state.exitLen}</b>`,ok?'Fits!':'Length'));

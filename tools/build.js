@@ -48,9 +48,8 @@ const files=[];
 (function walk(d){ for(const f of fs.readdirSync(d).sort()){ const p=path.join(d,f); fs.statSync(p).isDirectory()?walk(p):files.push(path.relative(dist,p).split(path.sep).join('/')); } })(dist);
 const hash=crypto.createHash('sha256'); for(const f of files){ hash.update(f); hash.update(fs.readFileSync(path.join(dist,f))); }
 const version=hash.digest('hex').slice(0,12);
-// install screenshots, the link preview and licence texts are only needed online, so they aren't precached;
-// neither is the throwaway race-test.html
-const assets=['./',...files.filter(f=>!/^screenshots\/|^share\.png$|LICENSE|^race-test\.html$/.test(f))];
+// install screenshots, the link preview and licence texts are only needed online, so they aren't precached
+const assets=['./',...files.filter(f=>!/^screenshots\/|^share\.png$|LICENSE/.test(f))];
 fs.writeFileSync(path.join(dist,'sw.js'),src('sw.js').replace('__VERSION__',version).replace('__ASSETS__',()=>JSON.stringify(assets)));
 
 const kb=f=>Math.round(fs.statSync(path.join(dist,f)).size/1024);

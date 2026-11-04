@@ -16,6 +16,7 @@ const start=()=>{ const i=currentGardenIndex();
   mode='garden'; li=i; showHome(true);
   // the home screen is already up; the garden and the home worm are built on the next frame and fade in
   requestAnimationFrame(()=>{ startLevel(LEVELS[i],false); initHomeWorm(); requestAnimationFrame(frame);
+    const inv=location.hash.match(/^#race=([A-Za-z0-9_-]+)/); if(inv){ try{ window.history.replaceState(null,'',location.pathname+location.search); }catch(e){} setTimeout(()=>raceJoin(inv[1]),400); }
     const ask=new URLSearchParams(location.search).get('play'); if(ask){ try{ window.history.replaceState(null,'',location.pathname); }catch(e){} launchPlay(ask); } }); };
 // what a launch URL asks for (?play=daily|meadow|continue): the app shortcuts and the reminder use these
 function launchPlay(what){ ensureAudio(); if(what==='daily') $('dailyBtn').onclick(); else if(what==='meadow') $('meadowBtn').onclick(); else if(what==='continue') $('homePlay').onclick(); }
@@ -23,5 +24,6 @@ function launchPlay(what){ ensureAudio(); if(what==='daily') $('dailyBtn').oncli
 // arrives here instead of reloading the page; the launch that opened the page is handled above
 { const bootURL=location.href; let first=true;
   if('launchQueue' in window) window.launchQueue.setConsumer(p=>{ const u=p&&p.targetURL, initial=first&&u===bootURL; first=false; if(!u||initial) return;
-    const ask=new URL(u).searchParams.get('play'); if(ask) launchPlay(ask); }); }
+    const U=new URL(u), inv=U.hash.match(/^#race=([A-Za-z0-9_-]+)/); if(inv){ raceJoin(inv[1]); return; }
+    const ask=U.searchParams.get('play'); if(ask) launchPlay(ask); }); }
 (document.fonts&&document.fonts.ready? document.fonts.ready : Promise.resolve()).then(start);

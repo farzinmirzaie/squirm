@@ -132,6 +132,7 @@ let winHats=[];
 function onWin(){ shareText=''; newBest=false; chapterDone=null; const coloursBefore=coloursUnlocked(), patsBefore=patternsUnlocked();
   winHats=HATS.filter(hatUnlocked).map(h=>h[0]);
   const par=curPar(), mv=state.moves; const st=starsFor(mv,par,hintsUsed>0); clearResume();
+  if(mode==='race'){ raceWin(mv,par,st); return; }
   const titles=['Snug as a bug!','Home sweet burrow!','Wiggle well done!','Cozy and curled up!'];
   const gifts=[], gift=(ico,t,sub,hot)=>gifts.push({ico,t,sub,hot});
   const seedGift=(n,why)=>n?gift(art('hintseed',26),`+${n} hint ${n===1?'seed':'seeds'}`,`${why?why+'. ':''}${progress.seeds} in your pouch`,true)

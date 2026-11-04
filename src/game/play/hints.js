@@ -33,7 +33,7 @@ function solveFrom(s0,cap=350000,ms=2500){ const until=performance.now()+ms;
     q=nq; }
   return null; }
 function clearHint(){ if(hintMesh){ removeObj(hintMesh); hintMesh=null; } }
-function showHint(){
+function showHint(){ if(mode==='race'){ toast('No hints in a race. Trust your wiggle!',2200); return; }
   if(animating&&!hintBusy){ setTimeout(showHint,250); return; }
   if(hintBusy||anyOverlay()||state.status!=='play') return;
   // the same hint again is free: just point at it once more
