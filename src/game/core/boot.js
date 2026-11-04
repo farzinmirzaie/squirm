@@ -11,7 +11,7 @@ document.querySelectorAll('[data-art]').forEach(e=>e.insertAdjacentHTML('afterbe
 const warmTextures=()=>{ for(const t of [gradTex,glowTex,sparkTex,turfTex,crackTex,swirlTex,lawnTex,flowH,flowV,blobTex,zTex,slimeTex]) try{ renderer.initTexture(t);
   }catch(e){} };
 const start=()=>{ const i=currentGardenIndex();
-  { const dk=todayKey(); if(progress.lastDay!==dk){ progress.lastDay=dk; bumpStat('days'); save(); } } warmTextures(); applyWormColour();
+  { const dk=todayKey(); if(progress.lastDay!==dk){ progress.lastDay=dk; bumpStat('days'); save(); setTimeout(()=>noteDays(progress.stats.days),2500); } } warmTextures(); applyWormColour();
     checkBadges(null,true); pickTod(); setInterval(pickTod,60000); setTimeout(statsBoot,2000);
   mode='garden'; li=i; showHome(true);
   // the home screen is already up; the garden and the home worm are built on the next frame and fade in

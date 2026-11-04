@@ -1,5 +1,5 @@
 // ---------- levels: starting a patch, and the garden map ----------
-function loadLevel(i,withHint=true){ mode='garden'; li=i; startLevel(LEVELS[i],withHint); store.set('squirm-current-name',LEVELS[i].name); }
+function loadLevel(i,withHint=true){ if(i!==li) noteQuit(); mode='garden'; li=i; startLevel(LEVELS[i],withHint); store.set('squirm-current-name',LEVELS[i].name); }
 let nudged=false, playT=0;
 const playTime=()=>{ const s=Math.round(playT); return s<60?`${s}s`:`${Math.floor(s/60)}m ${String(s%60).padStart(2,'0')}s`; };
 let pollensHere=new Set();

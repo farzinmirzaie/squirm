@@ -12,7 +12,18 @@ function stat(path,event=true){ if(!statsOn()||navigator.onLine===false) return;
   const url=`https://${STATS_CODE}.goatcounter.com/count?${q}`;
   try{ if(!(navigator.sendBeacon&&navigator.sendBeacon(url))) new Image().src=url; }catch(e){} }
 const pad3=n=>String(n).padStart(3,'0');
-function statsBoot(){ if(!statsOn()) return; stat('/',false);
+// No identifiers: funnels come from milestones each device sends once (start/new, clear/NNN, chapter/NN, days/N),
+// so the drop between two counts on the dashboard is the funnel. Retention: days/N when a device has played on N
+// different days. Quits: quit/NNN when a garden patch never cleared is left after a few moves without winning
+// (to home, another patch or closing the app), once per patch per session. Hints: hint/NN by garden chapter,
+// hint/daily, hint/meadow, for each new hint shown.
+const quitSent=new Set();
+function noteQuit(){ if(mode!=='garden'||!state||state.status!=='play'||state.moves<3||isCleared(li)||quitSent.has(li)) return;
+  quitSent.add(li); stat('quit/'+pad3(li+1)); }
+window.addEventListener('pagehide',noteQuit);
+function noteHint(){ stat('hint/'+(mode==='garden'?String(CHAPTERS.findIndex(ch=>li>=ch.from&&li<=ch.to)+1).padStart(2,'0'):L&&L.daily?'daily':'meadow')); }
+function noteDays(n){ if([2,3,7,14,30,60].includes(n)) stat('days/'+n); }
+function statsBoot(){ if(!statsOn()) return; stat('/',false); if(freshGarden&&!progress.stats.newSent){ progress.stats.newSent=1; save(); stat('start/new'); }
   const app=matchMedia('(display-mode: standalone)').matches||navigator.standalone===true; stat(app?'launch/app':'launch/browser');
   const v=NEWS[0][0]; if(store.get('squirm-stats-v')!==v){ store.set('squirm-stats-v',v); stat('version/'+v); } }
 window.addEventListener('appinstalled',()=>stat('install'));

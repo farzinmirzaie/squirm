@@ -2,6 +2,8 @@
 let mode='garden', endlessDiff='medium', li=0, L=null, state=null, history=[], cells=[], segMeshes=[];
 let animating=0, queue=[], headDir=[1,0], idleT=0, lastMoveT=0, wasReady=false;
 let progress={v:2,best:{},stars:{}};
+// freshGarden: nothing saved yet on this device (a new player; stats sends start/new once)
+const freshGarden=!store.get('squirm-progress');
 { const p=store.json('squirm-progress'); if(p&&p.best) progress=Object.assign(progress,p); }
 // hint seeds in the pouch (play/hints.js): new players start with 3, players from before seeds existed with 5
 if(progress.seeds==null) progress.seeds=Object.keys(progress.best).length?5:3;

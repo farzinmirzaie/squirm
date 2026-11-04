@@ -556,7 +556,11 @@ from a tab replaces that layer with `game`.
   real host (so never in tests or local builds); players switch it off in Settings > About (`squirm-stats`,
   device-specific, in `SAVE_SKIP` with `squirm-stats-v`). It sends a visit on boot, `launch/app` or
   `launch/browser`, `version/<x.y.z>` once per version, `install`, and on first clears `clear/<037>`,
-  `chapter/<17>`, plus `daily`, `meadow/<difficulty>` and `seeds/empty` (the hint-seed pouch ran out). The service worker ignores cross-origin requests,
+  `chapter/<17>`, plus `daily`, `meadow/<difficulty>` and `seeds/empty` (the hint-seed pouch ran out), `start/new` (a
+  new device, once), `days/<N>` (played on 2, 3, 7, 14, 30, 60 different days), `quit/<037>` (a never-cleared garden patch
+  left after 3+ moves without winning, once per patch per session: `noteQuit` from `loadLevel`, `showHome` and
+  `pagehide`) and `hint/<NN>` / `hint/daily` / `hint/meadow` per new hint (`noteHint`). Funnels and retention come from
+  these once-per-device milestones (compare counts), never from an id. The service worker ignores cross-origin requests,
   so pings never hit the cache. Keep events few, anonymous and aggregate; never add identifiers.
 
 ## Conventions

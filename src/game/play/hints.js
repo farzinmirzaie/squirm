@@ -43,7 +43,7 @@ function showHint(){
   setTimeout(()=>{ const d=solveFrom(state); hintBusy=false; $('hintBtn').classList.remove('busy');
     if(d===null){ sfx('stuck'); toast('No way to win from here. Undo a few moves and try again.',3600); pulse($('undoBtn')); return; }
     if(d===undefined){ sfx('stuck'); toast('This one is too tangled to work out from here. Hold Undo to start over.',3200); return; }
-    hintsUsed++; hintKey=key; if(!hintFree()){ progress.seeds--; if(!progress.seeds) stat('seeds/empty'); save(); renderSeeds(); } saveResume(); clearHint(); const h=state.segs[0], dd=DIRS[d], tx=h[0]+dd[0], ty=h[1]+dd[1];
+    hintsUsed++; hintKey=key; noteHint(); if(!hintFree()){ progress.seeds--; if(!progress.seeds) stat('seeds/empty'); save(); renderSeeds(); } saveResume(); clearHint(); const h=state.segs[0], dd=DIRS[d], tx=h[0]+dd[0], ty=h[1]+dd[1];
     hintMesh=new THREE.Group(); const am=m('key');
     const cone=new THREE.Mesh(new THREE.ConeGeometry(.13,.26,20),am); cone.rotation.x=Math.PI; outline(cone,.02); hintMesh.add(cone);
     const ring=new THREE.Mesh(new THREE.TorusGeometry(.3,.04,10,32),new THREE.MeshBasicMaterial({color:0xFFD866,transparent:true,opacity:.9}));
