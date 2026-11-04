@@ -79,8 +79,8 @@ textarea{width:100%;min-height:84px;border-radius:14px;border:2px solid var(--ed
   </section>
 </main>
 <script>
-// one public STUN server so phones on different networks can find their public address; nothing else is contacted
-const ICE={iceServers:[{urls:'stun:stun.l.google.com:19302'}]};
+// public STUN servers (two Google, one Cloudflare) so phones on different networks can find their public address; nothing else is contacted
+const ICE={iceServers:[{urls:['stun:stun.l.google.com:19302','stun:stun1.l.google.com:19302']},{urls:'stun:stun.cloudflare.com:3478'}]};
 const $=id=>document.getElementById(id);
 const t0=performance.now(), log=m=>{ $('log').textContent+=`${((performance.now()-t0)/1000).toFixed(1)}s ${m}\n`; $('log').scrollTop=1e9; };
 const setStatus=(m,cls='')=>{ $('status').textContent=m; $('status').className='status '+cls; };
@@ -100,11 +100,19 @@ function newPeer(){ pc=new RTCPeerConnection(ICE); seen={host:0,srflx:0,relay:0,
   pc.onicegatheringstatechange=()=>log('gathering: '+pc.iceGatheringState);
   pc.oniceconnectionstatechange=()=>{ const s=pc.iceConnectionState; log('connection: '+s);
     if(s==='checking') setStatus('Connecting…'); if(s==='failed') setStatus("Couldn't connect. Try the same Wi-Fi or a hotspot.",'bad');
-    if(s==='disconnected') setStatus('Connection dropped','bad'); };
+    if(s==='disconnected'||s==='failed'){ if(s==='disconnected') setStatus('Connection dropped','bad'); tried(); } };
   pc.ondatachannel=e=>wire(e.channel); return pc; }
 // waits for every candidate (or 5 s), so the whole invite fits in one message
 const gathered=()=>new Promise(res=>{ if(pc.iceGatheringState==='complete') return res(); const done=()=>{ if(pc.iceGatheringState==='complete'){ pc.removeEventListener('icegatheringstatechange',done); res(); } };
   pc.addEventListener('icegatheringstatechange',done); setTimeout(res,5000); });
+// what the two phones tried: every route (candidate pair) and how far it got
+async function tried(){ const st=await pc.getStats(); const by={}; let n=0;
+  st.forEach(r=>{ if(r.type!=='candidate-pair') return; n++; const l=st.get(r.localCandidateId), x=st.get(r.remoteCandidateId);
+    const k=`${l&&l.candidateType}->${x&&x.candidateType} ${r.state}${r.responsesReceived?' answered':''}`; by[k]=(by[k]||0)+1; });
+  log(`tried ${n} routes: `+(Object.entries(by).map(([k,v])=>`${v}x ${k}`).join(', ')||'none')); }
+// the candidate kinds inside an invite or reply, read from its SDP
+const sdpKinds=sdp=>{ const c={}; for(const m of sdp.matchAll(/a=candidate:\S+ \d \S+ \d+ \S+ \d+ typ (\w+)/g)) c[m[1]]=(c[m[1]]||0)+1;
+  return Object.entries(c).map(([k,n])=>`${n} ${k}`).join(', ')||'none'; };
 const kinds=()=>Object.entries(seen).filter(([,n])=>n).map(([k,n])=>`${n} ${k}`).join(', ')||'none';
 
 function wire(ch){ dc=ch; ch.onopen=async()=>{ setStatus('Connected!','ok'); $('hello').disabled=false; log('data channel open');
@@ -133,12 +141,13 @@ $('mkInvite').onclick=async()=>{ $('mkInvite').disabled=true; setStatus('Making 
   const link=location.origin+location.pathname+'#i='+code; $('inviteText').value=link; $('inviteBox').hidden=false; $('joinCard').hidden=true; setStatus('Waiting for the reply');
   $('shareInvite').onclick=()=>share('Join my Squirm race test',link); $('copyInvite').onclick=()=>copy(link); };
 $('pasteReply').onclick=()=>pasteInto('replyIn');
-$('useReply').onclick=async()=>{ try{ await pc.setRemoteDescription(await unpack($('replyIn').value)); log('reply accepted'); setStatus('Connecting…'); }
+$('useReply').onclick=async()=>{ if(pc.signalingState==='stable'){ log('reply already in, just wait'); return; }
+  try{ const ans=await unpack($('replyIn').value); log(`reply has: ${sdpKinds(ans.sdp)}`); await pc.setRemoteDescription(ans); $('useReply').disabled=true; log('reply accepted'); setStatus('Connecting…'); }
   catch(e){ log('bad reply: '+e.message); setStatus("That reply didn't work",'bad'); } };
 
 // phone B
 async function join(code){ $('hostCard').hidden=true; $('joinCard').hidden=true; $('guestCard').hidden=false;
-  try{ const offer=await unpack(code); newPeer(); await pc.setRemoteDescription(offer); await pc.setLocalDescription(await pc.createAnswer()); await gathered();
+  try{ const offer=await unpack(code); log(`invite has: ${sdpKinds(offer.sdp)}`); newPeer(); await pc.setRemoteDescription(offer); await pc.setLocalDescription(await pc.createAnswer()); await gathered();
     const reply=await pack(pc.localDescription); log(`reply ready: ${reply.length} characters, candidates: ${kinds()}`);
     $('replyText').value=reply; $('replyBox').hidden=false; $('guestNote').textContent='Send this reply back to your friend. You connect as soon as they paste it.';
     setStatus('Waiting for your friend to paste the reply');
