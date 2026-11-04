@@ -88,7 +88,9 @@ src/game/         everything else, in folders (map at the top of core/base.js), 
   platform/       stats.js, offline.js (service worker, install), reminder.js
 src/sw.js         service worker template (version and file list filled in by the build)
 public/           manifest, icons (icon.svg is the source art; maskable, Apple and shortcut PNGs), install
-                  screenshots, share.png (link preview): copied as-is into dist/
+                  screenshots, share.png (link preview): copied as-is into dist/; race-test.html is a throwaway two-phone WebRTC
+                  test (invite and reply swapped as links or pasted text, Google's public STUN server), not linked
+                  from the game and not precached; delete it once race mode is built or dropped
 tools/build.js    builds dist/ and syntax-checks the game script; --debug adds window.__squirm; --out <dir>
 tools/game-files.js  the order the src/game/ files are joined in
 tools/serve.js    tiny static server (also used by smoke): [dir] --port --base
