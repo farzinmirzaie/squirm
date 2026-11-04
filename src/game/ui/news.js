@@ -4,6 +4,7 @@
 // add an entry on top. Returning players see the newest entry once as a card on the Play tab, new players never
 // do (squirm-news holds the last version seen); Settings > About lists them all.
 const NEWS=[
+  ['1.23.0','2026-11-04','Race codes',['Racing a friend is simpler: start a race and share the link, or just tell them the six-letter code to type in. No more pasting replies back and forth.','Race a friend is also in the app icon\'s shortcut menu now.']],
   ['1.22.0','2026-11-04','Race ghosts',['When you race a friend you now see their worm on your patch: a see-through ghost crawling where they crawl, in their own colours, hat and extra.']],
   ['1.21.0','2026-11-04','Race a friend',['Race a friend to the burrow! Tap Race a friend, send the invite, paste the reply your friend sends back, and you both get the same freshly grown patch.','Watch their moves tick up as you crawl, then go again with a rematch.','It works best on the same Wi-Fi, or with one phone joined to the other\'s hotspot.']],
   ['1.20.0','2026-11-04','Shine them up',['The garden map now shows where stars are missing: each chapter counts its patches below 3 stars, and turns gold once every patch shines.','A new Shine button takes you straight to the next patch that could use another star, and its card tells you what 3 stars needs.']],

@@ -191,7 +191,8 @@ button:focus-visible{outline:3px solid var(--honey);outline-offset:2px}
 body[data-mode="race"] #hintBtn{display:none}
 .race .race-art{flex:none;align-self:center;width:84px;height:84px;margin:2px auto 8px;border-radius:22px;display:grid;place-items:center;background:var(--tint-lilac);border:3px solid var(--lilac);box-shadow:0 4px 0 var(--lilac);--art-halo:none}
 .race .seg{margin:0 0 14px}
-.race textarea{width:100%;margin:0 0 14px;border-radius:14px;border:2px solid var(--edge);background:var(--paper-2);color:var(--ink);font:600 12px/1.35 ui-monospace,monospace;padding:8px 10px;resize:none}
+.race input{width:100%;margin:0 0 14px;border-radius:14px;border:3px solid var(--edge);background:var(--paper-2);color:var(--ink);font:800 30px/1 var(--fd);letter-spacing:.18em;text-align:center;text-transform:uppercase;padding:10px}
+.race .race-count.code{font-size:44px;letter-spacing:.14em;user-select:all}
 .race .race-count{display:block;margin:0 0 12px;font:800 52px/1 var(--fd);color:var(--title);text-shadow:0 3px 0 var(--edge)}
 .race .set-note{margin:12px 0 0;font-size:12px}
 .race [hidden]{display:none!important}
@@ -979,7 +980,7 @@ body.big-text .hud-stats{zoom:.9}
   <h2 id="raceTitle">Race a friend</h2>
   <p id="raceText"></p>
   <div class="seg" id="raceDiff" role="radiogroup" aria-label="Patch size"><button role="radio" data-d="easy"><b>Easy</b><small>Small and quick</small></button><button role="radio" data-d="medium"><b>Medium</b><small>A good race</small></button><button role="radio" data-d="hard"><b>Hard</b><small>Long and twisty</small></button></div>
-  <textarea id="raceCode" rows="3" spellcheck="false" autocomplete="off" aria-label="Reply code"></textarea>
+  <input id="raceCode" maxlength="6" spellcheck="false" autocomplete="off" autocapitalize="characters" inputmode="text" placeholder="K7M4QX" aria-label="Race code">
   <b class="race-count" id="raceCount" aria-live="assertive"></b>
   <div class="seed-go"><button class="btn primary" id="raceGo"></button><button class="btn" id="raceAlt"></button><button class="btn" id="raceCancel">Not now</button></div>
   <p class="set-note small" id="raceNote"></p>

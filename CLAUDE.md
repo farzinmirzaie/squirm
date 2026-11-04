@@ -19,8 +19,8 @@ swipe controls (keyboard works too). Plain JavaScript and three.js, no framework
 ## Never do
 
 - **No bundler, no runtime dependencies besides three.js, no network requests at runtime** except the
-  anonymous stats pings (see "Anonymous stats") and, only while two phones connect for a race, public STUN servers
-  (see "Race a friend"); there is no game server. Every 3D model is built in code and every sound is
+  anonymous stats pings (see "Anonymous stats") and, only while two phones connect for a race, a few public Nostr
+  relays and STUN servers (see "Race a friend"); there is no game server. Every 3D model is built in code and every sound is
   synthesized with Web Audio; keep it that way.
 - **Don't upgrade three.js** (pinned at r128, `three@0.128.0`) casually: later versions change colour
   management and lighting, which shifts the whole look.
@@ -86,7 +86,7 @@ src/game/         everything else, in folders (map at the top of core/base.js), 
                   finale.js, settings.js
   home/           tabs.js, wardrobe.js (the tab), worm.js (home worm, secret reset)
   endless/        generator.js (rng, genCandidate, analyzeCapped, usage, generateEndless), daily.js
-  platform/       stats.js, offline.js (service worker, install), reminder.js
+  platform/       stats.js, offline.js (service worker, install), reminder.js, nostr.js (race meeting point)
 src/sw.js         service worker template (version and file list filled in by the build)
 public/           manifest, icons (icon.svg is the source art; maskable, Apple and shortcut PNGs), install
                   screenshots, share.png (link preview): copied as-is into dist/
@@ -102,6 +102,7 @@ test/logic.test.js      rules, unique level names, stateKey
 test/generator.test.js  daily and endless generation (daily patches must not change)
 test/news.test.js       What's new vs package.json version, semver order
 test/pwa.test.js        manifest icons, shortcuts and screenshots exist at their declared sizes; head links ship
+test/nostr.test.js      the race's Schnorr signatures match the BIP-340 test vectors
 test/smoke.js           headless Chromium: boot, win patch 1, saved stars, GPU memory while playing, offline reload
 .claude/skills/   add-levels; add-model (look.js: 3D model close-ups); ui-check (shoot.js: UI screenshots,
                   store-shots.js: the install screenshots and link preview in public/)
@@ -504,19 +505,24 @@ from a tab replaces that layer with `game`.
   zooms the app column and dialogs by 1.12 (not the HUD stat row). Colour helpers (`colourMarks`, `squirm-marks`): a
   shape per pollen colour (circle poppy, triangle buttercup, square bluebell) on a sprite over every flower and petal
   gate (`addMark`, `syncMarks`, `ART.mark*`) and a Pollen chip in the HUD showing the worn one.
-- **Race a friend** (`play/race.js`, `raceOv`, the home `#raceBtn`): two phones race on one patch, connected straight
-  to each other over a WebRTC data channel with no server. The host's offer goes out as an invite link
-  (`GAME_URL#race=<code>`, read at boot and from `launchQueue`, then `raceJoin`); the friend's answer comes back as a
-  reply code the host pastes (`raceUseReply`, also on input). Codes are deflated JSON in base64url (`racePack` /
-  `raceUnpack`, a few hundred characters) and carry network addresses, so the dialog says to share them only with
-  friends. Public STUN servers (`RACE_ICE`) are contacted only while connecting; some strict mobile networks still
-  can't connect (`raceFail` after 25 s of checking, suggesting the same Wi-Fi or a hotspot). Messages: `hi`, `start`
-  (the host grows the patch with `generateEndless(diff, RACE_OPTS)` and sends it whole), `mv`, `won`, `again`, `bye`.
-  One dialog walks the steps (`raceStep`: start with a difficulty, wait, reply, link, grow, count, fail). The race is
-  mode `race`: no hints (the button is hidden), no resume slot, no meadow or garden progress, its own clock from
-  "Go" (`raceSecs`, so a restart doesn't reset it), a Friend chip in the HUD (`raceChip`, `raceTick` sends our move
-  count), and `onWin` hands over to `raceWin` / `raceResult` (who got home first, both moves, Rematch once both ask,
-  the host grows the next round). Leaving (home, back, closing) sends `bye`; the friend sees "wandered off" and keeps
+- **Race a friend** (`play/race.js`, `platform/nostr.js`, `raceOv`, the home `#raceBtn`, the `?play=race` shortcut): two
+  phones race on one patch, connected straight to each other over a WebRTC data channel with no server of our own.
+  The host gets a six-character room code (`raceNewCode`, letters and digits that can't be mixed up) and an invite
+  link (`GAME_URL#race=<code>`, read at boot and from `launchQueue`); the friend opens the link or types the code
+  (Join with a code). Both phones meet on a few public Nostr relays (`NOSTR_RELAYS`, `nostrRoom`): ephemeral events
+  (kind 25050, never stored) tagged with a topic hashed from the code and AES-GCM encrypted with a key from the code,
+  signed with a throwaway secp256k1 Schnorr key (BIP-340 in BigInt, `schnorrSign`, checked by `test/nostr.test.js`).
+  Through them the friend knocks (`join`, every 3 s), the host answers with a WebRTC offer, and the friend replies
+  with an answer (repeated until connected); then the relays are closed. Public STUN servers (`RACE_ICE`) help across
+  networks; some strict mobile networks still can't connect (`raceFail`, suggesting the same Wi-Fi or a hotspot), and
+  no relay answering or no host for 30 s fails kindly too. Data-channel messages: `hi`, `look`, `start` (the host
+  grows the patch with `generateEndless(diff, RACE_OPTS)` and sends it whole), `mv`, `won`, `again`, `bye`.
+  One dialog walks the steps (`raceStep`: start with a difficulty, room with the big code, join, link, grow, count,
+  fail). The race is mode `race`: no hints (the button is hidden), no resume slot, no meadow or garden progress, its
+  own clock from "Go" (`raceSecs`, so a restart doesn't reset it), a Friend chip in the HUD (`raceChip`, `raceTick`
+  sends our move count), and `onWin` hands over to `raceWin` / `raceResult` (who got home first, both moves, Rematch
+  once both ask, the host grows the next round). Leaving (home, back, closing) sends `bye`; the friend sees "wandered
+  off" and keeps
   playing. `stats.raceWins` counts wins. The friend's ghost: on connect each phone sends `look` (`myLook`: colour,
   pattern, hat and extra with their colour options), and every `mv` carries our segments, so `raceGhostBuild` makes a
   see-through worm in their outfit (`makeSeg` plus their hat and extra protos, `tinted` with their option; see-through

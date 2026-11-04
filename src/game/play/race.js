@@ -1,29 +1,26 @@
 // ---------- race a friend: two phones, one patch, straight to each other ----------
-// No server. The host's phone makes a WebRTC offer and shares it as an invite link (GAME_URL#race=<code>; the hash
-// never reaches a server). The friend's phone opens it, makes an answer and shares it back as a reply code, which the
-// host pastes. Public STUN servers (only while connecting) let phones on different networks find each other; some
-// strict mobile networks still can't, and the dialog says so. Codes are deflated JSON in base64url (a few hundred
-// characters) and carry the phone's network addresses, so the dialog asks to share them only with friends.
+// No server of our own. The host gets a six-letter room code (and an invite link, GAME_URL#race=<code>, the hash
+// never reaching a server); the friend opens the link or types the code. Both phones meet on a few public Nostr
+// relays (platform/nostr.js: encrypted with a key from the code, nothing stored) and swap a WebRTC offer and answer
+// there: join (the friend, every 3 s until an offer comes), offer (to that friend), answer (repeated until connected).
+// Then they talk straight to each other over a data channel; public STUN servers help phones on different networks
+// find each other, and some strict mobile networks still can't (the dialog says so).
 // Over the data channel (JSON): hi, look (the outfit for the ghost), start {def, round} (the host grows the patch and
-// sends it whole), mv {n, s: our segments},
-// won {mv, secs}, again (wants a rematch), bye. The race itself is mode 'race': no hints, no resume, no meadow or
-// garden progress; a Friend chip in the HUD, and onWin hands over to raceWin for the result card.
+// sends it whole), mv {n, s: our segments}, won {mv, secs}, again (wants a rematch), bye. The race itself is mode
+// 'race': no hints, no resume, no meadow or garden progress; a Friend chip in the HUD, and onWin hands over to
+// raceWin for the result card.
 const RACE_ICE={iceServers:[{urls:['stun:stun.l.google.com:19302','stun:stun1.l.google.com:19302']},{urls:'stun:stun.cloudflare.com:3478'}]};
 const RACE_OPTS={flags:true,fruit:true,keys:true,dry:true,portals:true};
 let race=null;
-const raceOK=()=>!!(window.RTCPeerConnection&&window.CompressionStream&&window.DecompressionStream);
+const raceOK=()=>!!(window.RTCPeerConnection&&window.WebSocket&&window.crypto&&crypto.subtle&&typeof BigInt==='function');
 $('raceBtn').hidden=!raceOK();
 
-// an offer or answer as deflated JSON in base64url
-const rB64=b=>btoa(String.fromCharCode(...new Uint8Array(b))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
-const rUnB64=s=>Uint8Array.from(atob(s.replace(/-/g,'+').replace(/_/g,'/')),c=>c.charCodeAt(0));
-async function racePack(desc){ const s=new Blob([JSON.stringify({t:desc.type[0],s:desc.sdp})]).stream().pipeThrough(new CompressionStream('deflate-raw'));
-  return rB64(await new Response(s).arrayBuffer()); }
-async function raceUnpack(code,want){ code=String(code||'').trim(); const m=code.match(/(?:^|[#?&])race=([A-Za-z0-9_-]+)/); if(m) code=m[1];
-  code=code.replace(/[^A-Za-z0-9_-]/g,''); if(code.length<40) throw new Error('short');
-  const s=new Blob([rUnB64(code)]).stream().pipeThrough(new DecompressionStream('deflate-raw')); const o=JSON.parse(await new Response(s).text());
-  if(o.t!==want[0]||typeof o.s!=='string') throw new Error('kind'); return {type:want,sdp:o.s}; }
-// waits for every network address (or 5 s), so the whole offer fits in one code
+// room codes: six letters and digits that can't be mixed up (no I, L, O, 0 or 1)
+const RACE_ABC='ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+const raceNewCode=()=>Array.from(crypto.getRandomValues(new Uint8Array(6)),b=>RACE_ABC[b%RACE_ABC.length]).join('');
+const raceClean=s=>{ s=String(s||'').trim(); const m=s.match(/(?:^|[#?&])race=([A-Za-z0-9]+)/); if(m) s=m[1];
+  return s.toUpperCase().split('').filter(c=>RACE_ABC.includes(c)).join(''); };
+// waits for every network address (or 5 s), so the whole offer goes in one message
 const raceGathered=pc=>new Promise(res=>{ if(pc.iceGatheringState==='complete') return res();
   const done=()=>{ if(pc.iceGatheringState==='complete'){ pc.removeEventListener('icegatheringstatechange',done); res(); } };
   pc.addEventListener('icegatheringstatechange',done); setTimeout(res,5000); });
@@ -32,22 +29,23 @@ const raceGathered=pc=>new Promise(res=>{ if(pc.iceGatheringState==='complete') 
 const RACE_DIFF_LINE={easy:'a small, quick patch',medium:'a medium patch',hard:'a long, twisty patch'};
 function raceStep(step,o={}){ const d=$('raceOv').querySelector('.dialog'); d.dataset.step=step;
   const host=race&&race.host, set=(id,t)=>{ const e=$(id); e.hidden=!t; if(t) e.textContent=t; };
-  $('raceDiff').hidden=step!=='start'; $('raceCode').hidden=!(step==='wait'||step==='reply'); $('raceCount').hidden=step!=='count';
-  const T={start:['Race a friend','Grow a patch and race each other to the burrow. Send your friend an invite, then paste the reply they send back.'],
-    wait:['Waiting for a reply',"When your friend opens the invite they'll send you a reply. Paste it here and you're off."],
-    reply:['Race invite!','Your friend wants to race. Send them this reply, and the race starts as soon as they paste it.'],
-    link:['Connecting…',host?'Saying hello to your friend\'s garden.':'Waiting for your friend to paste your reply.'],
+  $('raceDiff').hidden=step!=='start'; $('raceCode').hidden=step!=='join'; $('raceCount').hidden=!(step==='count'||step==='room');
+  $('raceCount').classList.toggle('code',step==='room');
+  const T={start:['Race a friend','Grow a patch and race each other to the burrow. Start a race and share the code, or join a friend\'s.'],
+    room:['Your race code','Send your friend the invite, or have them type this code in Race a friend. The race starts when they join.'],
+    join:['Join a race','Type the code your friend sees on their screen.'],
+    link:[host?'Your friend is here!':'Finding the race…',host?'Connecting your gardens.':'Looking for your friend\'s race.'],
     grow:['Growing a patch…',host?'Planting '+RACE_DIFF_LINE[race.diff]+' for you both.':'Your friend is growing a patch for you both.'],
     count:['Get ready!','Same patch, same start. First worm home wins.'],
     fail:['No luck this time',o.why||"Couldn't reach your friend's garden. Being on the same Wi-Fi, or joining your friend's hotspot, helps."]}[step];
   $('raceTitle').textContent=T[0]; $('raceText').textContent=T[1];
-  set('raceGo',{start:'Share invite',wait:'Paste reply',reply:'Send reply',fail:host?'Try again':''}[step]||'');
-  set('raceAlt',{wait:'Share invite again',reply:'Copy reply'}[step]||'');
+  set('raceGo',{start:'Start a race',room:'Share invite',join:'Join',fail:host?'Try again':''}[step]||'');
+  set('raceAlt',{start:'Join with a code',room:'Copy code'}[step]||'');
   $('raceCancel').hidden=step==='count'; $('raceCancel').textContent=step==='fail'?'Close':'Not now';
-  set('raceNote',step==='start'||step==='reply'?'Invites and replies carry your network address, so share them only with friends. Playing on the same Wi-Fi works best.':'');
+  set('raceNote',step==='room'||step==='start'?'Racing connects your phones straight to each other. Playing on the same Wi-Fi works best.':'');
   if(step==='start') qa($('raceDiff'),'button').forEach(b=>{ const on=b.dataset.d===race.diff; b.classList.toggle('on',on); b.setAttribute('aria-checked',String(on)); });
-  if(step==='wait'){ $('raceCode').readOnly=false; $('raceCode').value=''; $('raceCode').placeholder='Paste the reply here'; }
-  if(step==='reply'){ $('raceCode').readOnly=true; $('raceCode').value=race.code; } }
+  if(step==='room') $('raceCount').textContent=race.code;
+  if(step==='join'){ $('raceCode').value=''; setTimeout(()=>$('raceCode').focus(),300); } }
 // its own back-button layer only from home; over a race (a rematch) the game layer is already there
 function raceDialog(){ if(!isOpen('raceOv')){ show('raceOv'); if(!layers.includes('game')) pushLayer('race'); } }
 function raceClose(){ if(isOpen('raceOv')){ hide('raceOv'); if(layers[layers.length-1]==='race') popLayer('race'); } }
@@ -59,32 +57,46 @@ function racePeer(){ const pc=new RTCPeerConnection(RACE_ICE); race.pc=pc;
     if(s==='failed'&&!race.open) raceFail();
     if((s==='failed'||s==='disconnected')&&race.open){ clearTimeout(race.goneT); race.goneT=setTimeout(()=>{ if(race&&race.pc===pc&&pc.iceConnectionState!=='connected') raceGone(); },6000); } };
   pc.ondatachannel=e=>{ raceWire(e.channel); if(e.channel.readyState==='open') e.channel.onopen(); }; return pc; }
-function raceFail(why){ if(!race) return; clearTimeout(race.failT); try{ race.pc.close(); }catch(e){} raceDialog(); raceStep('fail',{why}); sfx('stuck'); }
+function raceFail(why){ if(!race) return; clearTimeout(race.failT); clearInterval(race.joinT); clearInterval(race.ansT); clearTimeout(race.lostT);
+  if(race.room) race.room.close(); try{ race.pc&&race.pc.close(); }catch(e){} raceDialog(); raceStep('fail',{why}); sfx('stuck'); }
 async function raceShare(text,url){ try{ if(navigator.share){ await navigator.share(url?{title:'Squirm race',text,url}:{title:'Squirm race',text}); return true; } }
   catch(e){ if(e.name==='AbortError') return false; }
   try{ await navigator.clipboard.writeText(url||text); toast('Copied. Paste it into a message to your friend.',2600); return true; }
   catch(e){ toast('Copy the code from the box and send it to your friend.',2600); return false; } }
-// phone A: make the offer and share the invite link
+// the host: open a room, share its code, offer a connection to whoever joins first
 function raceOpen(){ if(!raceOK()) return; raceEnd(); race={host:true,diff:'medium',round:0,friend:{},want:{}}; raceDialog(); raceStep('start'); }
-async function raceInvite(){ const b=$('raceGo'); b.disabled=true;
-  try{ const pc=racePeer(); raceWire(pc.createDataChannel('race')); await pc.setLocalDescription(await pc.createOffer()); await raceGathered(pc);
-    race.code=await racePack(pc.localDescription); race.link=(GAME_URL||location.href.split('#')[0])+'#race='+race.code; }
-  catch(e){ b.disabled=false; raceFail('Your phone could not make an invite. Try again in a moment.'); return; }
-  b.disabled=false; raceStep('wait'); raceShare('Race me in Squirm! Open this and send me the reply.',race.link); }
-async function raceUseReply(text){ if(!race||!race.host||race.pc.signalingState!=='have-local-offer') return;
-  let ans; try{ ans=await raceUnpack(text,'answer'); }catch(e){ if(String(text).trim().length>40) nope($('raceCode'),"That doesn't look like a reply. Copy all of it."); return; }
-  try{ await race.pc.setRemoteDescription(ans); raceStep('link'); }catch(e){ raceFail(); } }
-// phone B: opened an invite link
+async function raceHost(){ race.code=raceNewCode(); race.link=(GAME_URL||location.href.split(/[?#]/)[0])+'#race='+race.code; raceStep('room');
+  const r=race; r.room=await nostrRoom(r.code,raceSignal); if(race!==r){ r.room.close(); return; } raceRelaysCheck(); }
+async function raceOffer(){ const r=race; if(r.offer){ r.room.send({t:'offer',to:r.guest,sdp:r.offer}); return; } if(r.making) return; r.making=true; raceStep('link');
+  try{ const pc=racePeer(); raceWire(pc.createDataChannel('race')); await pc.setLocalDescription(await pc.createOffer()); await raceGathered(pc); }
+  catch(e){ raceFail('Your phone could not get ready to race. Try again in a moment.'); return; }
+  if(race!==r) return; r.offer=r.pc.localDescription.sdp; r.room.send({t:'offer',to:r.guest,sdp:r.offer}); }
+// the friend: open the room the code names and knock until the host offers
 async function raceJoin(code){ if(!raceOK()){ toast("This browser can't race. Try Chrome on your phone.",3200); return; }
-  raceEnd(); race={host:false,round:0,friend:{},want:{}}; raceDialog(); raceStep('link');
-  try{ const offer=await raceUnpack(code,'offer'), pc=racePeer(); await pc.setRemoteDescription(offer);
-    await pc.setLocalDescription(await pc.createAnswer()); await raceGathered(pc); race.code=await racePack(pc.localDescription); raceStep('reply'); }
-  catch(e){ raceFail("That invite didn't work. Ask your friend for a fresh one."); } }
+  code=raceClean(code); raceEnd(); race={host:false,round:0,friend:{},want:{}}; raceDialog();
+  if(code.length!==6){ raceStep('fail',{why:"That isn't a race code. Ask your friend for theirs: six letters and numbers."}); return; }
+  race.code=code; raceStep('link'); const r=race; r.room=await nostrRoom(code,raceSignal); if(race!==r){ r.room.close(); return; }
+  const knock=()=>{ if(race===r&&!r.offerIn) r.room.send({t:'join'}); }; knock(); r.joinT=setInterval(knock,3000);
+  r.lostT=setTimeout(()=>{ if(race===r&&!r.offerIn) raceFail("Couldn't find that race. Check the code, or ask your friend to start a new one."); },30000);
+  raceRelaysCheck(); }
+async function raceAnswer(sdp){ const r=race; if(r.answer||r.making) return; r.making=true; clearInterval(r.joinT); clearTimeout(r.lostT);
+  try{ const pc=racePeer(); await pc.setRemoteDescription({type:'offer',sdp}); await pc.setLocalDescription(await pc.createAnswer()); await raceGathered(pc); }
+  catch(e){ raceFail("Couldn't connect to your friend's garden. Try again."); return; }
+  if(race!==r) return; r.answer=r.pc.localDescription.sdp; const say=()=>{ if(race===r&&!r.open) r.room.send({t:'answer',to:r.hostKey,sdp:r.answer}); };
+  say(); r.ansT=setInterval(say,3000); }
+// what comes through the relays before the phones are connected
+function raceSignal(m,from){ const r=race; if(!r||r.open||!m) return;
+  if(r.host){ if(m.t==='join'){ if(r.guest&&r.guest!==from) return; r.guest=from; raceOffer(); }
+    else if(m.t==='answer'&&from===r.guest&&r.pc&&r.pc.signalingState==='have-local-offer'&&typeof m.sdp==='string')
+      r.pc.setRemoteDescription({type:'answer',sdp:m.sdp}).catch(()=>raceFail()); }
+  else if(m.t==='offer'&&m.to===r.room.me&&typeof m.sdp==='string'&&!r.offerIn){ r.offerIn=true; r.hostKey=from; raceAnswer(m.sdp); } }
+// no relay answering at all means no internet (or every relay is down)
+function raceRelaysCheck(){ const r=race; setTimeout(()=>{ if(race===r&&r.room&&!r.open&&!r.room.open()) raceFail("Couldn't reach the race meeting point. Check your internet connection and try again."); },8000); }
 
 // ---- talking ----
 const raceSend=m=>{ try{ if(race&&race.dc&&race.dc.readyState==='open') race.dc.send(JSON.stringify(m)); }catch(e){} };
 function raceWire(dc){ race.dc=dc;
-  dc.onopen=()=>{ if(!race) return; race.open=true; clearTimeout(race.failT); raceSend({t:'hi',v:NEWS[0][0]}); sfx('on');
+  dc.onopen=()=>{ if(!race) return; race.open=true; clearTimeout(race.failT); clearInterval(race.ansT); clearTimeout(race.lostT); if(race.room) race.room.close(); raceSend({t:'hi',v:NEWS[0][0]}); sfx('on');
     raceSend({t:'look',look:myLook()}); if(race.host){ stat('race/start'); raceGrow(); } else raceStep('grow'); };
   dc.onclose=()=>{ if(race&&race.dc===dc&&race.open) raceGone(); };
   dc.onmessage=e=>{ let m; try{ m=JSON.parse(e.data); }catch(err){ return; } if(!race) return;
@@ -103,6 +115,7 @@ function raceGone(){ if(!race||race.friend.gone) return; race.friend.gone=true; 
   toast("Your friend's worm wandered off. Keep crawling!",2800); if(mode==='race') updateHUD(true); if(isOpen('winOv')&&mode==='race') raceResult(); }
 // leaving: tell the friend, close the line
 function raceEnd(){ raceGhostDrop(); if(!race) return; raceSend({t:'bye'}); clearTimeout(race.failT); clearTimeout(race.goneT); clearTimeout(race.countT);
+  clearInterval(race.joinT); clearInterval(race.ansT); clearTimeout(race.lostT); if(race.room) race.room.close();
   try{ race.pc&&race.pc.close(); }catch(e){} race=null; }
 function raceCancel(fromBack){ raceEnd(); if(fromBack) hide('raceOv'); else raceClose(); }
 
@@ -147,16 +160,16 @@ function raceNext(){ if(!race||race.friend.gone){ raceEnd(); hideAll(); popLayer
 
 $('raceBtn').onclick=()=>{ ensureAudio(); raceOpen(); };
 $('raceGo').onclick=()=>{ if(!race) return; const st=$('raceOv').querySelector('.dialog').dataset.step;
-  if(st==='start') raceInvite();
-  else if(st==='wait'){ navigator.clipboard&&navigator.clipboard.readText?navigator.clipboard.readText().then(t=>{ $('raceCode').value=t; raceUseReply(t); },
-    ()=>toast('Long-press the box and paste the reply there.',2600)):toast('Long-press the box and paste the reply there.',2600); }
-  else if(st==='reply') raceShare(race.code);
+  if(st==='start') raceHost();
+  else if(st==='room') raceShare(`Race me in Squirm! Open this, or type ${race.code} in Race a friend.`,race.link);
+  else if(st==='join'){ const c=raceClean($('raceCode').value); if(c.length!==6){ nope($('raceCode'),'Race codes have six letters and numbers.'); return; } raceJoin(c); }
   else if(st==='fail'&&race.host){ const d=race.diff; raceEnd(); race={host:true,diff:d,round:0,friend:{},want:{}}; raceStep('start'); } };
 $('raceAlt').onclick=()=>{ if(!race) return; const st=$('raceOv').querySelector('.dialog').dataset.step;
-  if(st==='wait') raceShare('Race me in Squirm! Open this and send me the reply.',race.link);
-  else if(st==='reply') navigator.clipboard.writeText(race.code).then(()=>toast('Reply copied.',1800),()=>toast('Select the reply in the box and copy it.',2400)); };
+  if(st==='start'){ race.host=false; raceStep('join'); }
+  else if(st==='room') navigator.clipboard.writeText(race.code).then(()=>toast('Code copied.',1800),()=>toast(`Your code is ${race.code}.`,2400)); };
 $('raceCancel').onclick=()=>raceCancel(false);
-$('raceCode').addEventListener('input',()=>{ if(race&&race.host) raceUseReply($('raceCode').value); });
+$('raceCode').addEventListener('input',()=>{ const e=$('raceCode'), c=raceClean(e.value); if(e.value!==c) e.value=c; });
+$('raceCode').addEventListener('keydown',e=>{ if(e.key==='Enter') $('raceGo').onclick(); });
 qa($('raceDiff'),'button').forEach(b=>b.onclick=()=>{ if(!race) return; race.diff=b.dataset.d; raceStep('start'); settle(b); });
 
 // ---- the friend's ghost: a see-through worm in their colours, pattern, hat and extra, crawling where they crawl ----
