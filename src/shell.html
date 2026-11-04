@@ -449,12 +449,21 @@ body.photo .wsay{display:none}
 .g-progress{flex:none;display:flex;flex-direction:column;gap:5px;margin-top:-8px}
 .g-progress .b-progress{margin:0}
 .g-progress small{font:800 12px/1 var(--fb);color:var(--ink-soft)}
+/* patches below 3 stars: the Shine button jumps to the next one, chips count them, a fully starred chapter rings gold */
+.g-row{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:28px}
+.shine-next{display:inline-flex;align-items:center;gap:4px;padding:3px 10px 3px 6px;border-radius:999px;background:var(--tint-honey);border:2px solid var(--honey-dark);color:var(--deep);font:800 12px/1.2 var(--fd);cursor:pointer}
+.shine-next svg{width:16px;height:16px}
+.ch-chip .ring{position:relative}
+.ch-chip .shine{position:absolute;top:-4px;right:-6px;min-width:20px;height:20px;padding:0 5px;border-radius:999px;display:grid;place-items:center;background:var(--honey);border:2px solid var(--paper);color:var(--deep);font:800 11px/1 var(--fd)}
+.ch-chip .shine svg{width:13px;height:13px}
+.ch-chip .shine.perfect{background:var(--sticker);border-color:var(--honey-dark);padding:0}
+.ch-chip.done .ring{background:conic-gradient(var(--honey) var(--s,0%),var(--tint-honey) 0)}
+.pick .tip{color:var(--honey-dark)}
 /* one sticker per chapter: its hat (or a lock) inside a ring that fills as patches are grown; tap to jump */
 .ch-strip{flex:none;display:flex;gap:6px;margin:-4px -16px -2px;padding:9px 16px 8px;scroll-behavior:smooth}
 .ch-chip{flex:none;display:flex;flex-direction:column;align-items:center;gap:7px;padding:0;border:0;background:none;cursor:pointer;color:var(--ink-soft);font:800 11px/1 var(--fd)}
 .ch-chip .ring{width:48px;height:48px;border-radius:50%;display:grid;place-items:center;background:conic-gradient(var(--leaf) var(--p,0%),var(--edge) 0);transition:box-shadow var(--dur) var(--ease-pop)}
 .ch-chip .emb{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;background:var(--sticker)}
-.ch-chip.done .ring{background:var(--honey)}
 .ch-chip.locked .emb{opacity:.6}
 .ch-chip.on{color:var(--ink)}
 .ch-chip.on .ring{box-shadow:0 0 0 2px var(--paper),0 0 0 4px var(--berry)}
@@ -843,7 +852,7 @@ body.big-text .hud-stats{zoom:.9}
     <section class="tab-page fade-scroll" id="tabGarden" aria-labelledby="lvTitle" hidden>
       <div class="panel card">
         <div class="panel-head"><h2 id="lvTitle">Garden patches</h2><span class="total" id="lvTotal"></span></div>
-        <div class="g-progress"><div class="b-progress" aria-hidden="true"><i id="lvBar"></i></div><small id="lvGrown"></small></div>
+        <div class="g-progress"><div class="b-progress" aria-hidden="true"><i id="lvBar"></i></div><div class="g-row"><small id="lvGrown"></small><button class="shine-next" id="shineBtn" hidden></button></div></div>
         <div class="ch-strip fade-scroll x" id="chStrip" data-fade="28" role="tablist" aria-label="Chapters"></div>
         <div class="list map fade-scroll" id="lvGrid" data-fade-top="10"></div>
         <div class="pick" id="lvPick" aria-live="polite"></div>

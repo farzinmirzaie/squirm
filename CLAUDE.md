@@ -412,7 +412,10 @@ from a tab replaces that layer with `game`.
   a winding SVG path; closed chapters fold into a small card; tapping a stone picks it (`pickPatch`) and
   shows its card with a `drawThumb` preview and the mechanics it uses, and tapping again plays. Above the
   map: stars, a patches-grown bar and the chapter strip (`#chStrip`, one chip per chapter with its hat in a
-  progress ring; tapping glides the map to that chapter, and `spyChapter` highlights the one in view).
+  progress ring; tapping glides the map to that chapter, and `spyChapter` highlights the one in view). Once a chapter
+  is fully grown its ring fills with stars instead (gold when all 30), and a honey badge counts its patches below 3
+  stars (`shineable`). The Shine button (`#shineBtn`) picks the next of those from the chapter in view, and a
+  picked patch's card says what 3 stars needs (par, or no hint).
 - **Meadow:** endless setup. A hero card for the chosen difficulty with its description and its own streak,
   best, stars and cleared count (`DIFF_DESC`), a compact difficulty switch, the mechanics mix with All/None
   and Surprise me, and Grow a patch pinned at the bottom.

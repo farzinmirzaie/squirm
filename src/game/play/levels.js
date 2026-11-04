@@ -47,7 +47,17 @@ function renderLevelList(){
   let total=0; LEVELS.forEach((l,i)=>total+=stars(i)); $('lvTotal').innerHTML=`${STAR(true,0).replace('width="44" height="44"','width="20" height="20"')} ${total} of ${LEVELS.length*3}`;
   const grown=LEVELS.filter((l,i)=>isCleared(i)).length; $('lvBar').style.setProperty('--p',(100*grown/LEVELS.length).toFixed(1)+'%'); $('lvGrown').textContent=`${grown} of ${LEVELS.length} patches grown`;
   $('chStrip').innerHTML=CHAPTERS.map((ch,k)=>{ const n=ch.to-ch.from+1, open=isUnlocked(ch.from), hat=HATS.find(h=>h[2]===k); let c=0; for(let i=ch.from;i<=ch.to;i++) if(isCleared(i)) c++;
-    return `<button class="ch-chip ${c===n?'done':''} ${open?'':'locked'}" role="tab" data-k="${k}" aria-label="Chapter ${k+1}, ${ch.name}, ${c} of ${n} grown"><span class="ring" style="--p:${(100*c/n).toFixed(1)}%"><span class="emb">${open&&hat?hatArt(hat[0],28):art(open?'sprout':'lock',open?24:20)}</span></span>${k+1}</button>`; }).join('');
+    // once every patch is grown the ring fills with stars instead; the badge counts patches below 3 stars, a star when none are
+    let s=0, shine=0; for(let i=ch.from;i<=ch.to;i++){ s+=stars(i); if(isCleared(i)&&stars(i)<3) shine++; }
+    const badge=c===n&&!shine?`<span class="shine perfect">${STAR(true,0).replace('width="44" height="44"','width="13" height="13"')}</span>`:shine?`<span class="shine">${shine}</span>`:'';
+    return `<button class="ch-chip ${c===n?'done':''} ${open?'':'locked'}" role="tab" data-k="${k}" aria-label="Chapter ${k+1}, ${ch.name}, ${c} of ${n} grown, ${s} of ${n*3} stars${shine?`, ${shine} to shine`:''}"><span class="ring" style="--p:${(100*c/n).toFixed(1)}%;--s:${(100*s/(n*3)).toFixed(1)}%">${badge}<span class="emb">${open&&hat?hatArt(hat[0],28):art(open?'sprout':'lock',open?24:20)}</span></span>${k+1}</button>`; }).join('');
+  // Shine: the next cleared patch below 3 stars, from the chapter in view on
+  const toShine=shineable(), sb=$('shineBtn'); sb.hidden=!toShine.length;
+  sb.innerHTML=`${STAR(true,0).replace('width="44" height="44"','width="16" height="16"')}Shine ${toShine.length}`;
+  sb.setAttribute('aria-label',`${toShine.length} ${toShine.length===1?'patch':'patches'} to shine up to 3 stars. Show the next one`);
+  sb.onclick=()=>{ const t=shineable(); if(!t.length) return; const from=picked>=0?picked+1:CHAPTERS[+(($('chStrip').querySelector('.ch-chip.on')||{dataset:{k:0}}).dataset.k)].from;
+    const i=t.find(x=>x>=from)??t[0], n=g.querySelector(`.node[data-i="${i}"]`);
+    if(n) n.scrollIntoView({block:'center',behavior:reduceMotion?'auto':'smooth'}); pickPatch(i,true); };
   qa($('chStrip'),'.ch-chip').forEach(b=>b.onclick=()=>{ const sc=g.querySelector(`.scene[data-k="${b.dataset.k}"]`); if(!sc) return;
     g.scrollTo({top:g.scrollTop+sc.getBoundingClientRect().top-g.getBoundingClientRect().top-2,behavior:reduceMotion?'auto':'smooth'});
       markChapter(+b.dataset.k); settle(b.querySelector('.ring')); });
@@ -99,7 +109,7 @@ function spyChapter(){ const g=$('lvGrid'), top=g.getBoundingClientRect().top+60
 $('lvGrid').addEventListener('scroll',()=>{ if(spyQ) return; spyQ=true; requestAnimationFrame(()=>{ spyQ=false; spyChapter(); }); },{passive:true});
 function pickPatch(i,anim){ picked=i; const lv=LEVELS[i], st=progress.stars[lv.name]||0, best=progress.best[lv.name], ch=CHAPTERS.find(c=>i>=c.from&&i<=c.to);
   document.querySelectorAll('#lvGrid .node').forEach(n=>n.classList.toggle('sel',+n.dataset.i===i));
-  const p=$('lvPick'); p.innerHTML=`<canvas class="thumb" width="88" height="88" aria-hidden="true"></canvas><span class="pt"><b>${i+1}. ${lv.name}</b><small><em class="mini" aria-hidden="true">${[0,1,2].map(q=>`<i class="${q<st?'on':''}"></i>`).join('')}</em>${best?`best ${best} · par ${lv.par}`:`par ${lv.par}`}</small><small>${ch?ch.name:''}<span class="mechs" aria-hidden="true">${Object.keys(MECH).filter(k=>k!=='basics'&&MECH[k].k.test(lv.map.join(''))).map(k=>MECH[k].i.replace(/width="40" height="40"/,'width="21" height="21"').replace(/stroke-width="[\d.]+"/,'stroke-width="2.2"')).join('')}</span></small></span><button class="go" aria-label="Play patch ${i+1}"><svg width="26" height="26" viewBox="0 0 24 24"><path d="M8 5.5v13l10.5-6.5z" fill="#fff" stroke="#fff" stroke-width="2" stroke-linejoin="round"/></svg></button>`;
+  const p=$('lvPick'); p.innerHTML=`<canvas class="thumb" width="88" height="88" aria-hidden="true"></canvas><span class="pt"><b>${i+1}. ${lv.name}</b><small><em class="mini" aria-hidden="true">${[0,1,2].map(q=>`<i class="${q<st?'on':''}"></i>`).join('')}</em>${best?`best ${best} · par ${lv.par}`:`par ${lv.par}`}</small>${best&&st<3?`<small class="tip">${best<=lv.par?'Finish without a hint for 3 stars':`Finish in ${lv.par} moves or fewer for 3 stars`}</small>`:''}<small>${ch?ch.name:''}<span class="mechs" aria-hidden="true">${Object.keys(MECH).filter(k=>k!=='basics'&&MECH[k].k.test(lv.map.join(''))).map(k=>MECH[k].i.replace(/width="40" height="40"/,'width="21" height="21"').replace(/stroke-width="[\d.]+"/,'stroke-width="2.2"')).join('')}</span></small></span><button class="go" aria-label="Play patch ${i+1}"><svg width="26" height="26" viewBox="0 0 24 24"><path d="M8 5.5v13l10.5-6.5z" fill="#fff" stroke="#fff" stroke-width="2" stroke-linejoin="round"/></svg></button>`;
   drawThumb(p.querySelector('canvas'),lv); p.querySelector('.go').onclick=playPicked;
   if(anim){ settle(document.querySelector('#lvGrid .node.sel')); animOnce(p,'swap'); } }
 function playPicked(){ if(picked<0) return; hideAll(); loadLevel(picked); enterGame(); }
