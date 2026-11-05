@@ -411,6 +411,9 @@ says which file holds what, and a search for a function name finds it fast.
 
 ### Home (`homeOv`; `home/`, the map in `play/levels.js`)
 
+Behind it is only the garden: `homeBackdrop` (`play/levels.js`) builds `HOME_DEF` (`L.home`), a clearing on the lawn
+with no bed, border, board or worm (`buildGarden` and `buildCritters` skip the bed pieces and the ladybug), at boot and
+whenever `showHome` runs; a patch is built only when one is played, and the resume slot keeps play in between.
 Five tabs switched by `showTab`; on screens 600px and wider the tab bar floats as a card the width of the content
 column. Dialogs are at most 720px tall (they scroll inside). Above them, stars and hint seeds share one pill (`.home-pills`, two buttons with a
 line between): the seeds half opens `seedInfo`, the stars half `gardenInfo` (`garOv`, layer `gar`, in `ui/finale.js`):
@@ -587,7 +590,7 @@ from a tab replaces that layer with `game`.
   textures grow.
 - **Fast first paint** (`core/boot.js`, `shell.html`): the home overlay is visible in the markup, and the `boot` script in `shell.html`
   fills in stars, the Continue text and the daily card from `squirm-boot` (written by `renderHome`) before
-  three.js loads. `start` shows home first and builds the garden a frame later; the 3D canvases fade in
+  three.js loads. `start` shows home first and builds the home backdrop a frame later; the 3D canvases fade in
   (`.ready`) once they've drawn. The `theme` script in `<head>` applies a forced theme before first paint.
 - **Offline, install and updates** (`platform/offline.js`): `sw.js` is registered at boot (http/https only) and checked for updates
   when the app returns to the foreground and every 30 minutes. A new worker takes over right away; the page

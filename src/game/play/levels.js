@@ -3,7 +3,12 @@ function loadLevel(i,withHint=true){ if(i!==li) noteQuit(); mode='garden'; li=i;
 let nudged=false, playT=0;
 const playTime=()=>{ const s=Math.round(playT); return s<60?`${s}s`:`${Math.floor(s/60)}m ${String(s%60).padStart(2,'0')}s`; };
 let pollensHere=new Set();
-function startLevel(def,withHint=true){ nudged=false; playT=0; pollensHere=new Set(); turnsHere=0;
+// The home screen's backdrop: just the garden (trees, bushes, flowers, critters) round an empty clearing, with no patch,
+// board or worm. A patch is only built when one is played; heading home swaps back to this (the resume slot keeps play).
+const HOME_DEF={name:'Home',home:true,hint:'',par:1,exitLen:2,seed:7,worm:[[1,2],[0,2]],map:['.....','.....','....E','.....','.....']};
+function homeBackdrop(){ if(L&&L.home) return; L=HOME_DEF; state=initState(L); history=[]; queue.length=0; slideSteps.length=0; clearHint();
+  $('wormSayG').hidden=true; buildBoard(); board.visible=fx.visible=wormG.visible=false; fitCamera(); }
+function startLevel(def,withHint=true){ board.visible=fx.visible=true; nudged=false; playT=0; pollensHere=new Set(); turnsHere=0;
   L=def; state=initState(L); history=[]; queue.length=0; slideSteps.length=0; wasReady=false; hintsUsed=0; undosHere=0; clearHint(); $('wormSayG').hidden=true;
     gSayT=0;
   $('raceBar').hidden=mode!=='race'; buildBoard(); snapWorm(); fitCamera(); updateHUD(true); hudIntro(); lastMoveT=idleT;

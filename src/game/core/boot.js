@@ -15,7 +15,7 @@ const start=()=>{ const i=currentGardenIndex();
     checkBadges(null,true); pickTod(); setInterval(pickTod,60000); setTimeout(statsBoot,2000);
   mode='garden'; li=i; showHome(true);
   // the home screen is already up; the garden and the home worm are built on the next frame and fade in
-  requestAnimationFrame(()=>{ startLevel(LEVELS[i],false); initHomeWorm(); requestAnimationFrame(frame);
+  requestAnimationFrame(()=>{ homeBackdrop(); initHomeWorm(); requestAnimationFrame(frame);
     const inv=location.hash.match(/^#race=([A-Za-z0-9_-]+)/); if(inv){ try{ window.history.replaceState(null,'',location.pathname+location.search); }catch(e){} setTimeout(()=>raceJoin(inv[1]),400); }
     const ask=new URLSearchParams(location.search).get('play'); if(ask){ try{ window.history.replaceState(null,'',location.pathname); }catch(e){} launchPlay(ask); } }); };
 // what a launch URL asks for (?play=daily|meadow|continue|race): the app shortcuts and the reminder use these

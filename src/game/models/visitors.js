@@ -27,7 +27,7 @@ function birdie(){ const g=new THREE.Group(), body=m('gdBird'), wing=m('gdBirdWi
   const bird=merged(g,1.7), hg=merged(head,1); hg.position.set(0,.3,.08); bird.add(hg); bird.userData.head=hg; return bird; }
 function buildCritters(r,cx,cz,bw,bd){ critters=[];
   // the ladybug walks the top of the wooden border, now and then stopping for a rest
-  const bug=ladybug(); garden.add(bug); critters.push({kind:'bug',o:bug,s:r()*4,rest:0,dir:r()<.5?1:-1,hw:bw/2+.12,hd:bd/2+.12,cx,cz});
+  if(!L.home){ const bug=ladybug(); garden.add(bug); critters.push({kind:'bug',o:bug,s:r()*4,rest:0,dir:r()<.5?1:-1,hw:bw/2+.12,hd:bd/2+.12,cx,cz}); }
   if(quality===0) return;
   // a bird visits the lawn in front of the bed and hops about
   const bird=birdie(); garden.add(bird); const c={kind:'bird',o:bird,cx,cz,hw:bw/2,hd:bd/2,mode:'eat',t:0,wait:0,to:null,peck:0,look:0,lookTo:0};
