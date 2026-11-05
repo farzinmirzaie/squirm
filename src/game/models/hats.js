@@ -551,6 +551,31 @@ function buildHat(id){ const h=new THREE.Group();
     const ag=new THREE.ExtrudeGeometry(sh,{depth:.018,bevelEnabled:true,bevelThickness:.006,bevelSize:.006,bevelSegments:1}); ag.translate(0,0,-.009);
     const arrow=new THREE.Mesh(ag,m('turnCap')); hHull(arrow,.007); ar.add(arrow);
     const tip=new THREE.Mesh(sph(.018,10,8),m('brass')); tip.position.y=.375; h.add(tip); }
+  else if(id==='racer'){ // a racing helmet: a round shell with a rolled rim, a checkered stripe from front to back, a star roundel
+    // on each side, and goggles pushed up on the front on a leather strap. The shell is an ellipsoid (A wide, B tall) round (0, Y0, 0)
+    const A=.265, B=.23, Y0=-.02, TH=.56*Math.PI, onShell=(g,o)=>hWarp(g,v=>v.set(v.x*(A+o),v.y*(B+o)+Y0,v.z*(A+o)));
+    const shell=new THREE.Mesh(onShell(new THREE.SphereGeometry(1,40,16,0,hTAU,0,TH),0),m('racer')); hHull(shell,.012); h.add(shell);
+    h.add(hRing(A*Math.sin(TH),.024,m('racerRim'),.009,Y0+B*Math.cos(TH),8,48));
+    // the stripe: little squares of the shell's own surface in a belt over the top (a sphere's equator, turned on its side)
+    const belt=(p0,p1,t0,t1,o,mat)=>{ const g=new THREE.SphereGeometry(1,Math.max(2,Math.round((p1-p0)/.08)),2,p0,p1-p0,t0,t1-t0); g.rotateZ(Math.PI/2);
+      return new THREE.Mesh(onShell(g,o),mat); };
+    const P0=Math.PI/2+.5, P1=Math.PI*1.5+.16, W=.16, N=14, st=(P1-P0)/N;
+    h.add(belt(P0-.03,P1+.02,Math.PI/2-W-.024,Math.PI/2+W+.024,.003,m('line')));
+    for(let k=0;k<N;k++) for(let c=0;c<2;c++) h.add(belt(P0+k*st,P0+(k+1)*st,Math.PI/2+(c-1)*W,Math.PI/2+c*W,.007,m((k+c)%2?'frame':'racerRim')));
+    for(const sx of [-1,1]){ const d=hV3(sx,.72,-.3).normalize(), p=hOnEllipsoid(d,A,B).add(hV3(0,Y0,0)), nrm=hV3(p.x/(A*A),(p.y-Y0)/(B*B),p.z/(A*A)).normalize();
+      const disc=new THREE.Mesh(new THREE.CylinderGeometry(.062,.062,.014,24),m('racerRim')); disc.geometry.rotateX(Math.PI/2); hStick(disc,p.addScaledVector(nrm,.004),nrm);
+      hHull(disc,.007); h.add(disc);
+      const star=new THREE.Mesh(new THREE.ExtrudeGeometry(SHAPE_STAR(),{depth:.3,bevelEnabled:false}),m('crown')); star.scale.set(.042,.042,.042); star.position.z=.006;
+      hHull(star,.005); disc.add(star); }
+    // goggles pushed up on the front: a strap round the shell, two leather cups looking up, brass bezels and blue lenses
+    const SY=.035, sr=A*Math.sqrt(1-Math.pow((SY-Y0)/B,2)); h.add(hRing(sr+.004,.017,m('goggle'),.007,SY,8,48));
+    for(const sx of [-1,1]){ const az=sx*.34, p=hV3(Math.sin(az)*sr,SY+.012,Math.cos(az)*sr), nrm=hV3(Math.sin(az),.42,Math.cos(az)).normalize();
+      const cup=new THREE.Group(); hStick(cup,p,nrm); h.add(cup);
+      const body=hLathe([[0,-.03],[.068,-.03],[.074,-.01],[.07,.03],[0,.03]],24,m('goggle')); body.rotation.x=Math.PI/2; body.position.z=.012; hHull(body,.008); cup.add(body);
+      const bez=hTorus(.058,.012,m('brass'),.006,hTAU,6,28); bez.position.z=.044; cup.add(bez);
+      const lens=new THREE.Mesh(new THREE.CircleGeometry(.056,24),m('lensBlue')); lens.position.z=.043; cup.add(lens);
+      const gl=new THREE.Mesh(new THREE.TorusGeometry(.036,.008,4,12,1.2),MC.hatGlint||(MC.hatGlint=new THREE.MeshBasicMaterial({color:C.glint})));
+      gl.position.z=.046; gl.rotation.z=1.7; cup.add(gl); } }
   return hBake(h); }
 let hatId=store.get('squirm-hat')||'none';
 const chapterCleared=k=>{ const ch=CHAPTERS[k]; if(!ch) return false; for(let i=ch.from;i<=ch.to;i++) if(!isCleared(i)) return false; return true; };

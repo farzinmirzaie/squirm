@@ -10,7 +10,8 @@ const HATS=[['none','No hat',-1],['crown','Flower crown',0],['mush','Mushroom ca
   ['wizard','Wizard hat',-2,'30 patches, no hints',()=>Object.keys(progress.clean).length>=30],
   ['cowboy','Cowboy hat',-2,'Clear 15 meadow patches',()=>['easy','medium','hard'].reduce((a,d)=>a+progress.endless[d].cleared,0)>=15],
   ['phones','Headphones',-2,'Finish 10 daily patches',()=>(progress.stats.dailies||0)>=10],
-  ['idea','Bright idea',-2,'Grow 30 hint seeds',()=>(progress.stats.seedsGot||0)>=30]];
+  ['idea','Bright idea',-2,'Grow 30 hint seeds',()=>(progress.stats.seedsGot||0)>=30],
+  ['racer','Racing helmet',-2,'Win 3 races against a friend',()=>(progress.stats.raceWins||0)>=3]];
 const hatArt=(id,size=36)=>tintArt(id,art('hat-'+id,size));
 // extras: things for the face, earned with milestones: [id, name, how to earn, test]. Built once and cloned, like hats.
 const EXTRAS=[['none','Nothing','',()=>true],
@@ -34,7 +35,8 @@ const EXTRAS=[['none','Nothing','',()=>true],
   ['sweatband','Sweatband','Crawl 20,000 moves',()=>(progress.stats.moves||0)>=20000],
   ['daisies','Daisy chain','Wear all three pollens in one patch',()=>(progress.stats.allPollen||0)>=1],
   ['firefly','Firefly friend','Finish 5 patches in the evening, 7 to 10 pm',()=>(progress.stats.evenings||0)>=5],
-  ['pinwheel','Pinwheel friend','Turn around 25 times',()=>(progress.stats.turns||0)>=25]];
+  ['pinwheel','Pinwheel friend','Turn around 25 times',()=>(progress.stats.turns||0)>=25],
+  ['medal','Finisher\'s medal','Race a friend 10 times',()=>(progress.stats.races||0)>=10]];
 let extraId=store.get('squirm-extra')||'none';
 const extraOn=()=>{ const e=EXTRAS.find(x=>x[0]===extraId); return e&&e[3]()?extraId:'none'; };
 const extraArt=(id,size=36)=>tintArt(id,art(id==='none'?'hat-none':'extra-'+id,size));
@@ -59,6 +61,8 @@ const TINTS={
   bowtie:{keys:['bowDark','heartFrame'],art:['#E36A8C','#F27DA2'],opts:[['Berry',0xE36A8C,0xF27DA2],['Navy',0x4E5E9E,0x6F80C2],['Fern',0x4FAE80,0x7FD3A8],['Marigold',0xD9A22A,0xF5C84E],['Plum',0x8E72D6,0xB79CF2]]},
   bandana:{keys:['bandana'],art:['#E4574C'],opts:TINT_SET.red},
   flower:{keys:['chef'],art:['#FFFBF2'],opts:[['Daisy',0xFFFBF2],['Blossom',0xF7A8C4],['Butter',0xFFE08A],['Lilac',0xCDB8F5],['Sky',0x9FD2F2]]},
+  racer:{keys:['racer'],art:['#F26B5E'],opts:[['Cherry',0xF26B5E],['Sky',0x7FBFEA],['Mint',0x7FD3A8],['Butter',0xF5C84E],['Lilac',0xB79CF2]]},
+  medal:{keys:['ribbon','ribbonStripe'],art:['#7FBFEA','#FFFBF2'],opts:[['Sky',0x7FBFEA,0xFFFBF2],['Berry',0xE36A8C,0xFFE3EC],['Mint',0x7FD3A8,0xFFF1A8],['Lilac',0xB79CF2,0xFFFBF2],['Coral',0xF07A6A,0xFFF1A8]]},
   sweatband:{keys:['sweat','sweatStripe'],art:['#FFFBF2','#F27DA2'],opts:[['Classic',0xFFFBF2,0xF27DA2],['Sky',0x9FD2F2,0xFFFBF2],['Lime',0xC9E77E,0x4FAE80],['Sunny',0xFFD04A,0xE4574C],['Berry',0xE36A8C,0xFFFBF2]]}};
 let tints=store.json('squirm-tints')||{};
 const tintOf=id=>{ const t=TINTS[id]; return t?Math.min(t.opts.length-1,Math.max(0,tints[id]|0)):0; };

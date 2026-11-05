@@ -71,6 +71,10 @@ const BADGES=[
   ['longhaul','lantern','The long haul','Finish a patch with a par of 45 or more.',c=>c&&c.won&&c.par>=45],
   ['tickles','dizzy','Tickle monster','Tap the worm 15 times in a row during a patch.',counted(()=>[progress.stats.pokeRun||0,15])],
   ['stocked','hintseed','Well stocked','Fill your pouch with 9 hint seeds.',counted(()=>[progress.seeds,SEED_MAX])],
+  ['raceday','race','Ready, set, wiggle!','Race a friend for the first time.',counted(()=>[progress.stats.races||0,1])],
+  ['racewin','trophy','First past the burrow','Win a race against a friend.',counted(()=>[progress.stats.raceWins||0,1])],
+  ['racewins','podium','Speedy wiggler','Win 10 races against friends.',counted(()=>[progress.stats.raceWins||0,10])],
+  ['rematch','rematch','Again, again!','Ask for a rematch and race again 5 times.',counted(()=>[progress.stats.rematches||0,5])],
   ['collector','medal','Badge collector','Earn 40 other badges.',counted(()=>[Object.keys(progress.badges).filter(k=>k!=='collector').length,40])]];
 // returns the badges earned just now; quiet ones (earned before badges existed) don't celebrate
 function checkBadges(ctx,quiet){ const got=[];
@@ -84,6 +88,7 @@ function bumpStat(k,n=1){ progress.stats[k]=(progress.stats[k]||0)+n; }
 const BADGE_GROUPS=[['Garden journey',['first','par','chapter','clean','sage','stars50','stars150','shiny','chapters','garden','golden','pure','notake','lightning','critters','harvest','tangled','farfields','moonlit','homeward','twirl','vane','longhaul','allstars']],
   ['Daily and meadow',['daily','streak7','month','sunrises','meadow','brave','fearless','unstoppable','legend','stocked']],
   ['Garden helpers',['flags','snacks','appetite','crumbs','gates','tunnels','rain','bridges','slides','wheee','hedges','pushes','flowerpower','pollinator','knots','uturn']],
+  ['Racing',['raceday','racewin','racewins','rematch']],
   ['Just for fun',['moves','marathon','undos','taps','tickles','nap','owl','dawn','quick','photos','dressup','hatrack','rainbow','patterns','fashion','collector']]];
 // a badge left out of every group still shows, in the last one
 { const seen=new Set(BADGE_GROUPS.flatMap(g=>g[1])); BADGE_GROUPS[BADGE_GROUPS.length-1][1].push(...BADGES.map(b=>b[0]).filter(id=>!seen.has(id))); }

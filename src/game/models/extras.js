@@ -315,6 +315,24 @@ function buildExtra(id){ // frames sit in front of the eyes even when they widen
       const bl=new THREE.Mesh(geo,m(cols[k])); bl.rotation.z=k*Math.PI/2; hHull(bl,.006); spin.add(bl); }
     const hub=dot(.024,m('brass'),.006,[1,1,.75],12,8); hub.position.z=.016; spin.add(hub);
     const pin=dot(.011,m('daisy'),0,[1,1,.6],8,6); pin.position.z=.032; spin.add(pin); }
+  else if(id==='medal'){ // a finisher's medal: a flat ribbon with a pale stripe round the neck where the scarf sits, two ends
+    // crossing into a V under the chin, and a gold medal with a raised star hanging from them, tipped up to be seen from above
+    const R=.335, rg=new THREE.Group(); rg.position.set(0,-.1,-.07); rg.rotation.x=-.93; rg.scale.x=.92; g.add(rg);
+    const flat=(r,tb,mat,z=0,sz=.5)=>{ const t=new THREE.Mesh(new THREE.TorusGeometry(r,tb,6,56),mat); t.scale.z=sz; t.position.z=z; rg.add(t); return t; };
+    flat(R,.044,m('ribbon')); flat(R,.055,lineMat,0,.52); flat(R,.015,m('ribbonStripe'),.016,.6);
+    rg.updateMatrixWorld(true);
+    const md=V(0,-.39,.295), top=md.clone().add(V(0,.09,-.035)), wid=.07, th=.016;
+    for(const s of [-1,1]){ const a=rg.localToWorld(V(Math.cos(-Math.PI/2+s*.42)*R,Math.sin(-Math.PI/2+s*.42)*R,0));
+      const mid=a.clone().lerp(top,.5).add(V(0,0,.02)), cv=new THREE.CatmullRomCurve3([a,mid,top.clone().add(V(-s*.012,0,0))]), side=V(1,0,-s*.5).normalize();
+      g.add(new THREE.Mesh(strip(cv,wid,th,10,side),m('ribbon')),new THREE.Mesh(strip(cv,wid+.016,th+.014,10,side),lineMat));
+      g.add(new THREE.Mesh(strip(cv,wid*.3,th+.006,10,side),m('ribbonStripe'))); }
+    // the medal, facing forward and up
+    const mg=new THREE.Group(); mg.position.copy(md); mg.rotation.x=-.6; g.add(mg);
+    const disc=new THREE.Mesh(new THREE.CylinderGeometry(.088,.088,.026,32),m('crown')); disc.rotation.x=Math.PI/2; mg.add(disc);
+    mg.add(ring(.088,.013,m('brass'),.008,6,40));
+    const star=new THREE.Mesh(new THREE.ExtrudeGeometry(SHAPE_STAR(),{depth:.25,bevelEnabled:true,bevelThickness:.08,bevelSize:.06,bevelSegments:1}),m('chef'));
+    star.scale.set(.056,.056,.056); star.position.z=.011; hull(star,.006); mg.add(star);
+    const loop=ring(.022,.007,m('brass'),.005,6,16); loop.position.set(0,.102,0); loop.rotation.y=Math.PI/2; mg.add(loop); }
   return g; }
 function dressExtra(g){ const slot=g&&g.userData.accSlot; if(!slot) return; slot.clear(); const id=extraOn(); if(id==='none') return;
   const k=id+'|'+tintOf(id); if(!extraProto[k]) extraProto[k]=tinted(id,buildExtra(id)); slot.add(wearAdd(extraProto[k].clone())); }
