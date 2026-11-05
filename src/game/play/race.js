@@ -157,7 +157,7 @@ $('leaveYes').onclick=()=>{ hide('leaveOv'); raceEnd(); hideAll(); popLayer('gam
 const raceSecs=()=>race&&race.t0?(performance.now()-race.t0)/1000:playT;
 const raceClock=s=>{ s=Math.round(s); return s<60?`${s}s`:`${Math.floor(s/60)}m ${String(s%60).padStart(2,'0')}s`; };
 // onWin hands over here in a race: tell the friend, then the result card
-function raceWin(mv,par,st){ const secs=raceSecs(), exBefore=EXTRAS.filter(e=>e[3]()).map(e=>e[0]);
+function raceWin(mv,par,st){ const secs=raceSecs(), exBefore=winExtras;
   if(race){ race.me={done:true,mv,secs,st}; raceSend({t:'won',mv,secs,st}); }
   clearResume(); const first=!race||!race.friend.done||secs<=race.friend.secs; bumpStat('races'); if(first){ bumpStat('raceWins'); stat('race/won'); }
   // what this race earned: badges, a hat or an extra
@@ -165,7 +165,7 @@ function raceWin(mv,par,st){ const secs=raceSecs(), exBefore=EXTRAS.filter(e=>e[
   if(first) gift(art('trophy',26),'Race won',`${progress.stats.raceWins} ${progress.stats.raceWins===1?'race':'races'} won so far`);
   checkBadges({race:true,won:first}).forEach(b=>gift(art(b[1],26),b[2],'New badge'));
   const newHat=HATS.find(h=>h[0]!=='none'&&hatUnlocked(h)&&!winHats.includes(h[0])); if(newHat) gift(hatArt(newHat[0],28),newHat[1],'New hat for your wardrobe');
-  const newEx=EXTRAS.find(e=>e[0]!=='none'&&e[3]()&&!exBefore.includes(e[0])); if(newEx) gift(art('extra-'+newEx[0],28),newEx[1],'New extra for your wardrobe');
+  const newEx=EXTRAS.find(e=>e[0]!=='none'&&e[3]()&&!exBefore.includes(e[0])); if(newEx) gift(extraArt(newEx[0],28),newEx[1],'New extra for your wardrobe');
   save();
   $('winStars').innerHTML=[0,1,2].map(i=>STAR(i<st,i)).join('');
   $('winGifts').innerHTML=gifts.join('')+'<div class="race-tally" id="raceTally"></div>'; raceResult();

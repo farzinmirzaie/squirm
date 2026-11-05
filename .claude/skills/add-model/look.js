@@ -32,7 +32,7 @@ const idle = page => page.waitForFunction(() => !window.__squirm.busy(), null, {
     await new Promise((res, rej) => server.once('error', rej).listen(0, res));
     fs.mkdirSync(outDir, { recursive: true });
     browser = await chromium.launch({ args: ['--use-gl=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
-    const big = 1e6, progress = { v: 2, best: {}, stars: {}, clean: {}, badges: {}, stats: { taps: big, moves: big, burrows: big, naps: big, teatime: 1, days: big, rains: big, restarts: big, outfits: big, allPollen: 1, photos: big, dailies: big, fruit: big, evenings: big, seedsGot: big, turns: big, twistyWins: big, races: big, raceWins: big, rematches: big } };
+    const big = 1e6, progress = { v: 2, best: {}, stars: {}, clean: {}, badges: {}, stats: { taps: big, moves: big, burrows: big, naps: big, teatime: 1, days: big, rains: big, restarts: big, outfits: big, allPollen: 1, photos: big, dailies: big, fruit: big, evenings: big, seedsGot: big, turns: big, twistyWins: big, races: big, raceWins: big, rematches: big, gates: big, swings: big, tunnels: big, crumbles: big } };
     LEVELS.forEach(l => { progress.best[l.name] = l.par; progress.stars[l.name] = 3; progress.clean[l.name] = true; });
     const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, colorScheme: dark ? 'dark' : 'light' });
     // every mechanic's intro already seen, so no card covers a board shot
@@ -48,6 +48,8 @@ const idle = page => page.waitForFunction(() => !window.__squirm.busy(), null, {
       await sp.screenshot({ path: path.join(outDir, `${name}.png`) }); await sp.close(); console.log('  saved', name);
     };
     if (mode === 'wardrobe') {
+      // a chapter hat whose chapter has no patches yet gets a stand-in chapter (patch 1, cleared), so it counts as earned
+      await ev(page, `HATS.forEach(h=>{ while(h[2]>=CHAPTERS.length) CHAPTERS.push({name:'Look',from:0,to:0}); })`);
       await page.click('.tab[data-tab="me"]'); await page.waitForTimeout(1500);
       const box = await (await page.$('#homeWorm')).boundingBox();
       for (const [name, hat, extra, tints, col] of list) {

@@ -576,6 +576,46 @@ function buildHat(id){ const h=new THREE.Group();
       const lens=new THREE.Mesh(new THREE.CircleGeometry(.056,24),m('lensBlue')); lens.position.z=.043; cup.add(lens);
       const gl=new THREE.Mesh(new THREE.TorusGeometry(.036,.008,4,12,1.2),MC.hatGlint||(MC.hatGlint=new THREE.MeshBasicMaterial({color:C.glint})));
       gl.position.z=.046; gl.rotation.z=1.7; cup.add(gl); } }
+  else if(id==='boat'){ // a folded paper boat worn side to side: two hull flaps that meet in points at the ends, a tall sail
+    // triangle between them, a creased floor, and a raindrop resting on one end. The bottom edge arches over the crown
+    const L=.31, B=.2, TH=.007, HT=.15, pts=(top,bot,half)=>{ const s=new THREE.Shape(); s.moveTo(-bot,-.03); s.quadraticCurveTo(0,.03,bot,-.03); s.lineTo(half,top); s.lineTo(-half,top); s.lineTo(-bot,-.03); return s; };
+    // a hull flap: a thin slab bent so it leans out at the top and curves in to meet the other flap at both ends
+    const flap=sd=>{ const g=new THREE.ExtrudeGeometry(pts(HT,B,L),{depth:TH*2,bevelEnabled:false,curveSegments:10}); g.translate(0,0,-TH);
+      const p=g.attributes.position; for(let k=0;k<p.count;k++){ const x=p.getX(k), y=p.getY(k), w=Math.max(0,1-Math.pow(Math.abs(x)/(L+.004),2.4));
+        p.setZ(k,sd*(.045+Math.max(0,y)*.42)*w+p.getZ(k)); }
+      g.computeVertexNormals(); const me=new THREE.Mesh(g,m('boat')); hHull(me,.009); return me; };
+    h.add(flap(1),flap(-1));
+    // a crease along each flap where the paper was folded up
+    const zAt=(x,y,sd)=>sd*(.045+y*.42)*Math.max(0,1-Math.pow(Math.abs(x)/(L+.004),2.4))+sd*(TH+.003);
+    for(const sd of [-1,1]){ const cp=[]; for(let i=0;i<=12;i++){ const y=.095, x=-.26+i/12*.52; cp.push(hV3(x,y,zAt(x,y,sd))); }
+      h.add(hTube(cp,.0045,lineMat,{seg:24,rs:4})); }
+    // the sail: a doubled triangle standing up between the flaps, with a fold down its middle
+    const ss=new THREE.Shape(); ss.moveTo(-.2,.0); ss.lineTo(.2,.0); ss.lineTo(0,.35); ss.lineTo(-.2,.0);
+    const sg=new THREE.ExtrudeGeometry(ss,{depth:.016,bevelEnabled:true,bevelThickness:.004,bevelSize:.004,bevelSegments:1}); sg.translate(0,0,-.008);
+    const sail=new THREE.Mesh(sg,m('boatIn')); hHull(sail,.009); h.add(sail);
+    for(const sd of [-1,1]){ const fold=new THREE.Mesh(new THREE.CylinderGeometry(.004,.004,.24,5),lineMat); fold.position.set(0,.2,sd*.013); h.add(fold); }
+    // the floor inside, so looking down into the boat shows paper, not the crown
+    const fl=new THREE.Shape(); fl.moveTo(-L*.9,0); fl.quadraticCurveTo(0,.17,L*.9,0); fl.quadraticCurveTo(0,-.17,-L*.9,0);
+    const floor=new THREE.Mesh(new THREE.ShapeGeometry(fl,12),m('boatIn')); floor.rotation.x=-Math.PI/2; floor.position.y=.04; h.add(floor);
+    // a raindrop resting on the near end
+    const drop=new THREE.Mesh(hDropGeo(.03),m('brolly')); drop.position.set(.2,.14,.07); drop.rotation.z=-.2; hHull(drop,.006); h.add(drop); }
+  else if(id==='apple'){ // an apple from the old orchard sitting on the head: round with a dimple top and bottom, a curved stalk,
+    // one leaf, a little shine, and a worm hole on the front with a cream rim
+    const R=.17, Y=.135, shape=v=>{ const rho=Math.hypot(v.x,v.z), w=1+.07*v.y;
+      v.set(v.x*w,v.y*.9-(v.y>0?.3:.15)*Math.exp(-Math.pow(rho*3.4,2))*Math.sign(v.y),v.z*w).multiplyScalar(R); v.y+=Y; return v; };
+    const body=new THREE.Mesh(hWarp(new THREE.SphereGeometry(1,36,24),shape),m('apple')); hHull(body,.012); h.add(body);
+    const top=Y+R*.9-R*.3+.004, st=[hV3(0,top-.02,0),hV3(.004,top+.04,0),hV3(.022,top+.09,0),hV3(.05,top+.12,0)];
+    h.add(hTube(st,.017,m('stalk'),{seg:12,rs:7,line:.007,taper:t=>1-.3*t}));
+    const tipb=new THREE.Mesh(sph(.012,8,6),m('stalk')); tipb.position.copy(st[3]); hHull(tipb,.006); h.add(tipb);
+    const leaf=new THREE.Mesh(hLeafGeo(.18,.09,{cup:.025,th:.012,bend:.03,ws:14,hs:5}),m('leaf')); leaf.position.set(.004,top+.035,0); leaf.rotation.set(.35,.7,.32); hHull(leaf,.007); h.add(leaf);
+    const rib=hTube([hV3(.01,0,0),hV3(.09,.003,0),hV3(.16,0,0)].map(v=>v.applyEuler(leaf.rotation).add(leaf.position).add(hV3(0,.007,0))),.0035,m('leafRib'),{seg:6,rs:4}); h.add(rib);
+    // a point on the apple's skin in direction d, and its outward normal
+    const onSkin=d=>{ const v=d.clone().normalize(), p=shape(v.clone()), n=p.clone().sub(hV3(0,Y,0)).normalize(); return [p,n]; };
+    const [hp,hn]=onSkin(hV3(.42,-.12,.9)), hole=new THREE.Group(); hStick(hole,hp.addScaledVector(hn,-.004),hn); h.add(hole);
+    const rim=hTorus(.026,.009,m('appleFlesh'),.005,hTAU,6,20); hole.add(rim);
+    const pit=new THREE.Mesh(new THREE.CircleGeometry(.026,16),m('burrow')); pit.position.z=.001; hole.add(pit);
+    const [gp,gn]=onSkin(hV3(-.55,.55,.6)), gl=new THREE.Mesh(sph(.1,10,8),MC.hatGlint||(MC.hatGlint=new THREE.MeshBasicMaterial({color:C.glint})));
+    gl.scale.set(.32,.18,.06); hStick(gl,gp.addScaledVector(gn,.002),gn); gl.rotation.z+=.7; h.add(gl); }
   return hBake(h); }
 let hatId=store.get('squirm-hat')||'none';
 const chapterCleared=k=>{ const ch=CHAPTERS[k]; if(!ch) return false; for(let i=ch.from;i<=ch.to;i++) if(!isCleared(i)) return false; return true; };
