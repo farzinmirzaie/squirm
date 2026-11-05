@@ -92,9 +92,9 @@ const BADGE_GROUPS=[['Garden journey',['first','par','chapter','clean','sage','s
   ['Just for fun',['moves','marathon','undos','taps','tickles','nap','owl','dawn','quick','photos','dressup','hatrack','rainbow','patterns','fashion','collector']]];
 // a badge left out of every group still shows, in the last one
 { const seen=new Set(BADGE_GROUPS.flatMap(g=>g[1])); BADGE_GROUPS[BADGE_GROUPS.length-1][1].push(...BADGES.map(b=>b[0]).filter(id=>!seen.has(id))); }
-// each group's tint for its earned badges' tiles (the home cards use the same tints)
-const BADGE_TINT=['--tint-leaf','--tint-berry','--tint-honey','--tint-lilac','--tint-honey'];
-const badgeTint=id=>BADGE_TINT[Math.max(0,BADGE_GROUPS.findIndex(g=>g[1].includes(id)))%BADGE_TINT.length];
+// earned badges' tiles take turns through the home cards' tints, so a list of them is colourful
+const BADGE_TINT=['--tint-berry','--tint-leaf','--tint-honey','--tint-lilac'];
+const badgeTint=id=>BADGE_TINT[Math.max(0,BADGES.findIndex(b=>b[0]===id))%BADGE_TINT.length];
 let badgeFilter='all', badgeSel=null; // badgeSel: a badge to scroll to when the tab opens
 const badgeById=id=>BADGES.find(b=>b[0]===id);
 // [have, need] for a counted badge that isn't earned yet and has more than one step, else null
@@ -115,7 +115,10 @@ function renderBadges(){ const n=Object.keys(progress.badges).length;
   $('badgeBar').firstElementChild.style.setProperty('--p',(100*n/BADGES.length).toFixed(1)+'%');
   qa($('badgeFilter'),'button').forEach(b=>{ const on=b.dataset.f===badgeFilter; b.classList.toggle('on',on); b.setAttribute('aria-checked',String(on)); });
   const show=b=>badgeFilter==='all'||(badgeFilter==='earned')===!!progress.badges[b[0]];
-  const html=BADGE_GROUPS.map(([title,ids])=>{ const list=ids.map(badgeById).filter(show); if(!list.length) return '';
+  // Earned is one list, newest first (progress.badges holds when each was earned); the others keep their groups
+  const html=badgeFilter==='earned'?(n?`<section class="b-group" aria-label="Earned"><p class="label">Newest first<span>${n} of ${BADGES.length}</span></p><div class="b-cards">${
+      BADGES.filter(b=>progress.badges[b[0]]).sort((a,b)=>(+progress.badges[b[0]]||0)-(+progress.badges[a[0]]||0)).map(badgeCard).join('')}</div></section>`:'')
+    :BADGE_GROUPS.map(([title,ids])=>{ const list=ids.map(badgeById).filter(show); if(!list.length) return '';
     const got=ids.filter(id=>progress.badges[id]).length;
     return `<section class="b-group" aria-label="${title}"><p class="label">${title}<span>${got} of ${ids.length}</span></p><div class="b-cards">${list.map(badgeCard).join('')}</div></section>`; }).join('');
   const g=$('badgeGrid'); g.innerHTML=html||`<p class="b-empty">${badgeFilter==='earned'?'No badges yet. Finish a patch to earn your first one.':'You found every badge. What a garden!'}</p>`;
