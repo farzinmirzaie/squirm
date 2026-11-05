@@ -413,7 +413,8 @@ says which file holds what, and a search for a function name finds it fast.
 
 Behind it is only the garden: `homeBackdrop` (`play/levels.js`) builds `HOME_DEF` (`L.home`), a clearing on the lawn
 with no bed, border, board or worm (`buildGarden` and `buildCritters` skip the bed pieces and the ladybug), at boot and
-whenever `showHome` runs; a patch is built only when one is played, and the resume slot keeps play in between.
+whenever `showHome` runs (`frame` keeps the worm, board and effects hidden while `L.home`, even if a finishing animation
+turns them back on); a patch is built only when one is played, and the resume slot keeps play in between.
 Five tabs switched by `showTab`; on screens 600px and wider the tab bar floats as a card the width of the content
 column. Dialogs are at most 720px tall (they scroll inside). Above them, stars and hint seeds share one pill (`.home-pills`, two buttons with a
 line between): the seeds half opens `seedInfo`, the stars half `gardenInfo` (`garOv`, layer `gar`, in `ui/finale.js`):

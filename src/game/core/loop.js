@@ -77,6 +77,8 @@ function frame(now){
   updateWorm();
   // behind menus the garden is blurred, so a third of the frames is plenty
   const behind=anyOverlay(); frameN++;
+  // the home backdrop never shows the last patch's worm or board, even if a finishing animation turned them back on
+  if(L&&L.home) wormG.visible=board.visible=fx.visible=false;
   if(!isOpen('genOv') && (!behind || frameN%3===0)){ renderer.render(scene,camera); if(!drawn){ drawn=true; canvas.classList.add('ready'); } }
   if(!behind && !document.hidden) watchSpeed(now-last0);
   last0=now;
