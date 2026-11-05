@@ -21,5 +21,6 @@ window.addEventListener('popstate',()=>{ if(ignorePop>0){ ignorePop--; return; }
   else if(top==='tab') showTab('play',true);
   else if(top==='photo') exitPhoto();
   else if(top==='win'){ hide('winOv'); if(layers.includes('game')) popLayer('game'); showHome(); }
-  else if(top==='game'){ hideAll(); showHome(); } });
+  else if(top==='leave') hide('leaveOv');
+  else if(top==='game'){ if(raceLive()){ pushLayer('game'); raceAskLeave(); return; } hideAll(); showHome(); } });
 

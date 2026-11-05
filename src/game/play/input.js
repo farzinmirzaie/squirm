@@ -80,7 +80,7 @@ $('undoBtn').addEventListener('pointerdown',e=>{ if(e.button>0||!state||state.mo
 ['pointerup','pointerleave','pointercancel'].forEach(ev=>$('undoBtn').addEventListener(ev,endHold));
 $('undoBtn').addEventListener('contextmenu',e=>e.preventDefault());
 $('undoBtn').onclick=()=>{ if(undoHeld){ undoHeld=false; return; } undo(); }; $('hintBtn').onclick=showHint; $('tutorial').onclick=dismissTutorial; 
-$('levelsBtn').onclick=()=>{ hideAll(); popLayer('game'); showHome(); };
+$('levelsBtn').onclick=()=>{ if(raceLive()){ raceAskLeave(); return; } hideAll(); popLayer('game'); showHome(); };
 $('skipBtn').onclick=()=>{ if(mode!=='endless'||animating) return; const e=progress.endless[endlessDiff]; e.streak=0; save(); clearResume();
   toast('Skipped. Your streak starts over.',2000); newEndless(); };
 $('winShare').onclick=async()=>{ try{ if(navigator.share){ await navigator.share({text:shareText}); return; } }catch(e){ return; }

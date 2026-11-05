@@ -368,7 +368,9 @@ says which file holds what, and a search for a function name finds it fast.
   every 40 s), while hints and the stuck nudge always speak through it. Rule explanations and blocked moves
   stay as toasts.
 - **Meeting a mechanic** (`play/intro.js`): `showIntro(list,done)` pages through one illustrated card per mechanic
-  (`renderIntro`, a bobbing `MECH` sticker in a tinted circle, dots, Next / Let's go).
+  (`renderIntro`, dots, Next / Let's go). Its bobbing picture is the real board pieces (`MECH_PIECES`), rendered
+  once per mechanic off-screen into an image by `mechShot` (the `MECH` sticker if that fails); it borrows `makeTile` /
+  `makeItem` and undoes their `flowTiles` / `polItems` entries.
 
 ### Board pieces
 
@@ -519,15 +521,17 @@ from a tab replaces that layer with `game`.
   grows the patch with `generateEndless(diff, RACE_OPTS)` and sends it whole), `mv`, `won`, `again`, `bye`.
   One dialog walks the steps (`raceStep`: start with a difficulty, room with the big code, join, link, grow, count,
   fail). The race is mode `race`: no hints (the button is hidden), no resume slot, no meadow or garden progress, its
-  own clock from "Go" (`raceSecs`, so a restart doesn't reset it), a Friend chip in the HUD (`raceChip`, `raceTick`
-  sends our move count), and `onWin` hands over to `raceWin` / `raceResult` (who got home first, both moves, Rematch
+  own clock from "Go" (`raceSecs`, so a restart doesn't reset it), a race row under the HUD (`#raceBar`: the friend's
+  moves or status and the race clock; `raceBar`, `raceClockTick`; `raceTick` sends our move count), a "Leave the race?"
+  check (`leaveOv`) on Home, back or Esc while the race is still on (`raceLive`, `raceAskLeave`), and `onWin` hands over to `raceWin` / `raceResult` (who got home first, both moves, Rematch
   once both ask, the host grows the next round). Leaving (home, back, closing) sends `bye`; the friend sees "wandered
   off" and keeps
   playing. `stats.raceWins` counts wins. The friend's ghost: on connect each phone sends `look` (`myLook`: colour,
   pattern, hat and extra with their colour options), and every `mv` carries our segments, so `raceGhostBuild` makes a
   see-through worm in their outfit (`makeSeg` plus their hat and extra protos, `tinted` with their option; see-through
   copies of each material cached in `MC` by `ghostMat`) and `raceGhostTick` (from `frame`) eases it after their moves,
-  snapping on tunnels and turnarounds. Gradient patterns show on it; shader patterns (stripes, spots...) don't.
+  snapping on tunnels and turnarounds; its body tapers to a tail tip, and its see-through materials still write depth so
+  its own far side and outline shell stay hidden. Gradient patterns show on it; shader patterns (stripes, spots...) don't.
   `raceGhostDrop` frees it when the friend finishes or leaves and when the race ends.
 - **Layers and the back button** (`ui/layers.js`): a small layer stack mirrored to `window.history` (`pushLayer` /
   `popLayer` / `swapLayers`). `popLayer`'s `history.go` is async, so use `swapLayers` when replacing a layer

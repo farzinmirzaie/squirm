@@ -6,7 +6,7 @@ let pollensHere=new Set();
 function startLevel(def,withHint=true){ nudged=false; playT=0; pollensHere=new Set(); turnsHere=0;
   L=def; state=initState(L); history=[]; queue.length=0; slideSteps.length=0; wasReady=false; hintsUsed=0; undosHere=0; clearHint(); $('wormSayG').hidden=true;
     gSayT=0;
-  buildBoard(); snapWorm(); fitCamera(); updateHUD(true); hudIntro(); lastMoveT=idleT;
+  $('raceBar').hidden=mode!=='race'; buildBoard(); snapWorm(); fitCamera(); updateHUD(true); hudIntro(); lastMoveT=idleT;
   const resumed=tryResume(); if(!resumed) clearResume();
   introAnim();
   if(resumed) toast('Picking up where you left off.',2400);

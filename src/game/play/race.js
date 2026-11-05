@@ -134,9 +134,21 @@ function raceStart(def,round){ if(!race) return; def.name='Race patch'; def.hint
   tick(); }
 // from updateHUD: send our move count when it changes
 function raceTick(){ if(!race||!state) return; const key=state.moves+':'+state.segs.join(';'); if(key!==race.sent){ race.sent=key; raceSend({t:'mv',n:state.moves,s:state.segs}); } }
-function raceChip(){ const f=race?race.friend:{gone:true}, n=f.done?f.mv:(f.n||0);
-  return hudTile('friend',f.done?'done':'',f.gone?'Your friend left the race':f.done?`Your friend finished in ${f.mv} moves`:`Your friend has made ${n} moves`,
-    `${sticker(art('worm',22))}<b>${f.gone&&!f.done?'–':n}</b>`,f.gone&&!f.done?'Left':f.done?'Home!':'Friend'); }
+// the race row under the HUD: how your friend is doing, and the race clock
+function raceBar(){ const f=race?race.friend:{gone:true}, el=$('raceBar'), n=f.done?f.mv:(f.n||0);
+  const t=f.gone&&!f.done?'Your friend left the race':f.done?`Friend got home in ${f.mv}!`:`Friend <small>· ${n} ${n===1?'move':'moves'}</small>`;
+  const html=`<span class="ic" aria-hidden="true">${art('worm',19)}</span><span class="rb-t">${t}</span><span class="rb-clock" id="raceClock">${raceMMSS(raceSecs())}</span>`;
+  el.classList.toggle('done',!!f.done); if(el.innerHTML!==html) el.innerHTML=html; }
+// once a second, from frame
+const raceMMSS=s=>{ s=Math.floor(s); return `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`; };
+let raceClockS=-1;
+function raceClockTick(){ if(!race||!race.t0||(race.me&&race.me.done)) return; const s=Math.floor(raceSecs()); if(s===raceClockS) return; raceClockS=s;
+  const c=$('raceClock'); if(c) c.textContent=raceMMSS(s); }
+// a race still on: connected, the friend still here, and not yet home ourselves
+const raceLive=()=>mode==='race'&&!!race&&race.open&&!race.friend.gone&&!(race.me&&race.me.done)&&!!state&&state.status==='play';
+function raceAskLeave(){ if(isOpen('leaveOv')) return; show('leaveOv'); pushLayer('leave'); }
+$('leaveNo').onclick=()=>window.history.back();
+$('leaveYes').onclick=()=>{ hide('leaveOv'); raceEnd(); hideAll(); popLayer('game'); showHome(); };
 const raceSecs=()=>race&&race.t0?(performance.now()-race.t0)/1000:playT;
 const raceClock=s=>{ s=Math.round(s); return s<60?`${s}s`:`${Math.floor(s/60)}m ${String(s%60).padStart(2,'0')}s`; };
 // onWin hands over here in a race: tell the friend, then the result card
@@ -180,7 +192,7 @@ let ghost=null;
 function myLook(){ const c=WORM_COLS[wormCol], h=HATS.find(x=>x[0]===hatId&&hatUnlocked(x)), e=extraOn();
   return {c:[c[1],c[2],c[4]],p:patOn(),h:h?h[0]:'none',ht:h?tintOf(h[0]):0,e,et:tintOf(e)}; }
 function ghostMat(mt,hex){ const key='ghost'+(hex!=null?'#'+hex:mt.uuid);
-  return MC[key]||(MC[key]=(()=>{ const g=mt.clone(); if(hex!=null) g.color.setHex(hex); g.transparent=true; g.opacity=mt===lineMat?.45:.75; g.depthWrite=false; return g; })()); }
+  return MC[key]||(MC[key]=(()=>{ const g=mt.clone(); if(hex!=null) g.color.setHex(hex); g.transparent=true; g.opacity=mt===lineMat?.5:.72; return g; })()); }
 function ghostLook(root,look){ const skin=look.c[1], cheek=look.c[2];
   root.traverse(o=>{ if(!o.material||Array.isArray(o.material)) return; const mt=o.material;
     o.material=mt===m('head')||mt===MC.gameHead?ghostMat(mt,skin):mt===cheekMat?ghostMat(mt,cheek):ghostMat(mt); o.renderOrder=2; o.castShadow=false; }); }
@@ -189,7 +201,7 @@ function raceGhostBuild(){ raceGhostDrop(); if(!race||!race.look||!race.def) ret
   if(look.h!=='none'&&HATS.some(x=>x[0]===look.h)){ const k=look.h+'|'+look.ht; if(!hatProto[k]) hatProto[k]=tinted(look.h,buildHat(look.h),look.ht); u.hatSlot.add(wearAdd(hatProto[k].clone())); }
   if(look.e!=='none'&&EXTRAS.some(x=>x[0]===look.e)){ const k=look.e+'|'+look.et; if(!extraProto[k]) extraProto[k]=tinted(look.e,buildExtra(look.e),look.et); u.accSlot.add(wearAdd(extraProto[k].clone())); }
   applyExpr(head,'smile'); ghostLook(head,look);
-  const bodyMat=MC.ghostBody||(MC.ghostBody=new THREE.MeshToonMaterial({color:0xffffff,vertexColors:true,gradientMap:gradTex,transparent:true,opacity:.75,depthWrite:false}));
+  const bodyMat=MC.ghostBody||(MC.ghostBody=new THREE.MeshToonMaterial({color:0xffffff,vertexColors:true,gradientMap:gradTex,transparent:true,opacity:.72}));
   const lineG=ghostMat(lineMat);
   ghost={g:gg,head,tubes:[],bodyMat,lineG,base:new THREE.Color(look.c[0]),pat:look.p,cur:[],tgt:[]};
   raceGhostTo(race.def.worm,true); }
@@ -210,9 +222,13 @@ function raceGhostDraw(){ const P=ghost.cur, n=P.length; if(!n) return; ghost.he
   const chains=[]; let cur=[0]; for(let i=1;i<n;i++){ if(P[i].distanceTo(P[i-1])>1.3){ chains.push(cur); cur=[i]; } else cur.push(i); } chains.push(cur);
   let ti=0;
   for(const ch of chains){ if(ch.length<2) continue; const pts=ch.map(i=>i===0?P[i].clone().setY(P[i].y-.08):P[i]);
-    const curve=new THREE.CatmullRomCurve3(pts,false,'centripetal'), S=(pts.length-1)*6+1, sp=[], rr=[], cc=[], gs=[];
-    for(let j=0;j<S;j++){ const u=j/(S-1), g=ch[0]+u*(ch.length-1), i0=Math.min(Math.floor(g),n-1), f=g-i0;
-      sp.push(curve.getPoint(u)); rr.push(segR(i0,n)*(1-f)+segR(Math.min(i0+1,n-1),n)*f); cc.push(colorAt(g,n,ghost.pat,ghost.base)); gs.push(g); }
+    // the tail end tapers to a soft point a little past the last segment, like the real worm's
+    const tail=ch[ch.length-1]===n-1, a=P[n-1], b=P[n-2], dl=Math.hypot(a.x-b.x,a.z-b.z)||1;
+    if(tail) pts.push(new THREE.Vector3(a.x+(a.x-b.x)/dl*TIP_LEN,a.y-segR(n-1,n)*(1-TIP_K),a.z+(a.z-b.z)/dl*TIP_LEN));
+    const curve=new THREE.CatmullRomCurve3(pts,false,'centripetal'), S=(pts.length-1)*6+1, sp=[], rr=[], cc=[], gs=[], last=ch.length-1;
+    for(let j=0;j<S;j++){ const u=j/(S-1), fi=u*(pts.length-1); sp.push(curve.getPoint(u));
+      if(fi<=last){ const g=ch[0]+fi, i0=Math.min(Math.floor(g),n-1), f=g-i0; rr.push(segR(i0,n)*(1-f)+segR(Math.min(i0+1,n-1),n)*f); cc.push(colorAt(g,n,ghost.pat,ghost.base)); gs.push(g); }
+      else { const t=fi-last; rr.push(Math.max(.012,segR(n-1,n)*(1-(1-TIP_K)*t*t)*(1-.9*Math.pow(t,6)))); cc.push(colorAt(n-1,n,ghost.pat,ghost.base)); gs.push(n-1+t*.3); } }
     if(!ghost.tubes[ti]){ const body=new THREE.Mesh(new THREE.BufferGeometry(),ghost.bodyMat), line=new THREE.Mesh(new THREE.BufferGeometry(),ghost.lineG);
       body.renderOrder=line.renderOrder=2; ghost.g.add(body,line); ghost.tubes[ti]={body,line}; }
     const tb=ghost.tubes[ti++]; tb.body.visible=tb.line.visible=true; tubeGeo(tb.body.geometry,sp,rr,cc,0,gs); tubeGeo(tb.line.geometry,sp,rr.map(r=>r+.03),null,0); }

@@ -5,7 +5,6 @@ function statTip(k){ const par=curPar(), len=state.segs.length, fruit=/[+-]/.tes
   if(k==='moves') return `Par is ${par}. Finish in ${par} moves for 3 stars, or within ${Math.ceil(par*1.3)} for 2.`;
   if(k==='flags') return 'Touch every flag before the burrow will let you in.';
   if(k==='keys') return 'Each key opens one gate, then it is used up.';
-  if(k==='friend') return race&&race.friend.done?`Your friend reached the burrow in ${race.friend.mv} moves. You can still finish!`:'Your friend is racing on the same patch. First worm into the burrow wins.';
   if(len===state.exitLen) return 'You are just the right length for the burrow.';
   return `The burrow fits a worm of ${state.exitLen}. You are ${len}.`+(fruit?(len<state.exitLen?' A peach makes you longer.':' A mushroom makes you shorter.'):''); }
 document.querySelector('.hud-stats').addEventListener('keydown',e=>{ if((e.key==='Enter'||e.key===' ')&&e.target.closest('.stat')){ e.preventDefault(); e.target.click(); } });
@@ -31,7 +30,7 @@ function updateHUD(silent){ renderSeeds();
   // colour helpers: the pollen the worm wears, as its shape
   if(colourMarks&&/[PYUpyu]/.test(map)){ const k=state.pollen, n=k?POLL[k].n:'';
     chips.push(hudTile('pollen','',k?`Wearing ${n} pollen`:'No pollen yet',sticker(art(k?'mark'+k:'pollen0',22)),'Pollen',false)); }
-  if(mode==='race'){ chips.push(raceChip()); raceTick(); }
+  if(mode==='race'){ raceBar(); raceTick(); }
   const ok=state.segs.length===state.exitLen;
   chips.push(hudTile('length',ok&&'done',`Length ${state.segs.length}, burrow fits ${state.exitLen}`,
     `${sticker(ICON.worm)}<b>${state.segs.length}</b><span class="to" aria-hidden="true">${ok?'=':'&rarr;'}</span><b>${state.exitLen}</b>`,ok?'Fits!':'Length'));

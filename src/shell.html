@@ -188,6 +188,14 @@ button:focus-visible{outline:3px solid var(--honey);outline-offset:2px}
 .seeds .seed-art{flex:none;align-self:center;width:84px;height:84px;margin:2px auto 0;border-radius:22px;display:grid;place-items:center;background:var(--tint-honey);border:3px solid var(--honey-dark);box-shadow:0 4px 0 var(--honey-dark);--art-halo:none}
 /* race a friend: the invite, reply, connecting and countdown steps share one dialog (race.js sets data-step) */
 .race-ico{background:var(--tint-lilac)}
+/* the race row under the HUD: your friend on the left, the race clock on the right */
+.race-bar{display:flex;align-items:center;gap:8px;align-self:center;max-width:100%;padding:4px 12px 4px 5px;border-radius:999px;background:var(--paper);border:2px solid var(--edge);box-shadow:0 3px 0 var(--edge);font:800 13px/1 var(--fd);color:var(--ink)}
+.race-bar .ic{width:24px;height:24px;background:var(--tint-lilac);border-color:var(--lilac)}
+.race-bar .ic svg{width:19px;height:19px}
+.race-bar .rb-t{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.race-bar .rb-t small{font:800 12px/1 var(--fb);color:var(--ink-soft)}
+.race-bar.done .rb-t{color:var(--honey-dark)}
+.race-bar .rb-clock{margin-left:4px;padding-left:10px;border-left:2px solid var(--edge);font-variant-numeric:tabular-nums;color:var(--ink-soft)}
 body[data-mode="race"] #hintBtn{display:none}
 .race .race-art{flex:none;align-self:center;width:84px;height:84px;margin:2px auto 8px;border-radius:22px;display:grid;place-items:center;background:var(--tint-lilac);border:3px solid var(--lilac);box-shadow:0 4px 0 var(--lilac);--art-halo:none}
 .race .seg{margin:0 0 14px}
@@ -210,7 +218,7 @@ button.seed-pill{cursor:pointer;color:var(--ink);font:800 18px/1 var(--fd)}
 #introBody{display:flex;flex-direction:column;align-items:center;gap:8px;min-height:0;overflow:auto;overscroll-behavior:contain;margin:0 -6px 6px;padding:0 6px}
 #introBody .label{margin:0}
 .intro-art{--tint:var(--tint-leaf);position:relative;width:132px;height:132px;margin:4px 0 6px;border-radius:26px;display:grid;place-items:center;background:var(--tint);border:3px solid var(--edge);box-shadow:0 5px 0 var(--edge)}
-.intro-art .ia{display:grid;place-items:center;width:92px;height:92px;border-radius:26px;background:var(--sticker);border:3px solid var(--sticker-edge);--art-halo:none;animation:bob 2.6s ease-in-out infinite}
+.intro-art .ia{display:grid;place-items:center;width:92px;height:92px;overflow:hidden;border-radius:26px;background:var(--sticker);border:3px solid var(--sticker-edge);--art-halo:none;animation:bob 2.6s ease-in-out infinite}
 .intro-art i{position:absolute;width:12px;height:12px;border-radius:50%;background:var(--sticker);border:2px solid var(--sticker-edge);animation:twinkle 2.6s ease-in-out infinite}
 .intro-art i:nth-of-type(1){top:10px;right:14px}.intro-art i:nth-of-type(2){bottom:18px;left:6px;width:9px;height:9px;animation-delay:1.1s}.intro-art i:nth-of-type(3){top:28px;left:12px;width:7px;height:7px;animation-delay:.5s}
 #introBody h2{margin:0!important}
@@ -698,7 +706,9 @@ nav .enter,.rise{animation:navIn var(--dur-slow) var(--ease-pop) var(--d,0ms) bo
 .gbtn.pop .disc{animation:popin var(--dur) var(--ease-pop)}
 .gbtn.pop{animation:none}
 .nope{animation:nope var(--dur) var(--ease-out)}
-.gen-ico{display:block;margin:0 auto;border-radius:18px;animation:peek 1.6s var(--ease-out) infinite}
+/* growing a patch: a sprout keeps popping up out of a green tile */
+.gen-ico{display:grid;place-items:center;width:84px;height:84px;margin:0 auto 6px;border-radius:22px;background:var(--tint-leaf);border:3px solid var(--leaf-dark);box-shadow:0 4px 0 var(--leaf-dark);--art-halo:none;overflow:hidden}
+.gen-ico [data-art]{transform-origin:50% 92%;animation:sprout 1.6s var(--ease-pop) infinite}
 .pick.swap{animation:popin var(--dur) var(--ease-pop)}
 #winNext{animation:beckon 1.8s ease-in-out 1.4s infinite}
 /* keyframes; animations that must stack on an element's own transform use the individual scale / translate properties */
@@ -723,7 +733,7 @@ nav .enter,.rise{animation:navIn var(--dur-slow) var(--ease-pop) var(--d,0ms) bo
 @keyframes squirm{0%,60%,100%{transform:none}20%{transform:translateY(-4px) rotate(-4deg)}40%{transform:translateY(2px) rotate(3deg)}}
 @keyframes halo{0%{transform:scale(.92);opacity:1}100%{transform:scale(1.22);opacity:0}}
 /* the worm peeks up and looks around while a patch grows */
-@keyframes peek{0%,100%{transform:translateY(0) rotate(0)}25%{transform:translateY(-8px) rotate(-6deg)}50%{transform:translateY(-2px) rotate(0)}75%{transform:translateY(-8px) rotate(6deg)}}
+@keyframes sprout{0%{transform:scale(.25,.05)}30%{transform:scale(1.05,1.12)}45%{transform:scale(.97,.95)}58%,82%{transform:scale(1) rotate(0)}70%{transform:rotate(-5deg)}100%{transform:scale(.25,.05)}}
 
 /* ==== 10. Small screens ==== */
 /* narrow phones with many goals: tighter tiles */
@@ -750,7 +760,7 @@ body.big-text .hud-stats{zoom:.9}
 /* ==== 11. Reduced motion: every animation and transition above stops ==== */
 /* Calm motion (Settings > Comfort) applies the same rules under body.calm: calmCSS in core/boot.js copies this block */
 @media (prefers-reduced-motion: reduce){
-  .dialog,.ov.show:not(.home),.ov.show.out,.ov.out .dialog,.pop,.enter,.rise,.nope,#flash.go,.bubble.say,.intro-art .ia,.intro-art i,#introBody.swap>*,.gen-ico,.pick.swap,#winNext,
+  .dialog,.ov.show:not(.home),.ov.show.out,.ov.out .dialog,.pop,.enter,.rise,.nope,#flash.go,.bubble.say,.intro-art .ia,.intro-art i,#introBody.swap>*,.gen-ico [data-art],.pick.swap,#winNext,
   .tab.on.pop svg,.stat.cheer,.stat.cheer .ic,.stat.lost .mini,.gbtn.pop .disc,.gbtn.hint .disc svg,#hintBtn.busy svg,
   #tutorial .hand,.brand span,.node.cur::after{animation:none}
   .star{animation:none;transform:none}
@@ -777,6 +787,7 @@ body.big-text .hud-stats{zoom:.9}
       <div class="toggles"><button id="muteBtn" class="round" aria-pressed="false" title="Sound (M)"></button></div>
     </div>
     <div class="hud-stats"><span class="stat moves" id="moves" data-tip="moves" role="button" tabindex="0"></span><span class="chips" id="chips" aria-live="polite"></span></div>
+    <div class="race-bar" id="raceBar" aria-live="polite" hidden></div>
   </header>
   <div class="bottom">
     <nav>
@@ -966,6 +977,10 @@ body.big-text .hud-stats{zoom:.9}
     </section>
   </div>
 </div></div>
+<div class="ov" id="leaveOv"><div role="dialog" aria-modal="true" aria-labelledby="leaveTitle" class="dialog card">
+  <h2 id="leaveTitle">Leave the race?</h2><p>Your friend will keep crawling without you, and this race ends for you.</p>
+  <div class="row"><button class="btn primary" id="leaveNo">Keep racing</button><button class="btn" id="leaveYes">Leave</button></div>
+</div></div>
 <div class="ov" id="resetOv"><div role="dialog" aria-modal="true" aria-labelledby="resetTitle" class="dialog card">
   <h2 id="resetTitle">Start over?</h2><p>This clears every star, best score, streak and setting. Your worm will forget everything.</p>
   <div class="row"><button class="btn" id="resetNo">Keep it</button><button class="btn danger" id="resetYes">Reset all</button></div>
@@ -991,7 +1006,7 @@ body.big-text .hud-stats{zoom:.9}
   <button class="btn primary" id="introOk">Got it</button>
 </div></div>
 <div class="ov" id="genOv"><div role="dialog" aria-modal="true" aria-labelledby="genTitle" class="dialog card gen">
-  <img class="gen-ico" src="icons/icon.svg" width="76" height="76" alt="">
+  <span class="gen-ico" aria-hidden="true"><span data-art="sprout" data-size="56"></span></span>
   <h2 id="genTitle">Growing a patch</h2><p id="genText">Planting seeds...</p>
 </div></div>
 <div id="tutorial" aria-hidden="true"><div class="hand"><svg width="64" height="64" viewBox="0 0 24 24" style="fill:var(--sticker);stroke:var(--outline)" stroke-width="1.4" stroke-linejoin="round"><path d="M9 11V5.5a1.5 1.5 0 0 1 3 0V10l.2-1a1.5 1.5 0 0 1 3 .3V11l.2-.6a1.5 1.5 0 0 1 2.8 1V15c0 3.3-2.2 6-5.7 6-2.3 0-3.7-1-4.9-2.7L5 14.6a1.5 1.5 0 0 1 2.3-1.9L9 14.5z"/></svg></div><div class="tip card">Swipe in any direction to crawl</div></div>
