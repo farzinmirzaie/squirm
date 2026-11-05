@@ -248,6 +248,15 @@ button.seed-pill{cursor:pointer;color:var(--ink);font:800 18px/1 var(--fd)}
 .win-stats em{position:absolute;top:-9px;right:-4px;padding:3px 7px;border-radius:999px;background:var(--honey);border:2px solid var(--honey-dark);font:800 11px/1 var(--fb);font-style:normal;color:var(--deep)}
 .win-gifts{flex:0 1 auto;min-height:0;display:flex;flex-direction:column;gap:6px;margin:0 -6px;padding:2px 6px}
 .win-gifts:empty{display:none}
+/* race totals for the session on the race result card: you, the label, your friend; the leader's number in leaf */
+.race-tally{flex:none;display:flex;flex-direction:column;gap:6px;padding:8px 12px 10px;border-radius:16px;background:var(--paper-2);border:2px solid var(--edge)}
+.race-tally[hidden]{display:none}
+.race-tally .rt-head{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;margin:0;font:800 11px/1 var(--fb);color:var(--ink-soft);text-transform:uppercase;letter-spacing:.04em;text-align:center}
+.race-tally .rt-head b{font:800 12px/1 var(--fd);color:var(--ink);text-transform:none;letter-spacing:0}
+.rt-grid{display:grid;grid-template-columns:1fr auto 1fr;row-gap:4px;align-items:center;text-align:center}
+.rt-grid span{font:800 18px/1.1 var(--fd);color:var(--ink);font-variant-numeric:tabular-nums}
+.rt-grid span.lead{color:var(--leaf-dark)}
+.rt-grid b{font:800 12px/1 var(--fb);color:var(--ink-soft)}
 .gift{flex:none;display:flex;align-items:center;gap:10px;padding:6px 10px 6px 6px;border-radius:16px;background:var(--paper-2);border:2px solid var(--edge);text-align:left}
 .gift .gi{flex:none;width:38px;height:38px;border-radius:14px;display:grid;place-items:center;background:var(--sticker);border:2px solid var(--sticker-edge);--art-halo:none}
 .gift b{display:block;font:800 15px/1.15 var(--fd);color:var(--ink)}
@@ -352,7 +361,7 @@ nav{display:flex;justify-content:center;align-items:flex-end;gap:12px}
 /* ==== 6. Home ==== */
 .home{z-index:4;background:linear-gradient(180deg,color-mix(in srgb,var(--sticker) 55%,transparent),color-mix(in srgb,var(--lawn) 25%,transparent));padding:calc(10px + env(safe-area-inset-top,0px)) 0 0;overflow:hidden}
 .home.show{display:flex;flex-direction:column;align-items:stretch;place-items:stretch}
-.home-top{flex:none;display:flex;justify-content:space-between;align-items:center;gap:8px;padding:0 max(14px,env(safe-area-inset-right,0px)) 0 max(14px,env(safe-area-inset-left,0px));width:min(100%,560px);margin:0 auto}
+.home-top{flex:none;display:flex;justify-content:space-between;align-items:center;gap:8px;padding:0 max(14px,env(safe-area-inset-right,0px)) 0 max(14px,env(safe-area-inset-left,0px));width:min(100%,468px);margin:0 auto}
 .home-top-tools{display:flex;gap:8px}
 .star-pill{display:inline-flex;align-items:center;gap:6px;height:40px;padding:0 14px 0 10px;border-radius:999px;background:var(--paper);border:3px solid var(--edge);box-shadow:0 3px 0 var(--edge);font:800 18px/1 var(--fd)}
 .home-pills{display:inline-flex;gap:8px}
@@ -389,11 +398,11 @@ nav{display:flex;justify-content:center;align-items:flex-end;gap:12px}
 .tint{width:38px;height:38px;padding:0;display:grid;place-items:center;border:3px solid transparent;border-radius:50%;background:none;cursor:pointer;transition:border-color var(--dur-fast) var(--ease-out)}
 .tint.on{border-color:var(--leaf)}
 /* -- Play: logo, the big play button, the daily patch and its week -- */
-.home-inner{width:min(100%,420px);margin:auto;align-items:stretch;display:flex;flex-direction:column;gap:14px}
+.home-inner{width:min(100%,440px);margin:auto;align-items:stretch;display:flex;flex-direction:column;gap:14px}
 .logo{display:flex;flex-direction:column;align-items:center;text-align:center;margin:6px 0 2px}
 #homeWorm:focus-visible{outline:3px solid var(--honey);outline-offset:2px;border-radius:26px}
 #homeWorm{position:static;display:block;margin:-30px auto -8px;width:220px;height:200px;cursor:pointer;-webkit-touch-callout:none;user-select:none;touch-action:none}
-.brand{display:inline-block;margin:0;padding:0 0 4px;letter-spacing:.02em;white-space:normal;overflow:visible;font:800 52px/1.1 var(--fd);color:var(--deep);
+.brand{display:inline-block;margin:0;padding:0 0 4px;letter-spacing:.02em;white-space:normal;overflow:visible;font:800 52px/1.1 var(--fd);color:var(--outline);
   text-shadow:0 3px 0 var(--sticker),3px 0 0 var(--sticker),-3px 0 0 var(--sticker),0 -3px 0 var(--sticker),2px 2px 0 var(--sticker),-2px 2px 0 var(--sticker),2px -2px 0 var(--sticker),-2px -2px 0 var(--sticker),0 7px 0 var(--shadow)}
 .brand span{display:inline-block;animation:squirm 2.4s ease-in-out infinite}
 .brand span:nth-child(2){animation-delay:.12s}.brand span:nth-child(3){animation-delay:.24s}.brand span:nth-child(4){animation-delay:.36s}.brand span:nth-child(5){animation-delay:.48s}.brand span:nth-child(6){animation-delay:.6s}
@@ -411,8 +420,7 @@ nav{display:flex;justify-content:center;align-items:flex-end;gap:12px}
 .big small{font-weight:700;color:var(--ink-soft);font-size:14px}
 .big .go{flex:none;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:var(--leaf);border:3px solid var(--leaf-dark);color:var(--on-accent);font:800 26px/1 var(--fd);padding-bottom:3px;box-shadow:0 3px 0 var(--leaf-dark)}
 .mode-ico{flex:none;width:52px;height:52px;border-radius:18px;display:grid;place-items:center;border:2px solid var(--edge)}
-.daily-ico{background:var(--tint-berry)}
-#dailyBtn.done .daily-ico{background:var(--tint-leaf)}
+.daily-ico{background:var(--tint-berry)} /* the same in both states: Done shows in the text and the week dots */
 .week{display:flex;gap:6px;margin-top:3px}
 /* Play: the worm's speech bubble, chapter pips on Continue, Daily and Meadow side by side, the closest badge */
 .logo{position:relative}

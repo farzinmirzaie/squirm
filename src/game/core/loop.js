@@ -25,9 +25,9 @@ function frame(now){
           for(let v=0;v<pa.count;v++) pa.array[v*3+2]=wave(b[v*3]); pa.needsUpdate=true; } }
       if(u.rim){ const s=u.ready?1+Math.sin(idleT*5)*.07:1; u.rim.scale.set(s,s,.8*s); }
     }
-    flyers.children.forEach((b,i)=>{ const u=b.userData, t=idleT*.35+u.ph;
-      const x=u.c[0]+Math.cos(t)*u.R, z=u.c[1]+Math.sin(t*1.3)*u.R*.7, y=1.3+Math.sin(t*3)*.25;
-      const nx=u.c[0]+Math.cos(t+.05)*u.R, nz=u.c[1]+Math.sin((t+.05)*1.3)*u.R*.7;
+    flyers.children.forEach((b,i)=>{ const u=b.userData, t=idleT*u.sp+u.ph, dt2=Math.sign(u.sp)*.05;
+      const x=u.c[0]+Math.cos(t)*u.R, z=u.c[1]+Math.sin(t*u.fz)*u.R*.7, y=u.y0+Math.sin(t*3)*.25;
+      const nx=u.c[0]+Math.cos(t+dt2)*u.R, nz=u.c[1]+Math.sin((t+dt2)*u.fz)*u.R*.7;
       b.position.set(x,y,z); b.rotation.y=Math.atan2(nx-x,nz-z);
       const sh=b.userData.shadow; if(sh){ const inBed=Math.abs(x-bedBox.cx)<bedBox.hw&&Math.abs(z-bedBox.cz)<bedBox.hd;
         const gx=Math.round(x+(state.w-1)/2), gz=Math.round(z+(state.h-1)/2), onTile=tileAt(state,gx,gz)!==' '; sh.position.set(x,onTile?.02:inBed?-.2:-.33,z);
@@ -39,6 +39,8 @@ function frame(now){
     const want=occupied(u.at[0],u.at[1])?1.12:.76; u.bobBase+=(want-u.bobBase)*(reduceMotion?1:1-Math.exp(-dt/1000*6));
       if(reduceMotion) u.cloud.position.y=u.bobBase; }
   if(state&&state.status==='play'&&!anyOverlay()&&!document.hidden) playT+=dt/1000;
+  // the idle clock (yawns, naps, the stuck nudge) only runs while the patch is on screen, so waiting on home earns nothing
+  else if(state) lastMoveT=idleT;
   if(!reduceMotion && state) for(let y=0;y<state.h;y++) for(let x=0;x<state.w;x++){ const c=cells[y]&&cells[y][x]; if(!c||c.ch!=='x'||!c.tile) continue;
     const on=state.status==='play'&&occupied(x,y); c.tile.rotation.z=on?Math.sin(idleT*31+x*3+y)*.012:0; c.tile.rotation.x=on?Math.cos(idleT*27+x+y*2)*.012:0; }
   if(!nudged && state && state.status==='play' && state.moves>0 && idleT-lastMoveT>45 && !anyOverlay() && !document.body.classList.contains('at-home')){

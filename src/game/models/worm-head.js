@@ -61,22 +61,13 @@ function makeSeg(i,parent){
     const oIn=new THREE.Mesh(fsph(.024,12,8),m('wormMouth')); oIn.scale.z=.3; o.add(oIn);
     const flat=new THREE.Mesh(faceGeo('flat',()=>new THREE.CylinderGeometry(.013,.013,.075,8,1,true)),dark); flat.rotation.z=Math.PI/2; flat.position.set(0,-.06,.33);
       for(const k of [-1,1]){ const c=new THREE.Mesh(fsph(.013,8,6),dark); c.position.y=k*.0375; flat.add(c); } face.add(flat); F.mouths.flat=flat;
-    // the cheeky tongue: a little rounded tongue with an outline and a groove, poking out from under the flat mouth
-    // (its top tucked behind the mouth line), so it reads as part of the mouth rather than a third blush dot
-    const tongue=new THREE.Group(); tongue.position.set(.016,-.088,Math.sqrt(HEAD_R*HEAD_R-.016*.016-.088*.088)-.012);
-      tongue.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,1),tongue.position.clone().normalize()); tongue.visible=false;
-    const tGeo=faceGeo('tongue',()=>new THREE.SphereGeometry(.03,16,10,0,Math.PI*2,Math.PI/2,Math.PI/2));
-    const tb=new THREE.Mesh(tGeo,m('wormTongue')); tb.rotation.x=-Math.PI/2; tb.scale.set(1,.5,1.35); tongue.add(tb);
-    const tl=new THREE.Mesh(tGeo,dark); tl.rotation.x=-Math.PI/2; tl.scale.set(1.28,.5,1.42); tl.position.set(0,.002,-.0015); tongue.add(tl);
-    const tg2=new THREE.Mesh(faceGeo('tongueGroove',()=>new THREE.CylinderGeometry(.004,.004,.022,6)),dark); tg2.position.set(0,-.016,.012); tongue.add(tg2);
-      face.add(tongue); F.tongue=tongue;
     const hat=new THREE.Group(); hat.position.set(0,.27,-.02); hat.rotation.x=-.18; head.add(hat); g.userData.hatSlot=hat; dressHat(g);
     const acc=new THREE.Group(); head.add(acc); g.userData.accSlot=acc; dressExtra(g);
     g.userData.expr='smile'; applyExpr(g,'smile');
   }
   (parent||wormG).add(g); return g;
 }
-const EXPRS=['grin','joy','wink','wow','sleepy','cheeky'];
+const EXPRS=['grin','joy','wink','wow','sleepy'];
 let reactT=0, zT=0;
 const zTex=canvasTex(64,64,c=>{ c.font='800 48px "Baloo 2", sans-serif'; c.textAlign='center'; c.textBaseline='middle';
   c.lineWidth=8; c.strokeStyle='#FFF8EA'; c.strokeText('z',32,34); c.fillStyle='#5B4436'; c.fillText('z',32,34); });
@@ -86,13 +77,12 @@ function snore(h){ const s=new THREE.Sprite(new THREE.SpriteMaterial({map:zTex,t
     tween(1800,(e,k)=>{ s.position.y+=.004; s.position.x=x0+Math.sin(k*5)*.08; s.scale.setScalar(.12+k*.18); s.material.opacity=1-k; },kill(s)); }
 function react(name,ms=900){ const h=segMeshes[0]; if(!h||!h.userData.face) return; applyExpr(h,name); reactT=ms/1000; }
 function applyExpr(g,name){ const F=g.userData.face; if(!F) return; g.userData.expr=name;
-  const open=[true,true], eyeY=[1,1]; let mouth='smile', tongue=false, pupilY=0;
+  const open=[true,true], eyeY=[1,1]; let mouth='smile', pupilY=0;
   if(name==='grin') mouth='grin';
   if(name==='joy'){ open[0]=open[1]=false; mouth='grin'; }
   if(name==='wink'){ open[0]=false; }
   if(name==='wow'){ mouth='o'; }
   if(name==='sleepy'){ open[0]=open[1]=false; mouth='flat'; }
-  if(name==='cheeky'){ tongue=true; mouth='flat'; }
   if(name==='oops'){ open[0]=open[1]=false; mouth='o'; }
   if(name==='yawn'){ open[0]=open[1]=false; mouth='o'; }
   F.mouths.o.scale.set(1,1,1);
@@ -103,7 +93,6 @@ function applyExpr(g,name){ const F=g.userData.face; if(!F) return; g.userData.e
   if(F.squints) F.squints.forEach(q=>q.visible=squeeze);
   F.pupils.forEach(p=>p.position.y=pupilY);
   for(const k in F.mouths) F.mouths[k].visible=(k===mouth);
-  F.tongue.visible=tongue;
 }
 // frees an old worm segment: the head's face parts are its own, but its hat and extra share geometry with
 // their cached protos, so they come off first

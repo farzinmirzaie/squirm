@@ -347,7 +347,9 @@ says which file holds what, and a search for a function name finds it fast.
   that comes out of a tunnel and goes straight back into the same one is drawn as a hairpin, two strands
   side by side, instead of one tube folding back on itself.
 - **Head** (`models/worm-head.js`, `play/worm-life.js`): expressions (`applyExpr`), blinking, an idle look-at-camera cycle, reactions, idle acts between
-  looks (`startAct`: watch a butterfly, stretch, wiggle), a yawn, and asleep after 25 s.
+  looks (`startAct`: watch a butterfly, stretch, wiggle), a yawn, and asleep after 25 s. The idle clock (`lastMoveT`) only
+  runs while the patch is on screen (`frame` holds it while any overlay, home included, is up), so naps and yawns never
+  happen, or count, behind a menu.
 - **Moves and hints** (`play/moves.js`, `play/hints.js`): `tryMove` queues swipes and animates `step` events; `history` is the undo stack.
   There's no Restart button: a tap on Undo takes back one move, holding it fills a ring (`--hold` on
   `#undoBtn`, `HOLD_WAIT` + `HOLD_MS`) and then calls `restart()`; R still restarts. The hint solver
@@ -403,7 +405,8 @@ says which file holds what, and a search for a function name finds it fast.
   and fireflies hover in a ring just outside the bed. Critters use the same merge (`merged`).
 - **Garden visitors** (`models/visitors.js`): `buildCritters` adds a ladybug on the wooden border and, above the lowest quality,
   a bird on the lawn in front of the bed (placed once the camera is fitted). `birdSpot` only picks spots
-  clear of `lawnObstacles` / `treeObstacles` and reachable in a straight line. It bobs when the ambient
+  clear of `lawnObstacles` / `treeObstacles` and of the bed with its border (`bedBox`), reachable in a straight line,
+  so a hop never crosses the board. The two butterflies each fly their own loop (speed, shape, direction, height). It bobs when the ambient
   birdsong plays. Animated in `updateCritters`.
 
 ### Home (`homeOv`; `home/`, the map in `play/levels.js`)
@@ -529,9 +532,12 @@ from a tab replaces that layer with `game`.
   own clock from "Go" (`raceSecs`, so a restart doesn't reset it), a race row under the HUD (`#raceBar`: the friend's
   moves or status and the race clock; `raceBar`, `raceClockTick`; `raceTick` sends our move count), a "Leave the race?"
   check (`leaveOv`) on Home, back or Esc while the race is still on (`raceLive`, `raceAskLeave`), and `onWin` hands over to `raceWin` / `raceResult` (who got home first, both moves, Rematch
-  once both ask, the host grows the next round). Leaving (home, back, closing) sends `bye`; the friend sees "wandered
+  once both ask, the host grows the next round, and the session's totals for both sides: `raceSettle` counts a round
+  once both are home or the friend left, into `race.tally` (rounds, wins, stars, total time), shown by `raceTallyHTML` in
+  `#raceTally`; `won` carries our stars). A race win checks badges and lists new badges, hats and extras like `onWin`. Leaving (home, back, closing) sends `bye`; the friend sees "wandered
   off" and keeps
-  playing. `stats.raceWins` counts wins. The friend's ghost: on connect each phone sends `look` (`myLook`: colour,
+  playing. `stats.races` counts finished rounds, `stats.raceWins` wins and `stats.rematches` rematch rounds (the racing
+  badges, the `racer` helmet and the `medal` extra). The friend's ghost: on connect each phone sends `look` (`myLook`: colour,
   pattern, hat and extra with their colour options), and every `mv` carries our segments, so `raceGhostBuild` makes a
   see-through worm in their outfit (`makeSeg` plus their hat and extra protos, `tinted` with their option; see-through
   copies of each material cached in `MC` by `ghostMat`) and `raceGhostTick` (from `frame`) eases it after their moves,

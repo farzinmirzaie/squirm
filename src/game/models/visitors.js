@@ -33,7 +33,9 @@ function buildCritters(r,cx,cz,bw,bd){ critters=[];
   const bird=birdie(); garden.add(bird); const c={kind:'bird',o:bird,cx,cz,hw:bw/2,hd:bd/2,mode:'eat',t:0,wait:0,to:null,peck:0,look:0,lookTo:0};
   critters.push(c); bird.visible=false; }
 const BIRD_R=.28, BUG_Y=-.052; // the wooden border's top is at y -.07; the bug's shell reaches .011 below its origin (x1.5)
-const clearAt=(x,z)=>![...lawnObstacles,...treeObstacles].some(o=>Math.hypot(x-o.x,z-o.z)<o.r+BIRD_R);
+// clear of the lawn pieces, the trees and the bed itself with its wooden border (so a hop never crosses the board)
+const clearAt=(x,z)=>!(bedBox&&Math.abs(x-bedBox.cx)<bedBox.hw+.25+BIRD_R&&Math.abs(z-bedBox.cz)<bedBox.hd+.25+BIRD_R)
+  &&![...lawnObstacles,...treeObstacles].some(o=>Math.hypot(x-o.x,z-o.z)<o.r+BIRD_R);
 function clearPath(a,b){ const n=Math.ceil(a.distanceTo(b)/.12); for(let i=1;i<=n;i++){ const t=i/n; if(!clearAt(a.x+(b.x-a.x)*t,a.z+(b.z-a.z)*t)) return false;
   } return true; }
 // a free spot on the lawn between the bed and the camera that the bird can reach without going through anything

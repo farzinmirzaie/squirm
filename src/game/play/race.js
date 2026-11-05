@@ -103,7 +103,7 @@ function raceWire(dc){ race.dc=dc;
     if(m.t==='start'&&!race.host&&m.def&&Array.isArray(m.def.map)) raceStart(m.def,m.round);
     else if(m.t==='look'&&m.look&&Array.isArray(m.look.c)){ race.look=m.look; if(mode==='race'&&!ghost) raceGhostBuild(); }
     else if(m.t==='mv'){ race.friend.n=m.n|0; if(Array.isArray(m.s)) race.friend.segs=m.s; if(mode==='race'){ raceGhostTo(m.s); updateHUD(true); } }
-    else if(m.t==='won'){ race.friend.done=true; race.friend.mv=m.mv|0; race.friend.secs=+m.secs||0;
+    else if(m.t==='won'){ race.friend.done=true; race.friend.mv=m.mv|0; race.friend.secs=+m.secs||0; race.friend.st=Math.max(0,Math.min(3,m.st|0));
       if(mode==='race'&&!race.me.done){ toast(`Your friend reached the burrow in ${race.friend.mv} moves!`,2600); sfx('flag'); updateHUD(true); }
       setTimeout(()=>{ if(race&&race.friend.done) raceGhostDrop(); },700);
       if(isOpen('winOv')&&mode==='race') raceResult(); }
@@ -126,6 +126,7 @@ async function raceGrow(){ if(!race||!race.host||race.growing) return; race.grow
   if(!race){ return; } race.growing=false; race.round++; raceSend({t:'start',def,round:race.round}); raceStart(def,race.round); }
 function raceStart(def,round){ if(!race) return; def.name='Race patch'; def.hint=''; race.def=def; race.round=round||race.round;
   race.friend={n:0,gone:race.friend.gone}; race.me={done:false}; race.want={}; race.sent=-1;
+  if(race.round>1){ bumpStat('rematches'); checkBadges({race:true}); save(); }
   if(isOpen('winOv')){ hide('winOv'); popLayer('win'); } raceDialog(); raceStep('count');
   let n=3; const tick=()=>{ if(!race) return; if(n>0){ $('raceCount').textContent=n; sfx('tap'); n--; race.countT=setTimeout(tick,800); return; }
     $('raceCount').textContent='Go!'; sfx('ready');
@@ -157,13 +158,32 @@ $('leaveYes').onclick=()=>{ hide('leaveOv'); raceEnd(); hideAll(); popLayer('gam
 const raceSecs=()=>race&&race.t0?(performance.now()-race.t0)/1000:playT;
 const raceClock=s=>{ s=Math.round(s); return s<60?`${s}s`:`${Math.floor(s/60)}m ${String(s%60).padStart(2,'0')}s`; };
 // onWin hands over here in a race: tell the friend, then the result card
-function raceWin(mv,par,st){ const secs=raceSecs(); if(race){ race.me={done:true,mv,secs}; raceSend({t:'won',mv,secs}); }
-  clearResume(); const first=!race||!race.friend.done||secs<=race.friend.secs; if(first){ bumpStat('raceWins'); stat('race/won'); } save();
-  $('winStars').innerHTML=[0,1,2].map(i=>STAR(i<st,i)).join(''); raceResult();
-  $('winGifts').innerHTML=first?`<div class="gift hot"><span class="gi" aria-hidden="true">${art('trophy',26)}</span><span><b>Race won</b><small>${progress.stats.raceWins} ${progress.stats.raceWins===1?'race':'races'} won so far</small></span></div>`:'';
+function raceWin(mv,par,st){ const secs=raceSecs(), exBefore=EXTRAS.filter(e=>e[3]()).map(e=>e[0]);
+  if(race){ race.me={done:true,mv,secs,st}; raceSend({t:'won',mv,secs,st}); }
+  clearResume(); const first=!race||!race.friend.done||secs<=race.friend.secs; bumpStat('races'); if(first){ bumpStat('raceWins'); stat('race/won'); }
+  // what this race earned: badges, a hat or an extra
+  const gifts=[], gift=(ico,t,sub)=>gifts.push(`<div class="gift hot"><span class="gi" aria-hidden="true">${ico}</span><span><b>${t}</b><small>${sub}</small></span></div>`);
+  if(first) gift(art('trophy',26),'Race won',`${progress.stats.raceWins} ${progress.stats.raceWins===1?'race':'races'} won so far`);
+  checkBadges({race:true,won:first}).forEach(b=>gift(art(b[1],26),b[2],'New badge'));
+  const newHat=HATS.find(h=>h[0]!=='none'&&hatUnlocked(h)&&!winHats.includes(h[0])); if(newHat) gift(hatArt(newHat[0],28),newHat[1],'New hat for your wardrobe');
+  const newEx=EXTRAS.find(e=>e[0]!=='none'&&e[3]()&&!exBefore.includes(e[0])); if(newEx) gift(art('extra-'+newEx[0],28),newEx[1],'New extra for your wardrobe');
+  save();
+  $('winStars').innerHTML=[0,1,2].map(i=>STAR(i<st,i)).join('');
+  $('winGifts').innerHTML=gifts.join('')+'<div class="race-tally" id="raceTally"></div>'; raceResult();
   $('winReplay').hidden=true; $('winShare').hidden=true; photoInfo={title:'A race patch',st};
-  petals(); show('winOv'); pushLayer('win'); stagger([$('winStats'),...qa($('winGifts'),'.gift'),$('winNext'),document.querySelector('.win-acts')],'rise',380,70,8); }
+  petals(); show('winOv'); pushLayer('win'); stagger([$('winStats'),...qa($('winGifts'),'.gift,.race-tally'),$('winNext'),document.querySelector('.win-acts')],'rise',380,70,8); }
+// the session's totals, both sides: a round counts once both worms are home (or the friend left), and only once
+function raceSettle(){ if(!race||!race.me||!race.me.done||race.settled===race.round) return; const me=race.me, f=race.friend;
+  if(!f.done&&!f.gone) return; race.settled=race.round;
+  const T=race.tally||(race.tally={rounds:0,me:{wins:0,stars:0,secs:0},fr:{wins:0,stars:0,secs:0}}); T.rounds++;
+  T.me.stars+=me.st||0; T.me.secs+=me.secs||0;
+  if(f.done){ T.fr.stars+=f.st||0; T.fr.secs+=f.secs||0; if(me.secs<=f.secs) T.me.wins++; else T.fr.wins++; } else T.me.wins++; }
+function raceTallyHTML(){ const T=race&&race.tally; if(!T) return '';
+  const row=(k,a,b,fmt=x=>x)=>`<span class="${a>b?'lead':''}">${fmt(a)}</span><b>${k}</b><span class="${b>a?'lead':''}">${fmt(b)}</span>`;
+  return `<p class="rt-head"><span>You</span><b>${T.rounds} ${T.rounds===1?'round':'rounds'} so far</b><span>Friend</span></p>`
+    +`<div class="rt-grid">${row('Wins',T.me.wins,T.fr.wins)}${row('Stars',T.me.stars,T.fr.stars)}${row('Total time',-T.me.secs,-T.fr.secs,x=>raceClock(-x))}</div>`; }
 function raceResult(){ const me=race&&race.me||{}, f=race?race.friend:{gone:true}, want=race?race.want:{};
+  raceSettle(); const tl=$('raceTally'); if(tl){ tl.innerHTML=raceTallyHTML(); tl.hidden=!tl.innerHTML; }
   const won=!f.done||me.secs<=f.secs;
   $('winTitle').textContent=won?'You won the race!':'Your friend got there first';
   $('winSub').textContent=f.done?`Your friend took ${f.mv} ${f.mv===1?'move':'moves'} in ${raceClock(f.secs)}.`:f.gone?'Your friend left the race.':'Your friend is still crawling…';

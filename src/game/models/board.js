@@ -253,6 +253,12 @@ function makeItem(x,y,ch){
       drops.add(d); } }
   else if(ch==='E'){ // the burrow: a real hole in the tile (see makeTile) ringed by a heap of dug-up earth
     const rim=mk(lumpyTorus(.335,.09,x*2+y*3,.7),toon(C.mound),g,[0,.05,0],.018); rim.rotation.x=-Math.PI/2; rim.scale.z=.8; rim.receiveShadow=true;
+    // earth under the heap: a flat ring over the turf round the hole and a short collar down to the shaft, so no grass
+    // shows between the heap and the hole
+    const em=MC.burrowEarth||(MC.burrowEarth=new THREE.MeshToonMaterial({color:C.mound,gradientMap:gradTex,side:THREE.DoubleSide}));
+    const ring=new THREE.Mesh(GC.burrowRing||(GC.burrowRing=new THREE.RingGeometry(BURROW_R-.004,.38,32)),em); ring.rotation.x=-Math.PI/2; ring.position.y=.006;
+    const collar=new THREE.Mesh(GC.burrowCollar||(GC.burrowCollar=new THREE.CylinderGeometry(BURROW_R-.002,BURROW_R-.002,.13,28,1,true)),em);
+    collar.position.y=-.06; ring.receiveShadow=collar.receiveShadow=true; g.add(ring,collar);
     for(let i=0;i<4;i++){ const a=i*1.55+x+y*2.3, c=new THREE.Mesh(sph(.04,10,8),m('tunnelClod')); c.position.set(Math.cos(a)*.44,.025,Math.sin(a)*.44);
       c.scale.set(1,.6,.8); c.rotation.y=a; c.castShadow=true; g.add(c); }
     const sign=new THREE.Group(); sign.position.set(.3,0,-.34); sign.scale.setScalar(1.55); g.add(sign); sign.userData.faceCam=true;

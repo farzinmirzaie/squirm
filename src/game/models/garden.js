@@ -234,7 +234,8 @@ function buildGarden(){ swayers=[]; lawnObstacles=[];
       for(const [geo,x,y,z,sx,sz] of [[fore,.08,0,.03,1,1.15],[hind,.06,-.004,-.05,1,1]]){ const w=new THREE.Mesh(geo,wm); w.position.set(sd*x,y,z);
         w.scale.set(sx,sz,1); w.rotation.x=-Math.PI/2; piv.add(w);
         const o=new THREE.Mesh(geo,flatLineMat); o.scale.setScalar(1.2); w.add(o); } }
-    b.userData.ph=r()*10; b.userData.c=[cx,cz]; b.userData.R=R*.8+.5; flyers.add(b);
+    // each flies its own loop (speed, shape, direction, height), so the two never share a path
+    Object.assign(b.userData,{ph:i*Math.PI+r()*2,c:[cx,cz],R:(R*.8+.5)*(i?.72:1),sp:i?-.27:.35,fz:i?.8:1.3,y0:i?1.55:1.25}); flyers.add(b);
     const sh=new THREE.Mesh(new THREE.PlaneGeometry(.32,.32),new THREE.MeshBasicMaterial({map:blobTex,transparent:true,depthWrite:false}));
       sh.rotation.x=-Math.PI/2; scene.add(sh); flyShadows.push(sh); b.userData.shadow=sh; }
   buildCritters(r,cx,cz,bw,bd);
