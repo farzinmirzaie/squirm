@@ -11,7 +11,9 @@ function enterGame(){ const top=layers[layers.length-1];
   if(layers.includes('game')){ popLayer(layers[layers.indexOf('game')+1]); return; }
   if(top==='tab'){ layers[layers.length-1]='game'; try{ window.history.replaceState({squirm:layers.length},''); }catch(e){} return; }
   pushLayer('game'); }
-window.addEventListener('popstate',()=>{ if(ignorePop>0){ ignorePop--; return; } const top=layers.pop();
+window.addEventListener('popstate',()=>{ if(ignorePop>0){ ignorePop--; return; } layerBack(layers.pop()); });
+// what Back does for the layer that was on top (already taken off the stack)
+function layerBack(top){
   if(top==='intro') closeIntro(true);
   else if(top==='reset') hide('resetOv');
   else if(top==='seeds') hide('seedOv');
@@ -23,5 +25,5 @@ window.addEventListener('popstate',()=>{ if(ignorePop>0){ ignorePop--; return; }
   else if(top==='photo') exitPhoto();
   else if(top==='win'){ hide('winOv'); if(layers.includes('game')) popLayer('game'); showHome(); }
   else if(top==='leave') hide('leaveOv');
-  else if(top==='game'){ if(raceLive()){ pushLayer('game'); raceAskLeave(); return; } hideAll(); showHome(); } });
+  else if(top==='game'){ if(raceLive()){ pushLayer('game'); raceAskLeave(); return; } hideAll(); showHome(); } }
 

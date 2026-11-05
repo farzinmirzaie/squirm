@@ -411,7 +411,8 @@ says which file holds what, and a search for a function name finds it fast.
 
 ### Home (`homeOv`; `home/`, the map in `play/levels.js`)
 
-Five tabs switched by `showTab`. Above them, stars and hint seeds share one pill (`.home-pills`, two buttons with a
+Five tabs switched by `showTab`; on screens 600px and wider the tab bar floats as a card the width of the content
+column. Dialogs are at most 720px tall (they scroll inside). Above them, stars and hint seeds share one pill (`.home-pills`, two buttons with a
 line between): the seeds half opens `seedInfo`, the stars half `gardenInfo` (`garOv`, layer `gar`, in `ui/finale.js`):
 one grid of tiles: the totals (stars, patches, badges and hats, each out of the most there are), then every counter in
 `GAR_STATS`. Add a row there when you add a new counter. Leaving Play pushes a `tab` layer, so back returns to Play; opening a patch
@@ -509,8 +510,9 @@ from a tab replaces that layer with `game`.
 - **Settings and backups** (`ui/settings.js`): the home gear opens `setOv`, one scrolling page (`#setScroll`) of cards with
   sticker headings (`renderSettings`): Sound (music, volume, effects, vibration), Look (theme
   with swatches; Graphics: Auto lets `watchSpeed` adapt, Saver pins the lowest quality, Sharp the highest;
-  `squirm-gfx`, device-specific), Comfort, Reminders, Back up your garden (save code), What's new (every
-  entry folded into a `<details>`) and About (the anonymous stats switch, the build id). A save code is `SQUIRM1:` + base64 JSON of
+  `squirm-gfx`, device-specific), Comfort, Reminders, Back up your garden (save code), About (the anonymous stats switch, the build id) and
+  What's new last, a card that folds open on its own heading (`details.set-acc`). Each heading's sticker sits in a
+  tinted tile with the card edge, like the home cards' icons (`--tint` on the span). A save code is `SQUIRM1:` + base64 JSON of
   every `squirm-` key except the throwaway ones in `SAVE_SKIP`; restoring replaces those keys and reloads.
   Starting over is only the secret reset: hold the home worm's head for 3 s, which clears every `squirm-` key.
 - **Comfort** (Settings, `core/base.js`): three device-specific switches. Calm motion (`calmMotion`, `squirm-calm`) sets
@@ -698,7 +700,9 @@ from a tab replaces that layer with `game`.
   `popin` pop). **Toggles** (switches, mechanic tiles, sound and vibration buttons): `sfx('on')` /
   `sfx('off')`. **Blocked** (locked stone, hat or colour, a bad save code, reminders that can't be set):
   `nope(el,msg)`, which shakes, plays `bump` and shows a toast.
-- **Dialogs:** every `.ov` scrim fades in while its `.dialog` pops. `hide()` adds `.out` for a short
+- **Dialogs:** every `.ov` scrim fades in while its `.dialog` pops. A tap on the scrim closes the dialog the way Back
+  would (`OV_LAYER` in `ui/dialogs.js` maps each closable one to its layer; not the win card, the growing dialog or a
+  race that's growing or counting down). `hide()` adds `.out` for a short
   fade, then removes `.show`, so ask `isOpen(id)` (not `.show`). The home screen just swaps.
 - **Entrances:** `stagger(els, cls)` (`enter` drops in, `rise` comes up), used by `hudIntro`,
   `tabIntro`, `showHome` and `setPageIntro`. `animOnce` replays a one-shot class.

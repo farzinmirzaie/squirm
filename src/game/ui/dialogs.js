@@ -15,6 +15,14 @@ function hide(id){ const o=$(id); if(id==='homeOv'){ o.classList.remove('show');
 // open and not on its way out
 const isOpen=id=>{ const c=$(id).classList; return c.contains('show')&&!c.contains('out'); };
 function hideAll(){ ['winOv','homeOv','setOv','finOv'].forEach(hide); }
+// a tap on the dim scrim round a dialog closes it the way Back would (`layerBack` for its layer). Not the
+// win card (its Back goes home), the growing dialog, or the race dialog while a patch grows or counts down.
+const OV_LAYER={finOv:'finale',setOv:'settings',leaveOv:'leave',resetOv:'reset',seedOv:'seeds',garOv:'gar',raceOv:'race',introOv:'intro'};
+let scrimDown=null;
+document.addEventListener('pointerdown',e=>{ scrimDown=e.target.classList&&e.target.classList.contains('ov')?e.target:null; },true);
+document.addEventListener('click',e=>{ const o=e.target; if(o!==scrimDown||!OV_LAYER[o.id]||!isOpen(o.id)) return; scrimDown=null;
+  if(o.id==='raceOv'&&['grow','count'].includes(o.querySelector('.dialog').dataset.step)) return;
+  const l=OV_LAYER[o.id]; if(layers[layers.length-1]===l){ popLayer(l); layerBack(l); } });
 function anyOverlay(){ return ['winOv','homeOv','genOv','introOv','resetOv','setOv','finOv','seedOv','garOv'].some(isOpen); }
 function renderMute(){ if($('homeSound')){ const hb=$('homeSound'); hb.setAttribute('aria-label',muted?'Turn sound on':'Turn sound off');
   setTimeout(()=>{ hb.innerHTML=$('muteBtn').innerHTML; },0); } const b=$('muteBtn'); b.setAttribute('aria-pressed',String(muted));

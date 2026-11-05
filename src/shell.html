@@ -175,7 +175,7 @@ button:focus-visible{outline:3px solid var(--honey);outline-offset:2px}
 /* dialogs never outgrow the screen: they scroll inside */
 .dialog{width:min(100%,370px);padding:26px 20px 20px;text-align:center;animation:pop var(--dur) var(--ease-pop);border-radius:26px;
   box-shadow:inset 0 0 0 5px var(--paper),inset 0 0 0 7px var(--paper-2),0 6px 0 var(--edge),0 18px 40px var(--shadow);
-  max-height:100%;overflow:auto;overscroll-behavior:contain;touch-action:pan-y}
+  max-height:min(100%,720px);overflow:auto;overscroll-behavior:contain;touch-action:pan-y}
 .dialog h2{margin:6px 0 8px;font:800 30px/1.1 var(--fd);color:var(--title);text-shadow:0 3px 0 var(--edge)}
 /* :where keeps this a default that any class on a dialog paragraph overrides */
 :where(.dialog) p{margin:0 0 16px;color:var(--ink-soft);font-size:16px;line-height:1.45;font-weight:700}
@@ -389,6 +389,8 @@ nav{display:flex;justify-content:center;align-items:flex-end;gap:12px}
 .tab-page{position:absolute;inset:0;overflow:auto;overscroll-behavior:contain;touch-action:pan-y;padding:10px max(14px,env(safe-area-inset-right,0px)) 16px max(14px,env(safe-area-inset-left,0px));display:flex;flex-direction:column;align-items:center}
 .tab-page[hidden]{display:none}
 .tabbar{flex:none;display:grid;grid-template-columns:repeat(5,1fr);gap:2px;width:100%;padding:8px max(10px,env(safe-area-inset-right,0px)) max(14px,calc(6px + env(safe-area-inset-bottom,0px))) max(10px,env(safe-area-inset-left,0px));background:var(--paper);border-top:3px solid var(--edge);box-shadow:0 -6px 20px var(--shadow)}
+/* wider screens: the tab bar floats as a card the width of the content column */
+@media (min-width:600px){ .tabbar{width:min(calc(100% - 32px),440px);margin:0 auto 16px;padding:8px 10px;border:3px solid var(--edge);border-radius:26px;box-shadow:0 5px 0 var(--edge),0 12px 28px var(--shadow)} }
 .tab{display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 0 4px;border:0;border-radius:18px;background:none;color:var(--ink-soft);cursor:pointer;min-width:0;font:800 12px/1 var(--fd)}
 .tab.on{color:var(--ink);background:var(--paper-2)}
 .tab.on svg{color:var(--leaf-dark);transform:translateY(-1px) scale(1.08)}
@@ -422,7 +424,7 @@ nav{display:flex;justify-content:center;align-items:flex-end;gap:12px}
 .play{display:flex;align-items:center;gap:14px;width:100%;padding:12px 18px 12px 12px;border-radius:26px;cursor:pointer;text-align:left;color:var(--on-accent);font:inherit;
   background:var(--leaf) var(--glaze-accent);border:3px solid var(--leaf-dark);box-shadow:0 6px 0 var(--leaf-dark),0 14px 28px var(--shadow)}
 .play:active{transform:translateY(6px);box-shadow:0 0 0 var(--leaf-dark)}
-.play-ico{flex:none;width:58px;height:58px;border-radius:50%;display:grid;place-items:center;background:rgba(0,0,0,.12);border:3px solid rgba(255,255,255,.5);padding-left:4px}
+.play-ico{background:var(--tint-leaf)}
 .play .pt{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
 .play b{font:800 30px/1 var(--fd);text-shadow:0 2px 0 var(--leaf-dark)}
 .play small{font-weight:800;font-size:14px;opacity:.95;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -666,22 +668,24 @@ body.photo .wsay{display:none}
 .set-link .chev{color:var(--ink-soft);display:grid}
 .set-row{display:flex;justify-content:space-between;align-items:center;gap:12px;font:800 17px/1.15 var(--fd);padding:2px 2px}
 /* Settings: one scrolling page of cards, each with a sticker heading */
-.settings{max-height:min(760px,calc(100% - 24px));padding-bottom:6px}
+.settings{max-height:min(720px,calc(100% - 24px));padding-bottom:6px}
 .set-scroll{flex:1;min-height:0;display:flex;flex-direction:column;gap:12px;margin:0 -16px;padding:2px 16px 14px}
 .set-card{flex:none;display:flex;flex-direction:column;gap:12px;padding:12px 14px 14px;border-radius:22px;background:var(--paper-2);border:3px solid var(--edge)}
 .set-h{display:flex;align-items:center;gap:10px;margin:0;font:800 18px/1.1 var(--fd);color:var(--ink)}
-.set-h [data-art]{width:38px;height:38px;border-radius:14px;place-items:center;background:var(--sticker);border:2px solid var(--sticker-edge);--art-halo:none;vertical-align:0}
+.set-h [data-art]{flex:none;width:40px;height:40px;border-radius:14px;display:grid;place-items:center;background:var(--tint,var(--tint-leaf));border:2px solid var(--edge);--art-halo:none;vertical-align:0}
 .set-card .set-row+.set-row{border-top:2px solid var(--edge);padding-top:12px}
 .set-card .seg{background:var(--paper)}
 .set-card .label{margin:0 0 -6px}
 .set-note.small{font-size:12px}
 .sw{width:18px;height:18px;border-radius:50%;border:2px solid var(--outline);margin-bottom:2px}
 .sw-light{background:var(--swatch-light)}.sw-dark{background:var(--swatch-dark)}.sw-auto{background:linear-gradient(135deg,var(--swatch-light) 50%,var(--swatch-dark) 50%)}
-.news-more summary{list-style:none;display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:10px 12px;border-radius:14px;background:var(--paper);border:2px solid var(--edge);font:800 15px/1 var(--fd);color:var(--ink)}
-.news-more summary::-webkit-details-marker{display:none}
-.news-more summary .chev{display:grid;transition:transform var(--dur) var(--ease-out)}
-.news-more[open] summary .chev{transform:rotate(90deg)}
-.news-more .news-log{padding:12px 4px 0}
+/* What's new: the last card folds open on its own heading */
+.set-acc>summary{list-style:none;display:flex;align-items:center;justify-content:space-between;gap:10px;cursor:pointer}
+.set-acc>summary::-webkit-details-marker{display:none}
+.set-acc .chev{display:grid;color:var(--ink-soft);transition:transform var(--dur) var(--ease-out)}
+.set-acc[open] .chev{transform:rotate(90deg)}
+.set-acc:not([open]){gap:0}
+.set-acc .news-log{padding:0 2px 2px}
 .set-row.vol{font-size:15px;color:var(--ink-soft)}
 .set-row.vol input{flex:1;max-width:190px}
 .set-row.vol[hidden]{display:none}
@@ -789,7 +793,7 @@ body.big-text .hud-stats{zoom:.9}
   .tab.on.pop svg,.stat.cheer,.stat.cheer .ic,.stat.lost .mini,.gbtn.pop .disc,.gbtn.hint .disc svg,#hintBtn.busy svg,
   #tutorial .hand,.brand span,.node.cur::after{animation:none}
   .star{animation:none;transform:none}
-  .btn,.round,.disc,.play,.big,.goal,.set-link,.pick .go,.snap,.hat,.tint,.b-tile,.b-progress i,.b-medal>.art,.diff,.node,.mech,.seg button,.stat,.icon-btn,.rb-ghost,.link,.tab svg,.switch,.switch i,.mech .mi,#toast,#app,.news-more summary .chev,.bubble.bye{transition:none}
+  .btn,.round,.disc,.play,.big,.goal,.set-link,.pick .go,.snap,.hat,.tint,.b-tile,.b-progress i,.b-medal>.art,.diff,.node,.mech,.seg button,.stat,.icon-btn,.rb-ghost,.link,.tab svg,.switch,.switch i,.mech .mi,#toast,#app,.set-acc .chev,.bubble.bye{transition:none}
   .diff.on:not(:active){transform:none}
   .petals{display:none}
 }
@@ -874,7 +878,7 @@ body.big-text .hud-stats{zoom:.9}
           <h1 class="brand" aria-label="Squirm"><span>S</span><span>q</span><span>u</span><span>i</span><span>r</span><span>m</span></h1>
           <p class="bubble" id="wormSay" aria-live="polite"></p>
         </div>
-        <button class="play" id="homePlay"><span class="play-ico" aria-hidden="true"><svg width="30" height="30" viewBox="0 0 24 24"><path d="M8 5.5v13l10.5-6.5z" style="fill:var(--on-accent);stroke:var(--on-accent)" stroke-width="2" stroke-linejoin="round"/></svg></span><span class="pt"><b id="playTitle">Play</b><small id="playSub">Patch 1</small><span class="ch-pips" id="playPips" aria-hidden="true"></span></span></button>
+        <button class="play" id="homePlay"><span class="mode-ico play-ico" aria-hidden="true" data-art="sprout" data-size="32"></span><span class="pt"><b id="playTitle">Play</b><small id="playSub">Patch 1</small><span class="ch-pips" id="playPips" aria-hidden="true"></span></span></button>
         <div class="home-duo">
         <button class="big card mini" id="dailyBtn">
     <span class="mode-ico daily-ico" aria-hidden="true" data-art="calendar" data-size="32"></span>
@@ -945,7 +949,7 @@ body.big-text .hud-stats{zoom:.9}
   <div class="set-head"><h2 id="setTitle">Settings</h2><button class="icon-btn" id="setClose" aria-label="Close"><svg class="ui-ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></svg></button></div>
   <div class="set-scroll fade-scroll" id="setScroll">
     <section class="set-card" aria-labelledby="hSound">
-      <h3 class="set-h" id="hSound"><span data-art="sound" data-size="26"></span>Sound</h3>
+      <h3 class="set-h" id="hSound"><span style="--tint:var(--tint-honey)" data-art="sound" data-size="26"></span>Sound</h3>
       <div class="set-row"><span>Music</span><button class="switch" id="setMusic" role="switch" aria-checked="true" aria-label="Music"><i></i></button></div>
       <div class="set-row vol" id="volRow"><span>Volume</span><input type="range" id="setMusicVol" min="0" max="100" step="5" value="70" aria-label="Music volume"></div>
       <div class="set-row"><span>Sound effects</span><button class="switch" id="setSound" role="switch" aria-checked="true" aria-label="Sound effects"><i></i></button></div>
@@ -955,7 +959,7 @@ body.big-text .hud-stats{zoom:.9}
       </div>
     </section>
     <section class="set-card" aria-labelledby="hLook">
-      <h3 class="set-h" id="hLook"><span data-art="palette" data-size="26"></span>Look</h3>
+      <h3 class="set-h" id="hLook"><span style="--tint:var(--tint-berry)" data-art="palette" data-size="26"></span>Look</h3>
       <p class="label">Colours</p>
       <div class="seg" id="setTheme" role="radiogroup" aria-label="Colours">
         <button role="radio" data-t="auto"><i class="sw sw-auto" aria-hidden="true"></i><b>Auto</b><small>Like device</small></button><button role="radio" data-t="light"><i class="sw sw-light" aria-hidden="true"></i><b>Light</b><small>Sunny</small></button><button role="radio" data-t="dark"><i class="sw sw-dark" aria-hidden="true"></i><b>Dark</b><small>Cozy</small></button>
@@ -966,14 +970,14 @@ body.big-text .hud-stats{zoom:.9}
       </div>
     </section>
     <section class="set-card" aria-labelledby="hComfort">
-      <h3 class="set-h" id="hComfort"><span data-art="heart" data-size="26"></span>Comfort</h3>
+      <h3 class="set-h" id="hComfort"><span style="--tint:var(--tint-lilac)" data-art="heart" data-size="26"></span>Comfort</h3>
       <div class="set-row"><span>Calm motion</span><button class="switch" id="setCalm" role="switch" aria-checked="false" aria-label="Calm motion"><i></i></button></div>
       <div class="set-row"><span>Bigger text</span><button class="switch" id="setBig" role="switch" aria-checked="false" aria-label="Bigger text"><i></i></button></div>
       <div class="set-row"><span>Colour helpers</span><button class="switch" id="setMarks" role="switch" aria-checked="false" aria-label="Colour helpers"><i></i></button></div>
       <p class="set-note">Calm motion keeps the screen still: no bouncing, gliding or swaying. Colour helpers add a shape to each pollen colour: a circle for poppy, a triangle for buttercup and a square for bluebell.</p>
     </section>
     <section class="set-card" aria-labelledby="hRemind">
-      <h3 class="set-h" id="hRemind"><span data-art="bell" data-size="26"></span>Reminders</h3>
+      <h3 class="set-h" id="hRemind"><span style="--tint:var(--tint-honey)" data-art="bell" data-size="26"></span>Reminders</h3>
       <div class="set-row"><span>Daily patch reminder</span><button class="switch" id="setRemind" data-sfx="none" role="switch" aria-checked="false" aria-label="Daily patch reminder"><i></i></button></div>
       <div id="remindWhen">
         <p class="label">Not before</p>
@@ -984,23 +988,23 @@ body.big-text .hud-stats{zoom:.9}
       <p class="set-note" id="remindNote"></p>
     </section>
     <section class="set-card" aria-labelledby="hGarden">
-      <h3 class="set-h" id="hGarden"><span data-art="sprout" data-size="26"></span>Back up your garden</h3>
+      <h3 class="set-h" id="hGarden"><span style="--tint:var(--tint-leaf)" data-art="sprout" data-size="26"></span>Back up your garden</h3>
       <p class="set-note">Your progress lives on this device. Copy a save code to keep it safe or move it to another phone.</p>
       <textarea id="saveCode" rows="3" hidden spellcheck="false" autocomplete="off" aria-label="Save code" placeholder="Paste a save code here"></textarea>
       <div class="row"><button class="btn" id="saveCopy">Copy code</button><button class="btn" id="saveLoad">Restore</button></div>
     </section>
-    <section class="set-card" aria-labelledby="hNews">
-      <h3 class="set-h" id="hNews"><span data-art="news" data-size="26"></span>What's new</h3>
-      <details class="news-more"><summary>Every update<span class="chev" aria-hidden="true"><svg class="ui-ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 5.5L16 12l-6.5 6.5"/></svg></span></summary><div class="news-log" id="newsLog"></div></details>
-    </section>
     <section class="set-card" aria-labelledby="hAbout">
-      <h3 class="set-h" id="hAbout"><span data-art="info" data-size="26"></span>About Squirm</h3>
+      <h3 class="set-h" id="hAbout"><span style="--tint:var(--tint-leaf)" data-art="info" data-size="26"></span>About Squirm</h3>
       <p class="set-note">A cozy garden puzzle about a worm who just wants to get home. It plays offline and keeps your progress on this device.</p>
       <div class="set-row" id="statsRow" hidden><span>Share anonymous stats</span><button class="switch" id="setStats" role="switch" aria-checked="true" aria-label="Share anonymous stats"><i></i></button></div>
       <p class="set-note small" id="statsNote" hidden>Only simple counts, like how many gardens grew today, which patches got finished or left halfway and how often hints help, so we know what to make next. No cookies, nothing about you.</p>
       <p class="set-note small">Made with three.js. Font: Baloo 2.</p>
       <p class="version">__BUILD__</p>
     </section>
+    <details class="set-card set-acc">
+      <summary><h3 class="set-h" id="hNews"><span style="--tint:var(--tint-berry)" data-art="news" data-size="26"></span>What's new</h3><span class="chev" aria-hidden="true"><svg class="ui-ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 5.5L16 12l-6.5 6.5"/></svg></span></summary>
+      <div class="news-log" id="newsLog"></div>
+    </details>
   </div>
 </div></div>
 <div class="ov" id="leaveOv"><div role="dialog" aria-modal="true" aria-labelledby="leaveTitle" class="dialog card">
