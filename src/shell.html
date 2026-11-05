@@ -186,7 +186,7 @@ button:focus-visible{outline:3px solid var(--honey);outline-offset:2px}
 .sheet .label-row p.label{margin:0}
 /* out of hint seeds: where to grow more */
 .seeds .seed-art{flex:none;align-self:center;width:84px;height:84px;margin:2px auto 0;border-radius:22px;display:grid;place-items:center;background:var(--tint-honey);border:3px solid var(--honey-dark);box-shadow:0 4px 0 var(--honey-dark);--art-halo:none}
-/* your garden so far (the stars pill): totals, the closest badges and every counter we keep */
+/* your garden so far (the stars pill): totals and every counter we keep */
 .gar{display:flex;flex-direction:column;overflow:hidden}
 .gar-body{flex:1 1 auto;min-height:0;overflow:auto;overscroll-behavior:contain;display:flex;flex-direction:column;gap:10px;margin:0 -20px 14px;padding:2px 20px 6px;text-align:left}
 .gar-body p{margin:0;text-align:center}
@@ -194,10 +194,6 @@ button:focus-visible{outline:3px solid var(--honey);outline-offset:2px}
 .gar-tops{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
 .gar-tops span{display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 4px 7px;border-radius:18px;background:var(--paper-2);border:2px solid var(--edge);font:800 18px/1 var(--fd);color:var(--ink);text-align:center}
 .gar-tops small,.gar-grid small{font:800 11px/1.15 var(--fb);color:var(--ink-soft)}
-.gar-body .seed-how{margin:0}
-.gar-near li{cursor:pointer}
-.gar-near li>span:not(.ic){display:flex;flex-direction:column;gap:2px;min-width:0}
-.gar-near small{font:700 12px/1.25 var(--fb);color:var(--ink-soft)}
 .gar-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .gar-grid>span{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:14px;background:var(--paper-2);border:2px solid var(--edge);min-width:0}
 .gar-grid .gv{display:flex;flex-direction:column;gap:2px;min-width:0}
@@ -1025,7 +1021,7 @@ body.big-text .hud-stats{zoom:.9}
   <span class="seed-art" aria-hidden="true" data-art="stars" data-size="54"></span>
   <h2 id="garTitle">Your garden so far</h2>
   <div class="gar-body fade-scroll" id="garBody"></div>
-  <div class="seed-go"><button class="btn primary" id="garBadges">See all badges</button><button class="btn" id="garOk">Got it</button></div>
+  <div class="seed-go"><button class="btn primary" id="garOk">Got it</button></div>
 </div></div>
 <div class="ov" id="raceOv"><div role="dialog" aria-modal="true" aria-labelledby="raceTitle" class="dialog card race">
   <span class="race-art" aria-hidden="true" data-art="race" data-size="54"></span>

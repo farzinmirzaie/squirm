@@ -36,8 +36,7 @@ function renderGoal(){ const g=$('goalCard'), id=nearestBadge(), b=badgeById(id)
   if(!b||progress.badges[id]){ g.hidden=true; return; } g.hidden=false; g.dataset.b=id;
   g.innerHTML=`<span class="b-medal" aria-hidden="true">${art(b[1],32)}<span class="b-lock">${art('lock',12)}</span></span><span class="gt"><b>${b[2]}</b><small>${b[3]}</small>`
     +(p?`<span class="gbar"><span class="b-bar" style="--p:${pct(p)}"></span>${p[0].toLocaleString()} of ${p[1].toLocaleString()}</span>`:'')+`</span>`; }
-// Your garden so far, from the stars pill: the big totals, the badges closest to earning and every counter we keep,
-// so players can see where they stand for the badges they're after
+// Your garden so far, from the stars pill: the big totals and every counter we keep
 const GAR_STATS=[['worm','Moves crawled','moves'],['peach','Snacks eaten','fruit'],['flag','Flags touched','flags'],['key','Gates opened','gates'],
   ['tunnel','Tunnel trips','tunnels'],['rain','Rains started','rains'],['bridge','Bridge swings','swings'],['flowerbtn','Hedges opened','hedges'],
   ['wetleaf','Leaf slides','slides'],['beetle','Beetle bumps','pushes'],['sunflower','Pollen dustings','dusts'],['sprout','Burrowed under','burrows'],
@@ -47,18 +46,12 @@ const GAR_STATS=[['worm','Moves crawled','moves'],['peach','Snacks eaten','fruit
   ['race','Races','races'],['trophy','Races won','raceWins']];
 function gardenInfo(){ const st=progress.stats, v=x=>typeof x==='function'?x():(st[x]||0);
   const grown=LEVELS.filter((l,i)=>isCleared(i)).length, got=BADGES.filter(b=>progress.badges[b[0]]).length;
-  const near=BADGES.map(b=>[b,badgeProg(b)]).filter(x=>x[1]&&x[1][0]>0).sort((x,y)=>y[1][0]/y[1][1]-x[1][0]/x[1][1]).slice(0,4);
-  $('garBody').innerHTML=`<p>Everything you do in the garden counts toward a badge. Here's where you stand.</p>`
+  $('garBody').innerHTML=`<p>A look at everything you've done in the garden.</p>`
     +`<div class="gar-tops"><span>${starTotal().toLocaleString()}<small>of ${(LEVELS.length*3).toLocaleString()} stars</small></span><span>${grown}<small>of ${LEVELS.length} patches</small></span><span>${got}<small>of ${BADGES.length} badges</small></span></div>`
-    +(near.length?`<p class="label">Closest badges</p><ul class="seed-how gar-near">${near.map(([b,p])=>`<li data-b="${b[0]}" role="button" tabindex="0"><span class="ic" aria-hidden="true">${art(b[1],18)}</span><span><b>${b[2]}</b><small>${b[3]}</small></span><b>${p[0].toLocaleString()} of ${p[1].toLocaleString()}</b></li>`).join('')}</ul>`:'')
     +`<p class="label">What we've counted</p><div class="gar-grid">${GAR_STATS.map(([ic,t,k])=>`<span><span class="ic" aria-hidden="true">${art(ic,18)}</span><span class="gv"><b>${v(k).toLocaleString()}</b><small>${t}</small></span></span>`).join('')}</div>`;
   $('garBody').scrollTop=0; show('garOv'); pushLayer('gar'); }
-const garTo=id=>{ hide('garOv'); if(layers.includes('tab')) popLayer('gar'); else swapLayers('gar','tab'); badgeSel=id; badgeFilter='all'; showTab('badges'); };
 $('homeStars').onclick=()=>{ ensureAudio(); gardenInfo(); };
 $('garOk').onclick=()=>{ hide('garOv'); popLayer('gar'); };
-$('garBadges').onclick=()=>garTo(nearestBadge());
-$('garBody').addEventListener('click',e=>{ const li=e.target.closest('[data-b]'); if(li) garTo(li.dataset.b); });
-$('garBody').addEventListener('keydown',e=>{ const li=e.target.closest('[data-b]'); if(li&&(e.key==='Enter'||e.key===' ')){ e.preventDefault(); garTo(li.dataset.b); } });
 $('goalCard').onclick=()=>{ badgeSel=$('goalCard').dataset.b; badgeFilter='all'; showTab('badges'); };
 // The home worm speaks now and then, not all the time: a greeting on the first visit and sometimes after that, a word on
 // some taps, and a run of jokes when someone keeps poking it. Every bubble fades away after a few seconds.
