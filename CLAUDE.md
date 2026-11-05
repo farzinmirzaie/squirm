@@ -440,11 +440,12 @@ from a tab replaces that layer with `game`.
 - **Meadow:** endless setup. A hero card for the chosen difficulty with its description and its own streak,
   best, stars and cleared count (`DIFF_DESC`), a compact difficulty switch, the mechanics mix with All/None
   and Surprise me, and Grow a patch pinned at the bottom.
-- **Wardrobe** (ids still `me` / `tabMe`): one grid switched between Hats / Colours / Patterns / Extras
-  (`wardTab`), the outfit line, a colour picker for the worn item (below), and Surprise outfit. The home
+- **Wardrobe** (ids still `me` / `tabMe`): one list switched between Hats / Colours / Patterns / Extras
+  (`wardTab`), a button row per item like the badge cards (`tile`: picture in a tile, tinted once owned, cream and faded with
+  a lock until then; while locked, how to earn it and a bar from `testProg` / `chapterProg` / stars where it counts up), the outfit line, a colour picker for the worn item (below), and Surprise outfit. The home
   worm's canvas moves between Play and Wardrobe; `homeStage(me)` widens it and shows `hBody`, a curled body
   built by `buildHomeBody` (rebuilt on every colour or pattern change), so the outfit shows.
-- **Badges:** grouped by `BADGE_GROUPS` with an All / Earned / To find filter (Earned is one list, newest first, by the
+- **Badges:** grouped by `BADGE_GROUPS` with an All / Earned / To find filter, hidden until a badge is earned (Earned is one list, newest first, by the
   time stored in `progress.badges`), one card per badge (`badgeCard`: medal, name,
   what earns it, and Earned or a bar with the count) in a list (`renderBadges`). `badgeSel` set before opening the tab
   (the home badge card) scrolls that badge's card into view and pops it.
@@ -453,7 +454,8 @@ from a tab replaces that layer with `game`.
 
 - **Badges:** `BADGES` (id, icon, name, description, test) are checked after every win and after moves that
   bump a counter in `progress.stats`; earned ones live in `progress.badges` (with a timestamp, not shown).
-  A test written as `counted(()=>[have,need])` also reports progress for the Badges tab. Add new badges to a
+  A test written as `counted(()=>[have,need])` (in `core/base.js`) also reports progress, for the Badges tab and, on
+  milestone hats, extras and patterns written the same way, the wardrobe rows. Add new badges to a
   `BADGE_GROUPS` group (ungrouped ones land in the last).
 - **Hats:** `HATS` entries are `[id, name, chapter index]` (unlocked by finishing that chapter) or
   `[id, name, -2, how to earn, test]` for milestone hats. Each is built once (`buildHat`) and cloned into

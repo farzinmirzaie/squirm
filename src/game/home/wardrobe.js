@@ -1,7 +1,15 @@
 // ---------- wardrobe (Me tab) ----------
 // the worm on its stage shows the whole outfit; Hats / Colours / Patterns switch one grid of tiles
 let wardTab='hats';
-const tile=(key,val,on,ok,ico,name,note)=>`<button data-${key}="${val}" class="hat ${on?'on':''} ${ok?'':'locked'}" aria-pressed="${on}"><span class="hat-ico" aria-hidden="true">${ok?ico:art('lock',28)}</span><b>${name}</b>${ok?'':`<small>${note}</small>`}</button>`;
+// one row per item, like the badge cards: its picture in a tile (tinted once it's yours, cream and faded with a lock
+// until then), its name, and while locked how to earn it with a bar where it counts up. Still a button: tap to wear.
+let wardN=0;
+const tile=(key,val,on,ok,ico,name,note,prog)=>{ const t=BADGE_TINT[wardN++%BADGE_TINT.length], p=!ok&&prog&&prog[1]>1?[Math.min(prog[0]||0,prog[1]),prog[1]]:null;
+  return `<button data-${key}="${val}" class="hat w-card ${on?'on':''} ${ok?'got':'locked'}" aria-pressed="${on}"><span class="b-medal" style="--tint:var(${t})" aria-hidden="true">${ico}${ok?'':`<span class="b-lock">${art('lock',12)}</span>`}</span>`
+    +`<span class="bt"><b>${name}</b>${ok?'':`<small>${note}</small>`}${p?`<small class="b-state"><span class="b-bar" style="--p:${pct(p)}"></span>${p[0].toLocaleString()} of ${p[1].toLocaleString()}</small>`:''}</span></button>`; };
+// [have, need] for an item still to unlock: a milestone test written with counted, a chapter's patches, or stars
+const testProg=f=>f&&f.prog?f.prog():null;
+const chapterProg=k=>{ const c=CHAPTERS[k]; return c?[LEVELS.slice(c.from,c.to+1).filter((l,i)=>isCleared(c.from+i)).length,c.to-c.from+1]:null; };
 function outfitChanged(el){ bumpStat('outfits'); save(); if(hHead) homeReact('joy'); renderWardrobe(); const on=$('wardGrid').querySelector('.hat.on');
   if(on) settle(on); }
 function wearHat(id){ hatId=id; store.set('squirm-hat',hatId); dressHat(hHead); dressHat(segMeshes[0]); }
@@ -12,11 +20,11 @@ function renderWardrobe(){ const hats=HATS.filter(hatUnlocked), cols=coloursUnlo
   $('outfitLine').textContent=[hat[0]==='none'?'No hat':hat[1],WORM_COLS[wormCol][0],PATTERNS.find(x=>x[0]===patOn())[1],...(ex[0]==='none'?[]:[ex[1]])].join(' · ');
   const n={hats:[hats.length-1,HATS.length-1],colours:[cols,WORM_COLS.length],patterns:[pats.length,PATTERNS.length],extras:[exs.length-1,EXTRAS.length-1]};
   qa($('wardSeg'),'button').forEach(b=>{ const on=b.dataset.w===wardTab, c=n[b.dataset.w]; b.classList.toggle('on',on); b.setAttribute('aria-selected',String(on)); b.querySelector('small').textContent=`${c[0]} of ${c[1]}`; });
-  const g=$('wardGrid'); g.className=`hat-grid fade-scroll ward-${wardTab}`;
-  if(wardTab==='hats') g.innerHTML=HATS.map(h=>tile('h',h[0],h[0]===hatId,hatUnlocked(h),hatArt(h[0]),h[1],h[3]||`Finish ${CHAPTERS[h[2]]?CHAPTERS[h[2]].name:'a chapter'}`)).join('');
-  else if(wardTab==='extras') g.innerHTML=EXTRAS.map(e=>tile('x',e[0],e[0]===extraOn(),e[3](),extraArt(e[0],44),e[1],e[2])).join('');
-  else if(wardTab==='colours') g.innerHTML=WORM_COLS.map((c,i)=>tile('c',i,i===wormCol,i<cols,patArt(patOn(),46,i),c[0],`${c[3]} stars`)).join('');
-  else g.innerHTML=PATTERNS.map(p=>tile('p',p[0],p[0]===patOn(),pats.includes(p[0]),patArt(p[0],46),p[1],p[2])).join('');
+  const g=$('wardGrid'); g.className=`w-list fade-scroll ward-${wardTab}`; wardN=0;
+  if(wardTab==='hats') g.innerHTML=HATS.map(h=>tile('h',h[0],h[0]===hatId,hatUnlocked(h),hatArt(h[0],32),h[1],h[3]||`Finish ${CHAPTERS[h[2]]?CHAPTERS[h[2]].name:'a chapter'}`,h[4]?testProg(h[4]):h[2]>=0?chapterProg(h[2]):null)).join('');
+  else if(wardTab==='extras') g.innerHTML=EXTRAS.map(e=>tile('x',e[0],e[0]===extraOn(),e[3](),extraArt(e[0],34),e[1],e[2],testProg(e[3]))).join('');
+  else if(wardTab==='colours') g.innerHTML=WORM_COLS.map((c,i)=>tile('c',i,i===wormCol,i<cols,patArt(patOn(),36,i),c[0],`Collect ${c[3]} stars`,[starTotal(),c[3]])).join('');
+  else g.innerHTML=PATTERNS.map(p=>tile('p',p[0],p[0]===patOn(),pats.includes(p[0]),patArt(p[0],36),p[1],p[2],testProg(p[3]))).join('');
   renderTints();
   qa(g,'button').forEach(b=>b.onclick=()=>{
     if(b.dataset.h){ const h=HATS.find(x=>x[0]===b.dataset.h); if(!hatUnlocked(h)){ nope(b,h[3]?`${h[1]}: ${h[3].charAt(0).toLowerCase()+h[3].slice(1)} to earn it.`:`Finish every patch in ${CHAPTERS[h[2]].name} to earn the ${h[1].toLowerCase()}.`,2800); return; } wearHat(h[0]); }

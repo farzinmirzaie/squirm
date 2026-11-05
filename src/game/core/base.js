@@ -66,3 +66,5 @@ const C = {
 // ---------- DOM helpers ----------
 const $=id=>document.getElementById(id);
 const qa=(root,sel)=>[...root.querySelectorAll(sel)];
+// a milestone test that also reports [have, need], so badges and wardrobe items can show a progress bar
+const counted=f=>Object.assign(()=>{ const [a,b]=f(); return a>=b; },{prog:f});

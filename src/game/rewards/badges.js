@@ -4,7 +4,6 @@ progress.badges=progress.badges||{}; progress.stats=Object.assign({slides:0,hedg
 if(progress.stats.dailies==null) progress.stats.dailies=Object.keys(progress.daily.results).length;
 const anyChapter=f=>CHAPTERS.some(ch=>{ for(let i=ch.from;i<=ch.to;i++) if(!f(i)) return false; return true; });
 // a badge test that also reports progress: [have, need], shown on the badges screen
-const counted=f=>Object.assign(()=>{ const [a,b]=f(); return a>=b; },{prog:f});
 const BADGES=[
   ['first','sprout','First wiggle','Finish your first patch.',c=>(c&&c.won)||LEVELS.some((l,i)=>isCleared(i))],
   ['par','target','Right on par','Finish a patch in par moves or fewer.',c=>c&&c.won&&c.mv<=c.par],
@@ -111,6 +110,8 @@ function badgeCard(b){ const t=!!progress.badges[b[0]], p=badgeProg(b);
     +(t?`<small class="b-state got">${UI_ICON.check} Earned</small>`:p?`<small class="b-state"><span class="b-bar" style="--p:${pct(p)}"></span>${p[0].toLocaleString()} of ${p[1].toLocaleString()}</small>`:'')
     +`</span></div>`; }
 function renderBadges(){ const n=Object.keys(progress.badges).length;
+  // the filter only makes sense once a badge is earned
+  $('badgeFilter').hidden=!n; if(!n) badgeFilter='all';
   qa($('badgeFilter'),'button').forEach(b=>{ const on=b.dataset.f===badgeFilter; b.classList.toggle('on',on); b.setAttribute('aria-checked',String(on)); });
   const show=b=>badgeFilter==='all'||(badgeFilter==='earned')===!!progress.badges[b[0]];
   // Earned is one list, newest first (progress.badges holds when each was earned); the others keep their groups

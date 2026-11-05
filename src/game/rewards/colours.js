@@ -9,18 +9,18 @@ const coloursUnlocked=()=>WORM_COLS.filter(c=>starTotal()>=c[3]).length;
 let wormCol=Math.max(0,Math.min(WORM_COLS.length-1,parseInt(store.get('squirm-colour')||'0',10)||0));
 // worm patterns, earned with milestones: [id, name, how to earn, test]. Drawn by colorAt and tubeMat's shader
 const PATTERNS=[['plain','Plain','',()=>true],
-  ['stripes','Stripes','Earn 5 badges',()=>Object.keys(progress.badges).length>=5],
-  ['spots','Spots','3 day daily streak',()=>progress.daily.best>=3],
-  ['fade','Soft fade','Clear 5 meadow patches',()=>['easy','medium','hard'].reduce((a,d)=>a+progress.endless[d].cleared,0)>=5],
-  ['rainbow','Rainbow tail','Finish 8 chapters',()=>CHAPTERS.filter((ch,k)=>chapterCleared(k)).length>=8],
-  ['bands','Bands','Crawl 2,000 moves',()=>(progress.stats.moves||0)>=2000],
-  ['sunset','Sunset','Finish 10 chapters',()=>CHAPTERS.filter((ch,k)=>chapterCleared(k)).length>=10],
-  ['glitter','Glitter','Earn 25 badges',()=>Object.keys(progress.badges).length>=25],
-  ['twotone','Two-tone','Finish a patch after turning around 3 times in it',()=>(progress.stats.twistyWins||0)>=1],
+  ['stripes','Stripes','Earn 5 badges',counted(()=>[Object.keys(progress.badges).length,5])],
+  ['spots','Spots','3 day daily streak',counted(()=>[progress.daily.best,3])],
+  ['fade','Soft fade','Clear 5 meadow patches',counted(()=>[['easy','medium','hard'].reduce((a,d)=>a+progress.endless[d].cleared,0),5])],
+  ['rainbow','Rainbow tail','Finish 8 chapters',counted(()=>[CHAPTERS.filter((ch,k)=>chapterCleared(k)).length,8])],
+  ['bands','Bands','Crawl 2,000 moves',counted(()=>[(progress.stats.moves||0),2000])],
+  ['sunset','Sunset','Finish 10 chapters',counted(()=>[CHAPTERS.filter((ch,k)=>chapterCleared(k)).length,10])],
+  ['glitter','Glitter','Earn 25 badges',counted(()=>[Object.keys(progress.badges).length,25])],
+  ['twotone','Two-tone','Finish a patch after turning around 3 times in it',counted(()=>[(progress.stats.twistyWins||0),1])],
   // these three move (tubeMat's shader, uT)
-  ['shimmer','Shimmer','3 stars on 100 patches',()=>LEVELS.filter(l=>progress.stars[l.name]===3).length>=100],
-  ['glow','Glow worm','Finish 15 patches in the evening, 7 to 10 pm',()=>(progress.stats.evenings||0)>=15],
-  ['prism','Prism','Finish 30 daily patches',()=>(progress.stats.dailies||0)>=30]];
+  ['shimmer','Shimmer','3 stars on 100 patches',counted(()=>[LEVELS.filter(l=>progress.stars[l.name]===3).length,100])],
+  ['glow','Glow worm','Finish 15 patches in the evening, 7 to 10 pm',counted(()=>[(progress.stats.evenings||0),15])],
+  ['prism','Prism','Finish 30 daily patches',counted(()=>[(progress.stats.dailies||0),30])]];
 const patternsUnlocked=()=>PATTERNS.filter(p=>p[3]()).map(p=>p[0]);
 let wormPat=store.get('squirm-pattern')||'plain';
 const patOn=()=>PATTERNS.some(p=>p[0]===wormPat&&p[3]())?wormPat:'plain';

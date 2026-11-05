@@ -404,8 +404,6 @@ nav{display:flex;justify-content:center;align-items:flex-end;gap:12px}
 .outfit{margin:-10px 0 0;font:800 14px/1.2 var(--fb);color:var(--ink-soft)}
 #wardGrid{flex:1;min-height:150px;margin:0 -8px;padding:4px 8px 10px;align-content:start}
 #wardSeg{grid-template-columns:repeat(4,1fr)}
-#wardGrid.ward-colours,#wardGrid.ward-patterns,#wardGrid.ward-extras{grid-template-columns:repeat(3,1fr)}
-#wardGrid.ward-colours .hat-ico,#wardGrid.ward-patterns .hat-ico,#wardGrid.ward-extras .hat-ico{height:50px}
 /* the colour picker under the wardrobe tabs, for the hat or extra being worn (when it has colours) */
 .tint-row{display:flex;align-items:center;gap:6px;padding:6px 8px 6px 14px;border-radius:18px;background:var(--paper-2)}
 .tint-row[hidden]{display:none}
@@ -626,6 +624,17 @@ body.photo .wsay{display:none}
 .hat.on{background:var(--done);border-color:var(--leaf);box-shadow:0 3px 0 var(--leaf)}
 .hat.locked{opacity:.6}
 .hat.locked .hat-ico{filter:grayscale(1)}
+/* the wardrobe list: one row per item, like the badge cards (the worn one green, as before) */
+#wardGrid.w-list{display:flex;flex-direction:column;gap:8px}
+#badgeFilter[hidden]{display:none}
+.w-card{flex-direction:row;align-items:center;gap:12px;width:100%;padding:6px 12px 6px 6px;text-align:left}
+.w-card .b-medal{width:44px;height:44px;border-radius:14px}
+.w-card.locked{opacity:1}
+.w-card .bt{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.w-card .bt b{font:800 15px/1.15 var(--fd);text-align:left}
+.w-card .bt small{font:700 12px/1.25 var(--fb);color:var(--ink-soft);text-align:left}
+.w-card .b-state{display:flex;align-items:center;gap:8px;color:var(--ink);font-weight:800}
+.w-card .b-state .b-bar{width:96px}
 /* -- Badges -- */
 .seg-sm button{min-height:0;padding:8px 4px}
 /* -- Badges: a progress bar, a filter, groups of sticker tiles in a fading scroller and the picked badge's card -- */
@@ -650,7 +659,8 @@ body.photo .wsay{display:none}
 .b-medal{position:relative;flex:none;width:52px;height:52px;border-radius:18px;display:grid;place-items:center;background:var(--sticker);border:2px solid var(--edge)}
 .on>.b-medal{background:var(--tint,var(--tint-honey))}
 .b-medal>.art:first-child{transition:filter var(--dur)}
-:not(.on)>.b-medal>.art:first-child{filter:grayscale(1);opacity:.5}
+.b-card:not(.on)>.b-medal>.art:first-child,.w-card.locked>.b-medal>:first-child{filter:grayscale(1);opacity:.5}
+.got>.b-medal{background:var(--tint,var(--tint-honey))}
 .b-lock{position:absolute;right:-6px;bottom:-5px;width:24px;height:24px;border-radius:50%;display:grid;place-items:center;background:var(--sticker);border:2px solid var(--sticker-edge)}
 .b-bar{flex:none;width:72%;height:6px;border-radius:999px;background:var(--edge);overflow:hidden}
 .b-bar::after{content:"";display:block;height:100%;width:var(--p,0%);border-radius:999px;background:var(--honey)}
