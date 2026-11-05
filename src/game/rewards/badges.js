@@ -111,8 +111,6 @@ function badgeCard(b){ const t=!!progress.badges[b[0]], p=badgeProg(b);
     +(t?`<small class="b-state got">${UI_ICON.check} Earned</small>`:p?`<small class="b-state"><span class="b-bar" style="--p:${pct(p)}"></span>${p[0].toLocaleString()} of ${p[1].toLocaleString()}</small>`:'')
     +`</span></div>`; }
 function renderBadges(){ const n=Object.keys(progress.badges).length;
-  $('badgeCount').textContent=`${n} of ${BADGES.length} earned`;
-  $('badgeBar').firstElementChild.style.setProperty('--p',(100*n/BADGES.length).toFixed(1)+'%');
   qa($('badgeFilter'),'button').forEach(b=>{ const on=b.dataset.f===badgeFilter; b.classList.toggle('on',on); b.setAttribute('aria-checked',String(on)); });
   const show=b=>badgeFilter==='all'||(badgeFilter==='earned')===!!progress.badges[b[0]];
   // Earned is one list, newest first (progress.badges holds when each was earned); the others keep their groups

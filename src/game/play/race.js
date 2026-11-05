@@ -42,7 +42,6 @@ function raceStep(step,o={}){ const d=$('raceOv').querySelector('.dialog'); d.da
   set('raceGo',{start:'Start a race',room:'Share invite',join:'Join',fail:host?'Try again':''}[step]||'');
   set('raceAlt',{start:'Join with a code',room:'Copy code'}[step]||'');
   $('raceCancel').hidden=step==='count'; $('raceCancel').textContent=step==='fail'?'Close':'Not now';
-  set('raceNote',step==='room'||step==='start'?'Racing connects your phones straight to each other. Playing on the same Wi-Fi works best.':'');
   if(step==='start') qa($('raceDiff'),'button').forEach(b=>{ const on=b.dataset.d===race.diff; b.classList.toggle('on',on); b.setAttribute('aria-checked',String(on)); });
   if(step==='room') $('raceCount').textContent=race.code;
   if(step==='join'){ $('raceCode').value=''; setTimeout(()=>$('raceCode').focus(),300); } }
