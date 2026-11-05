@@ -368,9 +368,11 @@ says which file holds what, and a search for a function name finds it fast.
   every 40 s), while hints and the stuck nudge always speak through it. Rule explanations and blocked moves
   stay as toasts.
 - **Meeting a mechanic** (`play/intro.js`): `showIntro(list,done)` pages through one illustrated card per mechanic
-  (`renderIntro`, dots, Next / Let's go). Its bobbing picture is the real board pieces (`MECH_PIECES`), rendered
-  once per mechanic off-screen into an image by `mechShot` (the `MECH` sticker if that fails); it borrows `makeTile` /
-  `makeItem` and undoes their `flowTiles` / `polItems` entries.
+  (`renderIntro`, dots, Next / Let's go). Its picture is the real board pieces (`MECH_PIECES`), slowly turning with no
+  tile behind them: `spinBuild` makes a little scene (borrowing `makeTile` / `makeItem` and undoing their `flowTiles` /
+  `polItems` entries), and `spinTick` (from `frame`, up to 30 fps, still under reduced motion) renders it into a render
+  target and copies the pixels to the card's `#introSpin` canvas, flipped by CSS; it frees itself once the card closes.
+  If the pieces can't be built, the `MECH` sticker shows in a tile instead.
 
 ### Board pieces
 
@@ -409,8 +411,11 @@ says which file holds what, and a search for a function name finds it fast.
 Five tabs switched by `showTab`. Leaving Play pushes a `tab` layer, so back returns to Play; opening a patch
 from a tab replaces that layer with `game`.
 
-- **Play:** the worm with a speech bubble (`say` / `sayHello`, a new line on every tap), Continue with the
-  chapter's pips, Daily and Meadow side by side (Meadow grows or resumes a patch in one tap), the closest
+- **Play:** the worm with a speech bubble that speaks now and then and fades after a few seconds (`say`): `sayHello`
+  greets on the first visit and only sometimes later, a tap says something about one time in three, and four quick
+  taps start the poking jokes (`sayTap`, `SAY_SPAM`). Continue with the chapter's pips, Daily (its week as dots
+  with weekday letters, the same look as the pips: filled done, ring today) and Meadow (a chip with the difficulty
+  it grows) side by side (Meadow grows or resumes a patch in one tap), the closest
   badge (`renderGoal`, which opens it on Badges), and the what's new card.
 - **Garden:** the map. `renderLevelList` draws one scene per chapter with its patches as stepping stones on
   a winding SVG path; closed chapters fold into a small card; tapping a stone picks it (`pickPatch`) and
@@ -532,7 +537,8 @@ from a tab replaces that layer with `game`.
   copies of each material cached in `MC` by `ghostMat`) and `raceGhostTick` (from `frame`) eases it after their moves,
   snapping on tunnels and turnarounds; its body tapers to a tail tip, and its see-through materials still write depth so
   its own far side and outline shell stay hidden. Gradient patterns show on it; shader patterns (stripes, spots...) don't.
-  `raceGhostDrop` frees it when the friend finishes or leaves and when the race ends.
+  `raceGhostDrop` frees it when the friend finishes or leaves and when the race ends. An eye button in the race row hides
+  or shows it (`ghostShown`, remembered in `squirm-race-ghost`, shown by default).
 - **Layers and the back button** (`ui/layers.js`): a small layer stack mirrored to `window.history` (`pushLayer` /
   `popLayer` / `swapLayers`). `popLayer`'s `history.go` is async, so use `swapLayers` when replacing a layer
   right after closing another (the finale does this coming from the win dialog).

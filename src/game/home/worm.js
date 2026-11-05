@@ -30,7 +30,7 @@ function initHomeWorm(){ try{ homeR=new THREE.WebGLRenderer({canvas:homeCanvas,a
       if(Math.floor(t*4)!==Math.floor((t-.05)*4)) buzz(Math.round(6+t*6));
       if(t>=3){ endHold(); held=true; askReset(); } },50); });
   ['pointerup','pointerleave','pointercancel'].forEach(ev=>homeCanvas.addEventListener(ev,()=>{ const short=holdT && performance.now()-holdStart<600; endHold();
-    if(short&&!held){ homeReact(EXPRS[Math.floor(Math.random()*EXPRS.length)]); sfx('grow'); if(curTab==='play') say(SAY_TAP[sayI++%SAY_TAP.length]);
+    if(short&&!held){ homeReact(EXPRS[Math.floor(Math.random()*EXPRS.length)]); sfx('grow'); if(curTab==='play') sayTap();
       bumpStat('taps'); checkBadges(null); save(); } else if(!held && hHead) applyExpr(hHead,'smile'); }));
   homeCanvas.addEventListener('contextmenu',e=>e.preventDefault());
   homeCanvas.addEventListener('keydown',e=>{ if(e.key!=='Enter'&&e.key!==' ') return; e.preventDefault(); ensureAudio(); homeReact(EXPRS[Math.floor(Math.random()*EXPRS.length)]); sfx('grow'); });

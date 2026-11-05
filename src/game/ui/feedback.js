@@ -28,7 +28,7 @@ function hudIntro(){ stagger([document.querySelector('.plaque'),$('muteBtn'),doc
   stagger(document.querySelectorAll('nav .gbtn'),'enter',120,55); }
 // what comes in, in order, when a home tab opens
 function tabIntro(name){ const pg=$('tab'+name[0].toUpperCase()+name.slice(1));
-  if(name==='play'){ stagger([$('slotPlay'),document.querySelector('.brand'),document.querySelector('.tagline'),$('homePlay'),$('dailyBtn'),$('meadowBtn'),$('raceBtn'),$('goalCard'),$('newsCard')],'rise',0,60);
+  if(name==='play'){ stagger([$('slotPlay'),document.querySelector('.brand'),$('homePlay'),$('dailyBtn'),$('meadowBtn'),$('raceBtn'),$('goalCard'),$('newsCard')],'rise',0,60);
     return; }
   if(name==='garden'){ const panel=pg.querySelector('.panel'); stagger([panel],'rise'); stagger([$('lvPick')],'rise',220);
     // the list scrolls to the current patch first, then the rows in view come in

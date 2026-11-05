@@ -194,6 +194,6 @@ function onWin(){ shareText=''; newBest=false; chapterDone=null; const coloursBe
   for(let i=0;i<st;i++) setTimeout(()=>buzz(12),200+i*180);
   if(!reduceMotion) for(let i=0;i<st;i++) tone([784,988,1318][i],.25,{vol:.1,delay:.2+i*.18});
   photoInfo={title:mode==='garden'?`${li+1}. ${LEVELS[li].name}`:L.daily?"Today's patch":'A meadow patch',st};
-  $('winShare').hidden=!shareText; petals(); show('winOv'); pushLayer('win');
+  $('winReplay').hidden=false; $('winShare').hidden=!shareText; petals(); show('winOv'); pushLayer('win');
   stagger([$('winStats'),...qa($('winGifts'),'.gift'),$('winNext'),document.querySelector('.win-acts')],'rise',380,70,8);
 }

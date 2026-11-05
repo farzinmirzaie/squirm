@@ -36,13 +36,24 @@ function renderGoal(){ const g=$('goalCard'), id=nearestBadge(), b=badgeById(id)
   g.innerHTML=`<span class="b-medal" aria-hidden="true">${art(b[1],32)}<span class="b-lock">${art('lock',12)}</span></span><span class="gt"><small>${p?'Almost there':'Next badge'}</small><b>${b[2]}</b>`
     +(p?`<span class="gbar"><span class="b-bar" style="--p:${pct(p)}"></span>${p[0].toLocaleString()} of ${p[1].toLocaleString()}</span>`:`<em>${b[3]}</em>`)+`</span>`; }
 $('goalCard').onclick=()=>{ badgeSel=$('goalCard').dataset.b; badgeFilter='all'; showTab('badges'); };
-// the worm says hello: by time of day, about today's daily, and something new each time it's tapped
+// The home worm speaks now and then, not all the time: a greeting on the first visit and sometimes after that, a word on
+// some taps, and a run of jokes when someone keeps poking it. Every bubble fades away after a few seconds.
 const SAY_TAP=['Hi there!','That tickles!','Wheee!','Hello, friend!','*wiggle wiggle*','I like your hat.','Shall we crawl?','Mmm, peaches.'];
-let sayI=0;
-function say(t){ const el=$('wormSay'); if(!el||el.textContent===t) return; el.textContent=t; animOnce(el,'say'); }
-function sayHello(){ const h=new Date().getHours(), d=progress.daily, done=!!d.results[todayKey()];
+const SAY_SPAM=['Hey, that tickles!','Okay, okay, I\'m awake!','Boop received.','You poke, I wiggle. Deal.','I\'m getting dizzy...',
+  'Are you trying to wake the snails?','*giggles uncontrollably*','Boop limit reached!','I\'ll tell the beetles.','My hat is going to fall off!',
+  'Is this a tickle attack?','I surrender! Take my peaches!','Fine. I\'ll just wiggle forever.','You must really like worms.'];
+let sayI=0, spamI=0, sayT=0, lastHello=0, pokes=[];
+function say(t,ms=4200){ const el=$('wormSay'); if(!el) return; clearTimeout(sayT); el.classList.remove('bye');
+  if(el.textContent!==t){ el.textContent=t; animOnce(el,'say'); }
+  sayT=setTimeout(()=>{ el.classList.add('bye'); sayT=setTimeout(()=>{ el.textContent=''; el.classList.remove('bye'); },reduceMotion?0:180); },ms); }
+function sayHello(){ const now=performance.now(); if(lastHello&&(now-lastHello<90000||Math.random()>.35)) return; lastHello=now;
+  const h=new Date().getHours(), d=progress.daily, done=!!d.results[todayKey()];
   const hi=h<5?'Up late?':h<12?'Good morning!':h<18?'Hello again!':'Good evening!', played=LEVELS.some((l,i)=>isCleared(i));
-  say(!done&&played?`${hi} Today's patch is ready.`:h<5?'Up late? Me too.':hi); }
+  say(!done&&played?`${hi} Today's patch is ready.`:h<5?'Up late? Me too.':hi,6000); }
+// a tap on the home worm: four or more within a couple of seconds is a poking spree
+function sayTap(){ const now=performance.now(); pokes=pokes.filter(t=>now-t<2500); pokes.push(now);
+  if(pokes.length>=4) say(SAY_SPAM[spamI++%SAY_SPAM.length],2600);
+  else if(Math.random()<.3) say(SAY_TAP[sayI++%SAY_TAP.length]); }
 $('dailyBtn').onclick=()=>{ ensureAudio(); const r=readResume('endless'); if(r&&r.def&&r.def.daily===todayKey()){ mode='endless'; hideAll();
   startLevel(r.def,false); enterGame(); return; } startDaily(); };
 $('homeEndlessCont').onclick=()=>{ continueEndless(); };

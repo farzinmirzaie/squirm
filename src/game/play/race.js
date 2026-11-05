@@ -137,8 +137,13 @@ function raceTick(){ if(!race||!state) return; const key=state.moves+':'+state.s
 // the race row under the HUD: how your friend is doing, and the race clock
 function raceBar(){ const f=race?race.friend:{gone:true}, el=$('raceBar'), n=f.done?f.mv:(f.n||0);
   const t=f.gone&&!f.done?'Your friend left the race':f.done?`Friend got home in ${f.mv}!`:`Friend <small>· ${n} ${n===1?'move':'moves'}</small>`;
-  const html=`<span class="ic" aria-hidden="true">${art('worm',19)}</span><span class="rb-t">${t}</span><span class="rb-clock" id="raceClock">${raceMMSS(raceSecs())}</span>`;
+  const on=ghostShown(), gb=f.gone||f.done?'':`<button class="rb-ghost${on?' on':''}" id="raceGhostBtn" aria-pressed="${on}" aria-label="Show your friend's ghost" data-sfx="none">${UI_ICON[on?'eye':'eyeOff']}</button>`;
+  const html=`<span class="ic" aria-hidden="true">${art('worm',19)}</span><span class="rb-t">${t}</span>${gb}<span class="rb-clock" id="raceClock">${raceMMSS(raceSecs())}</span>`;
   el.classList.toggle('done',!!f.done); if(el.innerHTML!==html) el.innerHTML=html; }
+// the friend's ghost can be hidden from the race row; the choice is remembered (squirm-race-ghost, shown by default)
+const ghostShown=()=>store.get('squirm-race-ghost')!=='0';
+$('raceBar').addEventListener('click',e=>{ if(!e.target.closest('#raceGhostBtn')) return; const on=!ghostShown();
+  store.set('squirm-race-ghost',on?'1':'0'); sfx(on?'on':'off'); if(ghost) ghost.g.visible=on; raceBar(); });
 // once a second, from frame
 const raceMMSS=s=>{ s=Math.floor(s); return `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`; };
 let raceClockS=-1;
@@ -203,6 +208,7 @@ function raceGhostBuild(){ raceGhostDrop(); if(!race||!race.look||!race.def) ret
   applyExpr(head,'smile'); ghostLook(head,look);
   const bodyMat=MC.ghostBody||(MC.ghostBody=new THREE.MeshToonMaterial({color:0xffffff,vertexColors:true,gradientMap:gradTex,transparent:true,opacity:.72}));
   const lineG=ghostMat(lineMat);
+  gg.visible=ghostShown();
   ghost={g:gg,head,tubes:[],bodyMat,lineG,base:new THREE.Color(look.c[0]),pat:look.p,cur:[],tgt:[]};
   raceGhostTo(race.def.worm,true); }
 function raceGhostDrop(){ if(!ghost) return; dropSeg(ghost.head); ghost.tubes.forEach(t=>{ t.body.geometry.dispose(); t.line.geometry.dispose(); });

@@ -25,7 +25,7 @@ function renderHome(){
   const k=todayKey(), dr=progress.daily.results[k];
   const mid=new Date(); mid.setHours(24,0,0,0); const left=Math.max(1,Math.ceil((mid-new Date())/60000)), wait=left>=60?`${Math.floor(left/60)}h ${left%60}m`:`${left}m`;
   $('dailyBtn').classList.toggle('done',!!dr); $('dailySeeds').hidden=!!dr; $('dailySub').textContent = dr ? `Done in ${dr.moves} moves. Next one in ${wait}.` : (progress.daily.streak?`Keep your ${progress.daily.streak} day streak going`:'One patch for everyone today');
-  $('dailyWeek').innerHTML=[6,5,4,3,2,1,0].map(n=>{ const d=new Date(); d.setDate(d.getDate()-n); return `<i class="${progress.daily.results[dateKey(d)]?'on':''} ${n?'':'today'}"></i>`; }).join('');
+  $('dailyWeek').innerHTML=[6,5,4,3,2,1,0].map(n=>{ const d=new Date(); d.setDate(d.getDate()-n); return `<span class="${n?'':'today'}"><i class="${progress.daily.results[dateKey(d)]?'on':''}"></i>${'SMTWTFS'[d.getDay()]}</span>`; }).join('');
   const ni=nextGardenIndex(), started=LEVELS.some((l,i)=>isCleared(i));
   if(allCleared()){ const t=shineable().length; $('playTitle').textContent='Garden grown!'; $('playSub').textContent=t?`${t} ${t===1?'patch':'patches'} to shine up · what's next`:"All 3 stars · see what's next"; }
   else { $('playTitle').textContent=started?'Continue':'Play'; $('playSub').textContent=`Patch ${ni+1} · ${LEVELS[ni].name}`; }
@@ -33,7 +33,8 @@ function renderHome(){
   const pc=CHAPTERS.find(c=>ni>=c.from&&ni<=c.to); $('playPips').innerHTML=pc&&!allCleared()?[...Array(pc.to-pc.from+1).keys()].map(j=>{ const i=pc.from+j; return `<i class="${isCleared(i)?'on':i===ni?'cur':''}"></i>`; }).join(''):'';
   // Meadow: the saved difficulty and its streak; one tap grows (or resumes) a patch
   const em=progress.endless[endlessDiff], er=readResume('endless'), canResume=er&&er.def&&!er.def.daily;
-  $('meadowSub').textContent=canResume?'Pick up where you left off':`${DIFF_NAME[endlessDiff]}${em.streak?` · streak ${em.streak}`:em.cleared?` · ${em.cleared} cleared`:''}`;
+  $('meadowSub').textContent=canResume?'Pick up where you left off':em.streak?`Streak of ${em.streak}`:em.cleared?`${em.cleared} cleared`:'Fresh patches, grown for you';
+  const rd=canResume&&DIFF_NAME[er.diff]?er.diff:endlessDiff; $('meadowDiff').innerHTML=`${art(DIFF_ICON_KEY[rd],18)}${DIFF_NAME[rd]}`;
   renderGoal(); sayHello();
   renderMute(); renderNews();
   // what the page shows before the game has loaded next time (see the boot script in shell.html)
