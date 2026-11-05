@@ -443,8 +443,9 @@ from a tab replaces that layer with `game`.
   (`wardTab`), the outfit line, a colour picker for the worn item (below), and Surprise outfit. The home
   worm's canvas moves between Play and Wardrobe; `homeStage(me)` widens it and shows `hBody`, a curled body
   built by `buildHomeBody` (rebuilt on every colour or pattern change), so the outfit shows.
-- **Badges:** grouped by `BADGE_GROUPS` with an All / Earned / To find filter and a detail card for the
-  tapped badge (`renderBadges`, `renderBadgeDetail`).
+- **Badges:** grouped by `BADGE_GROUPS` with an All / Earned / To find filter, one card per badge (`badgeCard`: medal, name,
+  what earns it, and Earned or a bar with the count) in a list (`renderBadges`). `badgeSel` set before opening the tab
+  (the home badge card) scrolls that badge's card into view and pops it.
 
 ### Rewards and the wardrobe (`rewards/`, `models/hats.js`, `models/extras.js`, `home/wardrobe.js`)
 

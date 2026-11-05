@@ -634,11 +634,17 @@ body.photo .wsay{display:none}
 .b-scroll{flex:1;min-height:0;margin:0 -8px;padding:4px 8px 10px}
 .b-group+.b-group{margin-top:16px}
 .b-group .label{display:flex;justify-content:space-between;margin:0 2px 8px}
-.b-tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-.b-tile{display:flex;flex-direction:column;align-items:center;gap:6px;padding:10px 4px 9px;border-radius:18px;border:3px solid var(--edge);background:var(--paper-2);color:var(--ink);font:inherit;cursor:pointer;box-shadow:0 3px 0 var(--edge)}
-.b-tile b{flex:1;display:flex;align-items:center;font:800 12px/1.15 var(--fd);text-align:center}
-.b-tile.on{background:var(--paper);border-color:var(--honey);box-shadow:0 3px 0 var(--honey-dark)}
-.b-tile.sel{outline:3px solid var(--berry);outline-offset:1px}
+.b-cards{display:flex;flex-direction:column;gap:8px}
+.b-card{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:18px;border:3px solid var(--edge);background:var(--paper-2);color:var(--ink)}
+.b-card.on{background:var(--paper);border-color:var(--honey)}
+.b-card .b-medal{width:52px;height:52px}
+.b-card .bt{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.b-card .bt b{font:800 16px/1.15 var(--fd)}
+.b-card .bt small{font:700 13px/1.3 var(--fb);color:var(--ink-soft)}
+.b-card .b-state{display:flex;align-items:center;gap:8px;color:var(--ink);font-weight:800}
+.b-card .b-state .b-bar{width:96px}
+.b-card .b-state.got{color:var(--leaf-dark)}
+.b-card .b-state .ui-ic{width:14px;height:14px}
 .b-medal{position:relative;flex:none;width:54px;height:54px;border-radius:50%;display:grid;place-items:center;background:var(--sticker);border:3px solid var(--sticker-edge)}
 .on>.b-medal{background:var(--tint-honey);border-color:var(--honey-dark)}
 .b-medal>.art:first-child{transition:filter var(--dur)}
@@ -647,14 +653,7 @@ body.photo .wsay{display:none}
 .b-bar{flex:none;width:72%;height:6px;border-radius:999px;background:var(--edge);overflow:hidden}
 .b-bar::after{content:"";display:block;height:100%;width:var(--p,0%);border-radius:999px;background:var(--honey)}
 .b-empty{margin:28px 12px;text-align:center;font-weight:700;color:var(--ink-soft)}
-.b-detail{margin-top:0}
-.b-detail .b-medal{width:60px;height:60px}
-.b-detail .pt small{display:block;font:700 13px/1.3 var(--fb)}
-.b-detail .pt .b-state{display:flex;align-items:center;gap:8px;color:var(--ink)}
-.b-detail .b-state .b-bar{width:96px}
 .b-bar.none{visibility:hidden}
-.b-detail .b-state.got{color:var(--leaf-dark)}
-.b-detail .b-state .ui-ic{width:14px;height:14px}
 
 /* ==== 7. Settings: a short list whose rows open sub-pages ==== */
 #setOv .dialog{overflow-x:hidden}
@@ -709,12 +708,11 @@ body.photo .wsay{display:none}
 
 /* ==== 9. UI feedback: one press style per family, one selection pop, one error shake, one dialog motion ==== */
 /* press: controls that stand on a ledge sink onto it, flat ones squish. Pressing is quick, letting go springs back. */
-.btn,.round,.disc,.play,.big,.goal,.set-link,.pick .go,.snap,.hat,.b-tile,.diff,.node,.mech,.seg button,.stat,.icon-btn,.rb-ghost,.link,.tab svg{
+.btn,.round,.disc,.play,.big,.goal,.set-link,.pick .go,.snap,.hat,.diff,.node,.mech,.seg button,.stat,.icon-btn,.rb-ghost,.link,.tab svg{
   transition:transform var(--dur) var(--ease-pop),scale var(--dur) var(--ease-pop),box-shadow var(--dur) var(--ease-pop),background-color var(--dur-fast),border-color var(--dur-fast)}
-.btn:active,.round:active,.snap:active,.gbtn:active .disc,.play:active,.big:active,.set-link:active,.pick .go:active,.hat:active,.b-tile:active,.diff:active,.node:active,
+.btn:active,.round:active,.snap:active,.gbtn:active .disc,.play:active,.big:active,.set-link:active,.pick .go:active,.hat:active,.diff:active,.node:active,
 .mech:active,.seg button:active,.stat:active,.icon-btn:active,.rb-ghost:active,.link:active,.switch:active,.tab:active svg{transition-duration:var(--dur-fast);transition-timing-function:var(--ease-out)}
-.hat:active,.b-tile:active{transform:translateY(3px);box-shadow:0 0 0 var(--edge)}
-.b-tile.on:active{box-shadow:0 0 0 var(--honey-dark)}
+.hat:active{transform:translateY(3px);box-shadow:0 0 0 var(--edge)}
 .hat.on:active{box-shadow:0 0 0 var(--leaf)}
 .diff:active{transform:translateY(3px);box-shadow:0 0 0 var(--acc)}
 .mech:active,.seg button:active,.stat:active,.icon-btn:active,.rb-ghost:active,.link:active,.switch:active,.tint:active{scale:.94}
@@ -794,7 +792,7 @@ body.big-text .hud-stats{zoom:.9}
   .tab.on.pop svg,.stat.cheer,.stat.cheer .ic,.stat.lost .mini,.gbtn.pop .disc,.gbtn.hint .disc svg,#hintBtn.busy svg,
   #tutorial .hand,.brand span,.node.cur::after{animation:none}
   .star{animation:none;transform:none}
-  .btn,.round,.disc,.play,.big,.goal,.set-link,.pick .go,.snap,.hat,.tint,.b-tile,.b-progress i,.b-medal>.art,.diff,.node,.mech,.seg button,.stat,.icon-btn,.rb-ghost,.link,.tab svg,.switch,.switch i,.mech .mi,#toast,#app,.set-acc .chev,.bubble.bye{transition:none}
+  .btn,.round,.disc,.play,.big,.goal,.set-link,.pick .go,.snap,.hat,.tint,.b-progress i,.b-medal>.art,.diff,.node,.mech,.seg button,.stat,.icon-btn,.rb-ghost,.link,.tab svg,.switch,.switch i,.mech .mi,#toast,#app,.set-acc .chev,.bubble.bye{transition:none}
   .diff.on:not(:active){transform:none}
   .petals{display:none}
 }
@@ -934,7 +932,6 @@ body.big-text .hud-stats{zoom:.9}
         <div class="b-progress" id="badgeBar" aria-hidden="true"><i></i></div>
         <div class="seg seg-sm" id="badgeFilter" role="radiogroup" aria-label="Show badges"><button role="radio" data-f="all"><b>All</b></button><button role="radio" data-f="earned"><b>Earned</b></button><button role="radio" data-f="todo"><b>To find</b></button></div>
         <div class="fade-scroll b-scroll" id="badgeGrid"></div>
-        <div class="pick b-detail" id="badgeDetail" aria-live="polite"></div>
       </div>
     </section>
   </div>

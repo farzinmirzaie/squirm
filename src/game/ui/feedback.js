@@ -37,5 +37,5 @@ function tabIntro(name){ const pg=$('tab'+name[0].toUpperCase()+name.slice(1));
   if(name==='meadow') { stagger([pg.querySelector('.panel'),$('mHero'),...qa(pg,'.diff')],'rise',0,40); stagger(qa(pg,'.mech'),'rise',260,22,10);
     stagger(qa(pg,'.m-go .btn'),'rise',420,60); return; }
   if(name==='me'){ stagger([$('slotMe'),pg.querySelector('.panel')],'rise',0,60); stagger(qa(pg,'#wardGrid button'),'rise',140,22,12); return; }
-  if(name==='badges'){ stagger([pg.querySelector('.panel')],'rise'); stagger(qa(pg,'.b-tile'),'rise',90,30,12); stagger([$('badgeDetail')],'rise',260); } }
+  if(name==='badges'){ stagger([pg.querySelector('.panel')],'rise'); stagger(qa(pg,'.b-card'),'rise',90,30,12); } }
 

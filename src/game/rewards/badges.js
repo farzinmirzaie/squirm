@@ -92,7 +92,7 @@ const BADGE_GROUPS=[['Garden journey',['first','par','chapter','clean','sage','s
   ['Just for fun',['moves','marathon','undos','taps','tickles','nap','owl','dawn','quick','photos','dressup','hatrack','rainbow','patterns','fashion','collector']]];
 // a badge left out of every group still shows, in the last one
 { const seen=new Set(BADGE_GROUPS.flatMap(g=>g[1])); BADGE_GROUPS[BADGE_GROUPS.length-1][1].push(...BADGES.map(b=>b[0]).filter(id=>!seen.has(id))); }
-let badgeFilter='all', badgeSel=null;
+let badgeFilter='all', badgeSel=null; // badgeSel: a badge to scroll to when the tab opens
 const badgeById=id=>BADGES.find(b=>b[0]===id);
 // [have, need] for a counted badge that isn't earned yet and has more than one step, else null
 const badgeProg=b=>{ if(progress.badges[b[0]]||!b[4].prog) return null; const [a,n]=b[4].prog(); return n>1?[Math.min(a||0,n),n]:null; };
@@ -101,29 +101,24 @@ const pct=([a,n])=>(100*a/n).toFixed(1)+'%';
 function nearestBadge(){ let best=null, br=-1;
   for(const b of BADGES){ const p=badgeProg(b); if(p&&p[0]/p[1]>br){ br=p[0]/p[1]; best=b; } }
   return (best||BADGES.find(b=>!progress.badges[b[0]])||BADGES[0])[0]; }
-function badgeTile(b){ const t=!!progress.badges[b[0]], p=badgeProg(b);
-  return `<button class="b-tile ${t?'on':''} ${b[0]===badgeSel?'sel':''}" data-b="${b[0]}" aria-pressed="${b[0]===badgeSel}" aria-label="${b[2]}${t?', earned':''}">`
-    +`<span class="b-medal" aria-hidden="true">${art(b[1],34)}${t?'':`<span class="b-lock">${art('lock',14)}</span>`}</span><b>${b[2]}</b>`
-    +`<span class="b-bar ${p?'':'none'}" style="--p:${p?pct(p):'0%'}" aria-hidden="true"></span></button>`; }
-function renderBadgeDetail(anim){ const b=badgeById(badgeSel), t=!!progress.badges[b[0]], p=badgeProg(b), d=$('badgeDetail');
-  d.classList.toggle('on',t);
-  d.innerHTML=`<span class="b-medal" aria-hidden="true">${art(b[1],38)}${t?'':`<span class="b-lock">${art('lock',14)}</span>`}</span><span class="pt"><b>${b[2]}</b><small>${b[3]}</small>`
-    +(t?`<small class="b-state got">${UI_ICON.check} Earned</small>`:p?`<small class="b-state"><span class="b-bar" style="--p:${pct(p)}"></span>${p[0].toLocaleString()} of ${p[1].toLocaleString()}</small>`:`<small class="b-state">Not yet</small>`)+`</span>`;
-  if(anim) animOnce(d,'swap'); }
+// one card per badge: its medal, name, what earns it and where you stand (earned, a bar with the count, or not yet)
+function badgeCard(b){ const t=!!progress.badges[b[0]], p=badgeProg(b);
+  return `<div class="b-card ${t?'on':''}" data-b="${b[0]}"><span class="b-medal" aria-hidden="true">${art(b[1],32)}${t?'':`<span class="b-lock">${art('lock',12)}</span>`}</span>`
+    +`<span class="bt"><b>${b[2]}</b><small>${b[3]}</small>`
+    +(t?`<small class="b-state got">${UI_ICON.check} Earned</small>`:p?`<small class="b-state"><span class="b-bar" style="--p:${pct(p)}"></span>${p[0].toLocaleString()} of ${p[1].toLocaleString()}</small>`:'')
+    +`</span></div>`; }
 function renderBadges(){ const n=Object.keys(progress.badges).length;
   $('badgeCount').textContent=`${n} of ${BADGES.length} earned`;
   $('badgeBar').firstElementChild.style.setProperty('--p',(100*n/BADGES.length).toFixed(1)+'%');
   qa($('badgeFilter'),'button').forEach(b=>{ const on=b.dataset.f===badgeFilter; b.classList.toggle('on',on); b.setAttribute('aria-checked',String(on)); });
   const show=b=>badgeFilter==='all'||(badgeFilter==='earned')===!!progress.badges[b[0]];
-  if(!badgeSel||!badgeById(badgeSel)) badgeSel=nearestBadge();
   const html=BADGE_GROUPS.map(([title,ids])=>{ const list=ids.map(badgeById).filter(show); if(!list.length) return '';
     const got=ids.filter(id=>progress.badges[id]).length;
-    return `<section class="b-group" aria-label="${title}"><p class="label">${title}<span>${got} of ${ids.length}</span></p><div class="b-tiles">${list.map(badgeTile).join('')}</div></section>`; }).join('');
+    return `<section class="b-group" aria-label="${title}"><p class="label">${title}<span>${got} of ${ids.length}</span></p><div class="b-cards">${list.map(badgeCard).join('')}</div></section>`; }).join('');
   const g=$('badgeGrid'); g.innerHTML=html||`<p class="b-empty">${badgeFilter==='earned'?'No badges yet. Finish a patch to earn your first one.':'You found every badge. What a garden!'}</p>`;
-  qa(g,'.b-tile').forEach(el=>el.onclick=()=>{ if(badgeSel===el.dataset.b) return; badgeSel=el.dataset.b;
-    qa(g,'.b-tile').forEach(x=>{ const on=x===el; x.classList.toggle('sel',on); x.setAttribute('aria-pressed',String(on)); }); settle(el);
-      renderBadgeDetail(true); });
-  renderBadgeDetail(); }
+  // arriving for one badge (the home card): bring its card into view and give it a little pop
+  if(badgeSel){ const el=g.querySelector(`[data-b="${badgeSel}"]`); badgeSel=null;
+    if(el) requestAnimationFrame(()=>{ g.scrollTop=Math.max(0,el.offsetTop-g.offsetTop-g.clientHeight/2+el.offsetHeight/2); settle(el); }); } }
 qa($('badgeFilter'),'button').forEach(b=>b.onclick=()=>{ if(badgeFilter===b.dataset.f) return; badgeFilter=b.dataset.f; renderBadges(); $('badgeGrid').scrollTop=0; settle(b);
-  stagger(qa($('badgeGrid'),'.b-tile'),'rise',0,25,12); });
+  stagger(qa($('badgeGrid'),'.b-card'),'rise',0,25,12); });
 
