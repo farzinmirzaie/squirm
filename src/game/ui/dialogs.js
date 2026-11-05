@@ -15,7 +15,7 @@ function hide(id){ const o=$(id); if(id==='homeOv'){ o.classList.remove('show');
 // open and not on its way out
 const isOpen=id=>{ const c=$(id).classList; return c.contains('show')&&!c.contains('out'); };
 function hideAll(){ ['winOv','homeOv','setOv','finOv'].forEach(hide); }
-function anyOverlay(){ return ['winOv','homeOv','genOv','introOv','resetOv','setOv','finOv','seedOv'].some(isOpen); }
+function anyOverlay(){ return ['winOv','homeOv','genOv','introOv','resetOv','setOv','finOv','seedOv','garOv'].some(isOpen); }
 function renderMute(){ if($('homeSound')){ const hb=$('homeSound'); hb.setAttribute('aria-label',muted?'Turn sound on':'Turn sound off');
   setTimeout(()=>{ hb.innerHTML=$('muteBtn').innerHTML; },0); } const b=$('muteBtn'); b.setAttribute('aria-pressed',String(muted));
   b.setAttribute('aria-label',muted?'Turn sound on':'Turn sound off');

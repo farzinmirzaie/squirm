@@ -360,7 +360,7 @@ says which file holds what, and a search for a function name finds it fast.
   7th streak day), a meadow patch +1 (hard +2), +1 for the first meadow patch of the day (`progress.meadowDay`).
   Asking again for the same position is free. An empty pouch opens `seedOv` (`openSeeds`), which sends the player
   to the daily or the meadow; the garden patch keeps its own resume slot. The count shows on the hint button
-  (`#seedN`, `renderSeeds` from `updateHUD`), the home pill `#homeSeeds` (tap: `seedInfo`, the same dialog as an
+  (`#seedN`, `renderSeeds` from `updateHUD`), the seeds half of the home pill (`#homeSeeds`; tap: `seedInfo`, the same dialog as an
   explainer) and chips on the Daily and Meadow cards. `stats.seedsGot` counts seeds grown; 30 unlock the `idea` hat.
 - **HUD** (`play/hud.js`): `updateHUD` shows the moves meter with par and chips (`hudTile`) only for what isn't visible on
   the board: flags touched, keys held and length vs the burrow. Weather, hedges and pollen show in the
@@ -411,7 +411,10 @@ says which file holds what, and a search for a function name finds it fast.
 
 ### Home (`homeOv`; `home/`, the map in `play/levels.js`)
 
-Five tabs switched by `showTab`. Leaving Play pushes a `tab` layer, so back returns to Play; opening a patch
+Five tabs switched by `showTab`. Above them, stars and hint seeds share one pill (`.home-pills`, two buttons with a
+line between): the seeds half opens `seedInfo`, the stars half `gardenInfo` (`garOv`, layer `gar`, in `ui/finale.js`):
+the big totals (stars, patches, badges), the four badges closest to earning (tap one to open it on Badges) and every
+counter in `GAR_STATS`, so players see where they stand. Add a row there when you add a counter a badge uses. Leaving Play pushes a `tab` layer, so back returns to Play; opening a patch
 from a tab replaces that layer with `game`.
 
 - **Play:** the worm with a speech bubble that speaks now and then and fades after a few seconds (`say`): `sayHello`
@@ -419,7 +422,8 @@ from a tab replaces that layer with `game`.
   taps start the poking jokes (`sayTap`, `SAY_SPAM`). Continue with the chapter's pips, Daily (its week as dots
   with weekday letters, the same look as the pips: filled done, ring today) and Meadow (a chip with the difficulty
   it grows) side by side (Meadow grows or resumes a patch in one tap), the closest
-  badge (`renderGoal`, which opens it on Badges), and the what's new card.
+  badge (`renderGoal`: its name as the title, what earns it below and a bar when it counts up; opens it on Badges),
+  and the what's new card.
 - **Garden:** the map. `renderLevelList` draws one scene per chapter with its patches as stepping stones on
   a winding SVG path; closed chapters fold into a small card; tapping a stone picks it (`pickPatch`) and
   shows its card with a `drawThumb` preview and the mechanics it uses, and tapping again plays. Above the

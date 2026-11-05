@@ -15,6 +15,7 @@ window.addEventListener('popstate',()=>{ if(ignorePop>0){ ignorePop--; return; }
   if(top==='intro') closeIntro(true);
   else if(top==='reset') hide('resetOv');
   else if(top==='seeds') hide('seedOv');
+  else if(top==='gar') hide('garOv');
   else if(top==='race') raceCancel(true);
   else if(top==='finale') hide('finOv');
   else if(top==='settings') hide('setOv');

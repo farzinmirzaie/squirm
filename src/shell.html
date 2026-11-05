@@ -186,6 +186,22 @@ button:focus-visible{outline:3px solid var(--honey);outline-offset:2px}
 .sheet .label-row p.label{margin:0}
 /* out of hint seeds: where to grow more */
 .seeds .seed-art{flex:none;align-self:center;width:84px;height:84px;margin:2px auto 0;border-radius:22px;display:grid;place-items:center;background:var(--tint-honey);border:3px solid var(--honey-dark);box-shadow:0 4px 0 var(--honey-dark);--art-halo:none}
+/* your garden so far (the stars pill): totals, the closest badges and every counter we keep */
+.gar{display:flex;flex-direction:column;overflow:hidden}
+.gar-body{flex:1 1 auto;min-height:0;overflow:auto;overscroll-behavior:contain;display:flex;flex-direction:column;gap:10px;margin:0 -20px 14px;padding:2px 20px 6px;text-align:left}
+.gar-body p{margin:0;text-align:center}
+.gar-body p.label{margin:6px 0 -2px;text-align:left}
+.gar-tops{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.gar-tops span{display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 4px 7px;border-radius:18px;background:var(--paper-2);border:2px solid var(--edge);font:800 18px/1 var(--fd);color:var(--ink);text-align:center}
+.gar-tops small,.gar-grid small{font:800 11px/1.15 var(--fb);color:var(--ink-soft)}
+.gar-body .seed-how{margin:0}
+.gar-near li{cursor:pointer}
+.gar-near li>span:not(.ic){display:flex;flex-direction:column;gap:2px;min-width:0}
+.gar-near small{font:700 12px/1.25 var(--fb);color:var(--ink-soft)}
+.gar-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.gar-grid>span{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:14px;background:var(--paper-2);border:2px solid var(--edge);min-width:0}
+.gar-grid .gv{display:flex;flex-direction:column;gap:2px;min-width:0}
+.gar-grid b{display:block;font:800 16px/1.1 var(--fd);color:var(--ink)}
 /* race a friend: the invite, reply, connecting and countdown steps share one dialog (race.js sets data-step) */
 .race-ico{background:var(--tint-lilac)}
 /* the race row under the HUD: your friend on the left, the race clock on the right */
@@ -211,7 +227,6 @@ body[data-mode="race"] #hintBtn{display:none}
 .seed-how[hidden]{display:none}
 .seed-how li{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:14px;background:var(--paper-2);border:2px solid var(--edge);font-weight:700;font-size:14px;line-height:1.3;color:var(--ink)}
 .seed-how li b{margin-left:auto;font:800 14px/1 var(--fd);white-space:nowrap}
-button.seed-pill{cursor:pointer;color:var(--ink);font:800 18px/1 var(--fd)}
 .seed-go{display:flex;flex-direction:column;gap:10px}
 .seed-go .btn{flex:none}
 /* "something new": the intro keeps its button in view */
@@ -363,10 +378,12 @@ nav{display:flex;justify-content:center;align-items:flex-end;gap:12px}
 .home.show{display:flex;flex-direction:column;align-items:stretch;place-items:stretch}
 .home-top{flex:none;display:flex;justify-content:space-between;align-items:center;gap:8px;padding:0 max(14px,env(safe-area-inset-right,0px)) 0 max(14px,env(safe-area-inset-left,0px));width:min(100%,468px);margin:0 auto}
 .home-top-tools{display:flex;gap:8px}
-.star-pill{display:inline-flex;align-items:center;gap:6px;height:40px;padding:0 14px 0 10px;border-radius:999px;background:var(--paper);border:3px solid var(--edge);box-shadow:0 3px 0 var(--edge);font:800 18px/1 var(--fd)}
-.home-pills{display:inline-flex;gap:8px}
-.seed-pill{padding:0 14px 0 8px;gap:4px}
-.seed-pill:empty{display:none}
+/* stars and hint seeds share one pill, two buttons with a line between */
+.home-pills{display:inline-flex;align-items:center;height:40px;border-radius:999px;background:var(--paper);border:3px solid var(--edge);box-shadow:0 3px 0 var(--edge)}
+.home-pills .hp{display:inline-flex;align-items:center;gap:6px;height:100%;padding:0 12px 0 10px;border:0;border-radius:999px;background:none;color:var(--ink);font:800 18px/1 var(--fd);cursor:pointer}
+.home-pills .seed-pill{padding:0 14px 0 8px;gap:4px}
+.hp:empty,.hp-sep:has(+ .hp:empty){display:none}
+.hp-sep{flex:none;width:2px;height:20px;border-radius:2px;background:var(--edge)}
 /* a little "+2" chip with a hint seed: on the Daily and Meadow cards and the out-of-seeds dialog */
 .seed-chip{display:inline-flex;align-items:center;gap:2px;margin-left:4px;padding:1px 8px 1px 4px;border-radius:999px;background:var(--tint-honey);border:2px solid var(--honey-dark);color:var(--deep);font:800 12px/1.2 var(--fd);vertical-align:middle}
 .home-duo .big{position:relative}
@@ -453,6 +470,7 @@ body.photo .wsay{display:none}
 .goal .gt{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
 .goal .gt small{font:800 11px/1 var(--fb);color:var(--ink-soft);text-transform:uppercase;letter-spacing:.06em}
 .goal .gt b{font:800 18px/1.1 var(--fd)}
+.goal .gt>small{font:700 13px/1.25 var(--fb);color:var(--ink-soft);text-transform:none;letter-spacing:0}
 .goal .gt em{font:700 13px/1.25 var(--fb);color:var(--ink-soft);font-style:normal}
 .goal .gbar{display:flex;align-items:center;gap:8px;font:800 12px/1 var(--fb);color:var(--ink-soft)}
 .goal .gbar .b-bar{flex:1;max-width:140px;height:8px}
@@ -852,7 +870,7 @@ body.big-text .hud-stats{zoom:.9}
 <div class="petals" id="petals"></div>
 <div class="home ov show" id="homeOv">
   <div class="home-top">
-    <span class="home-pills"><span class="star-pill" id="homeStars" aria-label="Stars"></span><button class="star-pill seed-pill" id="homeSeeds" aria-label="Hint seeds: what they are"></button></span>
+    <span class="home-pills"><button class="hp" id="homeStars" aria-label="Stars: how your garden is doing"></button><i class="hp-sep" aria-hidden="true"></i><button class="hp seed-pill" id="homeSeeds" aria-label="Hint seeds: what they are"></button></span>
     <span class="home-top-tools"><button class="round" id="homeSound"></button><button class="round" id="installBtn" aria-label="Install Squirm as an app" hidden><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7 10l5 5 5-5"/><path d="M5 19h14"/></svg></button><button class="round" id="settingsBtn" aria-label="Settings" title="Settings"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.8v2.4M12 18.8v2.4M2.8 12h2.4M18.8 12h2.4M5.5 5.5l1.7 1.7M16.8 16.8l1.7 1.7M5.5 18.5l1.7-1.7M16.8 7.2l1.7-1.7"/><circle cx="12" cy="12" r="6.6"/></svg></button></span>
   </div>
   <div class="tab-pages">
@@ -1002,6 +1020,12 @@ body.big-text .hud-stats{zoom:.9}
   <span class="seed-art" aria-hidden="true" data-art="hintseed" data-size="54"></span>
   <h2 id="seedTitle">Out of hint seeds</h2><p id="seedText"></p><ul class="seed-how" id="seedHow"></ul>
   <div class="seed-go"><button class="btn primary" id="seedDaily"></button><button class="btn" id="seedMeadow"></button><button class="btn" id="seedKeep"></button></div>
+</div></div>
+<div class="ov" id="garOv"><div role="dialog" aria-modal="true" aria-labelledby="garTitle" class="dialog card seeds gar">
+  <span class="seed-art" aria-hidden="true" data-art="stars" data-size="54"></span>
+  <h2 id="garTitle">Your garden so far</h2>
+  <div class="gar-body fade-scroll" id="garBody"></div>
+  <div class="seed-go"><button class="btn primary" id="garBadges">See all badges</button><button class="btn" id="garOk">Got it</button></div>
 </div></div>
 <div class="ov" id="raceOv"><div role="dialog" aria-modal="true" aria-labelledby="raceTitle" class="dialog card race">
   <span class="race-art" aria-hidden="true" data-art="race" data-size="54"></span>
