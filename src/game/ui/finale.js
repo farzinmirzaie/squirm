@@ -45,10 +45,13 @@ const GAR_STATS=[['worm','Moves crawled','moves'],['peach','Snacks eaten','fruit
   ['hintseed','Seeds grown','seedsGot'],['camera','Photos','photos'],['bowtie','Outfit changes','outfits'],['rewind','Undos','undos'],
   ['race','Races','races'],['trophy','Races won','raceWins']];
 function gardenInfo(){ const st=progress.stats, v=x=>typeof x==='function'?x():(st[x]||0);
-  const grown=LEVELS.filter((l,i)=>isCleared(i)).length, got=BADGES.filter(b=>progress.badges[b[0]]).length;
-  $('garBody').innerHTML=`<p>A look at everything you've done in the garden.</p>`
-    +`<div class="gar-tops"><span>${starTotal().toLocaleString()}<small>of ${(LEVELS.length*3).toLocaleString()} stars</small></span><span>${grown}<small>of ${LEVELS.length} patches</small></span><span>${got}<small>of ${BADGES.length} badges</small></span></div>`
-    +`<p class="label">What we've counted</p><div class="gar-grid">${GAR_STATS.map(([ic,t,k])=>`<span><span class="ic" aria-hidden="true">${art(ic,18)}</span><span class="gv"><b>${v(k).toLocaleString()}</b><small>${t}</small></span></span>`).join('')}</div>`;
+  const grown=LEVELS.filter((l,i)=>isCleared(i)).length, got=BADGES.filter(b=>progress.badges[b[0]]).length, hats=HATS.filter(h=>h[0]!=='none');
+  const tile=(ic,val,t)=>`<span><span class="ic" aria-hidden="true">${art(ic,18)}</span><span class="gv"><b>${val}</b><small>${t}</small></span></span>`;
+  const of=(a,n)=>`${a.toLocaleString()}<small class="of">/${n.toLocaleString()}</small>`;
+  $('garBody').innerHTML=`<p>A look at everything you've done in the garden.</p><div class="gar-grid">`
+    +tile('star',of(starTotal(),LEVELS.length*3),'Stars')+tile('blossom',of(grown,LEVELS.length),'Patches grown')
+    +tile('medal',of(got,BADGES.length),'Badges')+tile('crown',of(hats.filter(hatUnlocked).length,hats.length),'Hats')
+    +GAR_STATS.map(([ic,t,k])=>tile(ic,v(k).toLocaleString(),t)).join('')+`</div>`;
   $('garBody').scrollTop=0; show('garOv'); pushLayer('gar'); }
 $('homeStars').onclick=()=>{ ensureAudio(); gardenInfo(); };
 $('garOk').onclick=()=>{ hide('garOv'); popLayer('gar'); };

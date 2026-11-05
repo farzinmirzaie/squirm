@@ -413,7 +413,8 @@ says which file holds what, and a search for a function name finds it fast.
 
 Five tabs switched by `showTab`. Above them, stars and hint seeds share one pill (`.home-pills`, two buttons with a
 line between): the seeds half opens `seedInfo`, the stars half `gardenInfo` (`garOv`, layer `gar`, in `ui/finale.js`):
-the big totals (stars, patches, badges) and every counter in `GAR_STATS`. Add a row there when you add a new counter. Leaving Play pushes a `tab` layer, so back returns to Play; opening a patch
+one grid of tiles: the totals (stars, patches, badges and hats, each out of the most there are), then every counter in
+`GAR_STATS`. Add a row there when you add a new counter. Leaving Play pushes a `tab` layer, so back returns to Play; opening a patch
 from a tab replaces that layer with `game`.
 
 - **Play:** the worm with a speech bubble that speaks now and then and fades after a few seconds (`say`): `sayHello`
