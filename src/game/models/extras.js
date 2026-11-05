@@ -333,6 +333,21 @@ function buildExtra(id){ // frames sit in front of the eyes even when they widen
     const star=new THREE.Mesh(new THREE.ExtrudeGeometry(SHAPE_STAR(),{depth:.25,bevelEnabled:true,bevelThickness:.08,bevelSize:.06,bevelSegments:1}),m('chef'));
     star.scale.set(.056,.056,.056); star.position.z=.011; hull(star,.006); mg.add(star);
     const loop=ring(.022,.007,m('brass'),.005,6,16); loop.position.set(0,.102,0); loop.rotation.y=Math.PI/2; mg.add(loop); }
+  else if(id==='key'){ // a key necklace: a round cord round the neck where the scarf sits, its two sides meeting in a V under the
+    // chin at a brass ring, and a golden garden key (the board's key, with its pink gem) hanging from it, tipped up to be seen from above
+    const R=.335, rg=new THREE.Group(); rg.position.set(0,-.1,-.07); rg.rotation.x=-.93; rg.scale.x=.92; g.add(rg);
+    rg.add(new THREE.Mesh(new THREE.TorusGeometry(R,.012,6,56),m('cord')),new THREE.Mesh(new THREE.TorusGeometry(R,.019,6,56),lineMat));
+    rg.updateMatrixWorld(true);
+    const md=V(0,-.4,.3), top=md.clone().add(V(0,.075,-.03));
+    for(const s of [-1,1]){ const a=rg.localToWorld(V(Math.cos(-Math.PI/2+s*.36)*R,Math.sin(-Math.PI/2+s*.36)*R,0));
+      g.add(tube([a,a.clone().lerp(top,.5).add(V(0,0,.015)),top.clone().add(V(s*.008,.006,0))],.012,m('cord'),.007,10,6,false)); }
+    const jr=ring(.02,.007,m('brass'),.005,6,16); jr.position.copy(top); jr.rotation.set(-.6,Math.PI/2,0); g.add(jr);
+    // the key, facing forward and up: a round bow with the gem, a shaft and two teeth
+    const kg=new THREE.Group(); kg.position.copy(md); kg.rotation.x=-.6; g.add(kg);
+    kg.add(ring(.042,.016,m('key'),.007,8,28));
+    const gem=dot(.024,m('keyGem'),.005,[1,1,.6],12,8); kg.add(gem);
+    kg.add(rod(V(0,-.058,0),V(0,-.17,0),.014,m('key'),.007));
+    for(const [y,w] of [[-.162,.05],[-.128,.038]]){ const t=new THREE.Mesh(new THREE.BoxGeometry(w,.022,.022),m('key')); t.position.set(w/2+.008,y,0); hull(t,.006); kg.add(t); } }
   return g; }
 function dressExtra(g){ const slot=g&&g.userData.accSlot; if(!slot) return; slot.clear(); const id=extraOn(); if(id==='none') return;
   const k=id+'|'+tintOf(id); if(!extraProto[k]) extraProto[k]=tinted(id,buildExtra(id)); slot.add(wearAdd(extraProto[k].clone())); }

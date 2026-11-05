@@ -1,7 +1,7 @@
 // ---------- the wardrobe: hats, extras and their colour options ----------
 // hats, earned by finishing chapters: [id, name, chapter index that unlocks it]. Each is built once and cloned.
 const HATS=[['none','No hat',-1],['crown','Flower crown',0],['mush','Mushroom cap',1],['straw','Straw hat',2],['tophat','Top hat',3],['leaf','Leaf cap',4],['rainhat','Rain hat',5],
-  ['acorn','Acorn cap',6],['bee','Bee antennae',7],['party','Party hat',8],['brolly','Tiny umbrella',9],['beret','Dewdrop beret',10],['bow','Ribbon bow',11],['gold','Garden crown',12],['beanie','Pompom beanie',13],['sunflower','Sunflower',14],['horn','Beetle horn',15],['shell','Snail shell',16],['pumpkin','Pumpkin hat',17],['bonnet','Petal bonnet',18],['miner','Miner\'s helmet',19],['gnome','Gnome hat',20],['explorer','Explorer\'s hat',21],['owl','Owl friend',22],['nightcap','Sleepy nightcap',23],['twirl','Twirl-cap',24],['vane','Weathervane',25],
+  ['acorn','Acorn cap',6],['bee','Bee antennae',7],['party','Party hat',8],['brolly','Tiny umbrella',9],['beret','Dewdrop beret',10],['bow','Ribbon bow',11],['gold','Garden crown',12],['beanie','Pompom beanie',13],['sunflower','Sunflower',14],['horn','Beetle horn',15],['shell','Snail shell',16],['pumpkin','Pumpkin hat',17],['bonnet','Petal bonnet',18],['miner','Miner\'s helmet',19],['gnome','Gnome hat',20],['explorer','Explorer\'s hat',21],['owl','Owl friend',22],['nightcap','Sleepy nightcap',23],['twirl','Twirl-cap',24],['vane','Weathervane',25],['boat','Paper boat',26],['apple','Apple cap',27],
   ['sprout','Little sprout',-2,'Let the worm doze off 10 times',counted(()=>[(progress.stats.naps||0),10])],
   ['teacup','Teacup',-2,'Finish a patch at tea time, 3 to 5 pm',counted(()=>[(progress.stats.teatime||0),1])],
   ['nest','Bird\'s nest',-2,'Visit the garden on 7 different days',counted(()=>[(progress.stats.days||0),7])],
@@ -36,7 +36,8 @@ const EXTRAS=[['none','Nothing','',()=>true],
   ['daisies','Daisy chain','Wear all three pollens in one patch',counted(()=>[(progress.stats.allPollen||0),1])],
   ['firefly','Firefly friend','Finish 5 patches in the evening, 7 to 10 pm',counted(()=>[(progress.stats.evenings||0),5])],
   ['pinwheel','Pinwheel friend','Turn around 25 times',counted(()=>[(progress.stats.turns||0),25])],
-  ['medal','Finisher\'s medal','Race a friend 10 times',counted(()=>[(progress.stats.races||0),10])]];
+  ['medal','Finisher\'s medal','Race a friend 10 times',counted(()=>[(progress.stats.races||0),10])],
+  ['key','Key necklace','Open 50 gates',counted(()=>[(progress.stats.gates||0),50])]];
 let extraId=store.get('squirm-extra')||'none';
 const extraOn=()=>{ const e=EXTRAS.find(x=>x[0]===extraId); return e&&e[3]()?extraId:'none'; };
 const extraArt=(id,size=36)=>tintArt(id,art(id==='none'?'hat-none':'extra-'+id,size));
@@ -63,6 +64,9 @@ const TINTS={
   flower:{keys:['chef'],art:['#FFFBF2'],opts:[['Daisy',0xFFFBF2],['Blossom',0xF7A8C4],['Butter',0xFFE08A],['Lilac',0xCDB8F5],['Sky',0x9FD2F2]]},
   racer:{keys:['racer'],art:['#F26B5E'],opts:[['Cherry',0xF26B5E],['Sky',0x7FBFEA],['Mint',0x7FD3A8],['Butter',0xF5C84E],['Lilac',0xB79CF2]]},
   medal:{keys:['ribbon','ribbonStripe'],art:['#7FBFEA','#FFFBF2'],opts:[['Sky',0x7FBFEA,0xFFFBF2],['Berry',0xE36A8C,0xFFE3EC],['Mint',0x7FD3A8,0xFFF1A8],['Lilac',0xB79CF2,0xFFFBF2],['Coral',0xF07A6A,0xFFF1A8]]},
+  boat:{keys:['boat','boatIn'],art:['#FFFBF2','#E3DCCF'],opts:[['Paper',0xFFFBF2,0xE3DCCF],['Sky',0x9FD2F2,0x7FB8E0],['Blossom',0xF7A8C4,0xE38AAA],['Butter',0xFFE08A,0xF2C85E],['Mint',0x9FE0BE,0x7FC9A2]]},
+  apple:{keys:['apple'],art:['#F0685A'],opts:[['Red',0xF0685A],['Green',0x9BD66A],['Golden',0xF5C84E],['Pink',0xF7A0B8],['Russet',0xC98E52]]},
+  key:{keys:['cord'],art:['#D99A5C'],opts:[['Twine',0xD99A5C],['Berry',0xE36A8C],['Sky',0x7FBFEA],['Mint',0x7FD3A8],['Lilac',0xB79CF2]]},
   sweatband:{keys:['sweat','sweatStripe'],art:['#FFFBF2','#F27DA2'],opts:[['Classic',0xFFFBF2,0xF27DA2],['Sky',0x9FD2F2,0xFFFBF2],['Lime',0xC9E77E,0x4FAE80],['Sunny',0xFFD04A,0xE4574C],['Berry',0xE36A8C,0xFFFBF2]]}};
 let tints=store.json('squirm-tints')||{};
 const tintOf=id=>{ const t=TINTS[id]; return t?Math.min(t.opts.length-1,Math.max(0,tints[id]|0)):0; };

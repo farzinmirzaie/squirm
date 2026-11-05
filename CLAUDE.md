@@ -494,7 +494,8 @@ from a tab replaces that layer with `game`.
   The daily patch (`startDaily`) uses a date seed, `DAILY_OPTS` and a fixed number of tries, so everyone gets
   the same one; it's cached in `squirm-daily-patch` for the day.
 - **Win card** (`onWin`, `play/moves.js`): big stars, a line about par or hints, Moves / Par / Time tiles (`New best` tag),
-  then `gifts`: rows for what was earned (badges, hats, colours, patterns, hint seeds: `hot`, honey) and progress notes
+  then `gifts`: rows for what was earned (badges, hats, extras, colours, patterns, hint seeds: `hot`, honey; new hats and
+  extras are compared with `wardSnap` taken in `startLevel`, so one a move earned on the way, like the 50th gate, shows too) and progress notes
   (chapter, streaks, next chapter), in a `.fade-scroll`. Next is the big button; Replay, Home and Share sit
   under it. Badges earned by a win only play their jingle; the card lists them.
 - **Finale** (`ui/finale.js`): once every patch is cleared (`allCleared`), winning the last one offers "What's next?", which

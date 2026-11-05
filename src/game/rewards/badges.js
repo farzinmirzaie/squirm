@@ -66,6 +66,11 @@ const BADGES=[
   ['homeward','hat-nightcap','Home at last','Finish every patch in Long way home.',()=>chapterCleared(23)],
   ['twirl','hat-twirl','Turnabout','Finish every patch in Twirl-caps.',()=>chapterCleared(24)],
   ['vane','hat-vane','Which way now?','Finish every patch in Topsy-turvy.',()=>chapterCleared(25)],
+  ['showers','hat-boat','Puddle sailor','Finish every patch in Spring showers.',()=>chapterCleared(26)],
+  ['orchard','hat-apple','Orchard keeper','Finish every patch in Old orchard.',()=>chapterCleared(27)],
+  ['bridgemaster','bridge','Bridge master','Swing bridges 75 times.',counted(()=>[progress.stats.swings||0,75])],
+  ['showery','rain','April showers','Start the rain 100 times.',counted(()=>[progress.stats.rains||0,100])],
+  ['molehills','tunnel','Down the rabbit hole','Travel through tunnels 150 times.',counted(()=>[progress.stats.tunnels||0,150])],
   ['uturn','turnshroom','U-turn','Turn around 50 times.',counted(()=>[progress.stats.turns||0,50])],
   ['longhaul','lantern','The long haul','Finish a patch with a par of 45 or more.',c=>c&&c.won&&c.par>=45],
   ['tickles','dizzy','Tickle monster','Tap the worm 15 times in a row during a patch.',counted(()=>[progress.stats.pokeRun||0,15])],
@@ -84,9 +89,9 @@ function checkBadges(ctx,quiet){ const got=[];
   return got; }
 function bumpStat(k,n=1){ progress.stats[k]=(progress.stats[k]||0)+n; }
 // badges screen: a filter, groups of sticker tiles in a fading scroller, and a card for the picked badge
-const BADGE_GROUPS=[['Garden journey',['first','par','chapter','clean','sage','stars50','stars150','shiny','chapters','garden','golden','pure','notake','lightning','critters','harvest','tangled','farfields','moonlit','homeward','twirl','vane','longhaul','allstars']],
+const BADGE_GROUPS=[['Garden journey',['first','par','chapter','clean','sage','stars50','stars150','shiny','chapters','garden','golden','pure','notake','lightning','critters','harvest','tangled','farfields','moonlit','homeward','twirl','vane','showers','orchard','longhaul','allstars']],
   ['Daily and meadow',['daily','streak7','month','sunrises','meadow','brave','fearless','unstoppable','legend','stocked']],
-  ['Garden helpers',['flags','snacks','appetite','crumbs','gates','tunnels','rain','bridges','slides','wheee','hedges','pushes','flowerpower','pollinator','knots','uturn']],
+  ['Garden helpers',['flags','snacks','appetite','crumbs','gates','tunnels','molehills','rain','showery','bridges','bridgemaster','slides','wheee','hedges','pushes','flowerpower','pollinator','knots','uturn']],
   ['Racing',['raceday','racewin','racewins','rematch']],
   ['Just for fun',['moves','marathon','undos','taps','tickles','nap','owl','dawn','quick','photos','dressup','hatrack','rainbow','patterns','fashion','collector']]];
 // a badge left out of every group still shows, in the last one

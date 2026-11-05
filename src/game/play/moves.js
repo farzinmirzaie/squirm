@@ -128,9 +128,10 @@ function starsFor(mv,par,hinted){ let s = mv<=par?3 : mv<=Math.ceil(par*1.3)?2 :
 const STAR=(on,i)=>`<svg class="star ${on?'on':''}" style="animation-delay:${.15+i*.18}s" width="44" height="44" viewBox="0 0 24 24"><path d="M12 2.8l2.8 5.8 6.3.9-4.6 4.4 1.1 6.3L12 17.2l-5.6 3 1.1-6.3L2.9 9.5l6.3-.9z" style="fill:${on?'var(--honey)':'var(--edge)'}" stroke="#5B4436" stroke-width="1.6" stroke-linejoin="round"/></svg>`;
 let shareText='', newBest=false, chapterDone=null;
 const shareLine=(what,mv,par,st)=>`Squirm, ${what}: ${mv} moves (par ${par}) ${'★'.repeat(st)}${'☆'.repeat(3-st)}`+(GAME_URL?'\n'+GAME_URL:'');
-let winHats=[];
+// what the wardrobe held when the patch started, so the win card also lists what a move earned on the way (50 gates...)
+let winHats=[], winExtras=[];
+function wardSnap(){ winHats=HATS.filter(hatUnlocked).map(h=>h[0]); winExtras=EXTRAS.filter(e=>e[3]()).map(e=>e[0]); }
 function onWin(){ shareText=''; newBest=false; chapterDone=null; const coloursBefore=coloursUnlocked(), patsBefore=patternsUnlocked();
-  winHats=HATS.filter(hatUnlocked).map(h=>h[0]);
   const par=curPar(), mv=state.moves; const st=starsFor(mv,par,hintsUsed>0); clearResume();
   if(mode==='race'){ raceWin(mv,par,st); return; }
   const titles=['Snug as a bug!','Home sweet burrow!','Wiggle well done!','Cozy and curled up!'];
@@ -181,6 +182,7 @@ function onWin(){ shareText=''; newBest=false; chapterDone=null; const coloursBe
   earned.forEach(b=>gift(art(b[1],26),b[2],'New badge',true));
   const newHat=HATS.find(h=>h[0]!=='none'&&hatUnlocked(h)&&!hatsBefore.includes(h[0]));
   if(newHat) gift(hatArt(newHat[0],28),newHat[1],'New hat for your wardrobe',true);
+  const newEx=EXTRAS.find(e=>e[0]!=='none'&&e[3]()&&!winExtras.includes(e[0])); if(newEx) gift(extraArt(newEx[0],28),newEx[1],'New extra for your wardrobe',true);
   const newPat=patternsUnlocked().find(x=>!patsBefore.includes(x)); if(newPat){ const p=PATTERNS.find(x=>x[0]===newPat);
     gift(patArt(p[0],30),p[1],'New worm pattern',true); }
   if(coloursUnlocked()>coloursBefore){ const ci=coloursUnlocked()-1; gift(patArt(patOn(),30,ci),WORM_COLS[ci][0],'New worm colour',true); }
