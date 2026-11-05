@@ -401,7 +401,6 @@ nav{display:flex;justify-content:center;align-items:flex-end;gap:12px}
 #tabMe .panel{flex:1;min-height:0}
 #slotMe{margin-bottom:-10px}
 #slotMe #homeWorm{width:320px;height:280px;margin:-6px auto 0}
-.outfit{margin:-10px 0 0;font:800 14px/1.2 var(--fb);color:var(--ink-soft)}
 #wardGrid{flex:1;min-height:150px;margin:0 -8px;padding:4px 8px 10px;align-content:start}
 #wardSeg{grid-template-columns:repeat(4,1fr)}
 /* the colour picker under the wardrobe tabs, for the hat or extra being worn (when it has colours) */
@@ -627,12 +626,13 @@ body.photo .wsay{display:none}
 /* the wardrobe list: one row per item, like the badge cards (the worn one green, as before) */
 #wardGrid.w-list{display:flex;flex-direction:column;gap:8px}
 #badgeFilter[hidden]{display:none}
-.w-card{flex-direction:row;align-items:center;gap:12px;width:100%;padding:6px 12px 6px 6px;text-align:left}
+/* every row the same height, whether it shows just a name or a hint and a bar too */
+.w-card{flex:none;flex-direction:row;align-items:center;gap:12px;width:100%;height:72px;padding:6px 12px 6px 6px;text-align:left}
 .w-card .b-medal{width:44px;height:44px;border-radius:14px}
 .w-card.locked{opacity:1}
 .w-card .bt{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
 .w-card .bt b{font:800 15px/1.15 var(--fd);text-align:left}
-.w-card .bt small{font:700 12px/1.25 var(--fb);color:var(--ink-soft);text-align:left}
+.w-card .bt small{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font:700 12px/1.25 var(--fb);color:var(--ink-soft);text-align:left}
 .w-card .b-state{display:flex;align-items:center;gap:8px;color:var(--ink);font-weight:800}
 .w-card .b-state .b-bar{width:96px}
 /* -- Badges -- */
@@ -932,7 +932,6 @@ body.big-text .hud-stats{zoom:.9}
       <div class="worm-slot me-stage" id="slotMe"></div>
       <div class="panel card me">
         <div class="panel-head"><h2>Wardrobe</h2><button class="link" id="dressRandom" data-sfx="ready"><span data-art="dice" data-size="18"></span> Surprise outfit</button></div>
-        <p class="outfit" id="outfitLine"></p>
         <div class="seg seg-sm" id="wardSeg" role="tablist" aria-label="Wardrobe"><button role="tab" data-w="hats"><b>Hats</b><small></small></button><button role="tab" data-w="colours"><b>Colours</b><small></small></button><button role="tab" data-w="patterns"><b>Patterns</b><small></small></button><button role="tab" data-w="extras"><b>Extras</b><small></small></button></div>
         <div class="tint-row" id="wardTint" role="radiogroup" aria-label="Colour" hidden></div>
         <div class="hat-grid fade-scroll" id="wardGrid" role="group" aria-label="Wardrobe items"></div>

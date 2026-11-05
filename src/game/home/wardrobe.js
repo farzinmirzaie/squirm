@@ -17,7 +17,6 @@ function wearColour(i){ wormCol=i; store.set('squirm-colour',String(i)); applyWo
 function wearPattern(id){ wormPat=id; store.set('squirm-pattern',wormPat); applyWormColour(); }
 function wearExtra(id){ extraId=id; store.set('squirm-extra',extraId); dressExtra(hHead); dressExtra(segMeshes[0]); }
 function renderWardrobe(){ const hats=HATS.filter(hatUnlocked), cols=coloursUnlocked(), pats=patternsUnlocked(), exs=EXTRAS.filter(e=>e[3]()), hat=HATS.find(h=>h[0]===hatId)||HATS[0], ex=EXTRAS.find(e=>e[0]===extraOn());
-  $('outfitLine').textContent=[hat[0]==='none'?'No hat':hat[1],WORM_COLS[wormCol][0],PATTERNS.find(x=>x[0]===patOn())[1],...(ex[0]==='none'?[]:[ex[1]])].join(' · ');
   const n={hats:[hats.length-1,HATS.length-1],colours:[cols,WORM_COLS.length],patterns:[pats.length,PATTERNS.length],extras:[exs.length-1,EXTRAS.length-1]};
   qa($('wardSeg'),'button').forEach(b=>{ const on=b.dataset.w===wardTab, c=n[b.dataset.w]; b.classList.toggle('on',on); b.setAttribute('aria-selected',String(on)); b.querySelector('small').textContent=`${c[0]} of ${c[1]}`; });
   const g=$('wardGrid'); g.className=`w-list fade-scroll ward-${wardTab}`; wardN=0;

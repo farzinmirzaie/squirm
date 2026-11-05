@@ -441,8 +441,8 @@ from a tab replaces that layer with `game`.
   best, stars and cleared count (`DIFF_DESC`), a compact difficulty switch, the mechanics mix with All/None
   and Surprise me, and Grow a patch pinned at the bottom.
 - **Wardrobe** (ids still `me` / `tabMe`): one list switched between Hats / Colours / Patterns / Extras
-  (`wardTab`), a button row per item like the badge cards (`tile`: picture in a tile, tinted once owned, cream and faded with
-  a lock until then; while locked, how to earn it and a bar from `testProg` / `chapterProg` / stars where it counts up), the outfit line, a colour picker for the worn item (below), and Surprise outfit. The home
+  (`wardTab`), a button row per item (all the same height) like the badge cards (`tile`: picture in a tile, tinted once owned, cream and faded with
+  a lock until then; while locked, how to earn it and a bar from `testProg` / `chapterProg` / stars where it counts up), a colour picker for the worn item (below), and Surprise outfit. The home
   worm's canvas moves between Play and Wardrobe; `homeStage(me)` widens it and shows `hBody`, a curled body
   built by `buildHomeBody` (rebuilt on every colour or pattern change), so the outfit shows.
 - **Badges:** grouped by `BADGE_GROUPS` with an All / Earned / To find filter, hidden until a badge is earned (Earned is one list, newest first, by the
