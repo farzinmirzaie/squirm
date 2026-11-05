@@ -645,8 +645,9 @@ body.photo .wsay{display:none}
 .b-card .b-state .b-bar{width:96px}
 .b-card .b-state.got{color:var(--leaf-dark)}
 .b-card .b-state .ui-ic{width:14px;height:14px}
-.b-medal{position:relative;flex:none;width:54px;height:54px;border-radius:50%;display:grid;place-items:center;background:var(--sticker);border:3px solid var(--sticker-edge)}
-.on>.b-medal{background:var(--tint-honey);border-color:var(--honey-dark)}
+/* badge icons are tiles like the home cards': an earned one takes its group's tint, one still to find stays plain and faded */
+.b-medal{position:relative;flex:none;width:52px;height:52px;border-radius:18px;display:grid;place-items:center;background:var(--sticker);border:2px solid var(--edge)}
+.on>.b-medal{background:var(--tint,var(--tint-honey))}
 .b-medal>.art:first-child{transition:filter var(--dur)}
 :not(.on)>.b-medal>.art:first-child{filter:grayscale(1);opacity:.5}
 .b-lock{position:absolute;right:-6px;bottom:-5px;width:24px;height:24px;border-radius:50%;display:grid;place-items:center;background:var(--sticker);border:2px solid var(--sticker-edge)}

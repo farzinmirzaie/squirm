@@ -683,7 +683,8 @@ from a tab replaces that layer with `game`.
   `--sticker` fill and `--sticker-edge` border, or a `--tint-` fill for mode tiles), its corner radius stepping with
   size: 10px under 30px (`.ic`), 14px around 40 (`.set-ico`, `.mech .mi`, `.ch-banner .emb`, `.gift .gi`, stat tiles),
   18px at 52 (`.mode-ico`), 22px around 70-85 (`.m-em`, `.fin-emb`, `.seed-art`), 26px for the intro card's big tile.
-  Circles only where the shape means something: badge medals (`.b-medal`), the chapter progress rings, round buttons.
+  Badge icons (`.b-medal`) are such tiles too: earned ones in their group's tint (`badgeTint`), the rest plain and faded.
+  Circles only where the shape means something: the chapter progress rings, round buttons.
 - Controls (chevrons, back, close, check, HUD buttons) are monoline `currentColor` SVGs from `UI_ICON`
   (class `ui-ic`), stroke rendering about 2.5px.
 

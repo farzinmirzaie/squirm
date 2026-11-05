@@ -92,6 +92,9 @@ const BADGE_GROUPS=[['Garden journey',['first','par','chapter','clean','sage','s
   ['Just for fun',['moves','marathon','undos','taps','tickles','nap','owl','dawn','quick','photos','dressup','hatrack','rainbow','patterns','fashion','collector']]];
 // a badge left out of every group still shows, in the last one
 { const seen=new Set(BADGE_GROUPS.flatMap(g=>g[1])); BADGE_GROUPS[BADGE_GROUPS.length-1][1].push(...BADGES.map(b=>b[0]).filter(id=>!seen.has(id))); }
+// each group's tint for its earned badges' tiles (the home cards use the same tints)
+const BADGE_TINT=['--tint-leaf','--tint-berry','--tint-honey','--tint-lilac','--tint-honey'];
+const badgeTint=id=>BADGE_TINT[Math.max(0,BADGE_GROUPS.findIndex(g=>g[1].includes(id)))%BADGE_TINT.length];
 let badgeFilter='all', badgeSel=null; // badgeSel: a badge to scroll to when the tab opens
 const badgeById=id=>BADGES.find(b=>b[0]===id);
 // [have, need] for a counted badge that isn't earned yet and has more than one step, else null
@@ -103,7 +106,7 @@ function nearestBadge(){ let best=null, br=-1;
   return (best||BADGES.find(b=>!progress.badges[b[0]])||BADGES[0])[0]; }
 // one card per badge: its medal, name, what earns it and where you stand (earned, a bar with the count, or not yet)
 function badgeCard(b){ const t=!!progress.badges[b[0]], p=badgeProg(b);
-  return `<div class="b-card ${t?'on':''}" data-b="${b[0]}"><span class="b-medal" aria-hidden="true">${art(b[1],32)}${t?'':`<span class="b-lock">${art('lock',12)}</span>`}</span>`
+  return `<div class="b-card ${t?'on':''}" data-b="${b[0]}"><span class="b-medal" style="--tint:var(${badgeTint(b[0])})" aria-hidden="true">${art(b[1],32)}${t?'':`<span class="b-lock">${art('lock',12)}</span>`}</span>`
     +`<span class="bt"><b>${b[2]}</b><small>${b[3]}</small>`
     +(t?`<small class="b-state got">${UI_ICON.check} Earned</small>`:p?`<small class="b-state"><span class="b-bar" style="--p:${pct(p)}"></span>${p[0].toLocaleString()} of ${p[1].toLocaleString()}</small>`:'')
     +`</span></div>`; }
