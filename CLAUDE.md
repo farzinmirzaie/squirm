@@ -329,6 +329,8 @@ Chapters (`CHAPTER_NAMES`, ten levels each; level `n` is in chapter `ceil(n/10)`
 | 24 | Long way home | the biggest boards, the hardest patches in the game |
 | 25 | Twirl-caps | turnaround mushrooms, gently, with a few early mechanics |
 | 26 | Topsy-turvy | turnaround mushrooms mixed with the later mechanics, hardened, ending hard |
+| 27 | Spring showers | small, easy boards (4-6 wide): rain and rivers again, gently re-introduced, a few flags and fruit |
+| 28 | Old orchard | big boards (9-11 wide) with keys, gates, tunnels and dry patches, hardened, ending very hard |
 
 Each chapter has a hat (`HATS`, by chapter index) and a map scene (`SCENE_COL`, `SCENE_DECO`).
 
