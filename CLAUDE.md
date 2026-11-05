@@ -507,10 +507,10 @@ from a tab replaces that layer with `game`.
   pinching never zooms the page. `snapPhoto` draws a frame with a caption plaque (from `photoInfo`) and
   shares the PNG where the browser can share files, or downloads it. Keys: Space/Enter snap, P pose, Esc back.
 - **Settings and backups** (`ui/settings.js`): the home gear opens `setOv`, one scrolling page (`#setScroll`) of cards with
-  sticker headings (`renderSettings`): a stats strip, Sound (music, volume, effects, vibration), Look (theme
+  sticker headings (`renderSettings`): Sound (music, volume, effects, vibration), Look (theme
   with swatches; Graphics: Auto lets `watchSpeed` adapt, Saver pins the lowest quality, Sharp the highest;
-  `squirm-gfx`, device-specific), Reminders, Back up your garden (save code) and About (the anonymous stats
-  switch, What's new folded into a `<details>`, the build id). A save code is `SQUIRM1:` + base64 JSON of
+  `squirm-gfx`, device-specific), Comfort, Reminders, Back up your garden (save code), What's new (every
+  entry folded into a `<details>`) and About (the anonymous stats switch, the build id). A save code is `SQUIRM1:` + base64 JSON of
   every `squirm-` key except the throwaway ones in `SAVE_SKIP`; restoring replaces those keys and reloads.
   Starting over is only the secret reset: hold the home worm's head for 3 s, which clears every `squirm-` key.
 - **Comfort** (Settings, `core/base.js`): three device-specific switches. Calm motion (`calmMotion`, `squirm-calm`) sets

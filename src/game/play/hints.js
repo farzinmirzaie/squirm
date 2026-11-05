@@ -11,7 +11,7 @@ function renderSeeds(){ const b=$('hintBtn'), free=hintFree(), n=progress.seeds;
 // the pouch is empty: offer the daily (unless it's done or being played) and the meadow; this patch is saved meanwhile
 function openSeeds(){ const daily=!progress.daily.results[todayKey()]&&!(L&&L.daily);
   $('seedTitle').textContent='Out of hint seeds'; $('seedText').textContent='Garden hints use hint seeds. Grow more in today\'s patch or out in the meadow. This patch will wait for you.';
-  $('seedHow').hidden=true; $('seedKeep').textContent='Keep trying'; $('seedMeadow').hidden=false;
+  $('seedHow').hidden=true; $('seedKeep').textContent='Keep trying'; $('seedKeep').classList.remove('primary'); $('seedMeadow').hidden=false;
   $('seedDaily').hidden=!daily; $('seedDaily').innerHTML=`Today's patch ${seedChip(2)}`; $('seedMeadow').innerHTML=`A meadow patch ${seedChip(1)}`;
   $('seedMeadow').classList.toggle('primary',!daily); sfx('stuck'); show('seedOv'); pushLayer('seeds'); }
 // the explainer, from the seed pill on the home screen
@@ -20,7 +20,7 @@ function seedInfo(){ const n=progress.seeds, row=(t,v)=>`<li><span class="ic" ar
   $('seedHow').innerHTML=row("Today's patch",'+2')+row('A meadow patch','+1')+row('A hard meadow patch','+2')+row('First meadow patch of the day','+1 more')+row('Every 7 days in a row','+1 more')
     +`<li><span class="ic" aria-hidden="true">${art('bulb',18)}</span><span>Hints stay free in the first chapter and the meadow, and the same hint twice never costs a seed.</span></li>`
     +((progress.stats.seedsGot||0)<30?`<li><span class="ic" aria-hidden="true">${hatArt('idea',18)}</span><span>Grow 30 seeds to earn the Bright idea hat</span><b>${progress.stats.seedsGot||0} of 30</b></li>`:'');
-  $('seedHow').hidden=false; $('seedDaily').hidden=true; $('seedMeadow').hidden=true; $('seedKeep').textContent='Got it'; show('seedOv'); pushLayer('seeds'); }
+  $('seedHow').hidden=false; $('seedDaily').hidden=true; $('seedMeadow').hidden=true; $('seedKeep').textContent='Got it'; $('seedKeep').classList.add('primary'); show('seedOv'); pushLayer('seeds'); }
 $('homeSeeds').onclick=()=>{ ensureAudio(); seedInfo(); };
 const seedGo=f=>()=>{ hide('seedOv'); popLayer('seeds'); f(); };
 $('seedKeep').onclick=seedGo(()=>{}); $('seedDaily').onclick=seedGo(()=>$('dailyBtn').onclick()); $('seedMeadow').onclick=seedGo(()=>$('meadowBtn').onclick());

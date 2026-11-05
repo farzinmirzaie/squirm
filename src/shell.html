@@ -575,7 +575,7 @@ body.photo .wsay{display:none}
 /* -- Meadow: endless setup -- */
 .m-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
 .m-stat{display:flex;flex-direction:column;align-items:center;gap:2px;padding:9px 4px 8px;border-radius:18px;background:var(--paper-2);border:2px solid var(--edge)}
-.m-stat .ic,.set-hero .ic{width:36px;height:36px;border-radius:14px;margin-bottom:2px}.m-stat .ic svg,.set-hero .ic svg{width:24px;height:24px}
+.m-stat .ic{width:36px;height:36px;border-radius:14px;margin-bottom:2px}.m-stat .ic svg{width:24px;height:24px}
 .m-stat b{font:800 21px/1.1 var(--fd)}
 .m-stat small{font-size:11px;font-weight:800;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.04em}
 .m-diffs{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
@@ -667,9 +667,6 @@ body.photo .wsay{display:none}
 /* Settings: one scrolling page of cards, each with a sticker heading */
 .settings{max-height:min(760px,calc(100% - 24px));padding-bottom:6px}
 .set-scroll{flex:1;min-height:0;display:flex;flex-direction:column;gap:12px;margin:0 -16px;padding:2px 16px 14px}
-.set-hero{flex:none;display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-.set-hero>span{display:flex;flex-direction:column;align-items:center;gap:3px;padding:9px 4px 8px;border-radius:18px;background:var(--paper-2);border:2px solid var(--edge);font:800 21px/1 var(--fd);color:var(--ink)}
-.set-hero>span>small{font:800 11px/1 var(--fb);color:var(--ink-soft);text-transform:uppercase;letter-spacing:.04em}
 .set-card{flex:none;display:flex;flex-direction:column;gap:12px;padding:12px 14px 14px;border-radius:22px;background:var(--paper-2);border:3px solid var(--edge)}
 .set-h{display:flex;align-items:center;gap:10px;margin:0;font:800 18px/1.1 var(--fd);color:var(--ink)}
 .set-h [data-art]{width:38px;height:38px;border-radius:14px;place-items:center;background:var(--sticker);border:2px solid var(--sticker-edge);--art-halo:none;vertical-align:0}
@@ -946,7 +943,6 @@ body.big-text .hud-stats{zoom:.9}
 <div class="ov" id="setOv"><div role="dialog" aria-modal="true" aria-labelledby="setTitle" class="dialog card sheet settings">
   <div class="set-head"><h2 id="setTitle">Settings</h2><button class="icon-btn" id="setClose" aria-label="Close"><svg class="ui-ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></svg></button></div>
   <div class="set-scroll fade-scroll" id="setScroll">
-    <div class="set-hero" id="setHero"></div>
     <section class="set-card" aria-labelledby="hSound">
       <h3 class="set-h" id="hSound"><span data-art="sound" data-size="26"></span>Sound</h3>
       <div class="set-row"><span>Music</span><button class="switch" id="setMusic" role="switch" aria-checked="true" aria-label="Music"><i></i></button></div>
@@ -992,12 +988,15 @@ body.big-text .hud-stats{zoom:.9}
       <textarea id="saveCode" rows="3" hidden spellcheck="false" autocomplete="off" aria-label="Save code" placeholder="Paste a save code here"></textarea>
       <div class="row"><button class="btn" id="saveCopy">Copy code</button><button class="btn" id="saveLoad">Restore</button></div>
     </section>
+    <section class="set-card" aria-labelledby="hNews">
+      <h3 class="set-h" id="hNews"><span data-art="news" data-size="26"></span>What's new</h3>
+      <details class="news-more"><summary>Every update<span class="chev" aria-hidden="true"><svg class="ui-ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 5.5L16 12l-6.5 6.5"/></svg></span></summary><div class="news-log" id="newsLog"></div></details>
+    </section>
     <section class="set-card" aria-labelledby="hAbout">
       <h3 class="set-h" id="hAbout"><span data-art="info" data-size="26"></span>About Squirm</h3>
       <p class="set-note">A cozy garden puzzle about a worm who just wants to get home. It plays offline and keeps your progress on this device.</p>
       <div class="set-row" id="statsRow" hidden><span>Share anonymous stats</span><button class="switch" id="setStats" role="switch" aria-checked="true" aria-label="Share anonymous stats"><i></i></button></div>
       <p class="set-note small" id="statsNote" hidden>Only simple counts, like how many gardens grew today, which patches got finished or left halfway and how often hints help, so we know what to make next. No cookies, nothing about you.</p>
-      <details class="news-more"><summary>What's new<span class="chev" aria-hidden="true"><svg class="ui-ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 5.5L16 12l-6.5 6.5"/></svg></span></summary><div class="news-log" id="newsLog"></div></details>
       <p class="set-note small">Made with three.js. Font: Baloo 2.</p>
       <p class="version">__BUILD__</p>
     </section>

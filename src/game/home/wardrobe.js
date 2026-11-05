@@ -1,7 +1,7 @@
 // ---------- wardrobe (Me tab) ----------
 // the worm on its stage shows the whole outfit; Hats / Colours / Patterns switch one grid of tiles
 let wardTab='hats';
-const tile=(key,val,on,ok,ico,name,note)=>`<button data-${key}="${val}" class="hat ${on?'on':''} ${ok?'':'locked'}" aria-pressed="${on}"><span class="hat-ico" aria-hidden="true">${ok?ico:art('lock',28)}</span><b>${name}</b><small>${ok?(on?'Wearing':'Tap to wear'):note}</small></button>`;
+const tile=(key,val,on,ok,ico,name,note)=>`<button data-${key}="${val}" class="hat ${on?'on':''} ${ok?'':'locked'}" aria-pressed="${on}"><span class="hat-ico" aria-hidden="true">${ok?ico:art('lock',28)}</span><b>${name}</b>${ok?'':`<small>${note}</small>`}</button>`;
 function outfitChanged(el){ bumpStat('outfits'); save(); if(hHead) homeReact('joy'); renderWardrobe(); const on=$('wardGrid').querySelector('.hat.on');
   if(on) settle(on); }
 function wearHat(id){ hatId=id; store.set('squirm-hat',hatId); dressHat(hHead); dressHat(segMeshes[0]); }
