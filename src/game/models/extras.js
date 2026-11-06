@@ -364,11 +364,11 @@ function buildExtra(id){ // frames sit in front of the eyes even when they widen
     const gd=dot(.011,glint,0,[1,1,.3],8,6); gd.position.set(-.07,-.006,.15); b.add(gd); }
   else if(id==='earrings'){ // star earrings dangling from little gold studs at the sides of the head, swinging as the worm moves
     for(const s of [-1,1]){ const sp=V(s,.02,.06).normalize().multiplyScalar(HEAD_R+.006);
-      const st=dot(.019,m('brass'),.006,[1,1,1],10,8); st.position.copy(sp); g.add(st);
+      const st=dot(.024,m('brass'),.007,[1,1,1],10,8); st.position.copy(sp); g.add(st);
       const pv=new THREE.Group(); pv.position.copy(sp).add(V(s*.012,-.012,0)); pv.userData.anim={r:[.22,0,.1],f:2.1,ph:s,env:.5}; g.add(pv);
-      const lp=ring(.017,.0055,m('brass'),.004,6,16); lp.position.y=-.016; lp.rotation.y=Math.PI/2; pv.add(lp);
+      const lp=ring(.021,.0065,m('brass'),.004,6,16); lp.position.y=-.02; lp.rotation.y=Math.PI/2; pv.add(lp);
       const sg=new THREE.ExtrudeGeometry(SHAPE_STAR(),{depth:.32,bevelEnabled:true,bevelThickness:.12,bevelSize:.1,bevelSegments:2,curveSegments:2});
-      sg.translate(0,0,-.16); const star=new THREE.Mesh(sg,m('earStar')); star.scale.setScalar(.066); star.position.y=-.095; star.rotation.y=s*.75; hull(star,.006); pv.add(star); } }
+      sg.translate(0,0,-.16); const star=new THREE.Mesh(sg,m('earStar')); star.scale.setScalar(.1); star.position.y=-.125; star.rotation.y=s*.75; hull(star,.006); pv.add(star); } }
   else if(id==='plaster'){ // two sticking plasters crossed over a bump on the side of the forehead, hugging the head's curve
     const c=V(.3,.17,.06).normalize(), u0=V(0,1,0).cross(c).normalize(), v0=c.clone().cross(u0);
     // a box L long and W wide along direction th, wrapped onto the head from height z0 to z0+T above its surface
