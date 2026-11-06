@@ -150,7 +150,7 @@ function onWin(){ shareText=''; newBest=false; chapterDone=null; const coloursBe
     progress.stars[nm]=Math.max(progress.stars[nm]||0,st);
     const last=li===LEVELS.length-1;
     $('winTitle').textContent = last ? 'The whole garden!' : chapterDone ? 'Chapter complete!' : titles[li%titles.length];
-    if(chapterDone){ stat('chapter/'+String(CHAPTERS.indexOf(ch)+1).padStart(2,'0')); const h=HATS.find(x=>x[2]===CHAPTERS.indexOf(ch)); gift(h?hatArt(h[0],28):art('book',26),`${chapterDone} finished`,'The whole chapter is grown',true); }
+    if(chapterDone){ stat('chapter/'+String(CHAPTERS.indexOf(ch)+1).padStart(2,'0')); const rw=chapterReward(CHAPTERS.indexOf(ch)); gift(rw?rw.art(28):art('book',26),`${chapterDone} finished`,'The whole chapter is grown',true); }
     if(!chapterDone && ch){ let left=0; for(let i=ch.from;i<=ch.to;i++) if(i!==li&&!isCleared(i)) left++; if(left) gift(art('sprout',26),`${left} more in ${ch.name}`,`Patch ${li-ch.from+1} of ${ch.to-ch.from+1} grown`); }
     // 5. say so when the next patch opens a new chapter
     const nextCh=!last&&CHAPTERS.find(c=>c.from===li+1);
