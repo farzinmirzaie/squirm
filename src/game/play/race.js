@@ -26,13 +26,14 @@ const raceGathered=pc=>new Promise(res=>{ if(pc.iceGatheringState==='complete') 
   pc.addEventListener('icegatheringstatechange',done); setTimeout(res,5000); });
 
 // ---- the dialog: one card, its step set by raceStep ----
+const raceDiffMark=()=>qa($('raceDiff'),'button').forEach(b=>{ const on=b.dataset.d===race.diff; b.classList.toggle('on',on); b.setAttribute('aria-checked',String(on)); });
 const RACE_DIFF_LINE={easy:'a small, quick patch',medium:'a medium patch',hard:'a long, twisty patch'};
 function raceStep(step,o={}){ const d=$('raceOv').querySelector('.dialog'); d.dataset.step=step;
   const host=race&&race.host, set=(id,t)=>{ const e=$(id); e.hidden=!t; if(t) e.textContent=t; };
-  $('raceDiff').hidden=step!=='start'; $('raceCode').hidden=step!=='join'; $('raceCount').hidden=!(step==='count'||step==='room');
+  $('raceDiff').hidden=step!=='room'; $('raceCode').hidden=step!=='join'; $('raceCount').hidden=!(step==='count'||step==='room');
   $('raceCount').classList.toggle('code',step==='room');
   const T={start:['Race a friend','Grow a patch and race each other to the burrow. Start a race and share the code, or join a friend\'s.'],
-    room:['Your race code','Send your friend the invite, or have them type this code in Race a friend. The race starts when they join.'],
+    room:['Your race code','Send your friend the invite, or have them type this code in Race a friend. Pick the patch size while you wait: the race starts when they join.'],
     join:['Join a race','Type the code your friend sees on their screen.'],
     link:[host?'Your friend is here!':'Finding the race…',host?'Connecting your gardens.':'Looking for your friend\'s race.'],
     grow:['Growing a patch…',host?'Planting '+RACE_DIFF_LINE[race.diff]+' for you both.':'Your friend is growing a patch for you both.'],
@@ -41,8 +42,10 @@ function raceStep(step,o={}){ const d=$('raceOv').querySelector('.dialog'); d.da
   $('raceTitle').textContent=T[0]; $('raceText').textContent=T[1];
   set('raceGo',{start:'Start a race',room:'Share invite',join:'Join',fail:host?'Try again':''}[step]||'');
   set('raceAlt',{start:'Join with a code',room:'Copy code'}[step]||'');
-  $('raceCancel').hidden=step==='count'; $('raceCancel').textContent=step==='fail'?'Close':'Not now';
-  if(step==='start') qa($('raceDiff'),'button').forEach(b=>{ const on=b.dataset.d===race.diff; b.classList.toggle('on',on); b.setAttribute('aria-checked',String(on)); });
+  // the start and room steps close by tapping outside or Back; join steps back to start; the rest can be cancelled
+  set('raceCancel',{join:'Back',link:'Cancel',grow:'Cancel',fail:'Close'}[step]||'');
+  // the patch size is picked on the room step, while the friend joins; the code stays the same whatever the size
+  if(step==='room') raceDiffMark();
   if(step==='room') $('raceCount').textContent=race.code;
   if(step==='join'){ $('raceCode').value=''; setTimeout(()=>$('raceCode').focus(),300); } }
 // its own back-button layer only from home; over a race (a rematch) the game layer is already there
@@ -203,10 +206,10 @@ $('raceGo').onclick=()=>{ if(!race) return; const st=$('raceOv').querySelector('
 $('raceAlt').onclick=()=>{ if(!race) return; const st=$('raceOv').querySelector('.dialog').dataset.step;
   if(st==='start'){ race.host=false; raceStep('join'); }
   else if(st==='room') navigator.clipboard.writeText(race.code).then(()=>toast('Code copied.',1800),()=>toast(`Your code is ${race.code}.`,2400)); };
-$('raceCancel').onclick=()=>raceCancel(false);
+$('raceCancel').onclick=()=>{ if(race&&$('raceOv').querySelector('.dialog').dataset.step==='join'){ race.host=true; raceStep('start'); return; } raceCancel(false); };
 $('raceCode').addEventListener('input',()=>{ const e=$('raceCode'), c=raceClean(e.value); if(e.value!==c) e.value=c; });
 $('raceCode').addEventListener('keydown',e=>{ if(e.key==='Enter') $('raceGo').onclick(); });
-qa($('raceDiff'),'button').forEach(b=>b.onclick=()=>{ if(!race) return; race.diff=b.dataset.d; raceStep('start'); settle(b); });
+qa($('raceDiff'),'button').forEach(b=>b.onclick=()=>{ if(!race) return; race.diff=b.dataset.d; raceDiffMark(); settle(b); });
 
 // ---- the friend's ghost: a see-through worm in their colours, pattern, hat and extra, crawling where they crawl ----
 // Their look comes with hi; their worm with every mv (s: its segments). The ghost eases toward each new position and
