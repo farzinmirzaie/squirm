@@ -505,13 +505,11 @@ body.photo .wsay{display:none}
 .m-diff{display:inline-flex;align-self:flex-start;align-items:center;gap:4px;margin-top:2px;padding:2px 10px 2px 4px;border-radius:999px;background:var(--tint-leaf);border:2px solid var(--leaf-dark);color:var(--deep);font:800 12px/1.2 var(--fd)}
 /* -- Garden: each chapter is a little scene, its patches stepping stones along a path -- */
 #tabGarden .panel{flex:1;min-height:0;gap:10px}
-.g-progress{flex:none;display:flex;flex-direction:column;gap:5px;margin-top:-8px}
-.g-progress .b-progress{margin:0}
-.g-progress small{font:800 12px/1 var(--fb);color:var(--ink-soft)}
 /* patches below 3 stars: the Shine button jumps to the next one, chips count them, a fully starred chapter rings gold */
-.g-row{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:28px}
 .shine-next{display:inline-flex;align-items:center;gap:4px;padding:3px 10px 3px 6px;border-radius:999px;background:var(--tint-honey);border:2px solid var(--honey-dark);color:var(--deep);font:800 12px/1.2 var(--fd);cursor:pointer}
 .shine-next svg{width:16px;height:16px}
+.panel-head .shine-next{padding:5px 12px 5px 8px;border-width:2px;font-size:14px;gap:6px}
+.shine-next[hidden]{display:none}
 .ch-chip .ring{position:relative}
 .ch-chip .shine{position:absolute;top:-4px;right:-6px;min-width:20px;height:20px;padding:0 5px;border-radius:999px;display:grid;place-items:center;background:var(--honey);border:2px solid var(--paper);color:var(--deep);font:800 11px/1 var(--fd)}
 .ch-chip .shine svg{width:13px;height:13px}
@@ -932,8 +930,7 @@ body.big-text .hud-stats{zoom:.9}
     </section>
     <section class="tab-page fade-scroll" id="tabGarden" aria-labelledby="lvTitle" hidden>
       <div class="panel card">
-        <div class="panel-head"><h2 id="lvTitle">Garden patches</h2><span class="total" id="lvTotal"></span></div>
-        <div class="g-progress"><div class="b-progress" aria-hidden="true"><i id="lvBar"></i></div><div class="g-row"><small id="lvGrown"></small><button class="shine-next" id="shineBtn" hidden></button></div></div>
+        <div class="panel-head"><h2 id="lvTitle">Garden patches</h2><button class="shine-next" id="shineBtn" hidden></button></div>
         <div class="ch-strip fade-scroll x" id="chStrip" data-fade="28" role="tablist" aria-label="Chapters"></div>
         <div class="list map fade-scroll" id="lvGrid" data-fade-top="10"></div>
         <div class="pick" id="lvPick" aria-live="polite"></div>
@@ -952,7 +949,7 @@ body.big-text .hud-stats{zoom:.9}
     <section class="tab-page fade-scroll" id="tabMe" aria-label="Wardrobe" hidden>
       <div class="worm-slot me-stage" id="slotMe"></div>
       <div class="panel card me">
-        <div class="panel-head"><h2>Wardrobe</h2><button class="link" id="dressRandom" data-sfx="ready"><span data-art="dice" data-size="18"></span> Surprise outfit</button></div>
+        <div class="panel-head"><h2>Wardrobe</h2><button class="link" id="dressRandom" data-sfx="ready"><span data-art="dice" data-size="18"></span> Surprise me</button></div>
         <div class="seg seg-sm" id="wardSeg" role="tablist" aria-label="Wardrobe"><button role="tab" data-w="hats"><b>Hats</b><small></small></button><button role="tab" data-w="colours"><b>Colours</b><small></small></button><button role="tab" data-w="patterns"><b>Patterns</b><small></small></button><button role="tab" data-w="extras"><b>Extras</b><small></small></button></div>
         <div class="tint-row" id="wardTint" role="radiogroup" aria-label="Colour" hidden></div>
         <div class="hat-grid fade-scroll" id="wardGrid" role="group" aria-label="Wardrobe items"></div>

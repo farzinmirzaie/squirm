@@ -49,8 +49,6 @@ const LOCK_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strok
 let picked=-1;
 function renderLevelList(){
   const g=$('lvGrid'); g.innerHTML=''; const stars=i=>progress.stars[LEVELS[i].name]||0;
-  let total=0; LEVELS.forEach((l,i)=>total+=stars(i)); $('lvTotal').innerHTML=`${STAR(true,0).replace('width="44" height="44"','width="20" height="20"')} ${total} of ${LEVELS.length*3}`;
-  const grown=LEVELS.filter((l,i)=>isCleared(i)).length; $('lvBar').style.setProperty('--p',(100*grown/LEVELS.length).toFixed(1)+'%'); $('lvGrown').textContent=`${grown} of ${LEVELS.length} patches grown`;
   $('chStrip').innerHTML=CHAPTERS.map((ch,k)=>{ const n=ch.to-ch.from+1, open=isUnlocked(ch.from), hat=HATS.find(h=>h[2]===k); let c=0; for(let i=ch.from;i<=ch.to;i++) if(isCleared(i)) c++;
     // once every patch is grown the ring fills with stars instead; the badge counts patches below 3 stars, a star when none are
     let s=0, shine=0; for(let i=ch.from;i<=ch.to;i++){ s+=stars(i); if(isCleared(i)&&stars(i)<3) shine++; }

@@ -434,7 +434,7 @@ from a tab replaces that layer with `game`.
 - **Garden:** the map. `renderLevelList` draws one scene per chapter with its patches as stepping stones on
   a winding SVG path; closed chapters fold into a small card; tapping a stone picks it (`pickPatch`) and
   shows its card with a `drawThumb` preview and the mechanics it uses, and tapping again plays. Above the
-  map: stars, a patches-grown bar and the chapter strip (`#chStrip`, one chip per chapter with its hat in a
+  map: the title with the Shine button beside it, and the chapter strip (`#chStrip`, one chip per chapter with its hat in a
   progress ring; tapping glides the map to that chapter, and `spyChapter` highlights the one in view). Once a chapter
   is fully grown its ring fills with stars instead (gold when all 30), and a honey badge counts its patches below 3
   stars (`shineable`). The Shine button (`#shineBtn`) picks the next of those from the chapter in view, and a
@@ -444,7 +444,7 @@ from a tab replaces that layer with `game`.
   and Surprise me, and Grow a patch pinned at the bottom.
 - **Wardrobe** (ids still `me` / `tabMe`): one list switched between Hats / Colours / Patterns / Extras
   (`wardTab`), a button row per item (all the same height) like the badge cards (`tile`: picture in a tile, tinted once owned, cream and faded with
-  a lock until then; while locked, how to earn it and a bar from `testProg` / `chapterProg` / stars where it counts up), a colour picker for the worn item (below), and Surprise outfit. The home
+  a lock until then; while locked, how to earn it and a bar from `testProg` / `chapterProg` / stars where it counts up), a colour picker for the worn item (below), and Surprise me. The home
   worm's canvas moves between Play and Wardrobe; `homeStage(me)` widens it and shows `hBody`, a curled body
   built by `buildHomeBody` (rebuilt on every colour or pattern change), so the outfit shows.
 - **Badges:** grouped by `BADGE_GROUPS` with an All / Earned / To find filter, hidden until a badge is earned (Earned is one list, newest first, by the
