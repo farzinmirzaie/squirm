@@ -546,9 +546,9 @@ from a tab replaces that layer with `game`.
   networks; some strict mobile networks still can't connect (`raceFail`, suggesting the same Wi-Fi or a hotspot), and
   no relay answering or no host for 30 s fails kindly too. Data-channel messages: `hi`, `look`, `start` (the host
   grows the patch with `generateEndless(diff, RACE_OPTS)` and sends it whole), `mv`, `won`, `again`, `bye`.
-  One dialog walks the steps (`raceStep`: start, just Start a race and Join with a code; room, the big code with the
-  patch size toggle (`raceDiffMark`; the code doesn't depend on it); join, with Back to start; link, grow, count, fail,
-  with Cancel or Close). Start and room have no cancel button: tapping outside or Back closes them. The race is mode `race`: no hints (the button is hidden), no resume slot, no meadow or garden progress, its
+  One dialog walks the steps (`raceStep`: start, just Start a race and Join with a code; room, the big code (tap it to copy,
+  `raceCopy`) with the patch size toggle (`raceDiffMark`; the code doesn't depend on it) and Back to start; join, with Back to start; link, grow, count, fail,
+  with Cancel or Close). Start has no cancel button: tapping outside or Back closes it. The race is mode `race`: no hints (the button is hidden), no resume slot, no meadow or garden progress, its
   own clock from "Go" (`raceSecs`, so a restart doesn't reset it), a race row under the HUD (`#raceBar`: the friend's
   moves or status and the race clock; `raceBar`, `raceClockTick`; `raceTick` sends our move count), a "Leave the race?"
   check (`leaveOv`) on Home, back or Esc while the race is still on (`raceLive`, `raceAskLeave`), and `onWin` hands over to `raceWin` / `raceResult` (who got home first, both moves, Rematch

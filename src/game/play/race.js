@@ -33,7 +33,7 @@ function raceStep(step,o={}){ const d=$('raceOv').querySelector('.dialog'); d.da
   $('raceDiff').hidden=step!=='room'; $('raceCode').hidden=step!=='join'; $('raceCount').hidden=!(step==='count'||step==='room');
   $('raceCount').classList.toggle('code',step==='room');
   const T={start:['Race a friend','Grow a patch and race each other to the burrow. Start a race and share the code, or join a friend\'s.'],
-    room:['Your race code','Send your friend the invite, or have them type this code in Race a friend. Pick the patch size while you wait: the race starts when they join.'],
+    room:['Your race code','Send your friend the invite, or have them type this code in Race a friend (tap it to copy). Pick the patch size while you wait: the race starts when they join.'],
     join:['Join a race','Type the code your friend sees on their screen.'],
     link:[host?'Your friend is here!':'Finding the race…',host?'Connecting your gardens.':'Looking for your friend\'s race.'],
     grow:['Growing a patch…',host?'Planting '+RACE_DIFF_LINE[race.diff]+' for you both.':'Your friend is growing a patch for you both.'],
@@ -41,9 +41,11 @@ function raceStep(step,o={}){ const d=$('raceOv').querySelector('.dialog'); d.da
     fail:['No luck this time',o.why||"Couldn't reach your friend's garden. Being on the same Wi-Fi, or joining your friend's hotspot, helps."]}[step];
   $('raceTitle').textContent=T[0]; $('raceText').textContent=T[1];
   set('raceGo',{start:'Start a race',room:'Share invite',join:'Join',fail:host?'Try again':''}[step]||'');
-  set('raceAlt',{start:'Join with a code',room:'Copy code'}[step]||'');
+  set('raceAlt',{start:'Join with a code'}[step]||'');
   // the start and room steps close by tapping outside or Back; join steps back to start; the rest can be cancelled
-  set('raceCancel',{join:'Back',link:'Cancel',grow:'Cancel',fail:'Close'}[step]||'');
+  set('raceCancel',{room:'Back',join:'Back',link:'Cancel',grow:'Cancel',fail:'Close'}[step]||'');
+  // on the room step the big code copies itself when tapped
+  const rc=$('raceCount'); if(step==='room'){ rc.setAttribute('role','button'); rc.tabIndex=0; rc.setAttribute('aria-label',`Race code ${race.code}. Tap to copy`); } else { rc.removeAttribute('role'); rc.removeAttribute('tabindex'); rc.removeAttribute('aria-label'); }
   // the patch size is picked on the room step, while the friend joins; the code stays the same whatever the size
   if(step==='room') raceDiffMark();
   if(step==='room') $('raceCount').textContent=race.code;
@@ -205,8 +207,12 @@ $('raceGo').onclick=()=>{ if(!race) return; const st=$('raceOv').querySelector('
   else if(st==='fail'&&race.host){ const d=race.diff; raceEnd(); race={host:true,diff:d,round:0,friend:{},want:{}}; raceStep('start'); } };
 $('raceAlt').onclick=()=>{ if(!race) return; const st=$('raceOv').querySelector('.dialog').dataset.step;
   if(st==='start'){ race.host=false; raceStep('join'); }
-  else if(st==='room') navigator.clipboard.writeText(race.code).then(()=>toast('Code copied.',1800),()=>toast(`Your code is ${race.code}.`,2400)); };
-$('raceCancel').onclick=()=>{ if(race&&$('raceOv').querySelector('.dialog').dataset.step==='join'){ race.host=true; raceStep('start'); return; } raceCancel(false); };
+};
+const raceCopy=()=>{ if(!race||$('raceOv').querySelector('.dialog').dataset.step!=='room') return; settle($('raceCount'));
+  navigator.clipboard.writeText(race.code).then(()=>toast('Code copied.',1800),()=>toast(`Your code is ${race.code}.`,2400)); };
+$('raceCount').onclick=raceCopy; $('raceCount').addEventListener('keydown',e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); raceCopy(); } });
+$('raceCancel').onclick=()=>{ const st=race&&$('raceOv').querySelector('.dialog').dataset.step;
+  if(st==='join'){ race.host=true; raceStep('start'); return; } if(st==='room'){ raceOpen(); return; } raceCancel(false); };
 $('raceCode').addEventListener('input',()=>{ const e=$('raceCode'), c=raceClean(e.value); if(e.value!==c) e.value=c; });
 $('raceCode').addEventListener('keydown',e=>{ if(e.key==='Enter') $('raceGo').onclick(); });
 qa($('raceDiff'),'button').forEach(b=>b.onclick=()=>{ if(!race) return; race.diff=b.dataset.d; raceDiffMark(); settle(b); });
