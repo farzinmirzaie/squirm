@@ -41,19 +41,19 @@ function drawThumb(cv,lv){ const g=cv.getContext('2d'); const h=lv.map.length, w
     g.fillRect(ox+x*s+1,oy+y*s+1,s-2,s-2); }
   g.fillStyle='#FF8FAF'; lv.worm.forEach(p=>{ g.fillRect(ox+p[0]*s+2,oy+p[1]*s+2,s-4,s-4); }); }
 // the garden map: one little scene per chapter, its patches stepping stones along a winding path
-const SCENE_COL=['#CFEFB8','#FFD9C2','#E2D6FA','#FFE9A8','#CBE7F7','#FBD3E0','#D3EFD0','#F3DCC4','#CFE1F8','#F8D8EA','#D9F2C9','#FFD6DE','#C9EEDF','#FFE0C2','#FFF0A8','#D9DEFC','#E8F2C0','#F9D2BE','#FDE0EA','#EED9C4','#DCEFD6','#E6EDC8','#D8D6F2','#F7DCC6','#D3F2EC','#F3E3F7','#D9ECFA','#ECEBC6'];
-const SCENE_DECO=[['sprout','flag'],['peach','mushroom'],['wheat','crack'],['key','sunflower'],['tunnel','sprout'],['drop','rain'],['bridge','drop'],['blossom','butterfly'],['tree','bee'],['daisy','leaf'],['snail','leaf'],['blossom','hedge'],['wetleaf','drop'],['balloon','bowtie'],['sunflower','stars'],['beetle','daisy'],['snail','beetle'],['moon','wheat'],['pollenY','butterfly'],['soil','sprout'],['pollenU','soil'],['tree','flag'],['moon','owl'],['lantern','house'],['turnshroom','mushroom'],['turnshroom','dizzy'],['hat-boat','rain'],['hat-apple','key']];
+const SCENE_COL=['#CFEFB8','#FFD9C2','#E2D6FA','#FFE9A8','#CBE7F7','#FBD3E0','#D3EFD0','#F3DCC4','#CFE1F8','#F8D8EA','#D9F2C9','#FFD6DE','#C9EEDF','#FFE0C2','#FFF0A8','#D9DEFC','#E8F2C0','#F9D2BE','#FDE0EA','#EED9C4','#DCEFD6','#E6EDC8','#D8D6F2','#F7DCC6','#D3F2EC','#F3E3F7','#D9ECFA','#ECEBC6','#F0DCC8','#DCEDC4','#DCD6F0','#EBD8BE','#D2EBDD','#E8D2DC'];
+const SCENE_DECO=[['sprout','flag'],['peach','mushroom'],['wheat','crack'],['key','sunflower'],['tunnel','sprout'],['drop','rain'],['bridge','drop'],['blossom','butterfly'],['tree','bee'],['daisy','leaf'],['snail','leaf'],['blossom','hedge'],['wetleaf','drop'],['balloon','bowtie'],['sunflower','stars'],['beetle','daisy'],['snail','beetle'],['moon','wheat'],['pollenY','butterfly'],['soil','sprout'],['pollenU','soil'],['tree','flag'],['moon','owl'],['lantern','house'],['turnshroom','mushroom'],['turnshroom','dizzy'],['hat-boat','rain'],['hat-apple','key'],['trowel','sprout'],['mole-peek','daisy'],['roots','tunnel'],['boots','rain'],['mole-peek','snail'],['roots','lantern']];
 // a few pebble outlines so the stepping stones don't all look stamped from one mould
 const STONES=['48% 52% 46% 54% / 56% 50% 50% 44%','54% 46% 52% 48% / 48% 56% 44% 52%','46% 54% 50% 50% / 52% 46% 54% 48%','52% 48% 56% 44% / 50% 54% 46% 50%','50% 50% 44% 56% / 46% 52% 48% 54%'];
 const LOCK_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M8 10.5V8.2a4 4 0 0 1 8 0v2.3"/><rect x="5" y="10.5" width="14" height="10" rx="3"/><path d="M12 14.6v2.2"/></svg>';
 let picked=-1;
 function renderLevelList(){
   const g=$('lvGrid'); g.innerHTML=''; const stars=i=>progress.stars[LEVELS[i].name]||0;
-  $('chStrip').innerHTML=CHAPTERS.map((ch,k)=>{ const n=ch.to-ch.from+1, open=isUnlocked(ch.from), hat=HATS.find(h=>h[2]===k); let c=0; for(let i=ch.from;i<=ch.to;i++) if(isCleared(i)) c++;
+  $('chStrip').innerHTML=CHAPTERS.map((ch,k)=>{ const n=ch.to-ch.from+1, open=isUnlocked(ch.from), rw=chapterReward(k); let c=0; for(let i=ch.from;i<=ch.to;i++) if(isCleared(i)) c++;
     // once every patch is grown the ring fills with stars instead; the badge counts patches below 3 stars, a star when none are
     let s=0, shine=0; for(let i=ch.from;i<=ch.to;i++){ s+=stars(i); if(isCleared(i)&&stars(i)<3) shine++; }
     const badge=c===n&&!shine?`<span class="shine perfect">${STAR(true,0).replace('width="44" height="44"','width="13" height="13"')}</span>`:shine?`<span class="shine">${shine}</span>`:'';
-    return `<button class="ch-chip ${c===n?'done':''} ${open?'':'locked'}" role="tab" data-k="${k}" aria-label="Chapter ${k+1}, ${ch.name}, ${c} of ${n} grown, ${s} of ${n*3} stars${shine?`, ${shine} to shine`:''}"><span class="ring" style="--p:${(100*c/n).toFixed(1)}%;--s:${(100*s/(n*3)).toFixed(1)}%">${badge}<span class="emb">${open&&hat?hatArt(hat[0],28):art(open?'sprout':'lock',open?24:20)}</span></span>${k+1}</button>`; }).join('');
+    return `<button class="ch-chip ${c===n?'done':''} ${open?'':'locked'}" role="tab" data-k="${k}" aria-label="Chapter ${k+1}, ${ch.name}, ${c} of ${n} grown, ${s} of ${n*3} stars${shine?`, ${shine} to shine`:''}"><span class="ring" style="--p:${(100*c/n).toFixed(1)}%;--s:${(100*s/(n*3)).toFixed(1)}%">${badge}<span class="emb">${open&&rw?rw.art(28):art(open?'sprout':'lock',open?24:20)}</span></span>${k+1}</button>`; }).join('');
   // Shine: the next cleared patch below 3 stars, from the chapter in view on
   const toShine=shineable(), sb=$('shineBtn'); sb.hidden=!toShine.length;
   sb.innerHTML=`${STAR(true,0).replace('width="44" height="44"','width="16" height="16"')}Shine ${toShine.length}`;
@@ -67,10 +67,10 @@ function renderLevelList(){
   const RH=96, TOP=56; let shownLocked=false;
   CHAPTERS.forEach((ch,k)=>{ const n=ch.to-ch.from+1, open=isUnlocked(ch.from); let cs=0, allDone=true, fresh=ch.from>0&&open;
     for(let i=ch.from;i<=ch.to;i++){ cs+=stars(i); if(!isCleared(i)) allDone=false; else fresh=false; }
-    const hat=HATS.find(h=>h[2]===k), sc=document.createElement('section'); sc.className='scene'+(open?'':' later'); sc.dataset.k=k;
+    const rw=chapterReward(k), sc=document.createElement('section'); sc.className='scene'+(open?'':' later'); sc.dataset.k=k;
       sc.style.setProperty('--scene',SCENE_COL[k%SCENE_COL.length]);
-    const sub=!open?(shownLocked?'Locked':`Finish ${CHAPTERS[k-1].name} to open`):allDone?(hat?`${hat[1]} earned`:'All done'):(hat?`Reward: ${hat[1].toLowerCase()}`:`${n} patches`);
-    sc.innerHTML=`<div class="ch-banner"><span class="emb" aria-hidden="true">${!open?art('lock',28):hat?hatArt(hat[0],34):art('sprout',30)}</span><span class="tt"><b>${ch.name}${fresh?' <small class="new">New</small>':''}</b><small>${sub}</small></span><span class="cnt">${allDone?`<span class="done" aria-label="Finished">${UI_ICON.check}</span>`:''}${open?STAR(true,0).replace('width="44" height="44"','width="18" height="18"')+`${cs}/${n*3}`:''}</span></div>`;
+    const sub=!open?(shownLocked?'Locked':`Finish ${CHAPTERS[k-1].name} to open`):allDone?(rw?`${rw.name} earned`:'All done'):(rw?`Reward: ${rw.name.toLowerCase()}`:`${n} patches`);
+    sc.innerHTML=`<div class="ch-banner"><span class="emb" aria-hidden="true">${!open?art('lock',28):rw?rw.art(34):art('sprout',30)}</span><span class="tt"><b>${ch.name}${fresh?' <small class="new">New</small>':''}</b><small>${sub}</small></span><span class="cnt">${allDone?`<span class="done" aria-label="Finished">${UI_ICON.check}</span>`:''}${open?STAR(true,0).replace('width="44" height="44"','width="18" height="18"')+`${cs}/${n*3}`:''}</span></div>`;
     g.appendChild(sc);
     // a chapter you can't reach yet is just its banner and a row of dots
     if(!open){ shownLocked=true; sc.insertAdjacentHTML('beforeend',`<div class="peek" aria-hidden="true">${'<i></i>'.repeat(n)}</div>`); return; }

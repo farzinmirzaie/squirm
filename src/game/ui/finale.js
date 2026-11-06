@@ -40,7 +40,7 @@ function renderGoal(){ const g=$('goalCard'), id=nearestBadge(), b=badgeById(id)
 const GAR_STATS=[['worm','Moves crawled','moves'],['peach','Snacks eaten','fruit'],['flag','Flags touched','flags'],['key','Gates opened','gates'],
   ['tunnel','Tunnel trips','tunnels'],['rain','Rains started','rains'],['bridge','Bridge swings','swings'],['flowerbtn','Hedges opened','hedges'],
   ['wetleaf','Leaf slides','slides'],['beetle','Beetle bumps','pushes'],['sunflower','Pollen dustings','dusts'],['sprout','Burrowed under','burrows'],
-  ['turnshroom','Twirls','turns'],['zzz','Naps','naps'],['calendar','Days played','days'],['sun','Daily patches','dailies'],
+  ['turnshroom','Twirls','turns'],['trowel','Mounds dug','digs'],['mole-peek','Mole bonks','moleBonks'],['zzz','Naps','naps'],['calendar','Days played','days'],['sun','Daily patches','dailies'],
   ['flame','Best daily streak',()=>progress.daily.best||0],['tulip','Meadow patches',()=>Object.values(progress.endless||{}).reduce((n,e)=>n+(e&&e.cleared||0),0)],
   ['hintseed','Seeds grown','seedsGot'],['camera','Photos','photos'],['bowtie','Outfit changes','outfits'],['rewind','Undos','undos'],
   ['race','Races','races'],['trophy','Races won','raceWins']];

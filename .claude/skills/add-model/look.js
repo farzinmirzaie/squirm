@@ -1,7 +1,7 @@
 // Renders 3D models from several sides for review: wardrobe items on the worm, or board pieces in a patch.
 // usage:
 //   node .claude/skills/add-model/look.js <outDir> wardrobe '<list>' [--dark]
-//     list: [[name, hat id, extra id, {colour option by item id}, worm colour index], ...]
+//     list: [[name, hat id, extra id, {colour option by item id}, worm colour index, pattern id (optional)], ...]
 //     e.g. '[["teacup","teacup","none",{"teacup":1},0],["patch","none","eyepatch",{},5]]'
 //     views: stage (the wardrobe's own camera, as players see it), then close front, left, right, back and top
 //     (top is about the in-patch camera)
@@ -32,7 +32,7 @@ const idle = page => page.waitForFunction(() => !window.__squirm.busy(), null, {
     await new Promise((res, rej) => server.once('error', rej).listen(0, res));
     fs.mkdirSync(outDir, { recursive: true });
     browser = await chromium.launch({ args: ['--use-gl=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
-    const big = 1e6, progress = { v: 2, best: {}, stars: {}, clean: {}, badges: {}, stats: { taps: big, moves: big, burrows: big, naps: big, teatime: 1, days: big, rains: big, restarts: big, outfits: big, allPollen: 1, photos: big, dailies: big, fruit: big, evenings: big, seedsGot: big, turns: big, twistyWins: big, races: big, raceWins: big, rematches: big, gates: big, swings: big, tunnels: big, crumbles: big } };
+    const big = 1e6, progress = { v: 2, best: {}, stars: {}, clean: {}, badges: {}, stats: { taps: big, moves: big, burrows: big, naps: big, teatime: 1, days: big, rains: big, restarts: big, outfits: big, allPollen: 1, photos: big, dailies: big, fruit: big, evenings: big, seedsGot: big, turns: big, twistyWins: big, races: big, raceWins: big, rematches: big, gates: big, swings: big, tunnels: big, crumbles: big, digs: big, moleBonks: big } };
     LEVELS.forEach(l => { progress.best[l.name] = l.par; progress.stars[l.name] = 3; progress.clean[l.name] = true; });
     const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, colorScheme: dark ? 'dark' : 'light' });
     // every mechanic's intro already seen, so no card covers a board shot
@@ -48,12 +48,12 @@ const idle = page => page.waitForFunction(() => !window.__squirm.busy(), null, {
       await sp.screenshot({ path: path.join(outDir, `${name}.png`) }); await sp.close(); console.log('  saved', name);
     };
     if (mode === 'wardrobe') {
-      // a chapter hat whose chapter has no patches yet gets a stand-in chapter (patch 1, cleared), so it counts as earned
-      await ev(page, `HATS.forEach(h=>{ while(h[2]>=CHAPTERS.length) CHAPTERS.push({name:'Look',from:0,to:0}); })`);
+      // a chapter reward (hat, or byChapter extra or pattern) whose chapter has no patches yet gets a stand-in chapter (patch 1, cleared), so it counts as earned
+      await ev(page, `[...HATS.map(h=>h[2]),...EXTRAS.map(e=>e[3].chapter),...PATTERNS.map(p=>p[3].chapter)].forEach(k=>{ while(k>=CHAPTERS.length) CHAPTERS.push({name:'Look',from:0,to:0}); })`);
       await page.click('.tab[data-tab="me"]'); await page.waitForTimeout(1500);
       const box = await (await page.$('#homeWorm')).boundingBox();
-      for (const [name, hat, extra, tints, col] of list) {
-        await ev(page, `tints=${JSON.stringify(tints || {})}; hatId=${JSON.stringify(hat)}; extraId=${JSON.stringify(extra)}; wormCol=${col | 0}; applyWormColour(); dressHat(hHead); dressExtra(hHead);`);
+      for (const [name, hat, extra, tints, col, pat] of list) {
+        await ev(page, `tints=${JSON.stringify(tints || {})}; hatId=${JSON.stringify(hat)}; extraId=${JSON.stringify(extra)}; wormCol=${col | 0}; wormPat=${JSON.stringify(pat || 'plain')}; applyWormColour(); dressHat(hHead); dressExtra(hHead);`);
         const shots = [];
         await ev(page, `window.__cam0=window.__cam0||[hCam.position.clone(),hCam.quaternion.clone()]`);
         for (const [v, yaw, el] of [['stage', 0, 0], ['front', 0, .35], ['left', 1.1, .35], ['right', -1.1, .35], ['back', 2.6, .35], ['top', 0, 1.35]]) {
