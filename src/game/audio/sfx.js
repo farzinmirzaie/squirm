@@ -56,5 +56,12 @@ const SFX={
   // soft soil: an earthy shuffle as the worm burrows under itself
   dig:()=>{ noise(.32,{freq:300,ftype:'lowpass',vol:.2,slide:.6}); tone(150,.2,{type:'triangle',vol:.07,slide:.7}); tone(440,.12,{vol:.04,delay:.18,slide:1.3});
     },
+  // dirt mounds: three quick scoops of crumbly earth and a little sigh down as the worm comes out shorter
+  scrunch:()=>{ [0,.07,.14].forEach((d,i)=>noise(.11,{freq:700-i*120,ftype:'bandpass',q:.9,vol:.16,slide:.5,delay:d}));
+    noise(.3,{freq:260,ftype:'lowpass',vol:.12,slide:.6,delay:.05}); tone(520,.2,{type:'triangle',vol:.07,slide:.55,delay:.16}); },
+  // moles: a soft pop out of the hole, and a raspberry when the worm bumps into one
+  molePop:()=>{ tone(380,.09,{type:'sine',vol:.09,slide:2.2}); noise(.07,{freq:900,vol:.04,q:1.5,slide:.6}); },
+  raspberry:()=>{ tone(92,.32,{type:'sawtooth',vol:.035,slide:1.15,attack:.02}); tone(96,.3,{type:'square',vol:.018,slide:1.1,attack:.02});
+    noise(.3,{freq:420,q:3,vol:.05,slide:1.3}); },
   snail:()=>{ tone(330,.14,{type:'sine',vol:.05,slide:.75}); tone(250,.12,{type:'sine',vol:.035,slide:.8,delay:.08}); },
 };

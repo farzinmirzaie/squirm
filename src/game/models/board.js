@@ -62,6 +62,7 @@ function makeBridge(ch){ const br=new THREE.Group(); const wm=m('plank'), dm=m('
 function makeTile(x,y,ch){
   const g=new THREE.Group(); const dry=ch==='x';
   if(ch===SOFT){ makeSoftTile(g,x,y); g.position.copy(wp(x,y)); board.add(g); return g; }
+  if(ch===DIG){ makeDirtTile(g,x,y); g.position.copy(wp(x,y)); board.add(g); return g; }
   if(ch==='~'||ch==='='||ch==='|'){ waterTile(g,x,y); if(ch!=='~'){ const br=makeBridge(ch); g.add(br); g.userData.bridge=br; } g.userData.river=true;
     g.position.copy(wp(x,y)); board.add(g); return g; }
   if(ch==='i'){ // a big wet leaf lying on the grass: slippery
@@ -87,7 +88,7 @@ function makeTile(x,y,ch){
     leafVeins(leaf,m('leafBigRib'),.052);
     leaf.position.y=-.03; leaf.rotation.y=(x*7+y*3)%4*.4; leaf.scale.setScalar(.01); leaf.visible=false; g.add(leaf); g.userData.leaf=leaf;
     g.position.copy(wp(x,y)); board.add(g); return g; }
-  const holed=ch==='E'||(ch>='1'&&ch<='9');
+  const holed=ch==='E'||(ch>='1'&&ch<='9')||MOLE[ch];
   const top=new THREE.Mesh(holed?TURF_HOLE:TURF, dry?m('dry'):((x+y)%2?m('turf1'):m('turf2')));
   top.position.y=-.15; top.receiveShadow=true; top.castShadow=true; outlineBox(top,.02,.94,.3,.94); g.add(top);
   if(holed){ // the burrow and tunnels go down into the dark: an earthy shaft with a black floor, so the worm really crawls in
@@ -271,6 +272,7 @@ function makeItem(x,y,ch){
       t.position.set(Math.cos(a)*.36,.05,Math.sin(a)*.3); t.rotation.z=(i-1)*.3; t.castShadow=true; g.add(t); }
     g.userData.rim=rim; g.userData.sprite=sign; g.userData.signs=[sign]; }
   else if(POLLEN[ch]) makePollenFlower(g,ch,x,y);
+  else if(MOLE[ch]) makeMoleHill(g,x,y);
   else if(PETALS[ch]) makePetalGate(g,ch,x,y);
   else return null;
   faceCamera(g); board.add(g); return g;
@@ -284,7 +286,7 @@ function disposeTree(root){
   root.traverse(o=>{ if(o.geometry&&!keepG.has(o.geometry)) o.geometry.dispose();
     for(const mt of o.material?[].concat(o.material):[]){ if(keepM.has(mt)) continue; if(mt.map&&!keepT.has(mt.map)) mt.map.dispose(); mt.dispose(); } }); }
 function buildBoard(){
-  disposeTree(board); disposeTree(fx); board.clear(); fx.clear(); cells=[]; flowTiles=[]; polItems=[]; snapPollen();
+  disposeTree(board); disposeTree(fx); board.clear(); fx.clear(); cells=[]; flowTiles=[]; polItems=[]; moleItems=[]; snapPollen();
   for(let y=0;y<state.h;y++){ const row=[]; for(let x=0;x<state.w;x++){
     const ch=state.grid[y][x]; row.push({ch, tile: ch===' '?null:makeTile(x,y,ch), item: makeItem(x,y,ch)}); } cells.push(row); }
   buildGarden(); buildRain(); syncWeather(false); buildSnails(); buildBeetles(); syncHedges(false);
@@ -300,5 +302,5 @@ function syncHedges(animate){ if(!state) return; const open=hedgesOpen(state); l
         if(animate) tween(300,e=>{ h.scale.y=Math.max(.06,s0+(want-s0)*e); const w=w0+(wide-w0)*e; h.scale.x=h.scale.z=w; h.position.y=-(1-h.scale.y)*.06; });
           else { h.scale.set(wide,want,wide); h.position.y=-(1-want)*.06; } } } }
   if(changed&&animate){ sfx(open?'hedgeOpen':'hedgeClose'); if(open) bumpStat('hedges'); }
-  syncPetals(animate); syncSoil(animate); }
+  syncPetals(animate); syncSoil(animate); syncMoles(animate); }
 function removeObj(o){ if(o&&o.parent) o.parent.remove(o); }

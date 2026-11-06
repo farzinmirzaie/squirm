@@ -37,7 +37,7 @@ const idle = page => page.waitForFunction(() => !window.__squirm.busy(), null, {
     const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, colorScheme: dark ? 'dark' : 'light' });
     // every mechanic's intro already seen, so no card covers a board shot
     await ctx.addInitScript(p => { localStorage.setItem('squirm-tutorial', '1'); localStorage.setItem('squirm-progress', p); localStorage.setItem('squirm-news', '9.9.9');
-      localStorage.setItem('squirm-seen', JSON.stringify(Object.fromEntries('basics flags fruit keys dry portals rain rivers snails buttons beetles leaves pollen soil'.split(' ').map(k => [k, 1])))); }, JSON.stringify(progress));
+      localStorage.setItem('squirm-seen', JSON.stringify(Object.fromEntries('basics flags fruit keys dry portals rain rivers snails buttons beetles leaves pollen soil turn dig moles'.split(' ').map(k => [k, 1])))); }, JSON.stringify(progress));
     const page = await ctx.newPage(); page.on('pageerror', e => errors.push(String(e)));
     await page.goto(`http://localhost:${server.address().port}/squirm/`); await page.waitForSelector('#homeOv.show', { timeout: 60000 });
     // photo mode's buttons and its hint toast would cover the close-ups

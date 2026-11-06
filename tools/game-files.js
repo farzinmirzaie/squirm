@@ -15,6 +15,7 @@ module.exports = [
   'models/snails.js',
   'models/beetles.js',
   'models/pollen-soil.js',
+  'models/digmole.js',
   'models/weather.js',
   'models/worm-head.js',
   'models/worm-skin.js',

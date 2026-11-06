@@ -14,8 +14,8 @@ const MECH={
   pollen:{t:'Pollen and petal gates',d:'Crawl over a flower to get dusted in its pollen. Petal gates only open for a worm wearing their colour, and the next flower you visit swaps your colour.',k:/[PYUpyu]/,i:art('pollenY',40)},
   soil:{t:'Soft soil',d:'Worms love loose earth! On soft soil you burrow under, so you can cross your own body there. Just never fold back onto yourself.',k:/#/,i:art('soil',40)},
   turn:{t:'Turnaround mushrooms',d:'Nibble a twirl-cap and you turn around: your tail becomes your head, and off you crawl the other way. Each one works once.',k:/T/,i:art('turnshroom',40)},
-  dig:{t:'Dirt mounds',d:'Loose earth you can dig through. Crawl into a mound and it turns to grass, but digging tires you out: you come out one segment shorter. You need three segments to dig.',k:/D/,i:art('mountain',40)},
-  moles:{t:'Moles',d:'A mole pops out of its hill every other move. While it\'s up you can\'t crawl in, so watch its rhythm and time your way past.',k:/[MN]/,i:art('steps',40)},
+  dig:{t:'Dirt mounds',d:'Loose earth you can dig through. Crawl into a mound and it turns to grass, but digging tires you out: you come out one segment shorter. You need three segments to dig.',k:/D/,i:art('dirt',40)},
+  moles:{t:'Moles',d:'A mole pops out of its hill every other move. While it\'s up you can\'t crawl in, so watch its rhythm and time your way past.',k:/[MN]/,i:art('mole',40)},
   rivers:{t:'Rivers and bridges',d:'Water blocks the way. Bridges only go along their planks, and a crank swings every bridge you are not standing on.',k:/[~=|L]/,i:art('bridge',40)},
 };
 let seenMech=store.json('squirm-seen')||{};
@@ -27,17 +27,20 @@ const INTRO_TINT=['--tint-leaf','--tint-honey','--tint-berry'];
 // the card's picture: the real board pieces, turning slowly on their own (the sticker in a tile if that fails). They're
 // drawn live into a small render target and copied to the card's canvas (flipped by CSS, as WebGL rows run bottom up).
 const MECH_PIECES={basics:['E'],flags:['C'],fruit:['+','-'],keys:['K','G'],dry:['x'],portals:['1'],rain:['R','s'],snails:['>'],
-  buttons:['B','H'],beetles:['O'],leaves:['i'],pollen:['P','p'],soil:['#'],turn:['T'],rivers:['=','L']};
+  buttons:['B','H'],beetles:['O'],leaves:['i'],pollen:['P','p'],soil:['#'],turn:['T'],dig:['D'],moles:['M'],rivers:['=','L']};
 const SPIN_PX=320;
 let spin=null;
 function spinBuild(k){ spinDrop(); const pcs=MECH_PIECES[k]; if(!pcs||!state) return false;
-  const sc=new THREE.Scene(), pivot=new THREE.Group(), grp=new THREE.Group(), f0=flowTiles.length, p0=polItems.length;
+  const sc=new THREE.Scene(), pivot=new THREE.Group(), grp=new THREE.Group(), f0=flowTiles.length, p0=polItems.length, m0=moleItems.length;
   sc.add(new THREE.HemisphereLight(0xfffaf0,0xb7d79a,.38), new THREE.AmbientLight(0xfff4e2,.2));
   const sun=new THREE.DirectionalLight(0xfff1dc,.55); sun.position.set(-4,10,5); sc.add(sun, pivot); pivot.add(grp);
   try{ const at=pcs.map((ch,x)=>wp(x,0));
     pcs.forEach((ch,x)=>{ const tile=makeTile(x,0,ch==='>'||ch==='O'?'.':ch), item=makeItem(x,0,ch); [tile,item].forEach(o=>o&&grp.add(o));
       if(ch==='>'){ const sn=makeSnail(); sn.userData.inner.scale.setScalar(1); sn.children[0].scale.setScalar(1.4); sn.position.copy(at[x]); sn.rotation.y=Math.PI/2; grp.add(sn); }
-      if(ch==='O'){ const bt=makeBeetle(); bt.position.copy(at[x]); bt.rotation.y=.4; beetleFace(bt,'idle'); grp.add(bt); } });
+      if(ch==='O'){ const bt=makeBeetle(); bt.position.copy(at[x]); bt.rotation.y=.4; beetleFace(bt,'idle'); grp.add(bt); }
+      // a dirt mound rises out of the bed's soil, so it gets a square of soil under it; a mole is shown up
+      if(ch===DIG){ const so=new THREE.Mesh(slab(1.1,1.1,.14,.14,.04),m('soil')); so.position.copy(at[x]).setY(-.29); grp.add(so); }
+      if(item&&item.userData.moleG){ const u=item.userData.moleG.userData; u.want=u.v=1; setMole(u,1); } });
     // the pivot sits in the middle of the pieces, so they turn round their own centre
     const mid=at.reduce((v,p)=>v.add(p),new THREE.Vector3()).multiplyScalar(1/at.length); grp.position.set(-mid.x,0,-mid.z);
     // the camera looks down from the patch's angle, as far back as the pieces need to fit at any turn, tall ones included
@@ -48,7 +51,7 @@ function spinBuild(k){ spinDrop(); const pcs=MECH_PIECES[k]; if(!pcs||!state) re
     cam.position.copy(c).addScaledVector(dir,rad/Math.sin(14*Math.PI/180)*.92); cam.lookAt(c);
     spin={k,sc,cam,pivot,grp,rt:new THREE.WebGLRenderTarget(SPIN_PX,SPIN_PX),px:new Uint8Array(SPIN_PX*SPIN_PX*4),acc:1,cv:null}; }
   catch(e){ disposeTree(grp); spin=null; }
-  flowTiles.length=f0; polItems.length=p0; return !!spin; }
+  flowTiles.length=f0; polItems.length=p0; moleItems.length=m0; return !!spin; }
 function spinDrop(){ if(!spin) return; disposeTree(spin.grp); spin.rt.dispose(); spin=null; }
 function spinDraw(){ const cv=spin.cv||(spin.cv=$('introSpin')); if(!cv) return;
   const old=renderer.getRenderTarget(), cc=new THREE.Color(); renderer.getClearColor(cc); const ca=renderer.getClearAlpha();
@@ -81,7 +84,7 @@ function placeSay(){ const el=$('wormSayG'), h=segMeshes[0]; if(el.hidden) retur
   const v=h.position.clone(); v.y+=.45; v.project(camera); const W=window.innerWidth, H=window.innerHeight, x=(v.x+1)/2*W, y=(1-v.y)/2*H;
   const w=el.offsetWidth, left=x+30+w>W-8; el.classList.toggle('left',left);
   el.style.transform=`translate(${Math.round(Math.max(8,left?x-30-w:x+30))}px,${Math.round(Math.max(8,y-el.offsetHeight/2))}px)`; }
-const SAY={ '+':['Yum!','Peachy!','Nom nom!'], '-':['Whoa, smaller!','Shrinking!'], C:['Got it!','A flag!','Tagged!'], K:['A key!','Ooh, shiny!'], G:['Open sesame!'], T:['Wheee, other way!','Tail first? Head first!','All turned around!'], pollen:['Achoo!','Tickles!','So fluffy!','Pretty colour!'] };
+const SAY={ '+':['Yum!','Peachy!','Nom nom!'], '-':['Whoa, smaller!','Shrinking!'], C:['Got it!','A flag!','Tagged!'], K:['A key!','Ooh, shiny!'], G:['Open sesame!'], D:['Dig dig dig!','Scrunch!','Earthy!'], T:['Wheee, other way!','Tail first? Head first!','All turned around!'], pollen:['Achoo!','Tickles!','So fluffy!','Pretty colour!'] };
 let sayN=0;
 let sayLast=-99;
 const sayFor=k=>{ const a=SAY[k]; if(!a||idleT-sayLast<40||Math.random()>.25) return null; sayLast=idleT; return a[sayN++%a.length]; };

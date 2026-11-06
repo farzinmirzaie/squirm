@@ -75,7 +75,8 @@ src/game/         everything else, in folders (map at the top of core/base.js), 
                   state, tweens (kill, tween), loop (frame, quality), boot
   audio/          sfx.js (effects), music.js (the song engine; haptics and birdsong at its end)
   models/         3D objects: garden.js (scenery, batching), visitors.js (ladybug, bird), board.js (tiles,
-                  items, disposeTree, buildBoard), snails.js, beetles.js, pollen-soil.js, weather.js,
+                  items, disposeTree, buildBoard), snails.js, beetles.js, pollen-soil.js,
+                  digmole.js (dirt mounds, molehills and moles), weather.js,
                   worm-head.js, worm-skin.js (tube material, pattern shader), worm-body.js (updateWorm),
                   hats.js (buildHat), extras.js (buildExtra)
   rewards/        wardrobe.js (HATS, EXTRAS, TINTS), colours.js (WORM_COLS, PATTERNS), badges.js
@@ -265,6 +266,8 @@ change in light and dark. The README shows `share.png`, so it stays current with
 | `p` `y` `u` | petal gate: the head may enter only while the worm wears the matching pollen |
 | `#` | soft soil: the worm burrows under it, so the head may cross its own body there |
 | `T` | turnaround mushroom (twirl-cap): eaten when the head enters, then the worm turns around (tail becomes head) |
+| `D` | dirt mound (sits where soil would be): the head digs in, it turns to grass and the worm comes out one shorter |
+| `M` / `N` | molehill: the head can't enter while its mole is up (`M` up after an even number of moves, `N` after an odd one) |
 
 `rain` sets whether it starts raining. Rule details that the table doesn't capture:
 
@@ -291,6 +294,11 @@ change in light and dark. The README shows `share.png`, so it stays current with
   `segs` are reversed, so the old tail is the new head; `ev.turn`. A turn ends a wet-leaf slide. Nothing new in the
   solver key (the order of `segs` already is). The game animates the crawl in the old order, then `turnAround`
   (`play/moves.js`) shrinks the head away in a swirl and pops it up at the other end; `stats.turns` counts them.
+- **Dirt mounds:** digging needs a worm of three or more (`DIG_MIN`, else blocked `'dig'`); the tile becomes `.`, the worm
+  loses its last segment and `ev.dug` is `[x,y]`. Nothing else (beetles, snails) can use a mound. `stats.digs` counts digs.
+- **Moles:** `moleUp(t,moves)` is by the move count's parity only, so it joins the solver key (`state.moles`) only on
+  boards with moles. The head can't enter an up mole's hill (`'mole'`, `stats.moleBonks` counts the bumps); a body lying
+  on a hill is fine, and the mole stays down in its hole while covered. A wet-leaf slide is judged by the move it started on.
 
 ### Rules for levels
 
@@ -393,6 +401,14 @@ says which file holds what, and a search for a function name finds it fast.
   `makeSoftTile` (a grass tile with a low molehill; `setMound` / `syncSoil` swell it while the worm is in
   the tile, a collar for the head alone), and `updateWorm` sinks every body anchor (never the head) by
   `soilDepth(v)`, so the tube dives under the heap. `syncHedges` calls both syncs.
+- **Dirt mounds and moles** (`models/digmole.js`): `makeDirtTile` (a lumpy heap rising out of the bed's soil, crumbs,
+  pebbles, a root and a trowel, merged into one mesh), `digOut` (from `syncBoard` on `D` to `.`: the heap crumbles with a
+  dust puff while a grass tile springs up; the worm's shrink is `animateMove`'s), `digNope` (the heap shrugs). Molehills
+  are holed tiles (like the burrow) with `makeMoleHill`'s heap and a mole (`makeMole`: velvety body, pink snout, nose and
+  paws, bead eyes) registered in `moleItems`. `syncMoles` (from `syncHedges`) sets each mole's target from the state
+  (`moleWant`: up, down, or deeper while the worm covers the hill), snapping on load, undo and restart; `updateMoles`
+  (from `frame`) springs it there, turns it to the camera and a little toward the worm, sniffs and blinks; `moleNope`
+  shakes its head and blows a raspberry at a blocked move.
 - **Ambient motion** (`models/board.js`, `models/beetles.js`): river tiles register in `flowTiles` (drifting leaf, glints, ripple, a water-babble
   loop); snails leave a slime strip (`trail`) that grows from tile to tile.
 

@@ -143,6 +143,7 @@ function syncBoard(animate){
       tween(520,(e)=>{ br.rotation.y=r0+e*Math.PI/2; br.position.y=Math.sin(e*Math.PI)*.12; },()=>{ br.position.y=0; }); continue; }
     if(animate && old==='x' && ch===' '){ const t=cell.tile; cell.tile=dent(x,y); sfx('crumble'); dustPuff(wp(x,y,.05));
       tween(500,(e)=>{ t.position.y=-e*.32; t.scale.set(1-e*.25,1,1-e*.25); },kill(t)); continue; }
+    if(animate && old===DIG && ch==='.'){ digOut(cell,x,y); continue; }
     if(animate && old==='C' && ch==='c'){ react('grin',800); { const bl=bloom(.01); cell.item.add(bl);
       tween(500,(e,k)=>{ const t=Math.min(1,k*1.2); bl.scale.setScalar(Math.max(.01,.9*(1+Math.sin(t*Math.PI)*.3)*t)); });
       } cell.item.userData.flag.material=toon(C.flagDone,{side:THREE.DoubleSide}); sfx('flag');

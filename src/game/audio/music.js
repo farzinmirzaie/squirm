@@ -134,7 +134,7 @@ const HAPTIC={move:6,slide:[4,22,4],push:[18,26,8],grow:[8,26,12,26,18],shrink:[
   gate:[26,40,10],flag:[10,50,22],portal:[6,16,10,16,14,16,22],crumble:[8,12,8,12,8,12,20],bump:[14,40,10],stuck:[40,80,40],
   undo:5,tap:5,on:[6,30,10],off:[10,30,6],badge:[12,40,12,40,40],win:[20,50,20,50,20,90,60],ready:[8,60,16],
   turn:[6,24,8,20,10,16,14,12,22],hedgeOpen:[10,30,16],hedgeClose:[16,30,10],rainOn:[4,40,4,40,4,40,4],rainOff:[4,60,4],
-  creak:[20,40,20,40,20],pollen:[4,16,4,16,4,16,8],bloom:[8,30,16],bud:12,dig:[18,20,10,20,6],shutter:[10,30,6]};
+  creak:[20,40,20,40,20],pollen:[4,16,4,16,4,16,8],bloom:[8,30,16],bud:12,dig:[18,20,10,20,6],scrunch:[10,14,10,14,10,40,18],shutter:[10,30,6]};
 const iosHaptic=(()=>{ try{ const l=document.createElement('label'); l.setAttribute('aria-hidden','true'); l.style.cssText='position:fixed;left:-200px;top:0;width:1px;height:1px;opacity:0;pointer-events:none';
   const i=document.createElement('input'); i.type='checkbox'; i.setAttribute('switch',''); i.tabIndex=-1; l.appendChild(i); document.body.appendChild(l);
     return l; }catch(e){ return null; } })();

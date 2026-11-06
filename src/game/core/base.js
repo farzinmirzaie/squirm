@@ -4,7 +4,7 @@
 //   core/     store, DOM helpers, three setup, state, tweens, the frame loop, boot
 //   audio/    sound effects and the generated music
 //   models/   3D objects: garden scenery, critters, tiles and items, snails, beetles, pollen and soft soil,
-//             weather, the worm (head, skin, body), hats and extras
+//             dirt mounds and moles, weather, the worm (head, skin, body), hats and extras
 //   rewards/  the wardrobe lists (hats, extras, colour options, worm colours, patterns) and badges
 //   play/     the worm's idle life, moves, photo mode, hints, resume, HUD, mechanic intros, levels, camera, input
 //   ui/       press feedback, stickers (ART), dialogs, the back-button layers, what's new, finale, settings
@@ -52,6 +52,8 @@ const C = {
   owl:0xC99A6A, owlDark:0x9E7450, owlBelly:0xF6E3C3, beak:0xF5B83E, nightcap:0x8FA6E8, idea:0xFFE27A, ideaBase:0xC3CCD8, nightStripe:0xFFF6DE, firefly:0x6B5646, fireGlow:0xFFE36B,
   miner:0xF5A33A, minerDark:0xD9822A, lamp:0xFFF6C8, gnome:0xE4574C, goggle:0xA9703F, lensBlue:0xBFE6F7,
   softSoil:0xB07850, softRidge:0xCB9468, softClod:0x8A5A3A,
+  dirt:0xD29C68, dirtDark:0xA06A44, dirtCrumb:0xEABF8C, root:0xF0D9B5, trowel:0xC7D3E0, trowelHandle:0xF07A6A,
+  moleHill:0xA8714C, mole:0x7A6E8E, moleBelly:0x9D92AE, moleSnout:0xF7C6D0, moleNose:0xFF8BAA, molePaw:0xFFB8C8, moleClaw:0xFFF1E6,
   snail:0xF6E2B0, snailFoot:0xE6C88E, snailShell:0xC9A0E6, snailShellLight:0xDCC0F2, snailSpiral:0x9A6FC2, softCrumb:0x9C6842, polRib:0xA6E3AC,
   wetLeaf:0x8EE0B4, leafVein:0x5DBA8A, dew:0xEAF8FF, hedge:0x5FA64F, hedgeDark:0x4E8F40, petalB:0xF7A8C4,
   gdLeaf1:0x6FB45A, gdLeaf2:0x7CC062, gdLeaf3:0x86C96B, gdLeaf4:0x5FA64F, gdTrunk:0x9B6B47, gdBloom1:0xF9B9CC, gdBloom2:0xFCCFDB, gdPine1:0x64AB70, gdPine2:0x78BC80, gdPoplar:0x67AD58, gdFern:0x79C46A, gdTuft1:0x78B85F, gdTuft2:0x96CF78, gdRock1:0xC2BAB2, gdRock2:0xD2CAC0, gdMoss:0x8DC46D, gdPebble:0xD8CFC4, gdBerry:0xF0707A, gdLavender:0xB79CF0, gdHydra1:0xA8C8F5, gdHydra2:0xF5B3D0, gdHydra3:0xCDB6F5, gdWhite:0xFFFBF2, gdSun:0xFFC93C, gdCream:0xFFF0A8, gdBird:0x7DB4E8, gdBirdWing:0x6399D4, gdBirdBelly:0xFFE9C9, gdBirdBeak:0xFFB24A, gdBug:0xE8544E,

@@ -14,6 +14,9 @@ function tryMove(dir){
     if(r.blocked==='flooded') toast('That puddle is full of water. Wait for the sun.');
     if(r.blocked==='sprout') toast('Just a seedling. It needs rain to grow into a leaf.');
     if(r.blocked==='hedge') toast('The hedge only opens while part of you rests on a flower.');
+    if(r.blocked==='mole'){ const h=state.segs[0], dd=DIRS[dir]; moleNope(h[0]+dd[0],h[1]+dd[1]); bumpStat('moleBonks'); if(!checkBadges(null).length) save();
+      toast('The mole is up. It ducks back down after your next move.'); }
+    if(r.blocked==='dig'){ const h=state.segs[0], dd=DIRS[dir]; digNope(h[0]+dd[0],h[1]+dd[1]); toast('Digging takes three segments. You\'re too short for this mound.'); }
     if(r.blocked==='petals'){ const h=state.segs[0], dd=DIRS[dir], gx=h[0]+dd[0], gy=h[1]+dd[1], P=POLL[tileAt(state,gx,gy).toUpperCase()]; petalsNope(gx,gy);
       toast(`These petals only open for ${P.n} pollen. Find a ${P.n} flower first.`); }
     if(r.blocked==='body'&&tileAt(state,state.segs[0][0]+DIRS[dir][0],state.segs[0][1]+DIRS[dir][1])===SOFT&&state.segs.length>2) toast('Soft soil lets you burrow past your body, but not fold back on yourself.');
@@ -49,6 +52,7 @@ function animateMove(prev,ev,dir,sliding){
   if(ev.pollen){ pollensHere.add(ev.pollen); if(pollensHere.size===3&&!progress.stats.allPollen) bumpStat('allPollen'); const h=state.segs[0];
     pollenPuff(wp(h[0],h[1],.25),ev.pollen); sfx('pollen'); bumpStat('dusts'); react('wow',700);
     if(!sliding){ const t=sayFor('pollen'); if(t) wormSays(t,1400); } }
+  if(ev.dug){ bumpStat('digs'); if(!sliding){ const t=sayFor('D'); if(t) wormSays(t,1400); } }
   if(ev.cross){ dustPuff(wp(ev.cross[0],ev.cross[1],.05),C.softSoil); sfx('dig'); bumpStat('burrows'); }
   if(ev.rain!==undefined){ sfx(ev.rain?'rainOn':'rainOff');
     toast(ev.rain?'Rain is falling. Leaves grow, puddles fill.':'The sun is back. Puddles dry, leaves fold away.',2400); }
