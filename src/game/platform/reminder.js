@@ -41,7 +41,11 @@ if(remindKind()!=='none'){ shareRemindState();
   if(!remind.on) navigator.serviceWorker.ready.then(r=>r.periodicSync&&r.periodicSync.unregister('squirm-daily')).catch(()=>{}); }
 
 let installEvt=null;
-window.addEventListener('beforeinstallprompt',e=>{ e.preventDefault(); installEvt=e; $('installBtn').hidden=false; });
-window.addEventListener('appinstalled',()=>{ installEvt=null; $('installBtn').hidden=true; });
-$('installBtn').onclick=async()=>{ const e=installEvt; if(!e) return; installEvt=null; $('installBtn').hidden=true; try{ await e.prompt(); }catch(err){} };
+// installing: a card under Play offers it; once that's dismissed (squirm-install-hide) the small header button does instead
+const installShow=()=>{ const can=!!installEvt, hid=store.get('squirm-install-hide')==='1'; $('installCard').hidden=!can||hid; $('installBtn').hidden=!can||!hid; };
+window.addEventListener('beforeinstallprompt',e=>{ e.preventDefault(); installEvt=e; installShow(); });
+window.addEventListener('appinstalled',()=>{ installEvt=null; installShow(); });
+const installNow=async()=>{ const e=installEvt; if(!e) return; installEvt=null; installShow(); try{ await e.prompt(); }catch(err){} };
+$('installBtn').onclick=installNow; $('installGo').onclick=installNow;
+$('installClose').onclick=()=>{ store.set('squirm-install-hide','1'); installShow(); };
 

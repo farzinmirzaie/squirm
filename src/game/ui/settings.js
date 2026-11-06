@@ -26,7 +26,7 @@ $('setMusicVol').oninput=e=>{ musicVol=e.target.value/100; store.set('squirm-mus
 $('setMusic').onclick=()=>{ musicOn=!musicOn; store.set('squirm-music',musicOn?'1':'0'); ensureAudio(); sfx(musicOn?'on':'off'); renderSettings();
   if(musicOn&&muted) toast('Turn sound on to hear the music.',2400); };
 // a save code is every squirm- key (except throwaway ones) as base64 JSON with a version prefix
-const SAVE_PREFIX='SQUIRM1:', SAVE_SKIP=['squirm-quality','squirm-gfx','squirm-offline-told','squirm-daily-patch','squirm-remind','squirm-boot','squirm-stats','squirm-stats-v','squirm-calm','squirm-bigtext','squirm-marks','squirm-haptics'];
+const SAVE_PREFIX='SQUIRM1:', SAVE_SKIP=['squirm-quality','squirm-gfx','squirm-offline-told','squirm-daily-patch','squirm-remind','squirm-boot','squirm-stats','squirm-stats-v','squirm-calm','squirm-bigtext','squirm-marks','squirm-haptics','squirm-install-hide'];
 function saveCode(){ const d={}; for(const k of store.keys()) if(!SAVE_SKIP.includes(k)) d[k]=store.get(k);
   return SAVE_PREFIX+btoa(unescape(encodeURIComponent(JSON.stringify(d)))); }
 function readSaveCode(code){ code=String(code||'').trim(); if(!code.startsWith(SAVE_PREFIX)) return null;

@@ -10,8 +10,12 @@ const tile=(key,val,on,ok,ico,name,note,prog)=>{ const t=BADGE_TINT[wardN++%BADG
 // [have, need] for an item still to unlock: a milestone test written with counted, a chapter's patches, or stars
 const testProg=f=>f&&f.prog?f.prog():null;
 const chapterProg=k=>{ const c=CHAPTERS[k]; return c?[LEVELS.slice(c.from,c.to+1).filter((l,i)=>isCleared(c.from+i)).length,c.to-c.from+1]:null; };
-function outfitChanged(el){ bumpStat('outfits'); save(); if(hHead) homeReact('joy'); renderWardrobe(); const on=$('wardGrid').querySelector('.hat.on');
-  if(on) settle(on); }
+// a tapped row just moves the worn mark (no rebuild, so the press settles calmly); colour options re-render for the new art
+function outfitChanged(el){ bumpStat('outfits'); save(); if(hHead) homeReact('joy');
+  if(el){ markWorn(); settle(el); } else renderWardrobe(); }
+function markWorn(){ qa($('wardGrid'),'.w-card').forEach(b=>{ const d=b.dataset;
+  const on=d.h?d.h===hatId:d.x?d.x===extraOn():d.c!=null?+d.c===wormCol:d.p===patOn(); b.classList.toggle('on',on); b.setAttribute('aria-pressed',String(on)); });
+  renderTints(); }
 function wearHat(id){ hatId=id; store.set('squirm-hat',hatId); dressHat(hHead); dressHat(segMeshes[0]); }
 function wearColour(i){ wormCol=i; store.set('squirm-colour',String(i)); applyWormColour(); }
 function wearPattern(id){ wormPat=id; store.set('squirm-pattern',wormPat); applyWormColour(); }
@@ -30,7 +34,7 @@ function renderWardrobe(){ const hats=HATS.filter(hatUnlocked), cols=coloursUnlo
     else if(b.dataset.x){ const e=EXTRAS.find(x=>x[0]===b.dataset.x); if(!e[3]()){ nope(b,`${e[1]}: ${e[2].charAt(0).toLowerCase()+e[2].slice(1)} to earn it.`,2800); return; } wearExtra(e[0]); }
     else if(b.dataset.c!=null){ const i=+b.dataset.c, c=WORM_COLS[i]; if(i>=coloursUnlocked()){ nope(b,`${c[0]} unlocks at ${c[3]} stars. You have ${starTotal()}.`,2600); return; } wearColour(i); }
     else { const p=PATTERNS.find(x=>x[0]===b.dataset.p); if(!p[3]()){ nope(b,`${p[1]}: ${p[2].charAt(0).toLowerCase()+p[2].slice(1)} to earn it.`,2800); return; } wearPattern(p[0]); }
-    outfitChanged(); }); }
+    outfitChanged(b); }); }
 // a colour picker for the hat or extra being worn, only on its tab and only for items with colour options
 function renderTints(){ const row=$('wardTint'), id=wardTab==='hats'?hatId:wardTab==='extras'?extraOn():null, t=id&&TINTS[id];
   const item=t&&(wardTab==='hats'?HATS.find(h=>h[0]===id):EXTRAS.find(e=>e[0]===id));

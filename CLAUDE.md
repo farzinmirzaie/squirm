@@ -493,6 +493,8 @@ from a tab replaces that layer with `game`.
 ### Modes and screens
 
 - **Endless meadow and daily** (`endless/`): `genCandidate` + `analyzeCapped` + difficulty scoring in `generateEndless`.
+  A board only fits a few mechanics, so with more switched on than `fit` (3 easy, 4 medium, 5 hard) each try takes a
+  random handful of them (`pickSome`; only then are extra random numbers drawn, so the daily stays the same).
   The daily patch (`startDaily`) uses a date seed, `DAILY_OPTS` and a fixed number of tries, so everyone gets
   the same one; it's cached in `squirm-daily-patch` for the day.
 - **Win card** (`onWin`, `play/moves.js`): big stars, a line about par or hints, Moves / Par / Time tiles (`New best` tag),
@@ -518,7 +520,7 @@ from a tab replaces that layer with `game`.
   glide back. `#stage` gets `touch-action:none` in photo mode and Safari's `gesturestart` is cancelled, so
   pinching never zooms the page. `snapPhoto` draws a frame with a caption plaque (from `photoInfo`) and
   shares the PNG where the browser can share files, or downloads it. Keys: Space/Enter snap, P pose, Esc back.
-- **Settings and backups** (`ui/settings.js`): the home gear opens `setOv`, one scrolling page (`#setScroll`) of cards with
+- **Settings and backups** (`ui/settings.js`): the home gear opens `setOv` (choice rows are one word each, no second line), one scrolling page (`#setScroll`) of cards with
   sticker headings (`renderSettings`): Sound (music, volume, effects, vibration), Look (theme
   with swatches; Graphics: Auto lets `watchSpeed` adapt, Saver pins the lowest quality, Sharp the highest;
   `squirm-gfx`, device-specific), Comfort, Reminders, Back up your garden (save code), About (the anonymous stats switch, the build id) and
@@ -603,7 +605,8 @@ from a tab replaces that layer with `game`.
 - **Offline, install and updates** (`platform/offline.js`): `sw.js` is registered at boot (http/https only) and checked for updates
   when the app returns to the foreground and every 30 minutes. A new worker takes over right away; the page
   reloads into it at a calm moment (immediately on the home screen, otherwise the next time the player heads
-  home), with a toast that an update is waiting. The home screen shows an install button on `beforeinstallprompt`.
+  home), with a toast that an update is waiting. On `beforeinstallprompt` the Play tab shows an install card under Play (`#installCard`); closing it
+  (`squirm-install-hide`, device-specific) moves the offer to a small header button (`#installBtn`, `installShow`).
   Launch links: `?play=continue|daily|meadow|race` (the manifest's four shortcuts, the daily reminder) go through
   `launchPlay` in `core/boot.js`, at boot and, since `launch_handler` reuses an open window, from `launchQueue`.
   The manifest asks for portrait (`orientation`).
@@ -712,7 +715,9 @@ from a tab replaces that layer with `game`.
   `popin` pop). **Toggles** (switches, mechanic tiles, sound and vibration buttons): `sfx('on')` /
   `sfx('off')`. **Blocked** (locked stone, hat or colour, a bad save code, reminders that can't be set):
   `nope(el,msg)`, which shakes, plays `bump` and shows a toast.
-- **Dialogs:** every `.ov` scrim fades in while its `.dialog` pops. A tap on the scrim closes the dialog the way Back
+- **Dialogs:** every `.ov` scrim fades in while its `.dialog` pops. A dialog whose content can run long is a `.dlg`: its
+  content sits in a scrolling `.dlg-body` and its button row stays at the bottom (the win card, settings and mechanic
+  intro scroll their own middle the same way). A tap on the scrim closes the dialog the way Back
   would (`OV_LAYER` in `ui/dialogs.js` maps each closable one to its layer; not the win card, the growing dialog or a
   race that's growing or counting down). `hide()` adds `.out` for a short
   fade, then removes `.show`, so ask `isOpen(id)` (not `.show`). The home screen just swaps.

@@ -188,8 +188,11 @@ button:focus-visible{outline:3px solid var(--honey);outline-offset:2px}
 /* out of hint seeds: where to grow more */
 .seeds .seed-art{flex:none;align-self:center;width:84px;height:84px;margin:2px auto 0;border-radius:22px;display:grid;place-items:center;background:var(--tint-honey);border:3px solid var(--honey-dark);box-shadow:0 4px 0 var(--honey-dark);--art-halo:none}
 /* your garden so far (the stars pill): totals and every counter we keep */
-.gar{display:flex;flex-direction:column;overflow:hidden}
-.gar-body{flex:1 1 auto;min-height:0;overflow:auto;overscroll-behavior:contain;display:flex;flex-direction:column;gap:10px;margin:0 -20px 14px;padding:2px 20px 6px;text-align:left}
+/* dialogs whose content can run long: the content scrolls, the button row stays at the bottom */
+.dlg{display:flex;flex-direction:column;overflow:hidden}
+.dlg-body{flex:1 1 auto;min-height:0;overflow:auto;overscroll-behavior:contain;margin:0 -20px 14px;padding:2px 20px 6px}
+.dlg>:last-child{flex:none}
+.gar-body{display:flex;flex-direction:column;gap:10px;text-align:left}
 .gar-body p{margin:0;text-align:center}
 .gar-body p.label{margin:6px 0 -2px;text-align:left}
 .gar-grid small{font:800 11px/1.15 var(--fb);color:var(--ink-soft)}
@@ -200,6 +203,15 @@ button:focus-visible{outline:3px solid var(--honey);outline-offset:2px}
 .gar-grid b small.of{display:inline;font:800 12px/1 var(--fd);color:var(--ink-soft)}
 /* race a friend: the invite, reply, connecting and countdown steps share one dialog (race.js sets data-step) */
 .race-ico{background:var(--tint-lilac)}
+/* the install card under Play: the card's own button, and a close that moves the offer to the header instead */
+.install-card{display:flex;align-items:center;gap:8px;padding:10px 10px 10px 14px}
+.install-card[hidden]{display:none}
+.install-go{flex:1;min-width:0;display:flex;align-items:center;gap:12px;padding:0;border:0;background:none;color:var(--ink);font:inherit;text-align:left;cursor:pointer}
+.install-ico{background:var(--tint-honey)}
+.install-card .gt{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.install-card .gt b{font:800 18px/1.1 var(--fd)}
+.install-card .gt em{font:700 13px/1.25 var(--fb);color:var(--ink-soft);font-style:normal}
+.install-card .icon-btn{flex:none;width:34px;height:34px;border-width:2px}
 /* the race row under the HUD: your friend on the left, the race clock on the right */
 .race-bar{display:flex;align-items:center;gap:8px;align-self:center;max-width:100%;padding:4px 12px 4px 5px;border-radius:999px;background:var(--paper);border:2px solid var(--edge);box-shadow:0 3px 0 var(--edge);font:800 13px/1 var(--fd);color:var(--ink)}
 .race-bar .ic{width:24px;height:24px;background:var(--tint-lilac);border-color:var(--lilac)}
@@ -745,6 +757,8 @@ nav .enter,.rise{animation:navIn var(--dur-slow) var(--ease-pop) var(--d,0ms) bo
 .stat.lost .mini{animation:nope var(--dur-slow) var(--ease-out)}
 .gbtn.pop .disc{animation:popin var(--dur) var(--ease-pop)}
 .gbtn.pop{animation:none}
+.w-card.pop{animation:none}
+.w-card.pop>.b-medal{animation:popin var(--dur) var(--ease-pop)}
 .nope{animation:nope var(--dur) var(--ease-out)}
 /* growing a patch: a sprout keeps popping up out of a green tile */
 .gen-ico{display:grid;place-items:center;width:84px;height:84px;margin:0 auto 6px;border-radius:22px;background:var(--tint-leaf);border:3px solid var(--leaf-dark);box-shadow:0 4px 0 var(--leaf-dark);--art-halo:none;overflow:hidden}
@@ -800,7 +814,7 @@ body.big-text .hud-stats{zoom:.9}
 /* ==== 11. Reduced motion: every animation and transition above stops ==== */
 /* Calm motion (Settings > Comfort) applies the same rules under body.calm: calmCSS in core/boot.js copies this block */
 @media (prefers-reduced-motion: reduce){
-  .dialog,.ov.show:not(.home),.ov.show.out,.ov.out .dialog,.pop,.enter,.rise,.nope,#flash.go,.bubble.say,.intro-art .ia,.intro-art i,#introBody.swap>*,.gen-ico [data-art],.pick.swap,#winNext,
+  .dialog,.ov.show:not(.home),.ov.show.out,.ov.out .dialog,.pop,.w-card.pop>.b-medal,.enter,.rise,.nope,#flash.go,.bubble.say,.intro-art .ia,.intro-art i,#introBody.swap>*,.gen-ico [data-art],.pick.swap,#winNext,
   .tab.on.pop svg,.stat.cheer,.stat.cheer .ic,.stat.lost .mini,.gbtn.pop .disc,.gbtn.hint .disc svg,#hintBtn.busy svg,
   #tutorial .hand,.brand span,.node.cur::after{animation:none}
   .star{animation:none;transform:none}
@@ -864,14 +878,16 @@ body.big-text .hud-stats{zoom:.9}
   </div>
 </div></div>
 
-<div class="ov" id="finOv"><div role="dialog" aria-modal="true" aria-labelledby="finTitle" class="dialog card sheet finale">
-  <span class="fin-emb" aria-hidden="true" data-art="crown" data-size="40"></span>
-  <h2 id="finTitle">The whole garden is grown!</h2>
-  <p class="fin-sub">You crawled through every patch. Every flower out there knows your name.</p>
-  <div class="m-stats" id="finStats"></div>
-  <p class="label">What's next</p>
-  <div class="fin-next" id="finNext"></div>
-  <p class="fin-note"><span data-art="sprout" data-size="18"></span> More patches are growing and will show up here by themselves.</p>
+<div class="ov" id="finOv"><div role="dialog" aria-modal="true" aria-labelledby="finTitle" class="dialog card sheet finale dlg">
+  <div class="dlg-body fade-scroll">
+    <span class="fin-emb" aria-hidden="true" data-art="crown" data-size="40"></span>
+    <h2 id="finTitle">The whole garden is grown!</h2>
+    <p class="fin-sub">You crawled through every patch. Every flower out there knows your name.</p>
+    <div class="m-stats" id="finStats"></div>
+    <p class="label">What's next</p>
+    <div class="fin-next" id="finNext"></div>
+    <p class="fin-note"><span data-art="sprout" data-size="18"></span> More patches are growing and will show up here by themselves.</p>
+  </div>
   <div class="row"><button class="btn primary" id="finClose">Back home</button></div>
 </div></div>
 
@@ -890,6 +906,10 @@ body.big-text .hud-stats{zoom:.9}
           <p class="bubble" id="wormSay" aria-live="polite"></p>
         </div>
         <button class="play" id="homePlay"><span class="mode-ico play-ico" aria-hidden="true"><svg width="30" height="30" viewBox="0 0 24 24"><path transform="translate(-2.2 0)" d="M8.6 5.6v12.8c0 .8.9 1.3 1.6.9l10-6.4c.6-.4.6-1.3 0-1.7l-10-6.4c-.7-.5-1.6 0-1.6.8z" style="fill:var(--on-accent);stroke:var(--on-accent)" stroke-width="2" stroke-linejoin="round"/></svg></span><span class="pt"><b id="playTitle">Play</b><small id="playSub">Patch 1</small><span class="ch-pips" id="playPips" aria-hidden="true"></span></span></button>
+        <div class="card install-card" id="installCard" hidden>
+          <button class="install-go" id="installGo"><span class="mode-ico install-ico" aria-hidden="true" data-art="house" data-size="32"></span><span class="gt"><b>Keep Squirm on your phone</b><em>Install it to play from your home screen, even offline</em></span></button>
+          <button class="icon-btn" id="installClose" aria-label="Not now, hide this"><svg class="ui-ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></svg></button>
+        </div>
         <div class="home-duo">
         <button class="big card mini" id="dailyBtn">
     <span class="mode-ico daily-ico" aria-hidden="true" data-art="calendar" data-size="32"></span>
@@ -963,18 +983,18 @@ body.big-text .hud-stats{zoom:.9}
       <div class="set-row"><span>Sound effects</span><button class="switch" id="setSound" role="switch" aria-checked="true" aria-label="Sound effects"><i></i></button></div>
       <p class="label">Vibration</p>
       <div class="seg" id="setHaptic" role="radiogroup" aria-label="Vibration">
-        <button role="radio" data-h="0"><b>Off</b><small>Quiet hands</small></button><button role="radio" data-h="1"><b>Gentle</b><small>Soft taps</small></button><button role="radio" data-h="2"><b>Full</b><small>Every bump</small></button>
+        <button role="radio" data-h="0"><b>Off</b></button><button role="radio" data-h="1"><b>Gentle</b></button><button role="radio" data-h="2"><b>Full</b></button>
       </div>
     </section>
     <section class="set-card" aria-labelledby="hLook">
       <h3 class="set-h" id="hLook"><span style="--tint:var(--tint-berry)" data-art="palette" data-size="26"></span>Look</h3>
       <p class="label">Colours</p>
       <div class="seg" id="setTheme" role="radiogroup" aria-label="Colours">
-        <button role="radio" data-t="auto"><i class="sw sw-auto" aria-hidden="true"></i><b>Auto</b><small>Like device</small></button><button role="radio" data-t="light"><i class="sw sw-light" aria-hidden="true"></i><b>Light</b><small>Sunny</small></button><button role="radio" data-t="dark"><i class="sw sw-dark" aria-hidden="true"></i><b>Dark</b><small>Cozy</small></button>
+        <button role="radio" data-t="auto"><i class="sw sw-auto" aria-hidden="true"></i><b>Auto</b></button><button role="radio" data-t="light"><i class="sw sw-light" aria-hidden="true"></i><b>Light</b></button><button role="radio" data-t="dark"><i class="sw sw-dark" aria-hidden="true"></i><b>Dark</b></button>
       </div>
       <p class="label">Graphics</p>
       <div class="seg" id="setGfx" role="radiogroup" aria-label="Graphics">
-        <button role="radio" data-g="auto"><b>Auto</b><small>Adjusts itself</small></button><button role="radio" data-g="saver"><b>Saver</b><small>Easy on battery</small></button><button role="radio" data-g="best"><b>Sharp</b><small>Best looks</small></button>
+        <button role="radio" data-g="auto"><b>Auto</b></button><button role="radio" data-g="saver"><b>Saver</b></button><button role="radio" data-g="best"><b>Sharp</b></button>
       </div>
     </section>
     <section class="set-card" aria-labelledby="hComfort">
@@ -990,7 +1010,7 @@ body.big-text .hud-stats{zoom:.9}
       <div id="remindWhen">
         <p class="label">Not before</p>
         <div class="seg" id="setRemindAt" role="radiogroup" aria-label="Remind me from">
-          <button role="radio" data-h="9"><b>Morning</b><small>9 am</small></button><button role="radio" data-h="14"><b>Afternoon</b><small>2 pm</small></button><button role="radio" data-h="18"><b>Evening</b><small>6 pm</small></button>
+          <button role="radio" data-h="9"><b>Morning</b></button><button role="radio" data-h="14"><b>Afternoon</b></button><button role="radio" data-h="18"><b>Evening</b></button>
         </div>
       </div>
       <p class="set-note" id="remindNote"></p>
@@ -1015,32 +1035,42 @@ body.big-text .hud-stats{zoom:.9}
     </details>
   </div>
 </div></div>
-<div class="ov" id="leaveOv"><div role="dialog" aria-modal="true" aria-labelledby="leaveTitle" class="dialog card">
-  <h2 id="leaveTitle">Leave the race?</h2><p>Your friend will keep crawling without you, and this race ends for you.</p>
+<div class="ov" id="leaveOv"><div role="dialog" aria-modal="true" aria-labelledby="leaveTitle" class="dialog card dlg">
+  <div class="dlg-body fade-scroll">
+    <h2 id="leaveTitle">Leave the race?</h2><p>Your friend will keep crawling without you, and this race ends for you.</p>
+  </div>
   <div class="row"><button class="btn primary" id="leaveNo">Keep racing</button><button class="btn" id="leaveYes">Leave</button></div>
 </div></div>
-<div class="ov" id="resetOv"><div role="dialog" aria-modal="true" aria-labelledby="resetTitle" class="dialog card">
-  <h2 id="resetTitle">Start over?</h2><p>This clears every star, best score, streak and setting. Your worm will forget everything.</p>
+<div class="ov" id="resetOv"><div role="dialog" aria-modal="true" aria-labelledby="resetTitle" class="dialog card dlg">
+  <div class="dlg-body fade-scroll">
+    <h2 id="resetTitle">Start over?</h2><p>This clears every star, best score, streak and setting. Your worm will forget everything.</p>
+  </div>
   <div class="row"><button class="btn" id="resetNo">Keep it</button><button class="btn danger" id="resetYes">Reset all</button></div>
 </div></div>
-<div class="ov" id="seedOv"><div role="dialog" aria-modal="true" aria-labelledby="seedTitle" class="dialog card seeds">
-  <span class="seed-art" aria-hidden="true" data-art="hintseed" data-size="54"></span>
-  <h2 id="seedTitle">Out of hint seeds</h2><p id="seedText"></p><ul class="seed-how" id="seedHow"></ul>
+<div class="ov" id="seedOv"><div role="dialog" aria-modal="true" aria-labelledby="seedTitle" class="dialog card seeds dlg">
+  <div class="dlg-body fade-scroll">
+    <span class="seed-art" aria-hidden="true" data-art="hintseed" data-size="54"></span>
+    <h2 id="seedTitle">Out of hint seeds</h2><p id="seedText"></p><ul class="seed-how" id="seedHow"></ul>
+  </div>
   <div class="seed-go"><button class="btn primary" id="seedDaily"></button><button class="btn" id="seedMeadow"></button><button class="btn" id="seedKeep"></button></div>
 </div></div>
-<div class="ov" id="garOv"><div role="dialog" aria-modal="true" aria-labelledby="garTitle" class="dialog card seeds gar">
-  <span class="seed-art" aria-hidden="true" data-art="stars" data-size="54"></span>
-  <h2 id="garTitle">Your garden so far</h2>
-  <div class="gar-body fade-scroll" id="garBody"></div>
+<div class="ov" id="garOv"><div role="dialog" aria-modal="true" aria-labelledby="garTitle" class="dialog card seeds gar dlg">
+  <div class="dlg-body fade-scroll">
+    <span class="seed-art" aria-hidden="true" data-art="stars" data-size="54"></span>
+    <h2 id="garTitle">Your garden so far</h2>
+    <div class="gar-body" id="garBody"></div>
+  </div>
   <div class="seed-go"><button class="btn primary" id="garOk">Got it</button></div>
 </div></div>
-<div class="ov" id="raceOv"><div role="dialog" aria-modal="true" aria-labelledby="raceTitle" class="dialog card race">
-  <span class="race-art" aria-hidden="true" data-art="race" data-size="54"></span>
-  <h2 id="raceTitle">Race a friend</h2>
-  <p id="raceText"></p>
-  <div class="seg" id="raceDiff" role="radiogroup" aria-label="Patch size"><button role="radio" data-d="easy"><b>Easy</b><small>Small and quick</small></button><button role="radio" data-d="medium"><b>Medium</b><small>A good race</small></button><button role="radio" data-d="hard"><b>Hard</b><small>Long and twisty</small></button></div>
-  <input id="raceCode" maxlength="6" spellcheck="false" autocomplete="off" autocapitalize="characters" inputmode="text" placeholder="K7M4QX" aria-label="Race code">
-  <b class="race-count" id="raceCount" aria-live="assertive"></b>
+<div class="ov" id="raceOv"><div role="dialog" aria-modal="true" aria-labelledby="raceTitle" class="dialog card race dlg">
+  <div class="dlg-body fade-scroll">
+    <span class="race-art" aria-hidden="true" data-art="race" data-size="54"></span>
+    <h2 id="raceTitle">Race a friend</h2>
+    <p id="raceText"></p>
+    <div class="seg" id="raceDiff" role="radiogroup" aria-label="Patch size"><button role="radio" data-d="easy"><b>Easy</b><small>Small and quick</small></button><button role="radio" data-d="medium"><b>Medium</b><small>A good race</small></button><button role="radio" data-d="hard"><b>Hard</b><small>Long and twisty</small></button></div>
+    <input id="raceCode" maxlength="6" spellcheck="false" autocomplete="off" autocapitalize="characters" inputmode="text" placeholder="K7M4QX" aria-label="Race code">
+    <b class="race-count" id="raceCount" aria-live="assertive"></b>
+  </div>
   <div class="seed-go"><button class="btn primary" id="raceGo"></button><button class="btn" id="raceAlt"></button><button class="btn" id="raceCancel">Not now</button></div>
 </div></div>
 <div class="ov" id="introOv"><div role="dialog" aria-modal="true" aria-labelledby="introTitle" class="dialog card intro">

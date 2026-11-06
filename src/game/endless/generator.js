@@ -112,7 +112,12 @@ async function generateEndless(diff,o,seed,fixedTries){
   const r=rng(seed); const budget={easy:1400,medium:2600,hard:4800}[diff]; const t0=performance.now(); let best=null, bestScore=-1e9, n=0;
   const enabled=['fruit','keys','portals','dry','rain','rivers','snails','buttons','leaves','beetles','pollen','soil','turn'].filter(k=>o[k]);
     const needUse=Math.min(enabled.length,diff==='easy'?1:2);
-  while(true){ n++; const Ld=genCandidate(r,diff,o);
+  // a board only has room for a few mechanics; with more switched on than fit, each try takes a random handful of them
+  // (only then are extra random numbers drawn, so the daily patch, with its four, stays the same for everyone)
+  const fit={easy:3,medium:4,hard:5}[diff];
+  const pickSome=()=>{ if(enabled.length<=fit) return o; const pool=enabled.slice(), q={flags:o.flags};
+    for(let i=0;i<fit;i++) q[pool.splice(Math.floor(r()*pool.length),1)[0]]=true; return q; };
+  while(true){ n++; const Ld=genCandidate(r,diff,pickSome());
     if(Ld){ const cap={easy:4000,medium:10000,hard:12000}[diff]; const a=analyzeCapped(Ld,cap);
       if(a&&a.par>=5){ const win=a.good/a.states; const u=usage(Ld,a.sol); const used=enabled.filter(k=>u.has(k)).length;
         const inRange = diff==='easy' ? (a.par>=6&&a.par<=16&&win>=.45) : diff==='medium' ? (a.par>=12&&a.par<=30&&win<=.8) : (a.par>=18&&win<=(enabled.length>=2?.4:enabled.length===1?.7:.95));

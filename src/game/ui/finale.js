@@ -52,7 +52,7 @@ function gardenInfo(){ const st=progress.stats, v=x=>typeof x==='function'?x():(
     +tile('star',of(starTotal(),LEVELS.length*3),'Stars')+tile('blossom',of(grown,LEVELS.length),'Patches grown')
     +tile('medal',of(got,BADGES.length),'Badges')+tile('crown',of(hats.filter(hatUnlocked).length,hats.length),'Hats')
     +GAR_STATS.map(([ic,t,k])=>tile(ic,v(k).toLocaleString(),t)).join('')+`</div>`;
-  $('garBody').scrollTop=0; show('garOv'); pushLayer('gar'); }
+  $('garBody').parentElement.scrollTop=0; show('garOv'); pushLayer('gar'); }
 $('homeStars').onclick=()=>{ ensureAudio(); gardenInfo(); };
 $('garOk').onclick=()=>{ hide('garOv'); popLayer('gar'); };
 $('goalCard').onclick=()=>{ badgeSel=$('goalCard').dataset.b; badgeFilter='all'; showTab('badges'); };
