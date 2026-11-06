@@ -300,6 +300,12 @@ change in light and dark. The README shows `share.png`, so it stays current with
 - **Difficulty** rises inside a chapter. `par * (1 - winnable)` from `tools/analyze.js` is a rough score
   (the "d" curate prints). The last chapters end on the hardest patches in the game.
 - Names are unique (tested) and never renamed once shipped.
+- **Moles need something that shifts the beat.** On a plain grid the head always reaches a given tile after an
+  odd or always after an even number of moves, so a mole there is just a wall or just grass. Only a tunnel, a
+  wet-leaf slide (one move, several tiles) or a turnaround with an even-length worm changes when the head arrives,
+  so every mole patch has one of them. Curate's `moles` check also wants the solution to walk over a mole, which
+  generated boards almost never do; adding moles to finished boards and keeping placements where the solution
+  crosses a mole and every mole makes it longer works much better.
 
 Chapters (`CHAPTER_NAMES`, ten levels each; level `n` is in chapter `ceil(n/10)`):
 
@@ -331,6 +337,12 @@ Chapters (`CHAPTER_NAMES`, ten levels each; level `n` is in chapter `ceil(n/10)`
 | 26 | Topsy-turvy | turnaround mushrooms mixed with the later mechanics, hardened, ending hard |
 | 27 | Spring showers | small, easy boards (4-6 wide): rain and rivers again, gently re-introduced, a few flags and fruit |
 | 28 | Old orchard | big boards (9-11 wide) with keys, gates, tunnels and dry patches, hardened, ending very hard |
+| 29 | Digging in | dirt mounds, small easy boards (4-7 wide) with a few flags and fruit: digging costs a segment, the burrow sign cares |
+| 30 | Molehill lane | moles, easy to medium (5-7 wide), with wet leaves, tunnels or fruit to shift the beat |
+| 31 | Under the lawn | dirt mounds and moles together, with tunnels and keys and gates, medium |
+| 32 | Muddy boots | digging with rain, rivers and bridges, dry patches or beetles, medium-hard |
+| 33 | Mole patrol | moles with snails, flower buttons and hedges or pollen (and wet leaves to shift the beat), hard |
+| 34 | Deep roots | big boards (9-11 wide) with dirt mounds and moles and a few earlier mechanics each, hardened: the hardest patches in the game |
 
 Each chapter has a hat (`HATS`, by chapter index) and a map scene (`SCENE_COL`, `SCENE_DECO`).
 
