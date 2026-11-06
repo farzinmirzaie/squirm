@@ -316,7 +316,8 @@ change in light and dark. The README shows `share.png`, so it stays current with
   wet-leaf slide (one move, several tiles) or a turnaround with an even-length worm changes when the head arrives,
   so every mole patch has one of them. Curate's `moles` check also wants the solution to walk over a mole, which
   generated boards almost never do; adding moles to finished boards and keeping placements where the solution
-  crosses a mole and every mole makes it longer works much better.
+  crosses a mole and every mole makes it longer works much better. The meadow does the same: `genCandidate` adds a
+  tunnel or wet leaves to any try with moles and none of them.
 
 Chapters (`CHAPTER_NAMES`, ten levels each; level `n` is in chapter `ceil(n/10)`):
 

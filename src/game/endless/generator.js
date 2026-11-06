@@ -21,6 +21,9 @@ function analyzeCapped(Ld,cap){
 }
 function genCandidate(r,diff,o){
   const ri=n=>Math.floor(r()*n), pick=a=>a[ri(a.length)], D4=[[1,0],[-1,0],[0,1],[0,-1]];
+  // a mole only has a rhythm where the head can reach its hill on either beat: on plain grass every route to a tile
+  // takes an odd number of moves, or always an even one, so the mole would just be a wall. Moles bring a tunnel or leaves.
+  if(o.moles&&!o.portals&&!o.leaves&&!o.turn) o={...o,[r()<.5?'portals':'leaves']:true};
   const cfg={easy:{w:[5,6],h:[5,7],fill:.5,len:3,flags:1,dry:.14,cap:12000},medium:{w:[6,7],h:[6,8],fill:.56,len:3,flags:2,dry:.2,cap:25000},hard:{w:[7,8],h:[7,9],fill:.5,len:r()<.6?4:3,flags:2,dry:.3,cap:12000}}[diff];
   if(o.size){ cfg.w=o.size.w; cfg.h=o.size.h; }
   // crossing itself needs a worm of five or more, so soft soil brings a longer worm, laid out as a wiggle
