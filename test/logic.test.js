@@ -259,3 +259,53 @@ test('a turnaround ends a wet-leaf slide, and the turned worm can win at the bur
   assert.deepEqual(w.state.segs, [[1, 0], [2, 0]]);
   assert.equal(play(w.state, ['W']).state.status, 'won');
 });
+
+test('digging: the head digs into a dirt mound, which turns to grass, and the worm comes out one shorter', () => {
+  const s = initState(level(['...DE'], [[2, 0], [1, 0], [0, 0]], { exitLen: 2 }));
+  const r = step(s, 'E');
+  assert.ok(!r.blocked);
+  assert.deepEqual(r.ev.dug, [3, 0]);
+  assert.equal(r.state.segs.length, 2);
+  assert.equal(tileAt(r.state, 3, 0), '.');
+  assert.equal(step(r.state, 'E').state.status, 'won');
+});
+
+test('digging needs three segments or more, and nothing else can use a mound', () => {
+  const s = initState(level(['..D.'], [[1, 0], [0, 0]]));
+  assert.equal(step(s, 'E').blocked, 'dig');
+  // a beetle can't be pushed onto a mound
+  const b = initState(level(['...OD'], [[2, 0], [1, 0], [0, 0]]));
+  assert.equal(step(b, 'E').blocked, 'beetle');
+});
+
+test('moles: an M mole is up after an even number of moves, an N mole after an odd number', () => {
+  // M is up at the start, so the head can't enter it on the first move but can after waiting a move
+  const s = initState(level(['.M.', '...'], [[0, 0], [0, 1], [1, 1]]));
+  assert.equal(step(s, 'E').blocked, 'mole');
+  const n = initState(level(['.N.', '...'], [[0, 0], [0, 1], [1, 1]]));
+  assert.ok(!step(n, 'E').blocked);
+  // after one move the M mole is down
+  const s2 = initState(level(['..M', '...'], [[0, 0], [0, 1], [1, 1]]));
+  const r = play(s2, ['E']);
+  assert.ok(!step(r.state, 'E').blocked);
+});
+
+test('moles: a body lying on a hill is fine, and the solver key tracks the parity only on boards with moles', () => {
+  const s = initState(level(['.N...'], [[0, 0]]));
+  const r = play(s, ['E', 'E', 'E']); // the head passed over N while it was down
+  assert.equal(r.state.segs[0][0], 3);
+  const a = initState(level(['.M.'], [[0, 0]])), b = { ...a, moves: 1 };
+  assert.notEqual(stateKey(a), stateKey(b));
+  const c = initState(level(['...'], [[0, 0]])), d = { ...c, moves: 1 };
+  assert.equal(stateKey(c), stateKey(d));
+});
+
+test('moles during a wet-leaf slide are judged by the move the swipe started on', () => {
+  // the head slides over two leaves into an N hill: N is down at move 0, so the slide ends on the hill
+  // (judged by the move after it, the mole would be up and the slide would stop on the last leaf)
+  const s = initState(level(['.iiN.'], [[0, 0]]));
+  const r = step(s, 'E');
+  assert.ok(!r.blocked);
+  assert.equal(r.state.segs[0][0], 3);
+  assert.equal(r.state.moves, 1);
+});

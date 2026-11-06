@@ -33,7 +33,7 @@ function introAnim(){ if(reduceMotion) return;
       if(queue.length) tryMove(queue.shift()); });
 }
 const CHAPTERS=CHAPTER_NAMES.map((name,k)=>({name,from:k*10,to:Math.min(LEVELS.length-1,k*10+9)}));
-const THUMB_COL={'T':'#6FCFC0','O':'#7C8CF0','B':'#F7A8C4','H':'#4E8F40','i':'#8EE0B4','<':'#C9A0E6','>':'#C9A0E6','^':'#C9A0E6','v':'#C9A0E6','.':'#B9E49E','x':'#EBD59C','~':'#8CCFEA','=':'#D9A56E','|':'#D9A56E','E':'#3A2A22','C':'#F27DA2','K':'#F7C64F','G':'#C88A55','+':'#FFA27C','-':'#B79CF2','R':'#C9D6EA','w':'#9ED6EF','s':'#7CC95F','L':'#B98352','P':'#FF7A6B','Y':'#FFC63A','U':'#63A9F2','p':'#FFC6BC','y':'#FFE9A6','u':'#C4E2FF','#':'#C99063'};
+const THUMB_COL={'T':'#6FCFC0','O':'#7C8CF0','B':'#F7A8C4','H':'#4E8F40','i':'#8EE0B4','<':'#C9A0E6','>':'#C9A0E6','^':'#C9A0E6','v':'#C9A0E6','.':'#B9E49E','x':'#EBD59C','~':'#8CCFEA','=':'#D9A56E','|':'#D9A56E','E':'#3A2A22','C':'#F27DA2','K':'#F7C64F','G':'#C88A55','+':'#FFA27C','-':'#B79CF2','R':'#C9D6EA','w':'#9ED6EF','s':'#7CC95F','L':'#B98352','P':'#FF7A6B','Y':'#FFC63A','U':'#63A9F2','p':'#FFC6BC','y':'#FFE9A6','u':'#C4E2FF','#':'#C99063','D':'#A9774F','M':'#8A6A55','N':'#C9A88E'};
 function drawThumb(cv,lv){ const g=cv.getContext('2d'); const h=lv.map.length, w=Math.max(...lv.map.map(r=>r.length));
   const s=Math.floor(80/Math.max(w,h)), ox=(88-w*s)/2, oy=(88-h*s)/2;
   g.fillStyle='#9A6A4C'; g.fillRect(0,0,88,88);

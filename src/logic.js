@@ -12,7 +12,8 @@ function parseLevel(L){
 }
 function initState(L){
   const {w,h,grid,snails,beetles} = parseLevel(L);
-  return { w, h, grid, snails, beetles, segs: L.worm.map(p=>[p[0],p[1]]), keys:0, pollen:'', status:'play', moves:0, exitLen:L.exitLen, raining:!!L.rain };
+  return { w, h, grid, snails, beetles, segs: L.worm.map(p=>[p[0],p[1]]), keys:0, pollen:'', status:'play', moves:0, exitLen:L.exitLen, raining:!!L.rain,
+    moles: grid.some(r=>r.some(c=>MOLE[c])) };
 }
 function tileAt(s,x,y){ if(x<0||y<0||x>=s.w||y>=s.h) return ' '; return s.grid[y][x]; }
 function partner(s,x,y){
@@ -31,6 +32,14 @@ const POLLEN = { P:1, Y:1, U:1 }, PETALS = { p:1, y:1, u:1 };
 // soft soil (#): the worm burrows through it, so the head may cross its own body there (one pass over
 // another, never more), but never fold back onto its neck
 const SOFT = '#';
+// dirt mounds (D): the head digs into one, turning it to grass, and the worm comes out one segment shorter.
+// It needs three segments or more, so it never ends up shorter than two.
+const DIG = 'D', DIG_MIN = 3;
+// molehills: a mole pops up every other move, and the head can't enter its hill while it's up. M moles are up after an
+// even number of moves (so at the start), N moles after an odd number. Only the move count's parity matters, and only
+// on boards with moles (state.moles), so it joins the solver key there alone.
+const MOLE = { M:1, N:1 };
+function moleUp(t, moves){ return t==='M' ? moves%2===0 : t==='N' ? moves%2===1 : false; }
 function countChar(s,c){ let n=0; for(const r of s.grid) for(const t of r) if(t===c) n++; return n; }
 
 // flower buttons: every hedge is open while any part of the worm, or a beetle, rests on a flower
@@ -42,7 +51,8 @@ function hedgesOpen(s){ return onFlower(s,s.segs)||beetleOnFlower(s,s.beetles); 
 // from the worm and beetles, so they add nothing; beetles are sorted so identical ones don't double up.
 function stateKey(s){
   return s.segs.map(p=>p[0]+','+p[1]).join(';')+'|'+s.grid.map(r=>r.join('')).join('')+'|'+s.keys+(s.raining?'r':'')+'|'+
-    (s.snails||[]).map(n=>n.x+','+n.y+','+n.dx+','+n.dy).join(';')+'|'+(s.beetles||[]).map(b=>b.x+','+b.y).sort().join(';')+'|'+(s.pollen||'');
+    (s.snails||[]).map(n=>n.x+','+n.y+','+n.dx+','+n.dy).join(';')+'|'+(s.beetles||[]).map(b=>b.x+','+b.y).sort().join(';')+'|'+(s.pollen||'')+
+    (s.moles?'|'+(s.moves&1):'');
 }
 
 // One crawl of the head by one tile, with everything it touches. No snails, no win check:
@@ -61,6 +71,8 @@ function advance(s, dirKey){
   if(t==='w' && s.raining) return { blocked:'flooded' };
   if(t==='s' && !s.raining) return { blocked:'sprout' };
   if(PETALS[t] && s.pollen!==t.toUpperCase()) return { blocked:'petals' };
+  if(MOLE[t] && moleUp(t,s.moves)) return { blocked:'mole' };
+  if(t===DIG && s.segs.length<DIG_MIN) return { blocked:'dig' };
   const ev = { type:'move', from: head, via:null, portal:false };
   let dest = [nx,ny];
   if(t>='1' && t<='9'){ const p = partner(s,nx,ny); if(p){ dest=p; ev.portal=true; ev.via=[nx,ny]; } }
@@ -69,6 +81,7 @@ function advance(s, dirKey){
   let newLen = len;
   if(t==='+') newLen = len+1;
   if(t==='-') newLen = Math.max(1,len-1);
+  if(t===DIG) newLen = len-1;
   const newSegs = [dest, ...s.segs].slice(0,newLen);
   const hits=[]; for(let i=1;i<newSegs.length;i++) if(newSegs[i][0]===dest[0]&&newSegs[i][1]===dest[1]) hits.push(i);
   // on soft soil the head may burrow past one stretch of its own body (index 2 is the neck: no folding back)
@@ -95,6 +108,7 @@ function advance(s, dirKey){
   if(t==='K'){ ns.keys++; ns.grid[ny][nx]='.'; ev.eaten='K'; }
   if(t==='G'){ ns.keys--; ns.grid[ny][nx]='.'; ev.eaten='G'; }
   if(t==='+'||t==='-'){ ns.grid[ny][nx]='.'; ev.eaten=t; }
+  if(t===DIG){ ns.grid[ny][nx]='.'; ev.dug=[nx,ny]; }
   // a turnaround mushroom (T) is eaten and the worm turns around: its tail becomes the head
   if(t==='T'){ ns.grid[ny][nx]='.'; ns.segs=newSegs.slice().reverse(); ev.eaten='T'; ev.turn=true; }
   if(t==='C'){ ns.grid[ny][nx]='c'; ev.eaten='C'; }
@@ -122,7 +136,7 @@ function step(s, dirKey){
     const h = r.state.segs[0];
     // a turnaround ends the move: the new head doesn't carry on sliding
     if(r.ev.turn||tileAt(r.state,h[0],h[1])!=='i') break;
-    const nx = advance(r.state,dirKey);
+    r.state.moves = s.moves; const nx = advance(r.state,dirKey);
     if(nx.blocked) break;
     slide.push(r); r = nx;
   }
@@ -143,4 +157,4 @@ function step(s, dirKey){
   }
   return { state:ns, ev };
 }
-if(typeof module!=='undefined') module.exports = { DIRS, initState, step, tileAt, countChar, cloneState, hedgesOpen, beetleAt, stateKey, POLLEN, PETALS, SOFT };
+if(typeof module!=='undefined') module.exports = { DIRS, initState, step, tileAt, countChar, cloneState, hedgesOpen, beetleAt, stateKey, POLLEN, PETALS, SOFT, DIG, MOLE, moleUp };

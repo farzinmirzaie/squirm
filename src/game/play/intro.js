@@ -14,6 +14,8 @@ const MECH={
   pollen:{t:'Pollen and petal gates',d:'Crawl over a flower to get dusted in its pollen. Petal gates only open for a worm wearing their colour, and the next flower you visit swaps your colour.',k:/[PYUpyu]/,i:art('pollenY',40)},
   soil:{t:'Soft soil',d:'Worms love loose earth! On soft soil you burrow under, so you can cross your own body there. Just never fold back onto yourself.',k:/#/,i:art('soil',40)},
   turn:{t:'Turnaround mushrooms',d:'Nibble a twirl-cap and you turn around: your tail becomes your head, and off you crawl the other way. Each one works once.',k:/T/,i:art('turnshroom',40)},
+  dig:{t:'Dirt mounds',d:'Loose earth you can dig through. Crawl into a mound and it turns to grass, but digging tires you out: you come out one segment shorter. You need three segments to dig.',k:/D/,i:art('mountain',40)},
+  moles:{t:'Moles',d:'A mole pops out of its hill every other move. While it\'s up you can\'t crawl in, so watch its rhythm and time your way past.',k:/[MN]/,i:art('steps',40)},
   rivers:{t:'Rivers and bridges',d:'Water blocks the way. Bridges only go along their planks, and a crank swings every bridge you are not standing on.',k:/[~=|L]/,i:art('bridge',40)},
 };
 let seenMech=store.json('squirm-seen')||{};
