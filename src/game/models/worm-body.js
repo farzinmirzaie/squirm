@@ -30,7 +30,7 @@ function getTube(i){ if(!tubePool[i]){ const body=new THREE.Mesh(new THREE.Buffe
     body.castShadow=true; body.frustumCulled=false; line.frustumCulled=false; wormG.add(body,line); tubePool[i]={body,line}; } return tubePool[i]; }
 function getCap(i){ if(!capPool[i]){ const c=new THREE.Mesh(sph(1,24,16),capMat.clone()); c.castShadow=true; const o=new THREE.Mesh(c.geometry,lineMat);
   c.add(o); c.userData.o=o; wormG.add(c); capPool[i]=c; } return capPool[i]; }
-const WHITE=new THREE.Color(0xffffff), SUNSET=new THREE.Color(0xFF9A7A), SUNROSE=new THREE.Color(0xFF8FA8), RAINBOW=[0xFFB3C8,0xFFE08A,0x7FD9B0,0xA9D8F5,0xCDB8F5].map(c=>new THREE.Color(c));
+const WHITE=new THREE.Color(0xffffff), SUNSET=new THREE.Color(0xFF9A7A), SUNROSE=new THREE.Color(0xFF8FA8), MUD=new THREE.Color(0x8A5E43), RAINBOW=[0xFFB3C8,0xFFE08A,0x7FD9B0,0xA9D8F5,0xCDB8F5].map(c=>new THREE.Color(c));
 let curPat='plain';
 // a tint that turns round the colour wheel the short way, so Sunset on Mint or Sky glows instead of going muddy;
 // a little paler and softer on the way, so the colours in between stay pastel. hk: how far the hue turns
@@ -50,6 +50,9 @@ function colorAt(g,n,pat=curPat,base=COL_A){ const c=base.clone(); if(n<=1) retu
   if(pat==='fade') c.lerp(WHITE,.6*t);
   else if(pat==='sunset') hueMix(c,sunsetTo(base),.75*t,t);
   // two-tone: the tail half takes the colour's opposite hue, blended softly across the middle
+  // muddy tail: the tail end dipped in mud with a soft edge, and a few splashes up the body before it
+  else if(pat==='muddy'){ const dip=Math.min(1,Math.max(0,(t-.58)/.16)), sp=t>.25&&t<.6?.6*Math.pow(Math.max(0,Math.sin(g*4.1+.6)),8):0;
+    c.lerp(MUD,Math.max(.88*dip,sp)); }
   else if(pat==='twotone') c.lerp(twoTone(base),Math.min(1,Math.max(0,(t-.4)/.2)));
   else if(pat==='rainbow'){ const g0=(n-1)*.4; if(g>g0){ const u=(g-g0)*2, k=rainbowFrom(base)+Math.floor(u);
     c.lerp(tmpC.copy(RAINBOW[k%5]).lerp(RAINBOW[(k+1)%5],u%1),Math.min(1,(g-g0)*1.5)); } }

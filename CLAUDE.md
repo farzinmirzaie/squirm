@@ -157,9 +157,12 @@ A chapter is ten levels plus everything around them. Touch all of these:
 1. The levels (`add-levels` skill) and a name appended to `CHAPTER_NAMES`.
 2. Its row in the chapter table under "Rules for levels" below.
 3. The garden map: one more colour in `SCENE_COL` and a pair of `ART` stickers in `SCENE_DECO` for its scene.
-4. Unlockables, at least the chapter's hat (a `HATS` entry with the chapter index, a `buildHat` model, a
-   `hat-<id>` sticker) and usually a badge for finishing it (`BADGES`, placed in a `BADGE_GROUPS` group).
-   It doesn't have to be one thing per chapter: add what fits the chapter's theme, such as an extra, a worm
+4. Unlockables: a reward for finishing it and usually a badge for that too (`BADGES`, placed in a `BADGE_GROUPS`
+   group). The reward is a hat (a `HATS` entry with the chapter index, a `buildHat` model, a `hat-<id>` sticker), or,
+   so it isn't always a hat, an extra or pattern whose test is `byChapter(k)` (`core/base.js`: it marks the item with
+   the chapter, so `chapterReward(k)` shows it on the garden map, and reports the chapter's patches as progress).
+   Not every reward has to follow the chapter's theme: fun things people want to wear anyway (like the bushy
+   mustache) are some of the best. It doesn't have to be one thing per chapter: add what fits, such as an extra, a worm
    colour (the last one must stay reachable: total stars are `LEVELS.length*3`), a pattern, colour options
    for an item (`TINTS`), or several of them.
 5. Be creative about how things unlock. Finishing a chapter or collecting stars is the plain way; better are
@@ -340,7 +343,8 @@ Chapters (`CHAPTER_NAMES`, ten levels each; level `n` is in chapter `ceil(n/10)`
 | 27 | Spring showers | small, easy boards (4-6 wide): rain and rivers again, gently re-introduced, a few flags and fruit |
 | 28 | Old orchard | big boards (9-11 wide) with keys, gates, tunnels and dry patches, hardened, ending very hard |
 
-Each chapter has a hat (`HATS`, by chapter index) and a map scene (`SCENE_COL`, `SCENE_DECO`).
+Each chapter has a reward (`chapterReward(k)`: its hat in `HATS` by chapter index, or an extra or pattern unlocked with
+`byChapter(k)`) and a map scene (`SCENE_COL`, `SCENE_DECO`).
 
 ## Key systems in src/game/
 
@@ -450,8 +454,9 @@ from a tab replaces that layer with `game`.
 - **Garden:** the map. `renderLevelList` draws one scene per chapter with its patches as stepping stones on
   a winding SVG path; closed chapters fold into a small card; tapping a stone picks it (`pickPatch`) and
   shows its card with a `drawThumb` preview and the mechanics it uses, and tapping again plays. Above the
-  map: the title with the Shine button beside it, and the chapter strip (`#chStrip`, one chip per chapter with its hat in a
-  progress ring; tapping glides the map to that chapter, and `spyChapter` highlights the one in view). Once a chapter
+  map: the title with the Shine button beside it, and the chapter strip (`#chStrip`, one chip per chapter with its reward in a
+  progress ring (`chapterReward`: the hat, extra or pattern finishing it earns; a chapter without one shows a sprout, and its
+  banner says "Reward: ..." or "... earned" the same way); tapping glides the map to that chapter, and `spyChapter` highlights the one in view). Once a chapter
   is fully grown its ring fills with stars instead (gold when all 30), and a honey badge counts its patches below 3
   stars (`shineable`). The Shine button (`#shineBtn`) picks the next of those from the chapter in view, and a
   picked patch's card says what 3 stars needs (par, or no hint).
@@ -479,10 +484,11 @@ from a tab replaces that layer with `game`.
   `[id, name, -2, how to earn, test]` for milestone hats. Each is built once (`buildHat`) and cloned into
   the head's `hatSlot`. `hBake` merges a hat into one mesh per material, except parts marked to move.
 - **Extras:** `EXTRAS` (`[id, name, how to earn, test]`) work the same way through `buildExtra` into the
-  head's `accSlot`, saved in `squirm-extra`. Every hat and extra needs a sticker in `ART` (`hat-<id>` /
+  head's `accSlot`, saved in `squirm-extra`. An extra (or pattern) that a chapter earns uses `byChapter(k)` as its test. Every hat and extra needs a sticker in `ART` (`hat-<id>` /
   `extra-<id>`).
 - **Wear motion** (end of `models/extras.js`): a few items have a part that moves (pinwheel, butterfly, firefly,
-  bee antennae, lightbulb, weathervane, teacup steam, rain cloud, sprout). Put `userData.anim` on the part
+  bee antennae, lightbulb, weathervane, teacup steam, rain cloud, sprout, the flowerpot's seedling, the mole friend's bob,
+  the propeller, the bubble-gum bubble, star earrings). Put `userData.anim` on the part
   (swing `r`, sway `p`, scale pulse `s`, `spin` with gusts, `drip`; the comment there lists them); `hBake` keeps it
   as its own child, `dressHat` / `dressExtra` register worn clones with `wearAdd`, and `wearTick` (from `frame`)
   moves them round their rest pose. Reduced motion keeps them still. Keep it to items where motion fits.
@@ -495,14 +501,14 @@ from a tab replaces that layer with `game`.
   the same hex (the toon head and the vertex-coloured body render a hex identically, so any difference shows
   at the neck); the cheek is a blush picked per colour (`cheekMat`).
 - **Patterns:** `PATTERNS` (`[id, name, how to earn, test]`), saved in `squirm-pattern`. `colorAt(g,n)` gives
-  the tints that run along the body (fade, sunset, rainbow) as tube vertex colours; anything with an edge
+  the tints that run along the body (fade, sunset, rainbow, two-tone, muddy tail) as tube vertex colours; anything with an edge
   (the body-ring groove, stripes, bands, spots, glitter) is drawn per pixel by `tubeMat`'s shader (`patU` /
   `PAT_ID`) from the tube's `pg` attribute: the place along the worm `g` (one unit per segment, continued
   down the tail tip and through tunnel dives) and the ring direction scaled by the radius, so patterns keep
   their size on the stage and in a patch. Shimmer, Glow worm and Prism move: the shader reads `uT` (`patT`, set
   from `idleT` in `frame`, held still under reduced motion). `patArt` draws the wardrobe preview in the current colour.
 - **Milestones** for unlocks and badges come from `progress.stats` counters (`moves`, `fruit`, `naps`,
-  `rains`, `restarts`, `outfits`, `days`, `teatime`, `allPollen`, `burrows`, ...); bump new ones with
+  `rains`, `restarts`, `outfits`, `days`, `teatime`, `allPollen`, `burrows`, `digs`, `moleBonks`, ...); bump new ones with
   `bumpStat`. A few keep a best instead of a count: `pokeRun` (the longest run of quick taps on the worm in a
   patch, `wormEmote`), `slideMax`.
 

@@ -68,6 +68,15 @@ const BADGES=[
   ['vane','hat-vane','Which way now?','Finish every patch in Topsy-turvy.',()=>chapterCleared(25)],
   ['showers','hat-boat','Puddle sailor','Finish every patch in Spring showers.',()=>chapterCleared(26)],
   ['orchard','hat-apple','Orchard keeper','Finish every patch in Old orchard.',()=>chapterCleared(27)],
+  ['digin','hat-flowerpot','Down to earth','Finish every patch in Digging in.',()=>chapterCleared(28)],
+  ['molelane','hat-mole','Hello, mole!','Finish every patch in Molehill lane.',()=>chapterCleared(29)],
+  ['underlawn','extra-pearls','Buried treasure','Finish every patch in Under the lawn.',()=>chapterCleared(30)],
+  ['muddyboots','boots','Muddy but happy','Finish every patch in Muddy boots.',()=>chapterCleared(31)],
+  ['molepatrol','extra-earrings','Mole whisperer','Finish every patch in Mole patrol.',()=>chapterCleared(32)],
+  ['deeproots','roots','All the way down','Finish every patch in Deep roots.',()=>chapterCleared(33)],
+  ['digs','trowel','Little digger','Dig through 25 dirt mounds.',counted(()=>[progress.stats.digs||0,25])],
+  ['digsmore','mountain','Earth mover','Dig through 150 dirt mounds.',counted(()=>[progress.stats.digs||0,150])],
+  ['bonk','extra-plaster','Bonk!','Get bonked by a mole 10 times. Ouch!',counted(()=>[progress.stats.moleBonks||0,10])],
   ['bridgemaster','bridge','Bridge master','Swing bridges 75 times.',counted(()=>[progress.stats.swings||0,75])],
   ['showery','rain','April showers','Start the rain 100 times.',counted(()=>[progress.stats.rains||0,100])],
   ['molehills','tunnel','Down the rabbit hole','Travel through tunnels 150 times.',counted(()=>[progress.stats.tunnels||0,150])],
@@ -89,9 +98,9 @@ function checkBadges(ctx,quiet){ const got=[];
   return got; }
 function bumpStat(k,n=1){ progress.stats[k]=(progress.stats[k]||0)+n; }
 // badges screen: a filter, groups of sticker tiles in a fading scroller, and a card for the picked badge
-const BADGE_GROUPS=[['Garden journey',['first','par','chapter','clean','sage','stars50','stars150','shiny','chapters','garden','golden','pure','notake','lightning','critters','harvest','tangled','farfields','moonlit','homeward','twirl','vane','showers','orchard','longhaul','allstars']],
+const BADGE_GROUPS=[['Garden journey',['first','par','chapter','clean','sage','stars50','stars150','shiny','chapters','garden','golden','pure','notake','lightning','critters','harvest','tangled','farfields','moonlit','homeward','twirl','vane','showers','orchard','digin','molelane','underlawn','muddyboots','molepatrol','deeproots','longhaul','allstars']],
   ['Daily and meadow',['daily','streak7','month','sunrises','meadow','brave','fearless','unstoppable','legend','stocked']],
-  ['Garden helpers',['flags','snacks','appetite','crumbs','gates','tunnels','molehills','rain','showery','bridges','bridgemaster','slides','wheee','hedges','pushes','flowerpower','pollinator','knots','uturn']],
+  ['Garden helpers',['flags','snacks','appetite','crumbs','gates','tunnels','molehills','rain','showery','bridges','bridgemaster','slides','wheee','hedges','pushes','flowerpower','pollinator','knots','uturn','digs','digsmore','bonk']],
   ['Racing',['raceday','racewin','racewins','rematch']],
   ['Just for fun',['moves','marathon','undos','taps','tickles','nap','owl','dawn','quick','photos','dressup','hatrack','rainbow','patterns','fashion','collector']]];
 // a badge left out of every group still shows, in the last one

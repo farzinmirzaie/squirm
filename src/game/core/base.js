@@ -62,6 +62,8 @@ const C = {
   chef:0xFFFBF2, wizard:0x8E7BE0, cowboy:0xC98E52, cowboyBand:0x8A5A36, phones:0xF7A8C4, phonesBand:0x6E5F86,
   frame:0x4A3C52, lensDark:0x3E3548, heartFrame:0xF27DA2, starFrame:0xF5C14E, monocle:0xE0B04A, tash:0x6B4A35, tashLight:0xB08560,
   racer:0xF26B5E, racerRim:0xFFF6DE, ribbon:0x7FBFEA, ribbonStripe:0xFFFBF2,
+  flowerpot:0xE08A5E, flowerpotRim:0xC96F45, hatMole:0x857079, hatMoleSnout:0xF7A0B8, hatDirt:0xB07B57, hatDirtDark:0x93603F,
+  propA:0xF26B5E, propB:0xFFD04A, propBlade:0x7FBFEA, pearl:0xFBF3EA, gum:0xF7A0C4, earStar:0xF5C14E, plaster:0xF2C9A0, plasterPad:0xFFF1DE,
   boat:0xFFFBF2, boatIn:0xE3DCCF, apple:0xF0685A, appleFlesh:0xFFF1DE, cord:0xD99A5C,
   glass:0xDDF2FF, glint:0xFFFFFF, brass:0xE8B85A, wingDeep:0xE57A9C, freckle:0xB27654, stitch:0x9C8676, seed:0xD9952E,
   portal:{ '1':0x7FCFEA, '2':0xC69CF7, '3':0xFFB877, '4':0x9BE39B }
@@ -71,3 +73,6 @@ const $=id=>document.getElementById(id);
 const qa=(root,sel)=>[...root.querySelectorAll(sel)];
 // a milestone test that also reports [have, need], so badges and wardrobe items can show a progress bar
 const counted=f=>Object.assign(()=>{ const [a,b]=f(); return a>=b; },{prog:f});
+// an extra or pattern earned by finishing chapter k (a hat names its chapter in HATS instead): marked with .chapter, so
+// chapterReward finds it for the garden map, and with the chapter's patches as its progress
+const byChapter=k=>Object.assign(()=>chapterCleared(k),{chapter:k,prog:()=>chapterProg(k)});

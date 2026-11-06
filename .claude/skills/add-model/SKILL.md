@@ -82,7 +82,7 @@ node .claude/skills/add-model/look.js <outDir> wardrobe '[["teacup","teacup","no
 node .claude/skills/add-model/look.js <outDir> board '[["gate",{"map":["P.y.Y"],"worm":[[1,0],[0,0]],"exitLen":2},[2,0],"W"]]'
 ```
 
-Wardrobe entries are `[name, hat, extra, {colour option by item id}, worm colour index]` and render the
+Wardrobe entries are `[name, hat, extra, {colour option by item id}, worm colour index, pattern id (optional)]` and render the
 wardrobe's own view (as players see it), then close-ups from the front, both sides, the back and the top
 (about the in-patch angle). Neck items (scarf, bowtie, daisy chain) are mostly judged in the first view. Board entries are
 `[name, level, [x, y] to look at, moves to play first]` and render the normal patch view plus close orbits

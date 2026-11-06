@@ -348,6 +348,39 @@ function buildExtra(id){ // frames sit in front of the eyes even when they widen
     const gem=dot(.024,m('keyGem'),.005,[1,1,.6],12,8); kg.add(gem);
     kg.add(rod(V(0,-.058,0),V(0,-.17,0),.014,m('key'),.007));
     for(const [y,w] of [[-.162,.05],[-.128,.038]]){ const t=new THREE.Mesh(new THREE.BoxGeometry(w,.022,.022),m('key')); t.position.set(w/2+.008,y,0); hull(t,.006); kg.add(t); } }
+  else if(id==='pearls'){ // a string of pearls round the neck where the scarf sits, and a bigger drop pearl at the front
+    const R=.345, N=30, rg=new THREE.Group(); rg.position.set(0,-.1,-.07); rg.rotation.x=-.93; rg.scale.x=.92; g.add(rg);
+    rg.add(new THREE.Mesh(new THREE.TorusGeometry(R,.006,4,56),lineMat));
+    for(let k=0;k<N;k++){ const a=-Math.PI/2+(k+.5)/N*Math.PI*2, p=dot(.028,m('pearl'),.007,[1,1,1],12,8); p.position.set(Math.cos(a)*R,Math.sin(a)*R,0); p.scale.x/=.92; rg.add(p); }
+    rg.updateMatrixWorld(true); const fr=rg.localToWorld(V(0,-R,0));
+    const cl=dot(.016,m('brass'),.006,[1,1,1],10,8); cl.position.copy(fr).add(V(0,-.032,.012)); g.add(cl);
+    const dp=dot(.046,m('pearl'),.008,[.92,1.08,.92],16,12); dp.position.copy(fr).add(V(0,-.078,.026)); g.add(dp);
+    const sh=dot(.012,glint,0,[1.4,.8,.3],10,6); sh.position.copy(dp.position).add(V(-.017,.02,.038)); sh.rotation.z=.6; g.add(sh); }
+  else if(id==='bubble'){ // blowing a bubble-gum bubble: a round bubble from the mouth with a shine, that swells and shrinks
+    const b=new THREE.Group(); b.position.set(0,-.072,.335); b.userData.anim={s:[.12,.12,.1],f:1.6}; g.add(b);
+    const bub=dot(.1,m('gum'),.011,[1,.96,.92],22,16); bub.position.z=.085; b.add(bub);
+    b.add(ring(.022,.011,m('gum'),.006,8,20)); // puckered at the lips
+    const ga=new THREE.Mesh(new THREE.TorusGeometry(.064,.008,4,14,1.1),glint); ga.position.z=.153; ga.rotation.z=1.9; ga.scale.z=.3; b.add(ga);
+    const gd=dot(.011,glint,0,[1,1,.3],8,6); gd.position.set(-.07,-.006,.15); b.add(gd); }
+  else if(id==='earrings'){ // star earrings dangling from little gold studs at the sides of the head, swinging as the worm moves
+    for(const s of [-1,1]){ const sp=V(s,.02,.06).normalize().multiplyScalar(HEAD_R+.006);
+      const st=dot(.019,m('brass'),.006,[1,1,1],10,8); st.position.copy(sp); g.add(st);
+      const pv=new THREE.Group(); pv.position.copy(sp).add(V(s*.012,-.012,0)); pv.userData.anim={r:[.22,0,.1],f:2.1,ph:s,env:.5}; g.add(pv);
+      const lp=ring(.017,.0055,m('brass'),.004,6,16); lp.position.y=-.016; lp.rotation.y=Math.PI/2; pv.add(lp);
+      const sg=new THREE.ExtrudeGeometry(SHAPE_STAR(),{depth:.32,bevelEnabled:true,bevelThickness:.12,bevelSize:.1,bevelSegments:2,curveSegments:2});
+      sg.translate(0,0,-.16); const star=new THREE.Mesh(sg,m('earStar')); star.scale.setScalar(.066); star.position.y=-.095; star.rotation.y=s*.75; hull(star,.006); pv.add(star); } }
+  else if(id==='plaster'){ // two sticking plasters crossed over a bump on the side of the forehead, hugging the head's curve
+    const c=V(.3,.17,.06).normalize(), u0=V(0,1,0).cross(c).normalize(), v0=c.clone().cross(u0);
+    // a box L long and W wide along direction th, wrapped onto the head from height z0 to z0+T above its surface
+    const wrap=(th,L,W,T,z0,mat)=>{ const geo=new THREE.BoxGeometry(L,W,T,14,3,1), p=geo.attributes.position, U=u0.clone().multiplyScalar(Math.cos(th)).addScaledVector(v0,Math.sin(th)),
+      W2=c.clone().cross(U), q=V();
+      for(let i=0;i<p.count;i++){ const x=p.getX(i), y=p.getY(i), z=p.getZ(i)+T/2; q.copy(c).multiplyScalar(HEAD_R).addScaledVector(U,x).addScaledVector(W2,y).setLength(HEAD_R+z0+z);
+        p.setXYZ(i,q.x,q.y,q.z); }
+      geo.computeVertexNormals(); return new THREE.Mesh(geo,mat); };
+    for(const [k,th] of [[0,.75],[1,-.75]]){ const lift=k*.009;
+      g.add(wrap(th,.18,.05,.007,.003+lift,m('plaster')),wrap(th,.192,.062,.014,lift,lineMat),wrap(th,.056,.05,.004,.009+lift,m('plasterPad')));
+      for(const x of [-.07,-.05,.05,.07]){ const U=u0.clone().multiplyScalar(Math.cos(th)).addScaledVector(v0,Math.sin(th)), d=dot(.005,m('stitch'),0,[1,1,.4],6,4);
+        d.position.copy(c).multiplyScalar(HEAD_R).addScaledVector(U,x).setLength(HEAD_R+.0115+lift); d.lookAt(d.position.clone().multiplyScalar(2)); g.add(d); } } }
   return g; }
 function dressExtra(g){ const slot=g&&g.userData.accSlot; if(!slot) return; slot.clear(); const id=extraOn(); if(id==='none') return;
   const k=id+'|'+tintOf(id); if(!extraProto[k]) extraProto[k]=tinted(id,buildExtra(id)); slot.add(wearAdd(extraProto[k].clone())); }

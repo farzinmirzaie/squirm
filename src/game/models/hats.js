@@ -616,6 +616,57 @@ function buildHat(id){ const h=new THREE.Group();
     const pit=new THREE.Mesh(new THREE.CircleGeometry(.026,16),m('burrow')); pit.position.z=.001; hole.add(pit);
     const [gp,gn]=onSkin(hV3(-.55,.55,.6)), gl=new THREE.Mesh(sph(.1,10,8),MC.hatGlint||(MC.hatGlint=new THREE.MeshBasicMaterial({color:C.glint})));
     gl.scale.set(.32,.18,.06); hStick(gl,gp.addScaledVector(gn,.002),gn); gl.rotation.z+=.7; h.add(gl); }
+  else if(id==='flowerpot'){ // a little clay flowerpot worn upside down: a thick rolled lip round the head, the pot tapering up to
+    // its drainage hole, and a seedling that pushed its way out of the hole (it sways from there)
+    const pot=hLathe([[.236,.02],[.248,.075],[.205,.27],[.194,.288],[.17,.296],[0,.296]],48,m('flowerpot')); hHull(pot,.012); h.add(pot);
+    const lip=hLathe([[.238,-.04],[.268,-.042],[.283,-.03],[.288,.02],[.284,.066],[.27,.08],[.24,.082]],56,m('flowerpotRim')); hHull(lip,.011); h.add(lip);
+    const hole=new THREE.Mesh(new THREE.CircleGeometry(.04,20),m('burrow')); hole.rotation.x=-Math.PI/2; hole.position.y=.298; h.add(hole);
+    h.add(hRing(.044,.009,m('flowerpot'),.005,.298,6,24));
+    const sw=new THREE.Group(); sw.position.y=.29; sw.userData.anim={r:[.04,0,.08],f:1.4,env:.35}; h.add(sw);
+    sw.add(hTube([hV3(0,-.02,0),hV3(.01,.05,0),hV3(-.008,.1,0),hV3(0,.14,0)],.017,m('leaf'),{seg:10,rs:6,line:.007,taper:t=>1-.25*t}));
+    const lg=hLeafGeo(.19,.125,{cup:.04,tip:.8,ws:14,hs:5});
+    for(const sd of [-1,1]){ const l=new THREE.Mesh(lg,m(sd<0?'leaf':'lawn')); l.position.set(0,.135,0); l.rotation.set(0,sd<0?Math.PI:0,.5); if(sd>0) l.scale.setScalar(.9); hHull(l,.008); sw.add(l); } }
+  else if(id==='mole'){ // a mole friend popping out of a little molehill on the head: a velvety body, a pink snout with a round
+    // nose, tiny eyes squeezed shut in the sun, and two big pink digging paws resting on the soil. It bobs up and down
+    const hill=new THREE.Mesh(hWarp(new THREE.SphereGeometry(1,40,12,0,hTAU,0,Math.PI/2),v=>{ const a=Math.atan2(v.z,v.x), r=Math.hypot(v.x,v.z);
+      const k=1+.06*Math.sin(a*5+1)*r; v.set(v.x*.255*k,v.y*.13*(1+.08*Math.sin(a*3)),v.z*.255*k); }),m('hatDirt')); hill.position.y=-.035; hHull(hill,.012); h.add(hill);
+    for(const [a,r,s] of [[.5,.2,.024],[1.9,.22,.02],[2.9,.19,.026],[4.2,.21,.022],[5.3,.2,.02],[3.6,.12,.018]]){ const cl=new THREE.Mesh(sph(.1,10,8),m('hatDirtDark'));
+      cl.scale.set(s*10,s*7,s*10); const y=-.035+.13*Math.sqrt(Math.max(0,1-(r/.25)**2)); cl.position.set(Math.cos(a)*r,y+.004,Math.sin(a)*r); hHull(cl,.006); h.add(cl); }
+    const mo=new THREE.Group(); mo.scale.setScalar(1.4); mo.position.y=-.035; mo.userData.anim={p:[0,.018,0],f:2.2,env:.4}; h.add(mo); // pops up a little now and then
+    const body=new THREE.Mesh(hWarp(new THREE.SphereGeometry(1,28,20),v=>v.set(v.x*.115,v.y*.14,v.z*.105)),m('hatMole')); body.position.y=.14; hHull(body,.011); mo.add(body);
+    const snout=new THREE.Mesh(sph(.1,16,12),m('hatMoleSnout')); snout.scale.set(.36,.3,.5); snout.position.set(0,.15,.1); snout.rotation.x=-.15; hHull(snout,.007); mo.add(snout);
+    const nose=new THREE.Mesh(sph(.024,12,10),m('hatMoleSnout')); nose.scale.set(1.1,.95,.9); nose.position.set(0,.158,.148); hHull(nose,.006); mo.add(nose);
+    for(const sd of [-1,1]){ // happy closed eyes, little curves on the fur
+      const e=hTube([hV3(sd*.062,.196,.072),hV3(sd*.047,.206,.086),hV3(sd*.031,.198,.094)],.0065,lineMat,{seg:6,rs:4}); mo.add(e);
+      const ch=new THREE.Mesh(sph(.1,10,8),m('cheek')); ch.scale.set(.17,.11,.06); ch.position.set(sd*.07,.15,.075); ch.lookAt(sd*.5,.15,.7); mo.add(ch);
+      // a digging paw: a flat pink palm with four round fingers, resting on the hill in front
+      const pw=new THREE.Group(); pw.position.set(sd*.095,.055,.115); pw.rotation.set(-1.15,0,sd*.35); mo.add(pw);
+      const palm=new THREE.Mesh(sph(.1,14,10),m('hatMoleSnout')); palm.scale.set(.42,.36,.15); hHull(palm,.006); pw.add(palm);
+      for(let k=0;k<4;k++){ const f=new THREE.Mesh(sph(.1,8,6),m('hatMoleSnout')); f.scale.set(.1,.12,.09); f.position.set((k-1.5)*.024,.038-Math.abs(k-1.5)*.004,0); hHull(f,.005); pw.add(f); }
+      const arm=new THREE.Mesh(sph(.1,12,8),m('hatMole')); arm.scale.set(.34,.5,.3); arm.position.set(sd*.088,.09,.075); arm.rotation.set(-.7,0,sd*.45); hHull(arm,.007); mo.add(arm); } }
+  else if(id==='propeller'){ // a propeller cap: six felt panels in two colours, a button on top, a short peak at the front, and a
+    // two-bladed propeller on a little post that spins in the breeze
+    const dome=new THREE.Group(); h.add(dome);
+    for(let k=0;k<6;k++){ const pn=new THREE.Mesh(hWarp(new THREE.SphereGeometry(1,10,10,k*hTAU/6,hTAU/6,0,Math.PI/2),v=>v.set(v.x*.255,v.y*.215,v.z*.255)),m(k%2?'propB':'propA'));
+      pn.position.y=-.02; dome.add(pn); }
+    // one outline round the whole dome (the panels share its shape), and seams between the panels
+    const shell=new THREE.Mesh(hWarp(new THREE.SphereGeometry(1,48,10,0,hTAU,0,Math.PI/2),v=>v.set(v.x*.255,v.y*.215,v.z*.255)),m('propA'));
+    const ol=hHull(shell,.012); shell.remove(ol); ol.position.y=-.02; dome.add(ol);
+    for(let k=0;k<6;k++){ const a=k*hTAU/6, pts=[]; for(let i=0;i<=8;i++){ const ph=i/8*Math.PI/2; pts.push(hV3(Math.cos(a)*Math.cos(ph)*.257,Math.sin(ph)*.217-.02,-Math.sin(a)*Math.cos(ph)*.257)); }
+      dome.add(hTube(pts,.0045,lineMat,{seg:10,rs:4})); }
+    h.add(hRing(.256,.012,m('propA'),.006,-.012,6,48));
+    // the peak: a flat crescent jutting out at the front, tipped down a little
+    const ps=new THREE.Shape(), N=24; for(let i=0;i<=N;i++){ const a=-1.15+i/N*2.3, r=.24+.13*Math.pow(Math.cos(a*1.3),1.4); ps[i?'lineTo':'moveTo'](Math.sin(a)*r,Math.cos(a)*r); }
+    for(let i=N;i>=0;i--){ const a=-1.15+i/N*2.3; ps.lineTo(Math.sin(a)*.235,Math.cos(a)*.235); }
+    const pg=new THREE.ExtrudeGeometry(ps,{depth:.012,bevelEnabled:true,bevelThickness:.005,bevelSize:.005,bevelSegments:1,curveSegments:4});
+    const pk=new THREE.Group(); pk.position.y=-.01; pk.rotation.x=.14; h.add(pk);
+    const peak=new THREE.Mesh(pg,m('propA')); peak.rotation.x=Math.PI/2; hHull(peak,.007); pk.add(peak);
+    const btn=new THREE.Mesh(sph(.032,14,10),m('propB')); btn.scale.y=.6; btn.position.y=.195; hHull(btn,.007); h.add(btn);
+    const post=new THREE.Mesh(new THREE.CylinderGeometry(.011,.013,.07,10),m('brass')); post.position.y=.23; hHull(post,.005); h.add(post);
+    const spin=new THREE.Group(); spin.position.y=.268; spin.userData.anim={spin:[0,-5,0],gust:.5,gf:.5}; h.add(spin);
+    for(const sd of [-1,1]){ const b=new THREE.Mesh(hWarp(new THREE.SphereGeometry(1,16,8),v=>{ const u=(v.x+1)/2; v.set(u*.17,v.y*.012,v.z*.034*(.6+.7*Math.sin(Math.PI*Math.min(1,u*1.1)))); }),m('propBlade'));
+      b.rotation.set(sd*.3,sd<0?Math.PI:0,0); hHull(b,.006); spin.add(b); }
+    const hub=new THREE.Mesh(sph(.024,12,10),m('propB')); hub.scale.y=.75; hHull(hub,.006); spin.add(hub); }
   return hBake(h); }
 let hatId=store.get('squirm-hat')||'none';
 const chapterCleared=k=>{ const ch=CHAPTERS[k]; if(!ch) return false; for(let i=ch.from;i<=ch.to;i++) if(!isCleared(i)) return false; return true; };
