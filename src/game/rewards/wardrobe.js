@@ -1,7 +1,7 @@
 // ---------- the wardrobe: hats, extras and their colour options ----------
 // hats, earned by finishing chapters: [id, name, chapter index that unlocks it]. Each is built once and cloned.
 const HATS=[['none','No hat',-1],['crown','Flower crown',0],['mush','Mushroom cap',1],['straw','Straw hat',2],['tophat','Top hat',3],['leaf','Leaf cap',4],['rainhat','Rain hat',5],
-  ['acorn','Acorn cap',6],['bee','Bee antennae',7],['party','Party hat',8],['brolly','Tiny umbrella',9],['beret','Dewdrop beret',10],['bow','Ribbon bow',11],['gold','Garden crown',12],['beanie','Pompom beanie',13],['sunflower','Sunflower',14],['horn','Beetle horn',15],['shell','Snail shell',16],['pumpkin','Pumpkin hat',17],['bonnet','Petal bonnet',18],['miner','Miner\'s helmet',19],['gnome','Gnome hat',20],['explorer','Explorer\'s hat',21],['owl','Owl friend',22],['nightcap','Sleepy nightcap',23],['twirl','Twirl-cap',24],['vane','Weathervane',25],['boat','Paper boat',26],['apple','Apple cap',27],['flowerpot','Flowerpot',28],['mole','Mole friend',29],['propeller','Propeller cap',33],
+  ['acorn','Acorn cap',6],['bee','Bee antennae',7],['party','Party hat',8],['brolly','Tiny umbrella',9],['beret','Dewdrop beret',10],['bow','Ribbon bow',11],['gold','Garden crown',12],['beanie','Pompom beanie',13],['sunflower','Sunflower',14],['horn','Beetle horn',15],['shell','Snail shell',16],['pumpkin','Pumpkin hat',17],['bonnet','Petal bonnet',18],['miner','Miner\'s helmet',19],['gnome','Gnome hat',20],['explorer','Explorer\'s hat',21],['owl','Owl friend',22],['nightcap','Sleepy nightcap',23],['twirl','Twirl-cap',24],['vane','Weathervane',25],['boat','Paper boat',26],['apple','Apple cap',27],['flowerpot','Flowerpot',28],['mole','Mole friend',29],['propeller','Propeller cap',33],['frog','Frog hood',34],['pirate','Pirate hat',36],['can','Watering can',38],
   ['sprout','Little sprout',-2,'Let the worm doze off 10 times',counted(()=>[(progress.stats.naps||0),10])],
   ['teacup','Teacup',-2,'Finish a patch at tea time, 3 to 5 pm',counted(()=>[(progress.stats.teatime||0),1])],
   ['nest','Bird\'s nest',-2,'Visit the garden on 7 different days',counted(()=>[(progress.stats.days||0),7])],
@@ -11,7 +11,9 @@ const HATS=[['none','No hat',-1],['crown','Flower crown',0],['mush','Mushroom ca
   ['cowboy','Cowboy hat',-2,'Clear 15 meadow patches',counted(()=>[['easy','medium','hard'].reduce((a,d)=>a+progress.endless[d].cleared,0),15])],
   ['phones','Headphones',-2,'Finish 10 daily patches',counted(()=>[(progress.stats.dailies||0),10])],
   ['idea','Bright idea',-2,'Grow 30 hint seeds',counted(()=>[(progress.stats.seedsGot||0),30])],
-  ['racer','Racing helmet',-2,'Win 3 races against a friend',counted(()=>[(progress.stats.raceWins||0),3])]];
+  ['racer','Racing helmet',-2,'Win 3 races against a friend',counted(()=>[(progress.stats.raceWins||0),3])],
+  // tods: a bit for each time of day a patch was won in (1 morning, 2 afternoon, 4 evening, 8 night)
+  ['bucket','Bucket hat',-2,'Finish a patch in the morning, the afternoon, the evening and at night',counted(()=>[[1,2,4,8].filter(b=>(progress.stats.tods||0)&b).length,4])]];
 const hatArt=(id,size=36)=>tintArt(id,art('hat-'+id,size));
 // extras: things for the face, earned with milestones: [id, name, how to earn, test]. Built once and cloned, like hats.
 const EXTRAS=[['none','Nothing','',()=>true],
@@ -41,7 +43,10 @@ const EXTRAS=[['none','Nothing','',()=>true],
   ['pearls','Pearl necklace','Finish Under the lawn',byChapter(30)],
   ['bubble','Bubble gum','Finish Muddy boots',byChapter(31)],
   ['earrings','Star earrings','Finish Mole patrol',byChapter(32)],
-  ['plaster','Sticking plaster','Get bonked by a mole 30 times',counted(()=>[(progress.stats.moleBonks||0),30])]];
+  ['plaster','Sticking plaster','Get bonked by a mole 30 times',counted(()=>[(progress.stats.moleBonks||0),30])],
+  ['beebuddy','Bee buddy','Finish Busy bees',byChapter(35)],
+  ['snorkel','Snorkel','Finish 10 patches while it\'s raining',counted(()=>[(progress.stats.rainyWins||0),10])],
+  ['blower','Party blower','Get 3 stars on 3 patches in a row',counted(()=>[(progress.stats.starRun||0),3])]];
 let extraId=store.get('squirm-extra')||'none';
 const extraOn=()=>{ const e=EXTRAS.find(x=>x[0]===extraId); return e&&e[3]()?extraId:'none'; };
 const extraArt=(id,size=36)=>tintArt(id,art(id==='none'?'hat-none':'extra-'+id,size));
@@ -77,6 +82,12 @@ const TINTS={
   bubble:{keys:['gum'],art:['#F7A0C4'],opts:[['Bubblegum',0xF7A0C4],['Sky',0x9FD2F2],['Mint',0x9FE0BE],['Butter',0xFFE08A],['Lilac',0xCDB8F5]]},
   earrings:{keys:['earStar'],art:['#F5C14E'],opts:[['Gold',0xF5C14E],['Silver',0xD7DDF0],['Rose',0xF7A8C4],['Sky',0x9FD2F2],['Mint',0x9FE0BE]]},
   plaster:{keys:['plaster','plasterPad'],art:['#F2C9A0','#FFF1DE'],opts:[['Classic',0xF2C9A0,0xFFF1DE],['Blossom',0xF7A8C4,0xFFE3EC],['Sky',0x9FD2F2,0xFFFBF2],['Mint',0x9FE0BE,0xFFFBF2],['Dino',0xC9E77E,0xFFF1A8]]},
+  frog:{keys:['frog','frogLight','frogSpot'],art:['#8DD16E','#D3F0A8','#6DB352'],opts:[['Frog',0x8DD16E,0xD3F0A8,0x6DB352],['Tree frog',0x6FCFA0,0xFFE08A,0x4FAE80],['Sky',0x8FC2EE,0xDDF0FF,0x6A9FD6],['Blossom',0xF5A3C0,0xFFE3EC,0xE07A9E],['Butter',0xF5D063,0xFFF4C8,0xD9A932]]},
+  pirate:{keys:['pirate'],art:['#463D5C'],opts:[['Midnight',0x463D5C],['Navy',0x3E5491],['Berry',0xB8466A],['Fern',0x3F7F5F],['Cocoa',0x6B4A35]]},
+  can:{keys:['canTin','canDark'],art:['#B5CBE0','#8FAAC6'],opts:[['Tin',0xB5CBE0,0x8FAAC6],['Mint',0x9FE0BE,0x6FBF98],['Blossom',0xF7A8C4,0xE087A8],['Butter',0xFFE08A,0xE8BC4E],['Lilac',0xCDB8F5,0xA890E0]]},
+  bucket:{keys:['bucket','bucketBand'],art:['#BFD9A6','#6FAE6A'],opts:[['Sage',0xBFD9A6,0x6FAE6A],['Sky',0x9FCBF0,0x5B8FD9],['Blossom',0xF7A8C4,0xE36A8C],['Butter',0xFFE08A,0xE8A93A],['Lilac',0xCDB8F5,0x8E72D6]]},
+  snorkel:{keys:['snorkel'],art:['#F5865E'],opts:[['Coral',0xF5865E],['Sky',0x7FBFEA],['Mint',0x7FD3A8],['Butter',0xF5C84E],['Berry',0xE36A8C]]},
+  blower:{keys:['blowA','blowB'],art:['#F7A0C4','#FFE08A'],opts:[['Party',0xF7A0C4,0xFFE08A],['Sky',0x9FD2F2,0xFFFBF2],['Mint',0x9FE0BE,0xF7A8C4],['Lilac',0xCDB8F5,0xFFE08A],['Sunny',0xFFD04A,0xF26B5E]]},
   sweatband:{keys:['sweat','sweatStripe'],art:['#FFFBF2','#F27DA2'],opts:[['Classic',0xFFFBF2,0xF27DA2],['Sky',0x9FD2F2,0xFFFBF2],['Lime',0xC9E77E,0x4FAE80],['Sunny',0xFFD04A,0xE4574C],['Berry',0xE36A8C,0xFFFBF2]]}};
 let tints=store.json('squirm-tints')||{};
 const tintOf=id=>{ const t=TINTS[id]; return t?Math.min(t.opts.length-1,Math.max(0,tints[id]|0)):0; };

@@ -501,8 +501,9 @@ from a tab replaces that layer with `game`.
   `extra-<id>`).
 - **Wear motion** (end of `models/extras.js`): a few items have a part that moves (pinwheel, butterfly, firefly,
   bee antennae, lightbulb, weathervane, teacup steam, rain cloud, sprout, the flowerpot's seedling, the mole friend's bob,
-  the propeller, the bubble-gum bubble, star earrings). Put `userData.anim` on the part
-  (swing `r`, sway `p`, scale pulse `s`, `spin` with gusts, `drip`; the comment there lists them); `hBake` keeps it
+  the propeller, the bubble-gum bubble, star earrings, the bee buddy, the watering can's drips, the party blower). Put `userData.anim` on the part
+  (swing `r`, sway `p`, scale pulse `s`, `spin` with gusts, `drip`, `blow`: a swing all the way out now and then and back;
+  the comment there lists them); `hBake` keeps it
   as its own child, `dressHat` / `dressExtra` register worn clones with `wearAdd`, and `wearTick` (from `frame`)
   moves them round their rest pose. Reduced motion keeps them still. Keep it to items where motion fits.
 - **Colour options:** `TINTS` gives some hats and extras five colours. `keys` are the item's `C` materials,
@@ -515,10 +516,10 @@ from a tab replaces that layer with `game`.
   at the neck); the cheek is a blush picked per colour (`cheekMat`).
 - **Patterns:** `PATTERNS` (`[id, name, how to earn, test]`), saved in `squirm-pattern`. `colorAt(g,n)` gives
   the tints that run along the body (fade, sunset, rainbow, two-tone, muddy tail) as tube vertex colours; anything with an edge
-  (the body-ring groove, stripes, bands, spots, glitter) is drawn per pixel by `tubeMat`'s shader (`patU` /
+  (the body-ring groove, stripes, bands, spots, glitter, candy stripes, stars) is drawn per pixel by `tubeMat`'s shader (`patU` /
   `PAT_ID`) from the tube's `pg` attribute: the place along the worm `g` (one unit per segment, continued
   down the tail tip and through tunnel dives) and the ring direction scaled by the radius, so patterns keep
-  their size on the stage and in a patch. Shimmer, Glow worm and Prism move: the shader reads `uT` (`patT`, set
+  their size on the stage and in a patch. Shimmer, Glow worm, Prism and Starry move: the shader reads `uT` (`patT`, set
   from `idleT` in `frame`, held still under reduced motion). `patArt` draws the wardrobe preview in the current colour.
 - **Milestones** for unlocks and badges come from `progress.stats` counters (`moves`, `fruit`, `naps`,
   `rains`, `restarts`, `outfits`, `days`, `teatime`, `allPollen`, `burrows`, `digs`, `moleBonks`, ...); bump new ones with

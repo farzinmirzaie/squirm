@@ -667,6 +667,77 @@ function buildHat(id){ const h=new THREE.Group();
     for(const sd of [-1,1]){ const b=new THREE.Mesh(hWarp(new THREE.SphereGeometry(1,16,8),v=>{ const u=(v.x+1)/2; v.set(u*.17,v.y*.012,v.z*.034*(.6+.7*Math.sin(Math.PI*Math.min(1,u*1.1)))); }),m('propBlade'));
       b.rotation.set(sd*.3,sd<0?Math.PI:0,0); hHull(b,.006); spin.add(b); }
     const hub=new THREE.Mesh(sph(.024,12,10),m('propB')); hub.scale.y=.75; hHull(hub,.006); spin.add(hub); }
+  else if(id==='frog'){ // a frog hood: a soft green hood over the top, back and sides of the head (open round the face), a pale
+    // rolled rim, and two big friendly frog eyes on top. Built round the head's centre (hd undoes the hat slot's tilt)
+    const hd=new THREE.Group(); hd.position.set(0,-.269,-.029); hd.rotation.x=.18; h.add(hd);
+    const R=HEAD_R+.03, sm=(a,b,x)=>{ const t=Math.min(1,Math.max(0,(x-a)/(b-a))); return t*t*(3-2*t); };
+    // how far down the hood reaches (angle from the top) at azimuth f (0 in front): above the eyes in front, down past the cheeks at the sides
+    const reach=f=>{ const a=Math.abs(f); return .62+1.2*sm(.62,1.45,a)-.12*sm(2.1,3.1,a); };
+    const at=(f,th,r=R)=>hV3(Math.sin(th)*Math.sin(f)*r,Math.cos(th)*r,Math.sin(th)*Math.cos(f)*r);
+    const hood=new THREE.Mesh(hWarp(new THREE.SphereGeometry(1,64,22),v=>{ const f=Math.atan2(v.x,v.z), th=Math.acos(Math.max(-1,Math.min(1,v.y)))/Math.PI*reach(f);
+      v.copy(at(f,th)); }),m('frog')); hHull(hood,.012); hd.add(hood);
+    const rim=[]; for(let i=0;i<72;i++){ const f=-Math.PI+i/72*hTAU; rim.push(at(f,reach(f),R+.004)); }
+    hd.add(hTube(rim,.024,m('frogLight'),{seg:144,rs:7,closed:true,line:.008}));
+    for(const sd of [-1,1]){ // the eyes: green bumps on top, each with a big white eye, a dark pupil looking ahead and a glint
+      const p=at(sd*.52,.52,R-.025), bump=new THREE.Mesh(sph(.12,20,14),m('frog')); bump.position.copy(p); hHull(bump,.011); hd.add(bump);
+      const ep=p.clone().add(hV3(sd*.01,.05,.045)), eye=new THREE.Mesh(sph(.094,20,14),m('chef')); eye.position.copy(ep); hHull(eye,.009); hd.add(eye);
+      const look=hV3(sd*.12,.42,1).normalize(), pu=new THREE.Mesh(sph(.05,14,10),m('pupil')); hStick(pu,ep.clone().addScaledVector(look,.082),look); pu.scale.z=.4; hd.add(pu);
+      const gl=new THREE.Mesh(sph(.014,8,6),m('chef')); hStick(gl,ep.clone().addScaledVector(hV3(sd*.12-.35,.75,1).normalize(),.095),look); gl.scale.setScalar(1.2); gl.scale.z=.6; hd.add(gl);
+      // a green eyelid over the back of each eye, so they look sleepy-friendly rather than startled
+      const lid=new THREE.Mesh(new THREE.SphereGeometry(.099,20,8,0,hTAU,0,.95),m('frog')); lid.position.copy(ep); lid.rotation.x=-.5; hHull(lid,.008); hd.add(lid); }
+    // a few darker spots scattered over the back and sides
+    for(const [f,th,r] of [[2.6,.9,.05],[-2.4,1.15,.042],[3.1,1.45,.036],[1.9,1.55,.04],[-1.75,1.35,.046]]){ const sp=new THREE.Mesh(sph(.1,12,8),m('frogSpot'));
+      hStick(sp,at(f,th,R-.002),at(f,th,1)); sp.scale.set(r*10,r*8,.12); hd.add(sp); }
+    // two little nostrils between the eyes, at the front of the hood
+    for(const sd of [-1,1]){ const n=new THREE.Mesh(sph(.012,8,6),lineMat); hStick(n,at(sd*.14,.5,R+.002),at(sd*.14,.5,1)); n.scale.set(1,.7,.4); hd.add(n); } }
+  else if(id==='pirate'){ // a pirate's tricorn: a round crown, a brim turned up in three walls (the front one tall, with a gold coin
+    // stamped with a star on it), a gold braid round the edge and a band
+    const crown=hLathe([[.205,-.02],[.207,.06],[.196,.13],[.16,.18],[.09,.206],[0,.212]],40,m('pirate')); hHull(crown,.012); h.add(crown);
+    // a brim point at distance d out from the crown's edge (y across its thickness), azimuth a (0 in front): folded up steeply in
+    // the middle of each wall (front and the two at the back), flat and pointed at the three corners in between
+    const fold=(a,d,y)=>{ const c=Math.cos(3*a), lift=Math.pow((1+c)/2,.7), A=lift*(Math.abs(a)<1?1.38:1.22), r=.2+d*Math.cos(A)-y*Math.sin(A), yy=d*Math.sin(A)+y*Math.cos(A);
+      const ext=1+.22*(1-lift); return hV3(Math.sin(a)*(.2+(r-.2)*ext),yy+.004,Math.cos(a)*(.2+(r-.2)*ext)); };
+    const brim=hLathe([[.2,.012],[.2,-.012],[.36,-.012],[.374,0],[.36,.012],[.2,.012]],72,m('pirate'));
+    hWarp(brim.geometry,v=>{ const r=Math.hypot(v.x,v.z), a=Math.atan2(v.x,v.z); v.copy(fold(a,Math.max(0,r-.2),v.y)); }); hHull(brim,.011); h.add(brim);
+    const ep=[]; for(let i=0;i<96;i++){ const a=-Math.PI+i/96*hTAU; ep.push(fold(a,.176,0)); }
+    h.add(hTube(ep,.014,m('crown'),{seg:192,rs:6,closed:true,line:.007}));
+    const band=new THREE.Mesh(new THREE.CylinderGeometry(.203,.206,.04,40,1,true),m('crown')); band.position.y=.02; h.add(band);
+    // the coin on the front wall: lying on its outer face, a little star raised on it
+    const p0=fold(0,.095,-.013), q=fold(0,.095,.013), nrm=p0.clone().sub(q).normalize();
+    const coin=new THREE.Group(); hStick(coin,p0.clone().addScaledVector(nrm,.006),nrm); h.add(coin);
+    const disc=new THREE.Mesh(new THREE.CylinderGeometry(.056,.056,.018,28),m('crown')); disc.rotation.x=Math.PI/2; hHull(disc,.007); coin.add(disc);
+    coin.add(hTorus(.047,.006,m('coinLight'),0,hTAU,5,28));
+    const st=new THREE.Mesh(new THREE.ExtrudeGeometry(SHAPE_STAR(),{depth:.2,bevelEnabled:true,bevelThickness:.06,bevelSize:.05,bevelSegments:1}),m('coinLight'));
+    st.scale.setScalar(.03); st.position.z=.008; coin.add(st);
+    h.rotation.x=.06; h.position.y=.004; }
+  else if(id==='can'){ // a little tin watering can sitting on the head: a round body with two rolled bands, a fill hole on top, an
+    // arched handle over it, and a long spout reaching forward to a rose that drips now and then
+    const body=hLathe([[0,-.02],[.12,-.02],[.138,-.01],[.148,.03],[.152,.1],[.146,.17],[.13,.2],[.11,.212],[.07,.218],[0,.22]],40,m('canTin')); hHull(body,.012); h.add(body);
+    h.add(hRing(.15,.011,m('canDark'),.006,.035,6,40), hRing(.15,.011,m('canDark'),.006,.155,6,40));
+    const hole=hRing(.052,.014,m('canDark'),.006,.222,6,24); hole.position.z=-.04; h.add(hole);
+    const dark=new THREE.Mesh(new THREE.CircleGeometry(.05,20),m('burrow')); dark.rotation.x=-Math.PI/2; dark.position.set(0,.223,-.04); h.add(dark);
+    // the handle: a flat strap arching over the top from front to back
+    h.add(hTube([hV3(0,.2,.1),hV3(0,.31,.07),hV3(0,.34,-.02),hV3(0,.3,-.11),hV3(0,.19,-.12)],.017,m('canDark'),{seg:20,rs:7,line:.007,post:v=>v.set(v.x*1.5,v.y,v.z)}));
+    // the spout: from low on the front, up and forward, a little thinner at the end
+    const sp=[hV3(0,.05,.13),hV3(0,.09,.23),hV3(0,.13,.33),hV3(0,.155,.42)];
+    h.add(hTube(sp,.026,m('canTin'),{seg:16,rs:10,line:.008,taper:t=>1-.3*t}));
+    // the rose: a flared cap facing along the spout, its face dotted with holes
+    const dir=sp[3].clone().sub(sp[2]).normalize(), rose=new THREE.Group(); hStick(rose,sp[3].clone().addScaledVector(dir,.012),dir); h.add(rose);
+    const cap=hLathe([[.018,-.02],[.03,0],[.05,.018],[.052,.026],[0,.026]],24,m('canDark')); cap.rotation.x=Math.PI/2; hHull(cap,.007); rose.add(cap);
+    for(let k=0;k<7;k++){ const a=k/6*hTAU, rr=k<6?.026:0, d=new THREE.Mesh(sph(.0065,6,4),m('burrow')); d.position.set(Math.cos(a)*rr,Math.sin(a)*rr,.027); d.scale.z=.4; rose.add(d); }
+    // drops falling from the rose's lower edge
+    const lo=rose.position.clone().add(hV3(0,-.035,.02)), dg=hDropGeo(.017);
+    [[-.012,0],[.014,.5]].forEach(([x,ph],i)=>{ const d=new THREE.Mesh(dg,m('water')); d.position.copy(lo).add(hV3(x,-.01,0)); hHull(d,.005);
+      d.userData.anim={drip:[.13,.7+i*.15],ph}; h.add(d); });
+    h.scale.setScalar(1.22); h.position.set(0,.014,-.03); }
+  else if(id==='bucket'){ // a soft bucket hat: a rounded crown with a band, a brim sloping down all round, and rows of stitching
+    const crown=hLathe([[.205,-.01],[.203,.06],[.196,.13],[.182,.168],[.15,.18],[.07,.184],[0,.185]],40,m('bucket')); hHull(crown,.012); h.add(crown);
+    for(const y of [.1,.14]) h.add(hRing(.2,.0035,lineMat,0,y,4,40));
+    const band=new THREE.Mesh(new THREE.CylinderGeometry(.205,.207,.05,40,1,true),m('bucketBand')); band.position.y=.025; hHull(band,.005); h.add(band);
+    const brim=hLathe([[.2,.012],[.2,-.012],[.27,-.05],[.33,-.088],[.348,-.094],[.35,-.082],[.33,-.07],[.27,-.032],[.2,.012]],48,m('bucket')); hHull(brim,.011); h.add(brim);
+    const top=[[.2,.012],[.27,-.032],[.33,-.07],[.35,-.082]], topY=r=>{ for(let i=1;i<top.length;i++) if(r<=top[i][0]){ const [r0,y0]=top[i-1], [r1,y1]=top[i]; return y0+(y1-y0)*(r-r0)/(r1-r0); } return -.082; };
+    for(const r of [.25,.29,.325]) h.add(hRing(r,.0035,lineMat,0,topY(r)+.003,4,48));
+    h.position.y=.01; }
   return hBake(h); }
 let hatId=store.get('squirm-hat')||'none';
 const chapterCleared=k=>{ const ch=CHAPTERS[k]; if(!ch) return false; for(let i=ch.from;i<=ch.to;i++) if(!isCleared(i)) return false; return true; };
