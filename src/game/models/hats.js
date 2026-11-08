@@ -741,7 +741,8 @@ function buildHat(id){ const h=new THREE.Group();
   return hBake(h); }
 let hatId=store.get('squirm-hat')||'none';
 const chapterCleared=k=>{ const ch=CHAPTERS[k]; if(!ch) return false; for(let i=ch.from;i<=ch.to;i++) if(!isCleared(i)) return false; return true; };
-const hatUnlocked=h=>h[4]?h[4]():h[2]<0||chapterCleared(h[2]);
+const hatTest=h=>h[4]?h[4]():h[2]<0||chapterCleared(h[2]);
+const hatUnlocked=h=>h[2]===-1||kept('h:'+h[0],()=>hatTest(h))();
 function dressHat(g){ const slot=g&&g.userData.hatSlot; if(!slot) return; slot.clear();
   const h=HATS.find(x=>x[0]===hatId); if(!h||h[0]==='none'||!hatUnlocked(h)) return;
   const k=hatId+'|'+tintOf(hatId); if(!hatProto[k]) hatProto[k]=tinted(hatId,buildHat(hatId)); slot.add(wearAdd(hatProto[k].clone())); }

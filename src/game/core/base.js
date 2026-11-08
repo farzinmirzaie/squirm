@@ -75,6 +75,11 @@ const $=id=>document.getElementById(id);
 const qa=(root,sel)=>[...root.querySelectorAll(sel)];
 // a milestone test that also reports [have, need], so badges and wardrobe items can show a progress bar
 const counted=f=>Object.assign(()=>{ const [a,b]=f(); return a>=b; },{prog:f});
+// once earned, kept: an unlocked hat, extra or pattern is noted in progress.kept (key 'h:'/'e:'/'p:' + id), so a test that
+// can turn false again (new patches make "finish every garden patch" untrue) never takes it back. kept(key,f) wraps a test
+// and keeps its .prog / .chapter; the note is saved with the next save (keepSweep at boot saves at once).
+const kept=(key,f)=>Object.assign(()=>{ const k=progress.kept||(progress.kept={}); if(k[key]) return true; if(!f()) return false;
+  k[key]=Date.now(); return true; },f);
 // an extra or pattern earned by finishing chapter k (a hat names its chapter in HATS instead): marked with .chapter, so
 // chapterReward finds it for the garden map, and with the chapter's patches as its progress
 const byChapter=k=>Object.assign(()=>chapterCleared(k),{chapter:k,prog:()=>chapterProg(k)});

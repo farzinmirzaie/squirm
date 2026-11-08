@@ -24,6 +24,15 @@ const PATTERNS=[['plain','Plain','',()=>true],
   ['glow','Glow worm','Finish 15 patches in the evening, 7 to 10 pm',counted(()=>[(progress.stats.evenings||0),15])],
   ['prism','Prism','Finish 30 daily patches',counted(()=>[(progress.stats.dailies||0),30])],
   ['starry','Starry','Finish 20 patches after dark',counted(()=>[(progress.stats.nightWins||0),20])]];
+// extras and patterns stay unlocked once earned (kept in core/base.js; hats do the same in hatUnlocked)
+EXTRAS.forEach(e=>{ if(e[0]!=='none') e[3]=kept('e:'+e[0],e[3]); });
+PATTERNS.forEach(p=>{ if(p[0]!=='plain') p[3]=kept('p:'+p[0],p[3]); });
+// at boot: note everything already earned, so a later update with new patches can't lock it again. The garden had 340
+// patches before 1.27.0 added chapters 35-39: whoever had grown all of them had "every garden patch" and keeps its prizes.
+function keepSweep(){ const k=progress.kept||(progress.kept={}), n=Object.keys(k).length;
+  if(!k.v){ k.v=1; if(LEVELS.length>=340&&LEVELS.slice(0,340).every((l,i)=>isCleared(i))) k['e:butterfly']=Date.now(); }
+  HATS.forEach(hatUnlocked); EXTRAS.forEach(e=>e[3]()); PATTERNS.forEach(p=>p[3]());
+  if(Object.keys(k).length!==n) save(); }
 // what finishing chapter k earns, for the garden map: its hat, else an extra or pattern marked with byChapter(k); null if nothing
 function chapterReward(k){ const h=HATS.find(x=>x[2]===k); if(h) return {name:h[1],art:s=>hatArt(h[0],s)};
   const e=EXTRAS.find(x=>x[3].chapter===k); if(e) return {name:e[1],art:s=>extraArt(e[0],s)};
