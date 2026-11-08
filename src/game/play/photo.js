@@ -80,7 +80,7 @@ $('photoPose').onclick=posePhoto;
 function undo(){
   if(!history.length) return; bumpStat('undos'); undosHere++; checkBadges(null); save(); tweens.length=0; animating=0; queue.length=0; slideSteps.length=0;
     sfx('undo'); lastMoveT=idleT;
-  clearDying(); clearHint(); const cur=state; state=history.pop(); syncBoard(false); syncWeather(false); syncSnails(false); snapBeetles(); syncHedges(false);
+  clearDying(); clearHint(); const cur=state; state=history.pop(); undoHere(); syncBoard(false); syncWeather(false); syncSnails(false); snapBeetles(); syncHedges(false);
     updateHUD(true); saveResume();
   // a turnaround swapped the worm's ends, so gliding back would drag the head through the body: snap instead
   const turned=Math.abs(cur.segs[0][0]-state.segs[0][0])+Math.abs(cur.segs[0][1]-state.segs[0][1])!==1;
@@ -92,7 +92,7 @@ function undo(){
 }
 function restart(){ if(!L) return; if(state&&state.moves>0) bumpStat('restarts'); clearHint(); tweens.length=0; clearDying(); animating=0; queue.length=0;
   slideSteps.length=0; hideAll(); sfx('undo');
-  if(state.status==='play' && state.moves>0){ history=[]; state=initState(L); syncBoard(false); snapWorm(); syncSnails(false); snapBeetles();
+  if(state.status==='play' && state.moves>0){ history=[]; resetHere(false); state=initState(L); syncBoard(false); snapWorm(); syncSnails(false); snapBeetles();
     syncWeather(false); syncHedges(false); updateHUD(true); saveResume(); lastMoveT=idleT;
     toast('Fresh start.',1800); return; }
   clearResume(); hintsUsed=0; undosHere=0; if(mode==='garden') loadLevel(li,false); else startLevel(L,false); }

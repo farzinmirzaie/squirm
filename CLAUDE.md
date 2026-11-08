@@ -521,9 +521,19 @@ from a tab replaces that layer with `game`.
   their size on the stage and in a patch. Shimmer, Glow worm and Prism move: the shader reads `uT` (`patT`, set
   from `idleT` in `frame`, held still under reduced motion). `patArt` draws the wardrobe preview in the current colour.
 - **Milestones** for unlocks and badges come from `progress.stats` counters (`moves`, `fruit`, `naps`,
-  `rains`, `restarts`, `outfits`, `days`, `teatime`, `allPollen`, `burrows`, `digs`, `moleBonks`, ...); bump new ones with
-  `bumpStat`. A few keep a best instead of a count: `pokeRun` (the longest run of quick taps on the worm in a
-  patch, `wormEmote`), `slideMax`.
+  `rains`, `restarts`, `outfits`, `days`, `teatime`, `allPollen`, `burrows`, `digs`, `moleBonks`, `rainyWins`, `nightWins`,
+  ...); bump new ones with `bumpStat`. A few keep a best instead of a count: `pokeRun` (the longest run of quick taps on
+  the worm in a patch, `wormEmote`), `slideMax`, `shoveMax` (the most tiles a beetle went in one push), `starRun` (the
+  longest run of 3-star wins), and `tods` is a bitmask of the times of day a patch was won in (1 morning, 2 afternoon,
+  4 evening, 8 night, from `todOf`, OR'd in).
+- **Win counters and play style** (`play/moves.js`): `noteWin` runs in `onWin` for garden, daily and meadow wins (not
+  races, like `teatime`) and bumps `rainyWins` (raining at the win), `tods`, `nightWins` (evening or night) and
+  `starRun`; `progress.runs` keeps the current runs (`stars`, `hats`: the hats of the last wins in a row, all different,
+  at most 3, cleared by a hatless win, and `sat`, the date of a Saturday win). The Clever crawling badges read a
+  per-patch tally: `here` (the mechanics the moves used, turnarounds, weather toggles) is pushed per move by `tallyMove`
+  like `history`, so undo (`undoHere`) and a fresh start (`resetHere`, also from `startLevel`) take it back;
+  `bonksHere` and `nappedHere` aren't undone. `patchCtx()` hands it to `checkBadges` (`home`, `combo`, `moles`,
+  `bonks`, `len`, `napped`) from `onWin` and `raceWin` alike.
 
 ### Modes and screens
 

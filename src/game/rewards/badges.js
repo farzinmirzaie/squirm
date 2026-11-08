@@ -88,6 +88,16 @@ const BADGES=[
   ['racewin','trophy','First past the burrow','Win a race against a friend.',counted(()=>[progress.stats.raceWins||0,1])],
   ['racewins','podium','Speedy wiggler','Win 10 races against friends.',counted(()=>[progress.stats.raceWins||0,10])],
   ['rematch','rematch','Again, again!','Ask for a rematch and race again 5 times.',counted(()=>[progress.stats.rematches||0,5])],
+  // Clever crawling: how a patch was played (the per-patch tally is `here` in play/moves.js, win runs in progress.runs)
+  ['combo','combo','Combo gardener','Finish a patch using four different tricks on the way, like tunnels, keys, snacks and rain.',c=>c&&c.home&&c.combo>=4],
+  ['taxi','taxi','Beetle taxi','Shove a beetle three tiles in one push. Wet leaves help!',counted(()=>[progress.stats.shoveMax||0,3])],
+  ['fullcircle','fullcircle','Full circle','Turn around twice in one patch.',()=>here.turns>=2],
+  ['rainshine','rainshine','Rain or shine','Switch the weather five times in one patch.',()=>here.rains>=5],
+  ['tiptoe','tiptoe','Tiptoe','Finish a patch with moles without bumping into one. Shh!',c=>c&&c.home&&c.moles&&!c.bonks],
+  ['tiny','tinyworm','Tiny but mighty','Reach the burrow only two segments long.',c=>c&&c.home&&c.len<=2],
+  ['sleepywin','sleepy','Sleepy winner','Finish a patch after your worm had a nap in it.',c=>c&&c.home&&c.napped],
+  ['hattrick','hattrick','Hat trick','Finish three patches in a row, each in a different hat.',counted(()=>[((progress.runs||{}).hats||[]).length,3])],
+  ['weekend','weekend','Weekend gardener','Finish a patch on the Saturday and the Sunday of one weekend.',c=>c&&c.weekend],
   ['collector','medal','Badge collector','Earn 40 other badges.',counted(()=>[Object.keys(progress.badges).filter(k=>k!=='collector').length,40])]];
 // returns the badges earned just now; quiet ones (earned before badges existed) don't celebrate
 function checkBadges(ctx,quiet){ const got=[];
@@ -102,6 +112,7 @@ const BADGE_GROUPS=[['Garden journey',['first','par','chapter','clean','sage','s
   ['Daily and meadow',['daily','streak7','month','sunrises','meadow','brave','fearless','unstoppable','legend','stocked']],
   ['Garden helpers',['flags','snacks','appetite','crumbs','gates','tunnels','molehills','rain','showery','bridges','bridgemaster','slides','wheee','hedges','pushes','flowerpower','pollinator','knots','uturn','digs','digsmore','bonk']],
   ['Racing',['raceday','racewin','racewins','rematch']],
+  ['Clever crawling',['combo','taxi','fullcircle','rainshine','tiptoe','tiny','sleepywin','hattrick','weekend']],
   ['Just for fun',['moves','marathon','undos','taps','tickles','nap','owl','dawn','quick','photos','dressup','hatrack','rainbow','patterns','fashion','collector']]];
 // a badge left out of every group still shows, in the last one
 { const seen=new Set(BADGE_GROUPS.flatMap(g=>g[1])); BADGE_GROUPS[BADGE_GROUPS.length-1][1].push(...BADGES.map(b=>b[0]).filter(id=>!seen.has(id))); }

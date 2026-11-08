@@ -43,7 +43,10 @@ const GAR_STATS=[['worm','Moves crawled','moves'],['peach','Snacks eaten','fruit
   ['turnshroom','Twirls','turns'],['trowel','Mounds dug','digs'],['mole-peek','Mole bonks','moleBonks'],['zzz','Naps','naps'],['calendar','Days played','days'],['sun','Daily patches','dailies'],
   ['flame','Best daily streak',()=>progress.daily.best||0],['tulip','Meadow patches',()=>Object.values(progress.endless||{}).reduce((n,e)=>n+(e&&e.cleared||0),0)],
   ['hintseed','Seeds grown','seedsGot'],['camera','Photos','photos'],['bowtie','Outfit changes','outfits'],['rewind','Undos','undos'],
-  ['race','Races','races'],['trophy','Races won','raceWins']];
+  ['race','Races','races'],['trophy','Races won','raceWins'],
+  ['umbrella','Rainy wins','rainyWins'],['moon','Wins after dusk','nightWins'],['stars','Best 3-star run','starRun'],
+  // tods is a bitmask (1 morning, 2 afternoon, 4 evening, 8 night): how many of the four
+  ['daynight','Times of day won',()=>`${[1,2,4,8].filter(b=>(progress.stats.tods||0)&b).length}<small class="of">/4</small>`]];
 function gardenInfo(){ const st=progress.stats, v=x=>typeof x==='function'?x():(st[x]||0);
   const grown=LEVELS.filter((l,i)=>isCleared(i)).length, got=BADGES.filter(b=>progress.badges[b[0]]).length, hats=HATS.filter(h=>h[0]!=='none');
   const tile=(ic,val,t)=>`<span><span class="ic" aria-hidden="true">${art(ic,18)}</span><span class="gv"><b>${val}</b><small>${t}</small></span></span>`;

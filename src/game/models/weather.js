@@ -58,9 +58,10 @@ function syncThemeColor(c){ const h='#'+c.getHexString(); if(h!==themeHex&&theme
 // brings out fireflies in the evening and at night
 const tod={si:.55,hemi:.38,amb:[1,.96,.89],lawn:[1,1,1]};
 let todName='day', fireflies=null;
+// the time of day at a Date: morning, day (the afternoon), evening or night
+function todOf(d){ const h=d.getHours(); return h>=6&&h<10?'morning' : h>=10&&h<17?'day' : h>=17&&h<20?'evening' : 'night'; }
 function pickTod(){ if(typeof renderHome==='function'&&$('homeOv').classList.contains('show')) renderHome();
-  const h=new Date().getHours()+new Date().getMinutes()/60;
-  const was=todName; todName= h>=6&&h<10?'morning' : h>=10&&h<17?'day' : h>=17&&h<20?'evening' : 'night'; if(was!==todName||!fireflies) buildFireflies(); }
+  const was=todName; todName=todOf(new Date()); if(was!==todName||!fireflies) buildFireflies(); }
 // a soft round glow with a bright core, shared by every firefly
 const glowTex=canvasTex(64,64,c=>{ const gr=c.createRadialGradient(32,32,0,32,32,32);
   gr.addColorStop(0,'rgba(255,255,255,1)'); gr.addColorStop(.18,'rgba(255,250,200,.95)'); gr.addColorStop(.45,'rgba(255,230,120,.35)');

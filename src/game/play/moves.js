@@ -14,19 +14,37 @@ function tryMove(dir){
     if(r.blocked==='flooded') toast('That puddle is full of water. Wait for the sun.');
     if(r.blocked==='sprout') toast('Just a seedling. It needs rain to grow into a leaf.');
     if(r.blocked==='hedge') toast('The hedge only opens while part of you rests on a flower.');
-    if(r.blocked==='mole'){ const h=state.segs[0], dd=DIRS[dir]; moleNope(h[0]+dd[0],h[1]+dd[1]); bumpStat('moleBonks'); if(!checkBadges(null).length) save();
+    if(r.blocked==='mole'){ const h=state.segs[0], dd=DIRS[dir]; moleNope(h[0]+dd[0],h[1]+dd[1]); bumpStat('moleBonks'); bonksHere++; if(!checkBadges(null).length) save();
       toast('The mole is up. It ducks back down after your next move.'); }
     if(r.blocked==='dig'){ const h=state.segs[0], dd=DIRS[dir]; digNope(h[0]+dd[0],h[1]+dd[1]); toast('Digging takes three segments. You\'re too short for this mound.'); }
     if(r.blocked==='petals'){ const h=state.segs[0], dd=DIRS[dir], gx=h[0]+dd[0], gy=h[1]+dd[1], P=POLL[tileAt(state,gx,gy).toUpperCase()]; petalsNope(gx,gy);
       toast(`These petals only open for ${P.n} pollen. Find a ${P.n} flower first.`); }
     if(r.blocked==='body'&&tileAt(state,state.segs[0][0]+DIRS[dir][0],state.segs[0][1]+DIRS[dir][1])===SOFT&&state.segs.length>2) toast('Soft soil lets you burrow past your body, but not fold back on yourself.');
     nudge(dir); return; }
-  history.push(state); const prev=state; state=r.state; lastMoveT=idleT; clearHint(); saveResume(); bumpStat('moves'); dismissTutorial();
+  history.push(state); tallyMove(r); const prev=state; state=r.state; lastMoveT=idleT; clearHint(); saveResume(); bumpStat('moves'); dismissTutorial();
   if(r.ev.slide){ progress.stats.slideMax=Math.max(progress.stats.slideMax||0,r.ev.slide.length);
     slideSteps=r.ev.slide.slice(1).map(x=>({state:x.state,ev:x.ev})).concat([{state:r.state,ev:r.ev}]); state=r.ev.slide[0].state;
     animateMove(prev,r.ev.slide[0].ev,dir); return; }
   animateMove(prev,r.ev,dir);
 }
+// this patch's play, for the Clever crawling badges. The move tally is kept per move like history, so undo and a fresh
+// start take it back: the mechanics the moves used (Combo gardener), turnarounds (Full circle) and weather toggles (Rain or
+// shine). Mole bonks (Tiptoe) and a nap (Sleepy winner) aren't taken back by undo.
+const freshHere=()=>({mechs:[],turns:0,rains:0});
+let here=freshHere(), hereHist=[], bonksHere=0, nappedHere=false;
+function tallyMove(r){ hereHist.push(here); const h={mechs:here.mechs.slice(),turns:here.turns,rains:here.rains};
+  const use=k=>{ if(!h.mechs.includes(k)) h.mechs.push(k); }; if(r.ev.slide) use('slide');
+  for(const ev of (r.ev.slide||[]).map(x=>x.ev).concat([r.ev])){
+    if(ev.pushed) use('beetle'); if(ev.portal) use('tunnel'); if(ev.rain!==undefined){ use('rain'); h.rains++; } if(ev.swung) use('crank');
+    if(ev.eaten==='+'||ev.eaten==='-') use('fruit'); if(ev.eaten==='K'||ev.eaten==='G') use('gate');
+    if(ev.crumbled&&ev.crumbled.length) use('crumble'); if(ev.pollen) use('pollen'); if(ev.cross) use('soil');
+    if(ev.turn){ use('turn'); h.turns++; } if(ev.dug) use('dig'); }
+  here=h; }
+function undoHere(){ here=hereHist.pop()||freshHere(); }
+// a fresh start of the same patch (all: a new patch, so a nap in the last one doesn't count either)
+function resetHere(all){ here=freshHere(); hereHist=[]; bonksHere=0; if(all) nappedHere=false; }
+// what a finished patch tells the badges, for a win and a race alike
+const patchCtx=()=>({home:true,combo:here.mechs.length,moles:/[MN]/.test(L.map.join('')),bonks:bonksHere,len:state.segs.length,napped:nappedHere});
 function nudge(dir){ // the head leans toward the blocked spot and springs back
   const h=segMeshes[0]; if(!h) return; const base=h.position.clone(); const d=DIRS[dir]; animating++;
   const look=Math.atan2(d[0],d[1]); h.rotation.y=angLerp(h.rotation.y,look,.6);
@@ -44,7 +62,8 @@ function animateMove(prev,ev,dir,sliding){
   if(ev.eaten==='C') bumpStat('flags'); if(ev.eaten==='G') bumpStat('gates'); if(ev.portal) bumpStat('tunnels'); if(ev.rain===true) bumpStat('rains');
   if(ev.swung&&ev.swung.length) bumpStat('swings'); if(ev.crumbled&&ev.crumbled.length) bumpStat('crumbles',ev.crumbled.length);
   syncBoard(true); syncWeather(true); syncHedges(true); if(ev.snails) syncSnails(true,ev);
-  if(ev.pushed){ pushBeetle(ev.pushed,sliding?95:queue.length?110:170); bumpStat('pushes'); const bb=state.beetles[ev.pushed.i];
+  if(ev.pushed){ pushBeetle(ev.pushed,sliding?95:queue.length?110:170); bumpStat('pushes');
+    progress.stats.shoveMax=Math.max(progress.stats.shoveMax||0,ev.pushed.path.length); const bb=state.beetles[ev.pushed.i];
     if(bb&&tileAt(state,bb.x,bb.y)==='B') bumpStat('beetleFlower'); }
   if(ev.swung){ sfx('creak'); const it=cells[state.segs[0][1]][state.segs[0][0]].item; if(it&&it.userData.wheel){ const w=it.userData.wheel, z0=w.rotation.z;
     tween(600,(e)=>{ w.rotation.z=z0-e*Math.PI*1.5; }); }
@@ -135,6 +154,18 @@ const shareLine=(what,mv,par,st)=>`Squirm, ${what}: ${mv} moves (par ${par}) ${'
 // what the wardrobe held when the patch started, so the win card also lists what a move earned on the way (50 gates...)
 let winHats=[], winExtras=[];
 function wardSnap(){ winHats=HATS.filter(hatUnlocked).map(h=>h[0]); winExtras=EXTRAS.filter(e=>e[3]()).map(e=>e[0]); }
+// a won patch (garden, daily or meadow, not a race) for the win counters: the weather, the time of day, a run of 3-star
+// wins and a run of different hats (progress.runs keeps the current runs), and a Saturday win for a weekend. Returns true
+// when this win finishes a weekend: a Sunday after a Saturday win.
+const TOD_BIT={morning:1,day:2,evening:4,night:8};
+function noteWin(st){ const S=progress.stats, R=progress.runs=Object.assign({stars:0,hats:[],sat:''},progress.runs), now=new Date(), tod=todOf(now);
+  if(state.raining) bumpStat('rainyWins');
+  S.tods=(S.tods||0)|TOD_BIT[tod]; if(tod==='evening'||tod==='night') bumpStat('nightWins');
+  R.stars=st===3?R.stars+1:0; S.starRun=Math.max(S.starRun||0,R.stars);
+  R.hats=hatId==='none'?[]:R.hats.slice(R.hats.lastIndexOf(hatId)+1).concat([hatId]).slice(-3);
+  const y=new Date(now); y.setDate(y.getDate()-1);
+  if(now.getDay()===6) R.sat=dateKey(now);
+  return now.getDay()===0&&R.sat===dateKey(y); }
 function onWin(){ shareText=''; newBest=false; chapterDone=null; const coloursBefore=coloursUnlocked(), patsBefore=patternsUnlocked();
   const par=curPar(), mv=state.moves; const st=starsFor(mv,par,hintsUsed>0); clearResume();
   if(mode==='race'){ raceWin(mv,par,st); return; }
@@ -179,10 +210,11 @@ function onWin(){ shareText=''; newBest=false; chapterDone=null; const coloursBe
   }
   if(turnsHere>=3) bumpStat('twistyWins');
   { const hr=new Date().getHours(); if(hr>=15&&hr<17) bumpStat('teatime'); if(hr>=19&&hr<22) bumpStat('evenings'); }
+  const weekend=noteWin(st);
   if(mode==='garden'&&!hintsUsed) progress.clean[LEVELS[li].name]=true;
   save(); askPersist();
   const hatsBefore=winHats;
-  const earned=checkBadges({won:true,mv,par,secs:playT,hour:new Date().getHours(),undos:undosHere,hinted:hintsUsed>0});
+  const earned=checkBadges({won:true,mv,par,secs:playT,hour:new Date().getHours(),undos:undosHere,hinted:hintsUsed>0,weekend,...patchCtx()});
   earned.forEach(b=>gift(art(b[1],26),b[2],'New badge',true));
   const newHat=HATS.find(h=>h[0]!=='none'&&hatUnlocked(h)&&!hatsBefore.includes(h[0]));
   if(newHat) gift(hatArt(newHat[0],28),newHat[1],'New hat for your wardrobe',true);

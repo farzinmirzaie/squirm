@@ -13,7 +13,7 @@ function burrowPos(){ for(let y=0;y<state.h;y++) for(let x=0;x<state.w;x++) if(s
 function updateHead(dt){
   const h=segMeshes[0]; if(!h||!h.userData.body) return;
   const asleep=!animating && state.status==='play' && idleT-lastMoveT>25 && reactT<=0;
-  if(asleep){ endAct(h); if(h.userData.expr!=='sleepy'){ applyExpr(h,'sleepy'); bumpStat('naps'); checkBadges(null); save(); } lookPhase='sleep';
+  if(asleep){ endAct(h); if(h.userData.expr!=='sleepy'){ applyExpr(h,'sleepy'); bumpStat('naps'); nappedHere=true; checkBadges(null); save(); } lookPhase='sleep';
     h.rotation.y=angLerp(h.rotation.y,Math.atan2(headDir[0],headDir[1]),1-Math.exp(-dt/1000*3));
       h.userData.body.rotation.x+=(.25-h.userData.body.rotation.x)*(1-Math.exp(-dt/1000*3));
     h.userData.face.eyes.forEach(e=>e.scale.set(1,.22,1)); zT-=dt/1000; if(zT<0&&!reduceMotion){ zT=1.3; snore(h); } return; }

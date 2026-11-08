@@ -168,7 +168,7 @@ function raceWin(mv,par,st){ const secs=raceSecs(), exBefore=winExtras;
   // what this race earned: badges, a hat or an extra
   const gifts=[], gift=(ico,t,sub)=>gifts.push(`<div class="gift hot"><span class="gi" aria-hidden="true">${ico}</span><span><b>${t}</b><small>${sub}</small></span></div>`);
   if(first) gift(art('trophy',26),'Race won',`${progress.stats.raceWins} ${progress.stats.raceWins===1?'race':'races'} won so far`);
-  checkBadges({race:true,won:first}).forEach(b=>gift(art(b[1],26),b[2],'New badge'));
+  checkBadges({race:true,won:first,...patchCtx()}).forEach(b=>gift(art(b[1],26),b[2],'New badge'));
   const newHat=HATS.find(h=>h[0]!=='none'&&hatUnlocked(h)&&!winHats.includes(h[0])); if(newHat) gift(hatArt(newHat[0],28),newHat[1],'New hat for your wardrobe');
   const newEx=EXTRAS.find(e=>e[0]!=='none'&&e[3]()&&!exBefore.includes(e[0])); if(newEx) gift(extraArt(newEx[0],28),newEx[1],'New extra for your wardrobe');
   save();
