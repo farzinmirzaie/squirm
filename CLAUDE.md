@@ -354,7 +354,12 @@ Chapters (`CHAPTER_NAMES`, ten levels each; level `n` is in chapter `ceil(n/10)`
 | 31 | Under the lawn | dirt mounds and moles together, with tunnels and keys and gates, medium |
 | 32 | Muddy boots | digging with rain, rivers and bridges, dry patches or beetles, medium-hard |
 | 33 | Mole patrol | moles with snails, flower buttons and hedges or pollen (and wet leaves to shift the beat), hard |
-| 34 | Deep roots | big boards (9-11 wide) with dirt mounds and moles and a few earlier mechanics each, hardened: the hardest patches in the game |
+| 34 | Deep roots | big boards (9-11 wide) with dirt mounds and moles and a few earlier mechanics each, hardened, very hard |
+| 35 | Picnic in the rain | from here on every patch needs three or more mechanics at once: rain with fruit and turnaround mushrooms or snails, gentle to medium |
+| 36 | Busy bees | pollen and petal gates, flower buttons and hedges, beetles (a beetle parked on a flower holds the hedges open), medium |
+| 37 | Secret passages | tunnels, keys and gates, dirt mounds and moles in every patch (tunnels shift the moles' beat), hardened, medium-hard |
+| 38 | Slip and tumble | wet leaves, beetles, dry patches and soft soil, all four in every patch, hardened, hard |
+| 39 | Everything blooms | big boards (8-10 wide) with four or more mechanics each, hardened, ending on the hardest patches in the game |
 
 Each chapter has a reward (`chapterReward(k)`: its hat in `HATS` by chapter index, or an extra or pattern unlocked with
 `byChapter(k)`) and a map scene (`SCENE_COL`, `SCENE_DECO`).
