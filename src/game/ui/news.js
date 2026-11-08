@@ -4,6 +4,10 @@
 // add an entry on top. Returning players see the newest entry once as a card on the Play tab, new players never
 // do (squirm-news holds the last version seen); Settings > About lists them all.
 const NEWS=[
+  ['1.27.0','2026-11-08','Everything blooms',['Five new chapters, fifty patches where three or more garden tricks work together: picnics in the rain, busy bees, secret passages, slippery slopes and one last big bloom.',
+    'New things to wear: a frog hood, a pirate hat, a watering can, a bucket hat, a bee buddy, a snorkel, a party blower, candy stripes, a starry pattern and a Moonbeam worm.',
+    'Clever crawling: nine new badges for how you play, like winning in the rain, at every time of day, or with a different hat three times in a row.',
+    'Anything you\'ve already earned stays yours, even when new patches arrive.']],
   ['1.26.1','2026-11-07','Race fix',['After a race, your friend\'s moves no longer stay at the top of the screen in your next patch.']],
   ['1.26.0','2026-11-06','Digging and moles',['Two new things in the garden: dirt mounds your worm can dig through (it comes out one segment shorter), and moles that pop up out of their hills every other move. Time your crawl!','Six new chapters, from a gentle Digging in to Deep roots, now the hardest patches in the game.','New things to wear: a flowerpot, a mole friend, a propeller cap, pearls, a bubble-gum bubble and star earrings, plus a muddy-tail pattern, a sticking plaster for bumping into moles, a new orchid worm colour and nine new badges.','Switch on dirt mounds and moles in the meadow too.']],
   ['1.25.1','2026-11-06','Meadow fix',['Switching on lots of meadow mechanics, or all of them, now grows a patch that uses a mix of them, instead of a plain one.']],

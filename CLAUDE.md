@@ -504,6 +504,13 @@ from a tab replaces that layer with `game`.
 - **Extras:** `EXTRAS` (`[id, name, how to earn, test]`) work the same way through `buildExtra` into the
   head's `accSlot`, saved in `squirm-extra`. An extra (or pattern) that a chapter earns uses `byChapter(k)` as its test. Every hat and extra needs a sticker in `ART` (`hat-<id>` /
   `extra-<id>`).
+- **Earned stays earned:** hats, extras and patterns pass through `kept(key,test)` (`core/base.js`; `hatUnlocked` for hats,
+  wrapped in `rewards/colours.js` for the rest): once a test passes, `progress.kept['h:'|'e:'|'p:'+id]` remembers it, so a
+  test that can turn false again (new patches make "finish every garden patch" untrue) never locks an item. `keepSweep`
+  at boot notes everything already earned, and once (`kept.v`) gave the Butterfly friend to whoever had grown the 340
+  patches from before chapters 35-39. Badges are stored once earned already; colours go by stars, which never drop. When
+  you add a test that new patches could undo (counts out of `LEVELS.length`, `allCleared`), it's covered; when you change
+  an existing test so it gets harder, nothing changes for players who already have the item.
 - **Wear motion** (end of `models/extras.js`): a few items have a part that moves (pinwheel, butterfly, firefly,
   bee antennae, lightbulb, weathervane, teacup steam, rain cloud, sprout, the flowerpot's seedling, the mole friend's bob,
   the propeller, the bubble-gum bubble, star earrings, the bee buddy, the watering can's drips, the party blower). Put `userData.anim` on the part
