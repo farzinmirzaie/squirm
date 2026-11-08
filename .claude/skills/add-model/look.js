@@ -32,7 +32,7 @@ const idle = page => page.waitForFunction(() => !window.__squirm.busy(), null, {
     await new Promise((res, rej) => server.once('error', rej).listen(0, res));
     fs.mkdirSync(outDir, { recursive: true });
     browser = await chromium.launch({ args: ['--use-gl=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
-    const big = 1e6, progress = { v: 2, best: {}, stars: {}, clean: {}, badges: {}, stats: { taps: big, moves: big, burrows: big, naps: big, teatime: 1, days: big, rains: big, restarts: big, outfits: big, allPollen: 1, photos: big, dailies: big, fruit: big, evenings: big, seedsGot: big, turns: big, twistyWins: big, races: big, raceWins: big, rematches: big, gates: big, swings: big, tunnels: big, crumbles: big, digs: big, moleBonks: big } };
+    const big = 1e6, progress = { v: 2, best: {}, stars: {}, clean: {}, badges: {}, stats: { taps: big, moves: big, burrows: big, naps: big, teatime: 1, days: big, rains: big, restarts: big, outfits: big, allPollen: 1, photos: big, dailies: big, fruit: big, evenings: big, seedsGot: big, turns: big, twistyWins: big, races: big, raceWins: big, rematches: big, gates: big, swings: big, tunnels: big, crumbles: big, digs: big, moleBonks: big, rainyWins: big, starRun: big, tods: 15, nightWins: big } };
     LEVELS.forEach(l => { progress.best[l.name] = l.par; progress.stars[l.name] = 3; progress.clean[l.name] = true; });
     const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, colorScheme: dark ? 'dark' : 'light' });
     // every mechanic's intro already seen, so no card covers a board shot
@@ -45,7 +45,9 @@ const idle = page => page.waitForFunction(() => !window.__squirm.busy(), null, {
     const strip = async (name, shots, w, h) => {
       const sp = await browser.newPage({ viewport: { width: w * shots.length, height: h } });
       await sp.setContent(`<body style="margin:0;display:flex">${shots.map(f => `<img src="data:image/png;base64,${fs.readFileSync(f).toString('base64')}" style="width:${w}px;height:${h}px">`).join('')}</body>`);
-      await sp.screenshot({ path: path.join(outDir, `${name}.png`) }); await sp.close(); console.log('  saved', name);
+      // software rendering keeps the GPU busy, so capturing the strip now and then fails: try again
+      for (let k = 0; ; k++) { try { await sp.screenshot({ path: path.join(outDir, `${name}.png`) }); break; } catch (e) { if (k > 3) throw e; await sp.waitForTimeout(1000); } }
+      await sp.close(); console.log('  saved', name);
     };
     if (mode === 'wardrobe') {
       // a chapter reward (hat, or byChapter extra or pattern) whose chapter has no patches yet gets a stand-in chapter (patch 1, cleared), so it counts as earned

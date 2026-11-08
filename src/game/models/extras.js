@@ -381,6 +381,66 @@ function buildExtra(id){ // frames sit in front of the eyes even when they widen
       g.add(wrap(th,.18,.05,.007,.003+lift,m('plaster')),wrap(th,.192,.062,.014,lift,lineMat),wrap(th,.056,.05,.004,.009+lift,m('plasterPad')));
       for(const x of [-.07,-.05,.05,.07]){ const U=u0.clone().multiplyScalar(Math.cos(th)).addScaledVector(v0,Math.sin(th)), d=dot(.005,m('stitch'),0,[1,1,.4],6,4);
         d.position.copy(c).multiplyScalar(HEAD_R).addScaledVector(U,x).setLength(HEAD_R+.0115+lift); d.lookAt(d.position.clone().multiplyScalar(2)); g.add(d); } } }
+  else if(id==='beebuddy'){ // a bee friend hovering by the side of the head: a round striped body with a happy face, rosy cheeks,
+    // curly antennae and clear wings buzzing on its back. It bobs about
+    const b=new THREE.Group(); b.position.set(.42,.2,.14); b.rotation.set(.12,-.8,.08); b.scale.setScalar(1.55); g.add(b);
+    b.userData.anim={p:[.01,.016,.008],r:[.1,.12,.08],f:2.6}; // bobs and turns a little
+    // the body: a fat ellipsoid A wide, H high and L long (z forward), two dark stripes hugging it
+    const A=.05, H=.047, L=.058, body=dot(.05,m('bee'),.006,[1,H/A,L/A],18,14); b.add(body);
+    for(const z of [-.006,-.032]){ const k=Math.sqrt(1-(z/L)**2), s=new THREE.Mesh(new THREE.TorusGeometry(1,.16,6,28),m('pupil'));
+      s.scale.set(A*k+.001,H*k+.001,.05); s.position.z=z; b.add(s); }
+    const tail=dot(.012,m('pupil'),.004,[1,1,1.3],8,6); tail.position.z=-L-.004; b.add(tail);
+    // the face, on the front of the body: two big eyes with glints, cheeks and a little smile
+    const on=(x,y)=>{ const z=L*Math.sqrt(Math.max(0,1-(x/A)**2-(y/H)**2)); return [V(x,y,z),V(x/A/A,y/H/H,z/L/L).normalize()]; };
+    for(const s of [-1,1]){ const [ep,en]=on(s*.019,.008), e=dot(.012,m('pupil'),0,[1,1.15,.5],10,8); e.position.copy(ep); e.quaternion.setFromUnitVectors(V(0,0,1),en); b.add(e);
+      const gl=dot(.0045,glint,0,[1,1,.5],6,4); gl.position.copy(ep).add(V(-.003,.005,.004)); b.add(gl);
+      const [cp,cn]=on(s*.033,-.012), ck=dot(.008,m('cheek'),0,[1.2,.8,.3],8,6); ck.position.copy(cp); ck.quaternion.setFromUnitVectors(V(0,0,1),cn); b.add(ck);
+      // antennae: thin curls from the top of the head with round tips
+      b.add(tube([V(s*.012,.04,.035),V(s*.022,.07,.046),V(s*.038,.083,.04)],.0032,m('pupil'),0,10,4,false));
+      const tp=dot(.008,m('pupil')); tp.position.set(s*.038,.083,.04); b.add(tp);
+      // a wing on the back, tipped up and out, buzzing
+      const wp=new THREE.Group(); wp.position.set(s*.016,.04,-.012); wp.rotation.set(-.35,s*.35,s*.55); wp.userData.anim={r:[0,0,s*.4],f:30,ph:s}; b.add(wp);
+      const w=dot(.1,glass(),0,[.26,.03,.4],14,6); w.position.set(s*.018,.004,-.02); wp.add(w);
+      const wl=dot(.1,lineMat,0,[.275,.024,.415],14,6); wl.position.set(s*.018,0,-.02); wp.add(wl); }
+    const sm=new THREE.Mesh(new THREE.TorusGeometry(.008,.0022,4,10,Math.PI),m('pupil')), [mp,mn]=on(0,-.012);
+    sm.position.copy(mp).addScaledVector(mn,.001); sm.quaternion.setFromUnitVectors(V(0,0,1),mn); sm.rotateZ(Math.PI); b.add(sm); }
+  else if(id==='snorkel'){ // a snorkel and mask: one wide oval lens over both eyes in a soft rubber cup that meets the face, a strap
+    // round the head, and a tube from a mouthpiece round under the cheek and up the side of the head, with a pale cap on top
+    const sk=m('snorkel'), cy=EY+.012, Z0=EZ+.02, RX=.255, RY=.13, bow=1.25;
+    const lens=MC.exLensBlue||(MC.exLensBlue=toon(C.lensBlue,{transparent:true,opacity:.55,depthWrite:false}));
+    // the cup: an open oval band from the frame back to the face, its back edge laid on the head's surface
+    const cup=(grow,mat)=>{ const geo=new THREE.CylinderGeometry(1,.92,1,48,1,true), p=geo.attributes.position;
+      for(let i=0;i<p.count;i++){ const y=p.getY(i), x=p.getX(i)*(RX+grow), yy=-p.getZ(i)*(RY+grow)+cy;
+        const z=y>0?Z0-bow*x*x-.012:Math.sqrt(Math.max(0,HEAD_R*HEAD_R-x*x*.9-(yy)**2))-.012; p.setXYZ(i,x,yy,z); }
+      geo.computeVertexNormals(); return new THREE.Mesh(geo,mat); };
+    g.add(cup(0,sk),cup(.012,lineMat));
+    // the frame: an oval ring at the front, bent round to follow the face
+    const fr=new THREE.Shape(); fr.absellipse(0,0,RX+.012,RY+.012,0,hTAU,false); const hl=new THREE.Path(); hl.absellipse(0,0,RX-.026,RY-.026,0,hTAU,true); fr.holes.push(hl);
+    const fg=new THREE.ExtrudeGeometry(fr,{depth:.02,bevelEnabled:true,bevelThickness:.008,bevelSize:.006,bevelSegments:2,curveSegments:40});
+    hWarp(fg,v=>v.set(v.x,v.y+cy,v.z+Z0-.02-bow*v.x*v.x)); const frame=new THREE.Mesh(fg,sk); hull(frame,.008); g.add(frame);
+    const lg=new THREE.ShapeGeometry((()=>{ const s=new THREE.Shape(); s.absellipse(0,0,RX-.02,RY-.02,0,hTAU,false); return s; })(),40);
+    hWarp(lg,v=>v.set(v.x,v.y+cy,v.z+Z0-.005-bow*v.x*v.x)); g.add(new THREE.Mesh(lg,lens));
+    const gl=glintArc(.085); gl.position.set(-.1,cy+.005,Z0-.005-bow*.01+.004); gl.scale.set(1,.8,1); g.add(gl);
+    // the strap, hugging the head at eye height from one side of the cup round the back to the other
+    const hh=.05, rr=v=>Math.sqrt(HEAD_R*HEAD_R-v*v)+.012, th0=.26*Math.PI, arc=2*Math.PI-2*th0, sg=new THREE.Group(); sg.position.y=cy; g.add(sg);
+    sg.add(new THREE.Mesh(new THREE.CylinderGeometry(rr(cy+hh/2),rr(cy-hh/2),hh,48,1,true,th0,arc),sk));
+    for(const e of [-hh/2,hh/2]){ const r=new THREE.Mesh(new THREE.TorusGeometry(rr(cy+e),.006,5,48,arc),lineMat); r.rotation.set(Math.PI/2,0,th0-1.5*Math.PI); r.position.y=e; sg.add(r); }
+    // the tube: a mouthpiece at the lips, then round under the left cheek and up the side of the head, clipped to the strap
+    const mp=dot(.034,sk,.008,[1.25,.8,.7],14,10); mp.position.set(0,-.072,.34); g.add(mp);
+    const tp=[V(.02,-.074,.35),V(.13,-.13,.32),V(.27,-.14,.21),V(.37,-.05,.1),V(.415,.12,.04),V(.425,.33,-.01),V(.41,.48,-.03)];
+    g.add(tube(tp,.026,sk,.008,60,10,false));
+    g.add(rod(V(.3,cy,.04),V(.415,cy,.04),.017,sk,.007,10));
+    const capG=new THREE.CylinderGeometry(.03,.034,.06,16), cap=new THREE.Mesh(capG,m('chef')); cap.position.copy(tp[6]); cap.quaternion.setFromUnitVectors(V(0,1,0),V().subVectors(tp[6],tp[5]).normalize());
+    hull(cap,.008); g.add(cap); const ct=dot(.03,m('chef'),.008,[1,.5,1],12,8); ct.position.copy(tp[6]).addScaledVector(V().subVectors(tp[6],tp[5]).normalize(),.03); g.add(ct); }
+  else if(id==='blower'){ // a party blower at the lips: a striped paper horn that lies rolled up in a coil, and now and then
+    // unrolls straight out with a toot and curls back (each link of the paper turns a little, the tip last)
+    const mp=new THREE.Group(); mp.position.set(.03,-.075,.335); mp.rotation.set(-.3,.5,-1); g.add(mp); // rolled to one side, so the coil shows from the front and from above
+    mp.add(rod(V(0,0,-.005),V(0,0,.06),.02,m('blowMouth'),.007,12));
+    const N=14, Lk=.042; let at=new THREE.Group(); at.position.z=.06; mp.add(at);
+    for(let i=0;i<N;i++){ const k=new THREE.Group(), t=i/(N-1), curl=.2+.42*t, open=-.012;
+      k.position.z=i?Lk:0; k.rotation.x=curl; k.userData.anim={r:[open-curl,0,0],blow:[4.6,1.1],ph:-i*.03}; at.add(k);
+      const bd=dot(.1,m(i%2?'blowB':'blowA'),.007,[.36-.08*t,.13,Lk*7],14,8); bd.position.z=Lk*.5; k.add(bd); at=k; }
+    const tip=dot(.02,m(N%2?'blowB':'blowA'),.007,[1.4,.6,1],10,8); tip.position.z=Lk; at.add(tip); }
   return g; }
 function dressExtra(g){ const slot=g&&g.userData.accSlot; if(!slot) return; slot.clear(); const id=extraOn(); if(id==='none') return;
   const k=id+'|'+tintOf(id); if(!extraProto[k]) extraProto[k]=tinted(id,buildExtra(id)); slot.add(wearAdd(extraProto[k].clone())); }
@@ -390,9 +450,13 @@ function dressExtra(g){ const slot=g&&g.userData.accSlot; if(!slot) return; slot
 // carries userData.anim, read every frame by wearTick round the pose it was built in:
 //   r:[x,y,z] swing (radians) and p:[x,y,z] sway (units), each axis a little out of step; f: speed (rad/s); ph: phase;
 //   one: swing to one side only; env: a slow swell (rad/s) so it rests now and then; s:[x,y,z] a scale pulse;
-//   spin:[x,y,z] (rad/s) with gust (0-1, how much the speed breathes) and gf (its speed); drip:[fall, speed]: falls and fades, again
+//   spin:[x,y,z] (rad/s) with gust (0-1, how much the speed breathes) and gf (its speed); drip:[fall, speed]: falls and fades, again;
+//   blow:[period, hold] (s): instead of a sine, r goes all the way out once a period, holds and comes back (the party blower)
 // Only parts of a worn clone in a scene move: a handful of transforms a frame. Reduced motion keeps them still.
 const wearMoving=new Set();
+// a puff: 0 at rest, eases up to 1, holds for hold seconds and eases back, once every period seconds
+function blowAt(t,[period,hold]){ const s=((t%period)+period)%period, e=x=>x*x*(3-2*x);
+  return s<.22?e(s/.22):s<.22+hold?1:s<.6+hold?1-e((s-.22-hold)/.38):0; }
 function wearAdd(root){ root.userData.worn=true; root.traverse(o=>{ if(o.userData.anim) wearMoving.add(o); }); return root; }
 function wearTick(t){ if(!wearMoving.size) return;
   for(const o of wearMoving){ let r=o; while(r.parent) r=r.parent;
@@ -402,7 +466,7 @@ function wearTick(t){ if(!wearMoving.size) return;
     o.position.fromArray(b[0]); o.rotation.set(b[1][0],b[1][1],b[1][2]); o.scale.fromArray(b[2]);
     if(reduceMotion) continue;
     const f=a.f||1, ph=a.ph||0, env=a.env?Math.pow(.5+.5*Math.sin(t*a.env+ph*1.3),2):1;
-    const w=k=>{ const x=Math.sin(t*f+ph+k*1.7); return (a.one?.5+.5*x:x)*env; };
+    const pu=a.blow?blowAt(t+ph,a.blow):0, w=k=>{ if(a.blow) return pu; const x=Math.sin(t*f+ph+k*1.7); return (a.one?.5+.5*x:x)*env; };
     if(a.r){ o.rotation.x+=a.r[0]*w(0); o.rotation.y+=a.r[1]*w(1); o.rotation.z+=a.r[2]*w(2); }
     if(a.p){ o.position.x+=a.p[0]*w(0); o.position.y+=a.p[1]*w(1); o.position.z+=a.p[2]*w(2); }
     if(a.s){ const x=Math.sin(t*f+ph); o.scale.x*=1+a.s[0]*x; o.scale.y*=1+a.s[1]*x; o.scale.z*=1+a.s[2]*x; }
