@@ -658,18 +658,21 @@ function buildHat(id){ const h=new THREE.Group();
     const lg=hLeafGeo(.19,.125,{cup:.04,tip:.8,ws:14,hs:5});
     for(const sd of [-1,1]){ const l=new THREE.Mesh(lg,m(sd<0?'leaf':'lawn')); l.position.set(0,.135,0); l.rotation.set(0,sd<0?Math.PI:0,.5); if(sd>0) l.scale.setScalar(.9); hHull(l,.008); sw.add(l); } }
   else if(id==='mole'){ // a mole friend popping out of a little molehill on the head: a velvety body, a pink snout with a round
-    // nose, tiny eyes squeezed shut in the sun, and two big pink digging paws resting on the soil. It bobs up and down
+    // nose, tiny eyes squeezed shut in the sun, and two big pink digging paws resting on the soil. It bobs and looks about
     const hill=new THREE.Mesh(hWarp(new THREE.SphereGeometry(1,40,12,0,hTAU,0,Math.PI/2),v=>{ const a=Math.atan2(v.z,v.x), r=Math.hypot(v.x,v.z);
       const k=1+.06*Math.sin(a*5+1)*r; v.set(v.x*.255*k,v.y*.13*(1+.08*Math.sin(a*3)),v.z*.255*k); }),m('hatDirt')); hill.position.y=-.035; hHull(hill,.012); h.add(hill);
     for(const [a,r,s] of [[.5,.2,.024],[1.9,.22,.02],[2.9,.19,.026],[4.2,.21,.022],[5.3,.2,.02],[3.6,.12,.018]]){ const cl=new THREE.Mesh(sph(.1,10,8),m('hatDirtDark'));
       cl.scale.set(s*10,s*7,s*10); const y=-.035+.13*Math.sqrt(Math.max(0,1-(r/.25)**2)); cl.position.set(Math.cos(a)*r,y+.004,Math.sin(a)*r); hHull(cl,.006); h.add(cl); }
-    const mo=new THREE.Group(); mo.scale.setScalar(1.4); mo.position.y=-.035; mo.userData.anim={p:[0,.032,0],r:[.05,.5,.07],f:1.5,env:.45}; h.add(mo); // pops up now and then and looks about
-    const body=new THREE.Mesh(hWarp(new THREE.SphereGeometry(1,28,20),v=>v.set(v.x*.115,v.y*.14,v.z*.105)),m('hatMole')); body.position.y=.14; hHull(body,.011); mo.add(body);
-    const snout=new THREE.Mesh(sph(.1,16,12),m('hatMoleSnout')); snout.scale.set(.36,.3,.5); snout.position.set(0,.15,.1); snout.rotation.x=-.15; hHull(snout,.007); mo.add(snout);
-    const nose=new THREE.Mesh(sph(.024,12,10),m('hatMoleSnout')); nose.scale.set(1.1,.95,.9); nose.position.set(0,.158,.148); hHull(nose,.006); mo.add(nose);
+    // the paws and arms stay put on the soil (mo); the body and face (hd) bob a little and turn to look about now and then,
+    // round the body's own upright axis, so nothing swings through the hill
+    const mo=new THREE.Group(); mo.scale.setScalar(1.4); mo.position.y=-.035; h.add(mo);
+    const hd=new THREE.Group(); hd.scale.setScalar(1.4); hd.position.y=-.035; hd.userData.anim={p:[0,.014,0],r:[0,.32,0],f:1.3,env:.45}; h.add(hd);
+    const body=new THREE.Mesh(hWarp(new THREE.SphereGeometry(1,28,20),v=>v.set(v.x*.115,v.y*.14,v.z*.105)),m('hatMole')); body.position.y=.14; hHull(body,.011); hd.add(body);
+    const snout=new THREE.Mesh(sph(.1,16,12),m('hatMoleSnout')); snout.scale.set(.36,.3,.5); snout.position.set(0,.15,.1); snout.rotation.x=-.15; hHull(snout,.007); hd.add(snout);
+    const nose=new THREE.Mesh(sph(.024,12,10),m('hatMoleSnout')); nose.scale.set(1.1,.95,.9); nose.position.set(0,.158,.148); hHull(nose,.006); hd.add(nose);
     for(const sd of [-1,1]){ // happy closed eyes, little curves on the fur
-      const e=hTube([hV3(sd*.062,.196,.072),hV3(sd*.047,.206,.086),hV3(sd*.031,.198,.094)],.0065,lineMat,{seg:6,rs:4}); mo.add(e);
-      const ch=new THREE.Mesh(sph(.1,10,8),m('cheek')); ch.scale.set(.17,.11,.06); ch.position.set(sd*.07,.15,.075); ch.lookAt(sd*.5,.15,.7); mo.add(ch);
+      const e=hTube([hV3(sd*.062,.196,.072),hV3(sd*.047,.206,.086),hV3(sd*.031,.198,.094)],.0065,lineMat,{seg:6,rs:4}); hd.add(e);
+      const ch=new THREE.Mesh(sph(.1,10,8),m('cheek')); ch.scale.set(.17,.11,.06); ch.position.set(sd*.07,.15,.075); ch.lookAt(sd*.5,.15,.7); hd.add(ch);
       // a digging paw: a flat pink palm with four round fingers, resting on the hill in front
       const pw=new THREE.Group(); pw.position.set(sd*.095,.055,.115); pw.rotation.set(-1.15,0,sd*.35); mo.add(pw);
       const palm=new THREE.Mesh(sph(.1,14,10),m('hatMoleSnout')); palm.scale.set(.42,.36,.15); hHull(palm,.006); pw.add(palm);
