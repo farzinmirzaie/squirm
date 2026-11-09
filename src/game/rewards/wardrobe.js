@@ -74,7 +74,7 @@ const TINTS={
   racer:{keys:['racer'],art:['#F26B5E'],opts:[['Cherry',0xF26B5E],['Sky',0x7FBFEA],['Mint',0x7FD3A8],['Butter',0xF5C84E],['Lilac',0xB79CF2]]},
   medal:{keys:['ribbon','ribbonStripe'],art:['#7FBFEA','#FFFBF2'],opts:[['Sky',0x7FBFEA,0xFFFBF2],['Berry',0xE36A8C,0xFFE3EC],['Mint',0x7FD3A8,0xFFF1A8],['Lilac',0xB79CF2,0xFFFBF2],['Coral',0xF07A6A,0xFFF1A8]]},
   boat:{keys:['boat','boatIn'],art:['#FFFBF2','#E3DCCF'],opts:[['Paper',0xFFFBF2,0xE3DCCF],['Sky',0x9FD2F2,0x7FB8E0],['Blossom',0xF7A8C4,0xE38AAA],['Butter',0xFFE08A,0xF2C85E],['Mint',0x9FE0BE,0x7FC9A2]]},
-  apple:{keys:['apple'],art:['#F0685A'],opts:[['Red',0xF0685A],['Green',0x9BD66A],['Golden',0xF5C84E],['Pink',0xF7A0B8],['Russet',0xC98E52]]},
+  apple:{keys:['apple','appleStreak'],art:['#F0685A','#D54B47'],opts:[['Red',0xF0685A,0xD54B47],['Green',0x9BD66A,0x7DB54E],['Golden',0xF5C84E,0xDDA73A],['Pink',0xF7A0B8,0xE07F9C],['Russet',0xC98E52,0xA9713C]]},
   key:{keys:['cord'],art:['#D99A5C'],opts:[['Twine',0xD99A5C],['Berry',0xE36A8C],['Sky',0x7FBFEA],['Mint',0x7FD3A8],['Lilac',0xB79CF2]]},
   flowerpot:{keys:['flowerpot','flowerpotRim'],art:['#E08A5E','#C96F45'],opts:[['Terracotta',0xE08A5E,0xC96F45],['Sky',0x9FCBF0,0x7AAEDC],['Mint',0x8FD0B0,0x6FB894],['Butter',0xF7D57A,0xE3B648],['Blossom',0xF7A8C4,0xE087A8]]},
   propeller:{keys:['propA','propB'],art:['#F26B5E','#FFD04A'],opts:[['Classic',0xF26B5E,0xFFD04A],['Sky',0x7FBFEA,0xFFFBF2],['Mint',0x7FD3A8,0xF7A8C4],['Berry',0xE36A8C,0x9FD2F2],['Lilac',0xB79CF2,0xFFE08A]]},

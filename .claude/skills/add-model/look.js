@@ -5,6 +5,7 @@
 //     e.g. '[["teacup","teacup","none",{"teacup":1},0],["patch","none","eyepatch",{},5]]'
 //     views: stage (the wardrobe's own camera, as players see it), then close front, left, right, back and top
 //     (top is about the in-patch camera)
+//     --at <seconds>: freeze moving parts (wear motion) at that moment, to check a pose (a blink, a blow, a flicker)
 //   node .claude/skills/add-model/look.js <outDir> board '<list>' [--dark]
 //     list: [[name, {map, worm, exitLen, rain}, [x, y] tile to look at, "moves" to play first], ...]
 //     e.g. '[["gate",{"map":["P.p.E"],"worm":[[1,0],[0,0]],"exitLen":2},[2,0],"W"]]'
@@ -16,7 +17,8 @@ const fs = require('fs'), path = require('path'), os = require('os'), cp = requi
 const root = path.join(__dirname, '..', '..', '..');
 const { createServer } = require(path.join(root, 'tools/serve'));
 const LEVELS = require(path.join(root, 'src/levels.js'));
-const args = process.argv.slice(2), dark = args.includes('--dark'), [outDir, mode, listJ] = args.filter(a => a !== '--dark');
+const argv = process.argv.slice(2), atI = argv.indexOf('--at'), at = atI >= 0 ? +argv[atI + 1] : null;
+const args = atI >= 0 ? argv.filter((a, i) => i !== atI && i !== atI + 1) : argv, dark = args.includes('--dark'), [outDir, mode, listJ] = args.filter(a => a !== '--dark');
 if (!listJ || !['wardrobe', 'board'].includes(mode)) { console.error('usage: node look.js <outDir> wardrobe|board \'<json list>\' [--dark] (see the comment at the top)'); process.exit(2); }
 const list = JSON.parse(listJ);
 const ev = (page, code) => page.evaluate(c => window.__squirm.ev(c), code);
@@ -52,6 +54,7 @@ const idle = page => page.waitForFunction(() => !window.__squirm.busy(), null, {
     if (mode === 'wardrobe') {
       // a chapter reward (hat, or byChapter extra or pattern) whose chapter has no patches yet gets a stand-in chapter (patch 1, cleared), so it counts as earned
       await ev(page, `[...HATS.map(h=>h[2]),...EXTRAS.map(e=>e[3].chapter),...PATTERNS.map(p=>p[3].chapter)].forEach(k=>{ while(k>=CHAPTERS.length) CHAPTERS.push({name:'Look',from:0,to:0}); })`);
+      if (at != null) await ev(page, `{ const w=wearTick; wearTick=()=>w(${at}); }`);
       await page.click('.tab[data-tab="me"]'); await page.waitForTimeout(1500);
       const box = await (await page.$('#homeWorm')).boundingBox();
       for (const [name, hat, extra, tints, col, pat] of list) {

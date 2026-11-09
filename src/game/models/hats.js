@@ -66,7 +66,7 @@ function hBake(h){ h.updateMatrixWorld(true); const inv=h.matrixWorld.clone().in
       off+=pa.count; if(g!==o.geometry) g.dispose(); });
     const geo=new THREE.BufferGeometry(); geo.setAttribute('position',new THREE.BufferAttribute(P,3)); geo.setAttribute('normal',new THREE.BufferAttribute(N,3));
     const me=new THREE.Mesh(geo,mat); me.castShadow=mat!==lineMat&&!mat.transparent; out.add(me); }
-  movers.forEach((o,i)=>{ const b=hBake(o); poses[i].decompose(b.position,b.quaternion,b.scale); b.userData.anim=o.userData.anim; out.add(b); });
+  movers.forEach((o,i)=>{ const b=hBake(o); poses[i].decompose(b.position,b.quaternion,b.scale); b.userData.anim=o.userData.anim; b.visible=o.visible; out.add(b); });
   return out; }
 // a point on an ellipsoid (radii a, b, a) in direction d
 const hOnEllipsoid=(d,a,b)=>{ const k=1/Math.sqrt(d.x*d.x/(a*a)+d.y*d.y/(b*b)+d.z*d.z/(a*a)); return d.clone().multiplyScalar(k); };
@@ -499,6 +499,9 @@ function buildHat(id){ const h=new THREE.Group();
       const e=new THREE.Mesh(sph(.1,20,14),m('chef')); e.scale.set(.6,.6,.22); e.position.set(sd*.056,.205,.118); e.rotation.y=sd*.32; hHull(e,.008); h.add(e);
       const pu=new THREE.Mesh(sph(.1,14,10),m('burrow')); pu.scale.set(.29,.31,.12); pu.position.set(sd*.06,.203,.137); pu.rotation.y=sd*.32; h.add(pu);
       const gl=new THREE.Mesh(sph(.1,8,6),m('chef')); gl.scale.setScalar(.085); gl.position.set(sd*.066,.215,.146); h.add(gl);
+      // an eyelid hinged at the top of the eye: squashed flat there at rest, it drops over the eye for a blink
+      const lid=new THREE.Group(); lid.position.set(sd*.056,.266,.118); lid.rotation.y=sd*.32; lid.scale.y=.02; lid.userData.anim={blink:[4.2,sd*.02]}; h.add(lid);
+      const lm=new THREE.Mesh(sph(.1,20,14),m('owl')); lm.scale.set(.65,.62,.38); lm.position.y=-.061; hHull(lm,.007); lid.add(lm);
       const tuft=new THREE.Mesh(new THREE.ConeGeometry(.03,.075,12),m('owlDark')); tuft.position.set(sd*.088,.3,.01); tuft.rotation.set(-.15,0,-sd*.55); hHull(tuft,.008); h.add(tuft);
       const wing=new THREE.Mesh(sph(.1,18,12),m('owlDark')); wing.scale.set(.42,1.05,.85); wing.position.set(sd*.132,.13,-.012); wing.rotation.z=sd*.16; hHull(wing,.008); h.add(wing);
       for(let k=-1;k<=1;k++){ const toe=new THREE.Mesh(sph(.1,8,6),m('beak')); toe.scale.set(.11,.09,.2); toe.position.set(sd*.055+k*.017,.006,.1+(k?-.006:0)); toe.rotation.y=k*.35; hHull(toe,.005); h.add(toe); } }
@@ -530,22 +533,32 @@ function buildHat(id){ const h=new THREE.Group();
     const onGlass=(x,y)=>{ const z=Math.sqrt(Math.max(0,R*R-x*x-(y-C0)*(y-C0)))+.003; return hV3(x,y,z); };
     spr.add(hTube([onGlass(-.07,C0+.04),onGlass(-.082,C0+.005),onGlass(-.075,C0-.03)],.009,m('glint'),{seg:10,rs:5}));
     spr.add(hTube([onGlass(-.03,C0-.045),onGlass(-.018,C0-.01),onGlass(-.006,C0-.035),onGlass(.006,C0-.01),onGlass(.018,C0-.035),onGlass(.03,C0-.01)].map(v=>v.setZ(v.z+.001)),.005,m('tash'),{seg:20,rs:4}));
+    // now and then it flickers: a switched-off glass (a little bigger, a dull cream) shows for a few stutters and the glow round
+    // the bulb goes out. Both are their own moving parts with the spring's own swing, so they boing along with it
+    const sw={r:[.1,0,.1],f:2.3,env:.5};
+    const off=new THREE.Group(); off.visible=false; off.userData.anim={...sw,flick:[5.3,0]}; h.add(off);
+    off.add(hLathe(pts.map(([x,y])=>[x*1.045,y]),40,m('ideaOff')));
+    const glow=new THREE.Group(); glow.userData.anim={...sw,flick:[5.3,1]}; h.add(glow);
+    const halo=new THREE.Mesh(sph(.1,20,14),MC.ideaHalo||(MC.ideaHalo=new THREE.MeshBasicMaterial({color:C.idea,transparent:true,opacity:.3,depthWrite:false})));
+    halo.scale.setScalar(1.6); halo.position.y=C0; glow.add(halo);
     h.rotation.z=-.1; }
-  else if(id==='twirl'){ // a turnaround mushroom to wear: a mint toadstool cap with a cream swirl from the top down to the rim
+  else if(id==='twirl'){ // a turnaround mushroom to wear: a mint toadstool cap with a cream swirl from the top down to the rim.
+    // The whole cap turns slowly, now quicker now slower, so the swirl twirls
+    const sp=new THREE.Group(); sp.userData.anim={spin:[0,-1.1,0],gust:.7,gf:.5}; h.add(sp);
     const cap=new THREE.Mesh(hWarp(new THREE.SphereGeometry(1,40,12,0,hTAU,0,Math.PI/2),v=>{ const s=Math.hypot(v.x,v.z); v.set(v.x*.27*(1+.04*Math.pow(s,6)),v.y*.23+.008,v.z*.27*(1+.04*Math.pow(s,6))); }),m('turnCap'));
-    hHull(cap,.012); h.add(cap);
-    h.add(hRing(.272,.024,m('turnCap'),.009,.006,8,40));
+    hHull(cap,.012); sp.add(cap);
+    sp.add(hRing(.272,.024,m('turnCap'),.009,.006,8,40));
     const gills=hLathe([[.06,.03],[.27,-.004]],64,m('stem')); hWarp(gills.geometry,v=>{ const a=Math.atan2(v.z,v.x), r=Math.hypot(v.x,v.z); v.y+=.006*Math.cos(a*32)*Math.min(1,r/.15); });
-    h.add(gills);
+    sp.add(gills);
     const pts=[]; for(let i=0;i<=80;i++){ const t=i/80, th=.1+t*1.38, a=t*hTAU*2.4; pts.push(hV3(Math.sin(th)*Math.cos(a)*.277,Math.cos(th)*.237+.008,Math.sin(th)*Math.sin(a)*.277)); }
-    h.add(hTube(pts,.019,m('turnSwirl'),{seg:120,rs:6,line:.006}));
-    const tip=new THREE.Mesh(sph(.04,14,10),m('turnSwirl')); tip.position.y=.245; tip.scale.y=.75; hHull(tip,.007); h.add(tip); }
+    sp.add(hTube(pts,.019,m('turnSwirl'),{seg:120,rs:6,line:.006}));
+    const tip=new THREE.Mesh(sph(.04,14,10),m('turnSwirl')); tip.position.y=.245; tip.scale.y=.75; hHull(tip,.007); sp.add(tip); }
   else if(id==='vane'){ // a little weathervane: a brass pole on a round base, a mint ball, and an arrow that points the way
     const pole=new THREE.Mesh(new THREE.CylinderGeometry(.014,.018,.36,12),m('brass')); pole.position.y=.18; hHull(pole,.007); h.add(pole);
     const base=hLathe([[0,.05],[.07,.04],[.085,.012],[.08,0],[0,0]],24,m('brass')); hHull(base,.008); h.add(base);
     const ball=new THREE.Mesh(sph(.032,14,10),m('turnCap')); ball.position.y=.25; hHull(ball,.007); h.add(ball);
     // the arrow: a flat shaft with a pointed head and a feathered tail, slightly turned
-    const ar=new THREE.Group(); ar.position.y=.33; ar.rotation.y=.5; ar.userData.anim={r:[0,.8,0],f:.5,env:.21}; h.add(ar); // turns with the wind
+    const ar=new THREE.Group(); ar.position.y=.33; ar.rotation.y=.5; ar.userData.anim={spin:[0,.9,0],gust:.92,gf:.45,r:[.07,0,0],f:1.7,env:.4}; h.add(ar); // turns round with gusty wind: lingers, then swings on, with a little wobble
     const sh=new THREE.Shape(); sh.moveTo(-.2,-.012); sh.lineTo(.12,-.012); sh.lineTo(.12,-.045); sh.lineTo(.2,0); sh.lineTo(.12,.045); sh.lineTo(.12,.012); sh.lineTo(-.14,.012);
       sh.lineTo(-.2,.06); sh.lineTo(-.24,.06); sh.lineTo(-.18,0); sh.lineTo(-.24,-.06); sh.lineTo(-.2,-.06); sh.lineTo(-.14,-.012);
     const ag=new THREE.ExtrudeGeometry(sh,{depth:.018,bevelEnabled:true,bevelThickness:.006,bevelSize:.006,bevelSegments:1}); ag.translate(0,0,-.009);
@@ -576,41 +589,59 @@ function buildHat(id){ const h=new THREE.Group();
       const lens=new THREE.Mesh(new THREE.CircleGeometry(.056,24),m('lensBlue')); lens.position.z=.043; cup.add(lens);
       const gl=new THREE.Mesh(new THREE.TorusGeometry(.036,.008,4,12,1.2),MC.hatGlint||(MC.hatGlint=new THREE.MeshBasicMaterial({color:C.glint})));
       gl.position.z=.046; gl.rotation.z=1.7; cup.add(gl); } }
-  else if(id==='boat'){ // a folded paper boat worn side to side: two hull flaps that meet in points at the ends, a tall sail
-    // triangle between them, a creased floor, and a raindrop resting on one end. The bottom edge arches over the crown
-    const L=.31, B=.2, TH=.007, HT=.15, pts=(top,bot,half)=>{ const s=new THREE.Shape(); s.moveTo(-bot,-.03); s.quadraticCurveTo(0,.03,bot,-.03); s.lineTo(half,top); s.lineTo(-half,top); s.lineTo(-bot,-.03); return s; };
-    // a hull flap: a thin slab bent so it leans out at the top and curves in to meet the other flap at both ends
+  else if(id==='boat'){ // a folded paper boat, made from a page of the garden paper (lines of print), worn at a jaunty tilt: two hull
+    // flaps that meet in points at the ends, a sail folded into a tent between them with a little red pennant on top, a creased
+    // floor, and a raindrop resting on one end. The bottom edge arches over the crown
+    const L=.33, B=.19, TH=.008, HT=.15, pts=(top,bot,half)=>{ const s=new THREE.Shape(); s.moveTo(-bot,-.03); s.quadraticCurveTo(0,.03,bot,-.03); s.lineTo(half,top); s.lineTo(-half,top); s.lineTo(-bot,-.03); return s; };
+    // where a hull flap is at (x, y): it leans out toward the top and curves in to meet the other flap at both ends
+    const zAt=(x,y,sd,o=0)=>sd*((.05+Math.max(0,y)*.32)*Math.max(0,1-Math.pow(Math.abs(x)/(L+.004),2.4))+TH+o);
     const flap=sd=>{ const g=new THREE.ExtrudeGeometry(pts(HT,B,L),{depth:TH*2,bevelEnabled:false,curveSegments:10}); g.translate(0,0,-TH);
-      const p=g.attributes.position; for(let k=0;k<p.count;k++){ const x=p.getX(k), y=p.getY(k), w=Math.max(0,1-Math.pow(Math.abs(x)/(L+.004),2.4));
-        p.setZ(k,sd*(.045+Math.max(0,y)*.42)*w+p.getZ(k)); }
+      const p=g.attributes.position; for(let k=0;k<p.count;k++){ const x=p.getX(k), y=p.getY(k); p.setZ(k,zAt(x,y,sd,-TH)+p.getZ(k)); }
       g.computeVertexNormals(); const me=new THREE.Mesh(g,m('boat')); hHull(me,.009); return me; };
     h.add(flap(1),flap(-1));
-    // a crease along each flap where the paper was folded up
-    const zAt=(x,y,sd)=>sd*(.045+y*.42)*Math.max(0,1-Math.pow(Math.abs(x)/(L+.004),2.4))+sd*(TH+.003);
-    for(const sd of [-1,1]){ const cp=[]; for(let i=0;i<=12;i++){ const y=.095, x=-.26+i/12*.52; cp.push(hV3(x,y,zAt(x,y,sd))); }
-      h.add(hTube(cp,.0045,lineMat,{seg:24,rs:4})); }
-    // the sail: a doubled triangle standing up between the flaps, with a fold down its middle
-    const ss=new THREE.Shape(); ss.moveTo(-.2,.0); ss.lineTo(.2,.0); ss.lineTo(0,.35); ss.lineTo(-.2,.0);
-    const sg=new THREE.ExtrudeGeometry(ss,{depth:.016,bevelEnabled:true,bevelThickness:.004,bevelSize:.004,bevelSegments:1}); sg.translate(0,0,-.008);
+    // a crease along each flap where the paper was folded up, and lines of print below it
+    for(const sd of [-1,1]){ const cp=[]; for(let i=0;i<=12;i++){ const y=.1, x=-.27+i/12*.54; cp.push(hV3(x,y,zAt(x,y,sd,.003))); }
+      h.add(hTube(cp,.0045,lineMat,{seg:24,rs:4}));
+      for(const [y,x0,x1] of [[.072,-.2,-.04],[.072,0,.17],[.045,-.16,.06],[.045,.1,.15],[.018,-.1,.1]]){
+        const lp=[]; for(let i=0;i<=4;i++){ const x=x0+(x1-x0)*i/4; lp.push(hV3(sd*x,y,zAt(x,y,sd,.002))); } h.add(hTube(lp,.0042,m('boatInk'),{seg:8,rs:4})); } }
+    // the sail: a triangle of doubled paper pinched into a tent, wide at the base and closing to a ridge at the top
+    const SH=.36, ss=new THREE.Shape(); ss.moveTo(-.19,0); ss.lineTo(.19,0); ss.lineTo(0,SH); ss.lineTo(-.19,0);
+    const sg=new THREE.ExtrudeGeometry(ss,{depth:.08,bevelEnabled:false,curveSegments:2}); sg.translate(0,0,-.04);
+    { const p=sg.attributes.position; for(let k=0;k<p.count;k++) p.setZ(k,p.getZ(k)*(.12+.88*(1-p.getY(k)/SH))); sg.computeVertexNormals(); }
     const sail=new THREE.Mesh(sg,m('boatIn')); hHull(sail,.009); h.add(sail);
-    for(const sd of [-1,1]){ const fold=new THREE.Mesh(new THREE.CylinderGeometry(.004,.004,.24,5),lineMat); fold.position.set(0,.2,sd*.013); h.add(fold); }
+    const onSail=(x,y,sd)=>hV3(x,y,sd*(.04*(.12+.88*(1-y/SH))+.003));
+    for(const sd of [-1,1]){ h.add(hTube([onSail(0,.02,sd),onSail(0,SH-.03,sd)],.0045,lineMat,{seg:4,rs:4})); // its middle fold
+      for(const [y,w] of [[.07,.11],[.12,.08],[.17,.055]]) for(const x0 of [-w-.012,.018]) h.add(hTube([onSail(x0,y,sd),onSail(x0+w*.8,y,sd)],.0038,m('boatInk'),{seg:4,rs:4})); }
+    // a pennant on a little mast at the top
+    h.add(hTube([hV3(0,SH-.02,0),hV3(0,SH+.09,0)],.008,m('stalk'),{seg:4,rs:6,line:.006}));
+    const fs=new THREE.Shape(); fs.moveTo(0,0); fs.lineTo(.085,-.022); fs.lineTo(0,-.048); fs.lineTo(0,0);
+    const fg=new THREE.ExtrudeGeometry(fs,{depth:.01,bevelEnabled:true,bevelThickness:.003,bevelSize:.003,bevelSegments:1}); fg.translate(0,0,-.005);
+    const flag=new THREE.Mesh(fg,m('apple')); flag.position.set(.006,SH+.088,0); flag.rotation.y=-.35; hHull(flag,.006); h.add(flag);
     // the floor inside, so looking down into the boat shows paper, not the crown
     const fl=new THREE.Shape(); fl.moveTo(-L*.9,0); fl.quadraticCurveTo(0,.17,L*.9,0); fl.quadraticCurveTo(0,-.17,-L*.9,0);
     const floor=new THREE.Mesh(new THREE.ShapeGeometry(fl,12),m('boatIn')); floor.rotation.x=-Math.PI/2; floor.position.y=.04; h.add(floor);
     // a raindrop resting on the near end
-    const drop=new THREE.Mesh(hDropGeo(.03),m('brolly')); drop.position.set(.2,.14,.07); drop.rotation.z=-.2; hHull(drop,.006); h.add(drop); }
-  else if(id==='apple'){ // an apple from the old orchard sitting on the head: round with a dimple top and bottom, a curved stalk,
-    // one leaf, a little shine, and a worm hole on the front with a cream rim
-    const R=.17, Y=.135, shape=v=>{ const rho=Math.hypot(v.x,v.z), w=1+.07*v.y;
+    const drop=new THREE.Mesh(hDropGeo(.032),m('brolly')); drop.position.set(.21,.15,.06); drop.rotation.z=-.2; hHull(drop,.006); h.add(drop);
+    h.rotation.z=.07; }
+  else if(id==='apple'){ // an apple from the old orchard sitting on the head: a little wider at the shoulders with five soft lobes at
+    // the bottom, a dimple top and bottom, darker streaks running down from the stalk, a curved stalk
+    // with two leaves, a little shine, and a worm hole on the front with a cream rim
+    const R=.17, Y=.135, shape=v=>{ const rho=Math.hypot(v.x,v.z), a=Math.atan2(v.z,v.x), w=(1+.09*v.y)*(1+.04*Math.cos(a*5)*Math.max(0,-v.y));
       v.set(v.x*w,v.y*.9-(v.y>0?.3:.15)*Math.exp(-Math.pow(rho*3.4,2))*Math.sign(v.y),v.z*w).multiplyScalar(R); v.y+=Y; return v; };
-    const body=new THREE.Mesh(hWarp(new THREE.SphereGeometry(1,36,24),shape),m('apple')); hHull(body,.012); h.add(body);
+    const body=new THREE.Mesh(hWarp(new THREE.SphereGeometry(1,40,28),shape),m('apple')); hHull(body,.012); h.add(body);
+    // a point on the apple's skin in direction d, and its outward normal
+    const onSkin=d=>{ const v=d.clone().normalize(), p=shape(v.clone()), n=p.clone().sub(hV3(0,Y,0)).normalize(); return [p,n]; };
+    const polar=(th,a)=>hV3(Math.sin(th)*Math.cos(a),Math.cos(th),Math.sin(th)*Math.sin(a));
+    // streaks: thin darker stripes from the shoulders down the sides
+    for(const [a,th0,len] of [[.3,.42,.55],[.95,.38,.75],[1.6,.45,.5],[2.3,.4,.7],[3.0,.44,.6],[3.7,.4,.72],[4.4,.46,.5],[5.1,.4,.68],[5.75,.43,.58]]){
+      const sp=[]; for(let i=0;i<=6;i++){ const th=th0+len*i/6, [p,n]=onSkin(polar(th,a+.06*Math.sin(i))); sp.push(p.addScaledVector(n,.002)); }
+      h.add(hTube(sp,.009,m('appleStreak'),{seg:12,rs:4,taper:t=>Math.sin(Math.PI*Math.min(1,.15+t*.85))})); }
     const top=Y+R*.9-R*.3+.004, st=[hV3(0,top-.02,0),hV3(.004,top+.04,0),hV3(.022,top+.09,0),hV3(.05,top+.12,0)];
     h.add(hTube(st,.017,m('stalk'),{seg:12,rs:7,line:.007,taper:t=>1-.3*t}));
     const tipb=new THREE.Mesh(sph(.012,8,6),m('stalk')); tipb.position.copy(st[3]); hHull(tipb,.006); h.add(tipb);
-    const leaf=new THREE.Mesh(hLeafGeo(.18,.09,{cup:.025,th:.012,bend:.03,ws:14,hs:5}),m('leaf')); leaf.position.set(.004,top+.035,0); leaf.rotation.set(.35,.7,.32); hHull(leaf,.007); h.add(leaf);
-    const rib=hTube([hV3(.01,0,0),hV3(.09,.003,0),hV3(.16,0,0)].map(v=>v.applyEuler(leaf.rotation).add(leaf.position).add(hV3(0,.007,0))),.0035,m('leafRib'),{seg:6,rs:4}); h.add(rib);
-    // a point on the apple's skin in direction d, and its outward normal
-    const onSkin=d=>{ const v=d.clone().normalize(), p=shape(v.clone()), n=p.clone().sub(hV3(0,Y,0)).normalize(); return [p,n]; };
+    for(const [s,ry,rz,c] of [[1,.7,.32,'leaf'],[.68,-2.3,.45,'lawn']]){
+      const leaf=new THREE.Mesh(hLeafGeo(.18*s,.09*s,{cup:.025,th:.012,bend:.03,ws:14,hs:5}),m(c)); leaf.position.set(.004,top+.035,0); leaf.rotation.set(.35,ry,rz); hHull(leaf,.007); h.add(leaf);
+      h.add(hTube([hV3(.01*s,0,0),hV3(.09*s,.003,0),hV3(.16*s,0,0)].map(v=>v.applyEuler(leaf.rotation).add(leaf.position).add(hV3(0,.007,0))),.0035,m('leafRib'),{seg:6,rs:4})); }
     const [hp,hn]=onSkin(hV3(.42,-.12,.9)), hole=new THREE.Group(); hStick(hole,hp.addScaledVector(hn,-.004),hn); h.add(hole);
     const rim=hTorus(.026,.009,m('appleFlesh'),.005,hTAU,6,20); hole.add(rim);
     const pit=new THREE.Mesh(new THREE.CircleGeometry(.026,16),m('burrow')); pit.position.z=.001; hole.add(pit);
@@ -632,7 +663,7 @@ function buildHat(id){ const h=new THREE.Group();
       const k=1+.06*Math.sin(a*5+1)*r; v.set(v.x*.255*k,v.y*.13*(1+.08*Math.sin(a*3)),v.z*.255*k); }),m('hatDirt')); hill.position.y=-.035; hHull(hill,.012); h.add(hill);
     for(const [a,r,s] of [[.5,.2,.024],[1.9,.22,.02],[2.9,.19,.026],[4.2,.21,.022],[5.3,.2,.02],[3.6,.12,.018]]){ const cl=new THREE.Mesh(sph(.1,10,8),m('hatDirtDark'));
       cl.scale.set(s*10,s*7,s*10); const y=-.035+.13*Math.sqrt(Math.max(0,1-(r/.25)**2)); cl.position.set(Math.cos(a)*r,y+.004,Math.sin(a)*r); hHull(cl,.006); h.add(cl); }
-    const mo=new THREE.Group(); mo.scale.setScalar(1.4); mo.position.y=-.035; mo.userData.anim={p:[0,.018,0],f:2.2,env:.4}; h.add(mo); // pops up a little now and then
+    const mo=new THREE.Group(); mo.scale.setScalar(1.4); mo.position.y=-.035; mo.userData.anim={p:[0,.032,0],r:[.05,.5,.07],f:1.5,env:.45}; h.add(mo); // pops up now and then and looks about
     const body=new THREE.Mesh(hWarp(new THREE.SphereGeometry(1,28,20),v=>v.set(v.x*.115,v.y*.14,v.z*.105)),m('hatMole')); body.position.y=.14; hHull(body,.011); mo.add(body);
     const snout=new THREE.Mesh(sph(.1,16,12),m('hatMoleSnout')); snout.scale.set(.36,.3,.5); snout.position.set(0,.15,.1); snout.rotation.x=-.15; hHull(snout,.007); mo.add(snout);
     const nose=new THREE.Mesh(sph(.024,12,10),m('hatMoleSnout')); nose.scale.set(1.1,.95,.9); nose.position.set(0,.158,.148); hHull(nose,.006); mo.add(nose);

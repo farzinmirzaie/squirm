@@ -434,7 +434,8 @@ function buildExtra(id){ // frames sit in front of the eyes even when they widen
     hull(cap,.008); g.add(cap); const ct=dot(.03,m('chef'),.008,[1,.5,1],12,8); ct.position.copy(tp[6]).addScaledVector(V().subVectors(tp[6],tp[5]).normalize(),.03); g.add(ct); }
   else if(id==='blower'){ // a party blower at the lips: a striped paper horn that lies rolled up in a coil, and now and then
     // unrolls straight out with a toot and curls back (each link of the paper turns a little, the tip last)
-    const mp=new THREE.Group(); mp.position.set(.03,-.075,.335); mp.rotation.set(-.3,.5,-1); g.add(mp); // rolled to one side, so the coil shows from the front and from above
+    // it points straight out of the mouth (a touch to one side and down, so it reads from the front) and the coil rolls down under it
+    const mp=new THREE.Group(); mp.position.set(.03,-.072,.335); mp.rotation.set(.06,.24,0); g.add(mp);
     mp.add(rod(V(0,0,-.005),V(0,0,.06),.02,m('blowMouth'),.007,12));
     const N=14, Lk=.042; let at=new THREE.Group(); at.position.z=.06; mp.add(at);
     for(let i=0;i<N;i++){ const k=new THREE.Group(), t=i/(N-1), curl=.2+.42*t, open=-.012;
@@ -452,8 +453,15 @@ function dressExtra(g){ const slot=g&&g.userData.accSlot; if(!slot) return; slot
 //   one: swing to one side only; env: a slow swell (rad/s) so it rests now and then; s:[x,y,z] a scale pulse;
 //   spin:[x,y,z] (rad/s) with gust (0-1, how much the speed breathes) and gf (its speed); drip:[fall, speed]: falls and fades, again;
 //   blow:[period, hold] (s): instead of a sine, r goes all the way out once a period, holds and comes back (the party blower)
+//   blink:[period, ph]: scale.y goes from its rest to 1 for a quick blink once a period, now and then twice (the owl's lids)
+//   flick:[period, lit]: shown while lit (1) or hidden (0) at rest, flipped for a few quick stutters once a period (the bulb)
 // Only parts of a worn clone in a scene move: a handful of transforms a frame. Reduced motion keeps them still.
 const wearMoving=new Set();
+// a blink: 0 open, 1 shut, a quick one once every period seconds and every third time a second one just after
+function blinkAt(t,[period]){ const s=((t%period)+period)%period, tri=x=>x<0||x>.18?0:1-Math.abs(x-.09)/.09;
+  return Math.min(1,tri(s)+(Math.floor(t/period)%3===1?tri(s-.3):0)); }
+// a flicker: false for a few short stutters at the start of every period seconds
+const flickOff=(t,[period])=>{ const s=((t%period)+period)%period; return s<.07||(s>.14&&s<.19)||(s>.3&&s<.38)||(s>.55&&s<.58); };
 // a puff: 0 at rest, eases up to 1, holds for hold seconds and eases back, once every period seconds
 function blowAt(t,[period,hold]){ const s=((t%period)+period)%period, e=x=>x*x*(3-2*x);
   return s<.22?e(s/.22):s<.22+hold?1:s<.6+hold?1-e((s-.22-hold)/.38):0; }
@@ -463,8 +471,10 @@ function wearTick(t){ if(!wearMoving.size) return;
     if(r.userData.worn){ wearMoving.delete(o); continue; } // taken off: its clone is no longer on a head
     if(!r.isScene) continue;
     const a=o.userData.anim, b=o.userData.b0||(o.userData.b0=[o.position.toArray(),[o.rotation.x,o.rotation.y,o.rotation.z],o.scale.toArray()]);
-    o.position.fromArray(b[0]); o.rotation.set(b[1][0],b[1][1],b[1][2]); o.scale.fromArray(b[2]);
+    o.position.fromArray(b[0]); o.rotation.set(b[1][0],b[1][1],b[1][2]); o.scale.fromArray(b[2]); if(a.flick) o.visible=!!a.flick[1];
     if(reduceMotion) continue;
+    if(a.blink) o.scale.y=b[2][1]+(1-b[2][1])*blinkAt(t+a.blink[1],a.blink);
+    if(a.flick&&flickOff(t,a.flick)) o.visible=!a.flick[1];
     const f=a.f||1, ph=a.ph||0, env=a.env?Math.pow(.5+.5*Math.sin(t*a.env+ph*1.3),2):1;
     const pu=a.blow?blowAt(t+ph,a.blow):0, w=k=>{ if(a.blow) return pu; const x=Math.sin(t*f+ph+k*1.7); return (a.one?.5+.5*x:x)*env; };
     if(a.r){ o.rotation.x+=a.r[0]*w(0); o.rotation.y+=a.r[1]*w(1); o.rotation.z+=a.r[2]*w(2); }

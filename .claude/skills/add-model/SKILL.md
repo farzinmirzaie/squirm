@@ -87,7 +87,8 @@ wardrobe's own view (as players see it), then close-ups from the front, both sid
 (about the in-patch angle). Neck items (scarf, bowtie, daisy chain) are mostly judged in the first view. Board entries are
 `[name, level, [x, y] to look at, moves to play first]` and render the normal patch view plus close orbits
 from four sides. Each run also saves `<name>.png` with the views side by side; read those with the Read tool.
-Add `--dark` for dark mode. Put `<outDir>` in your scratchpad, and with a global Playwright prefix
+Add `--dark` for dark mode, and `--at <seconds>` to freeze moving parts (wear motion) at one moment, so a blink, a
+blow or a flicker can be checked in both its poses. Put `<outDir>` in your scratchpad, and with a global Playwright prefix
 `NODE_PATH=$(npm root -g)`.
 
 Look for, every time:

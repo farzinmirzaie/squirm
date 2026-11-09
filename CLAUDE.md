@@ -513,9 +513,11 @@ from a tab replaces that layer with `game`.
   an existing test so it gets harder, nothing changes for players who already have the item.
 - **Wear motion** (end of `models/extras.js`): a few items have a part that moves (pinwheel, butterfly, firefly,
   bee antennae, lightbulb, weathervane, teacup steam, rain cloud, sprout, the flowerpot's seedling, the mole friend's bob,
-  the propeller, the bubble-gum bubble, star earrings, the bee buddy, the watering can's drips, the party blower). Put `userData.anim` on the part
-  (swing `r`, sway `p`, scale pulse `s`, `spin` with gusts, `drip`, `blow`: a swing all the way out now and then and back;
-  the comment there lists them); `hBake` keeps it
+  the propeller, the bubble-gum bubble, star earrings, the bee buddy, the watering can's drips, the party blower, the owl's blinking
+  lids, the twirl-cap's slow turn, the lightbulb's flicker). Put `userData.anim` on the part
+  (swing `r`, sway `p`, scale pulse `s`, `spin` with gusts, `drip`, `blow`: a swing all the way out now and then and back,
+  `blink`: scale.y from its rest up to 1 for a moment, `flick`: shown or hidden for a few stutters; the comment there lists
+  them); `hBake` keeps it (with its visibility)
   as its own child, `dressHat` / `dressExtra` register worn clones with `wearAdd`, and `wearTick` (from `frame`)
   moves them round their rest pose. Reduced motion keeps them still. Keep it to items where motion fits.
 - **Colour options:** `TINTS` gives some hats and extras five colours. `keys` are the item's `C` materials,
