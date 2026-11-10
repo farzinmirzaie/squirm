@@ -8,6 +8,7 @@ A cozy, turn-based worm puzzle set in a little 3D garden. Steer a worm through g
 every flag, and slip into the burrow at exactly the right length.
 
 **Play it free in your browser at <https://farzinmirzaie.github.io/squirm/>.** No sign-up, no ads; it installs as an app and plays offline.
+It's also on [itch.io](https://farzinmirzaie.itch.io/squirm).
 
 ## What's inside
 

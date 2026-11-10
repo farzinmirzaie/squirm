@@ -681,11 +681,12 @@ from a tab replaces that layer with `game`.
   Launch links: `?play=continue|daily|meadow|race` (the manifest's four shortcuts, the daily reminder) go through
   `launchPlay` in `core/boot.js`, at boot and, since `launch_handler` reuses an open window, from `launchQueue`.
   The manifest asks for portrait (`orientation`).
-- **On itch.io:** the same build, uploaded as an HTML game (`npm run itch`; the zip leaves out the worker, screenshots,
+- **On itch.io** (<https://farzinmirzaie.itch.io/squirm>, embedded at 360×740, mobile friendly): the same build, uploaded as an HTML game (`npm run itch`; the zip leaves out the worker, screenshots,
   share card and sitemap). It runs in an iframe on itch's own domain, so `ON_ITCH` (`core/base.js`) changes three
   things: `GAME_URL` is `SITE_URL` (shared links and race invites point at the main site), the visit counts as
   `launch/itch`, and no service worker is registered (each upload lives at a new path). Progress there is separate from
-  the main site's (a different origin); save codes move it across.
+  the main site's (a different origin); save codes move it across. A release players should get on itch too means
+  running `npm run itch` and uploading the new zip on the itch page (it doesn't update itself).
 - **Daily reminder** (`platform/reminder.js`): no server, so no push. Where `PeriodicSyncManager` exists (installed Chrome on
   Android) the page registers periodic sync `squirm-daily`, and `sw.js` shows one notification a day if
   today's daily isn't done and it's past the chosen hour (quiet while the game is on screen). The worker
