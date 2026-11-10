@@ -69,7 +69,7 @@ async function raceShare(text,url){ try{ if(navigator.share){ await navigator.sh
   catch(e){ toast('Copy the code from the box and send it to your friend.',2600); return false; } }
 // the host: open a room, share its code, offer a connection to whoever joins first
 function raceOpen(){ if(!raceOK()) return; raceEnd(); race={host:true,diff:'medium',round:0,friend:{},want:{}}; raceDialog(); raceStep('start'); }
-async function raceHost(){ race.code=raceNewCode(); race.link=(GAME_URL||location.href.split(/[?#]/)[0])+'#race='+race.code; raceStep('room');
+async function raceHost(){ race.code=raceNewCode(); race.link=(GAME_URL?GAME_URL+'?ref=race':location.href.split(/[?#]/)[0])+'#race='+race.code; raceStep('room');
   const r=race; r.room=await nostrRoom(r.code,raceSignal); if(race!==r){ r.room.close(); return; } raceRelaysCheck(); }
 async function raceOffer(){ const r=race; if(r.offer){ r.room.send({t:'offer',to:r.guest,sdp:r.offer}); return; } if(r.making) return; r.making=true; raceStep('link');
   try{ const pc=racePeer(); raceWire(pc.createDataChannel('race')); await pc.setLocalDescription(await pc.createOffer()); await raceGathered(pc); }

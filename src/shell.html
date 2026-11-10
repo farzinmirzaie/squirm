@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <script id="theme">try{ var t=localStorage.getItem('squirm-theme'); if(t==='light'||t==='dark') document.documentElement.dataset.theme=t; }catch(e){}</script>
-<title>Squirm</title>
+<title>Squirm: a cozy worm puzzle game</title>
 <meta name="description" content="A cozy turn-based worm puzzle in a little 3D garden. Handmade patches, an endless meadow and a daily patch, fully offline.">
 <meta name="theme-color" content="#8CC673">
 <meta name="color-scheme" content="light dark">
@@ -12,8 +12,8 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Squirm">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta property="og:title" content="Squirm">
-<meta property="og:description" content="A cozy turn-based worm puzzle in a little 3D garden.">
+<meta property="og:title" content="Squirm: a cozy worm puzzle game">
+<meta property="og:description" content="A cozy turn-based worm puzzle in a little 3D garden. Free in your browser, installs as an app and plays offline.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://farzinmirzaie.github.io/squirm/">
 <meta property="og:image" content="https://farzinmirzaie.github.io/squirm/share.png">
@@ -21,6 +21,8 @@
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="Squirm: a smiling pink worm peeking up, beside the home screen and a garden patch">
 <meta name="twitter:card" content="summary_large_image">
+<link rel="canonical" href="https://farzinmirzaie.github.io/squirm/">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"VideoGame","name":"Squirm","url":"https://farzinmirzaie.github.io/squirm/","image":"https://farzinmirzaie.github.io/squirm/share.png","description":"A cozy turn-based worm puzzle in a little 3D garden: steer a worm through handmade patches, an endless meadow and a daily patch. Free, installs as an app and plays offline.","genre":["Puzzle","Casual"],"gamePlatform":["Web browser","Android","iOS","Windows","macOS"],"applicationCategory":"Game","operatingSystem":"Any","playMode":"SinglePlayer","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"author":{"@type":"Person","name":"Farzin Mirzaie"}}</script>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
@@ -288,6 +290,8 @@ body[data-mode="race"] #hintBtn{display:none}
 .gift small{font:700 12px/1.2 var(--fb);color:var(--ink-soft)}
 .gift.hot{background:var(--tint-honey);border-color:var(--honey-dark)}
 .gift.hot b,.gift.hot small{color:var(--deep)}.gift.hot small{opacity:.75}
+.gift.go{width:100%;font:inherit;cursor:pointer;background:var(--tint-leaf);border-color:var(--leaf-dark);transition:scale var(--dur-fast) var(--ease-out)}
+.gift.go>span:nth-child(2){flex:1}.gift.go b,.gift.go small{color:var(--deep)}.gift.go small{opacity:.75}.gift.go .ui-ic{flex:none;color:var(--deep)}
 .win-next{width:100%;font-size:21px;padding:12px}
 .win-acts{display:flex;gap:8px}
 .btn.act{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 4px;font-size:13px}
@@ -740,7 +744,7 @@ body.photo .wsay{display:none}
 .hat:active{transform:translateY(3px);box-shadow:0 0 0 var(--edge)}
 .hat.on:active{box-shadow:0 0 0 var(--leaf)}
 .diff:active{transform:translateY(3px);box-shadow:0 0 0 var(--acc)}
-.mech:active,.seg button:active,.stat:active,.icon-btn:active,.rb-ghost:active,.link:active,.switch:active,.tint:active{scale:.94}
+.mech:active,.seg button:active,.stat:active,.icon-btn:active,.rb-ghost:active,.link:active,.switch:active,.tint:active,.gift.go:active{scale:.94}
 .tab:active svg{scale:.9}
 button:disabled{cursor:default}
 /* dialogs: the scrim fades in while the card pops; closing fades and shrinks a little faster (hide() adds .out) */

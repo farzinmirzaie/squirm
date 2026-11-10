@@ -150,7 +150,17 @@ function petals(){ if(reduceMotion) return; const box=$('petals'); box.innerHTML
 function starsFor(mv,par,hinted){ let s = mv<=par?3 : mv<=Math.ceil(par*1.3)?2 : 1; if(hinted) s=Math.min(s,2); return s; }
 const STAR=(on,i)=>`<svg class="star ${on?'on':''}" style="animation-delay:${.15+i*.18}s" width="44" height="44" viewBox="0 0 24 24"><path d="M12 2.8l2.8 5.8 6.3.9-4.6 4.4 1.1 6.3L12 17.2l-5.6 3 1.1-6.3L2.9 9.5l6.3-.9z" style="fill:${on?'var(--honey)':'var(--edge)'}" stroke="#5B4436" stroke-width="1.6" stroke-linejoin="round"/></svg>`;
 let shareText='', newBest=false, chapterDone=null;
-const shareLine=(what,mv,par,st)=>`Squirm, ${what}: ${mv} moves (par ${par}) ${'★'.repeat(st)}${'☆'.repeat(3-st)}`+(GAME_URL?'\n'+GAME_URL:'');
+// shared links carry ?ref=<where> so the stats can tell which sharing brings people in (GoatCounter campaigns)
+const shareURL=ref=>GAME_URL?GAME_URL+'?ref='+ref:'';
+const shareLine=(what,mv,par,st,ref)=>`Squirm, ${what}: ${mv} moves (par ${par}) ${'★'.repeat(st)}${'☆'.repeat(3-st)}`+(GAME_URL?'\n'+shareURL(ref):'');
+// the daily's share, spoiler-free like the word games: a square per move (green within par, yellow past it, ten to a
+// row, the worm at the end), then moves, par, hints and the streak. Very long runs show their first 50 squares and a count.
+function dailyShare(k,mv,par,st,streak,hints){ const d=new Date(k+'T12:00:00'), day=isNaN(d)?k:d.toLocaleDateString('en-GB',{day:'numeric',month:'short'});
+  const n=Math.min(mv,50), cells=[...Array(n)].map((_,i)=>i<par?'🟩':'🟨'); cells.push('🪱');
+  const rows=[]; for(let i=0;i<cells.length;i+=10) rows.push(cells.slice(i,i+10).join(''));
+  if(mv>n) rows[rows.length-1]+=` +${mv-n}`;
+  const notes=[`${mv} moves, par ${par}`,hints?`${hints} ${hints===1?'hint':'hints'}`:'no hints',streak>1?`${streak} day streak`:''].filter(Boolean).join(' · ');
+  return [`Squirm daily, ${day} ${'★'.repeat(st)}${'☆'.repeat(3-st)}`,...rows,notes,shareURL('daily')].filter(Boolean).join('\n'); }
 // what the wardrobe held when the patch started, so the win card also lists what a move earned on the way (50 gates...)
 let winHats=[], winExtras=[];
 function wardSnap(){ winHats=HATS.filter(hatUnlocked).map(h=>h[0]); winExtras=EXTRAS.filter(e=>e[3]()).map(e=>e[0]); }
@@ -187,7 +197,7 @@ function onWin(){ shareText=''; newBest=false; chapterDone=null; const coloursBe
     const nextCh=!last&&CHAPTERS.find(c=>c.from===li+1);
     $('winNext').textContent = last&&allCleared() ? "What's next?" : last ? 'Back to patch 1' : nextCh ? 'Next chapter' : 'Next patch';
     if(nextCh) gift(art('flag',26),`Next up: ${nextCh.name}`,'A new chapter opens');
-    shareText=shareLine(`patch ${li+1} (${nm})`,mv,par,st);
+    shareText=shareLine(`patch ${li+1} (${nm})`,mv,par,st,'win');
   } else if(L.daily){
     const D=progress.daily, k=L.daily, prev=D.results[k];
     if(!prev){ bumpStat('dailies'); stat('daily'); const y=new Date(); y.setDate(y.getDate()-1); const yk=dateKey(y);
@@ -197,7 +207,7 @@ function onWin(){ shareText=''; newBest=false; chapterDone=null; const coloursBe
     const old=new Date(); old.setDate(old.getDate()-90); const ok=dateKey(old); for(const d in D.results) if(d<ok) delete D.results[d];
     $('winTitle').textContent="Today's patch, done!"; $('winNext').textContent='Back home'; shareRemindState();
     gift(art('flame',26),`${D.streak} day streak`,`Your best is ${D.best}. See you tomorrow!`,D.streak>1);
-    shareText=shareLine(`daily patch ${k}`,mv,par,st);
+    shareText=dailyShare(k,mv,par,st,D.streak,hintsUsed);
   } else {
     const e=progress.endless[endlessDiff]; e.cleared++; stat('meadow/'+endlessDiff); e.streak++; e.best=Math.max(e.best,e.streak); e.stars+=st;
     $('winTitle').textContent = titles[e.cleared%titles.length];
@@ -205,7 +215,7 @@ function onWin(){ shareText=''; newBest=false; chapterDone=null; const coloursBe
     // seeds for a meadow patch solved without hints, and one more for the first of the day
     if(hintsUsed) gift(art('hintseed',26),'No hint seeds this time','Solve a meadow patch without hints to earn them');
     else { const first=progress.meadowDay!==todayKey(); progress.meadowDay=todayKey(); seedGift(addSeeds(endlessDiff==='hard'?2:1)+(first?addSeeds(1):0),first?'With a first-of-the-day bonus':''); }
-    shareText=shareLine(`${DIFF_NAME[endlessDiff].toLowerCase()} endless patch, streak ${e.streak}`,mv,par,st);
+    shareText=shareLine(`${DIFF_NAME[endlessDiff].toLowerCase()} endless patch, streak ${e.streak}`,mv,par,st,'meadow');
     gift(art(DIFF_ICON_KEY[endlessDiff],26),`${DIFF_NAME[endlessDiff]} streak ${e.streak}`,`${e.cleared} cleared, best streak ${e.best}`,e.streak>1&&e.streak===e.best);
   }
   if(turnsHere>=3) bumpStat('twistyWins');
@@ -222,12 +232,19 @@ function onWin(){ shareText=''; newBest=false; chapterDone=null; const coloursBe
   const newPat=patternsUnlocked().find(x=>!patsBefore.includes(x)); if(newPat){ const p=PATTERNS.find(x=>x[0]===newPat);
     gift(patArt(p[0],30),p[1],'New worm pattern',true); }
   if(coloursUnlocked()>coloursBefore){ const ci=coloursUnlocked()-1; gift(patArt(patOn(),30,ci),WORM_COLS[ci][0],'New worm colour',true); }
+  // a nudge to race a friend: after a 3-star garden (once 5 patches are grown) or daily win, while they've raced fewer than
+  // 3 times, once a day
+  if(st===3&&!hintsUsed&&(L.daily||mode==='garden'&&LEVELS.filter((l,i)=>isCleared(i)).length>=5)&&raceOK()&&(progress.stats.races||0)<3&&progress.raceNudge!==todayKey()){ progress.raceNudge=todayKey(); save();
+    gifts.push({ico:art('race',26),t:'Race a friend',sub:'Send a link and see who reaches the burrow first',act:'winRace'}); }
   $('winStars').innerHTML=[0,1,2].map(i=>STAR(i<st,i)).join('');
   $('winSub').textContent = hintsUsed ? `You used ${hintsUsed} ${hintsUsed===1?'hint':'hints'}. Solve it on your own for 3 stars.` : mv<=par ? 'Right on par. Lovely crawling!' : `There's a shorter way, in ${par} moves.`;
   $('winStats').innerHTML=`<span class="${mv<=par?'good':''}">${mv}<small>moves</small>${newBest?'<em>New best</em>':''}</span><span>${par}<small>par</small></span><span>${playTime()}<small>time</small></span>`;
   // the rewards first, then progress notes
   gifts.sort((a,b)=>(b.hot?1:0)-(a.hot?1:0));
-  $('winGifts').innerHTML=gifts.map(g=>`<div class="gift ${g.hot?'hot':''}"><span class="gi" aria-hidden="true">${g.ico}</span><span><b>${g.t}</b><small>${g.sub}</small></span></div>`).join('');
+  gifts.sort((a,b)=>(a.act?1:0)-(b.act?1:0)); // a nudge goes last
+  $('winGifts').innerHTML=gifts.map(g=>g.act?`<button class="gift go" id="${g.act}"><span class="gi" aria-hidden="true">${g.ico}</span><span><b>${g.t}</b><small>${g.sub}</small></span>${UI_ICON.chev||''}</button>`
+    :`<div class="gift ${g.hot?'hot':''}"><span class="gi" aria-hidden="true">${g.ico}</span><span><b>${g.t}</b><small>${g.sub}</small></span></div>`).join('');
+  if($('winRace')) $('winRace').onclick=()=>{ window.addEventListener('popstate',()=>setTimeout(()=>{ ensureAudio(); raceOpen(); },60),{once:true}); window.history.back(); };
   $('winGifts').scrollTop=0;
   for(let i=0;i<st;i++) setTimeout(()=>buzz(12),200+i*180);
   if(!reduceMotion) for(let i=0;i<st;i++) tone([784,988,1318][i],.25,{vol:.1,delay:.2+i*.18});

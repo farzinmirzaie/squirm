@@ -8,10 +8,15 @@ const statsOn=()=>statsLive() && store.get('squirm-stats')!=='0';
 // path: '/' for a visit, or an event name like 'clear/037' (events group by name on the dashboard)
 function stat(path,event=true){ if(!statsOn()||navigator.onLine===false) return;
   const q=new URLSearchParams({p:path,t:event?path:'Squirm',r:event?'':document.referrer,s:`${screen.width},${screen.height},${devicePixelRatio||1}`,rnd:Math.random().toString(36).slice(2)});
-  if(event) q.set('e','true');
+  if(event) q.set('e','true'); else if(bootQuery) q.set('q',bootQuery);
   const url=`https://${STATS_CODE}.goatcounter.com/count?${q}`;
   try{ if(!(navigator.sendBeacon&&navigator.sendBeacon(url))) new Image().src=url; }catch(e){} }
 const pad3=n=>String(n).padStart(3,'0');
+// where this visit came from (?ref=daily|race|win|meadow, put on every link the game shares): sent with the visit as q,
+// which GoatCounter lists under Campaigns. It's read once at load and taken out of the address bar, so a reload, a
+// bookmark or an install from this page doesn't count it again.
+const bootQuery=location.search;
+{ const u=new URL(location.href); if(u.searchParams.has('ref')){ u.searchParams.delete('ref'); try{ window.history.replaceState(window.history.state,'',u.pathname+u.search+u.hash); }catch(e){} } }
 // No identifiers: funnels come from milestones each device sends once (start/new, clear/NNN, chapter/NN, days/N),
 // so the drop between two counts on the dashboard is the funnel. Retention: days/N when a device has played on N
 // different days. Quits: quit/NNN when a garden patch never cleared is left after a few moves without winning

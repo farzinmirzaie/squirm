@@ -4,6 +4,8 @@
 // add an entry on top. Returning players see the newest entry once as a card on the Play tab, new players never
 // do (squirm-news holds the last version seen); Settings > About lists them all.
 const NEWS=[
+  ['1.28.0','2026-11-10','Share your daily',['Sharing today\'s patch now shows a little row of squares, one for each move, so friends can see how you did without spoilers.',
+    'After a lovely 3-star win, the garden sometimes suggests racing a friend.']],
   ['1.27.0','2026-11-08','Everything blooms',['Five new chapters, fifty patches where three or more garden tricks work together: picnics in the rain, busy bees, secret passages, slippery slopes and one last big bloom.',
     'New things to wear: a frog hood, a pirate hat, a watering can, a bucket hat, a bee buddy, a snorkel, a party blower, candy stripes, a starry pattern and a Moonbeam worm.',
     'Clever crawling: nine new badges for how you play, like winning in the rain, at every time of day, or with a different hat three times in a row.',

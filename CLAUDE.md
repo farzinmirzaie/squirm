@@ -90,7 +90,7 @@ src/game/         everything else, in folders (map at the top of core/base.js), 
   platform/       stats.js, offline.js (service worker, install), reminder.js, nostr.js (race meeting point)
 src/sw.js         service worker template (version and file list filled in by the build)
 public/           manifest, icons (icon.svg is the source art; maskable, Apple and shortcut PNGs), install
-                  screenshots, share.png (link preview): copied as-is into dist/
+                  screenshots, share.png (link preview), sitemap.xml: copied as-is into dist/
 tools/build.js    builds dist/ and syntax-checks the game script; --debug adds window.__squirm; --out <dir>
 tools/game-files.js  the order the src/game/ files are joined in
 tools/serve.js    tiny static server (also used by smoke): [dir] --port --base
@@ -121,7 +121,9 @@ order inside one function wrapper, so they share one scope and any file can call
 - `vendor/three.min.js` (UMD) and `fonts/` (Baloo 2 woff2 in weights 600, 700 and 800, latin subset), each with
   its licence file.
 - `manifest.webmanifest`, `icons/`, `screenshots/`, `share.png` from `public/`.
-- `sw.js`: precaches every file above except the screenshots, `share.png` and licence texts (only needed online)
+- `sitemap.xml` (for Search Console; `robots.txt` only works at a host's root, so there's none) and, in `shell.html`'s
+  head, a canonical link and `VideoGame` structured data (JSON-LD) for search engines.
+- `sw.js`: precaches every file above except the screenshots, `share.png`, the sitemap and licence texts (only needed online)
   under `squirm-<content hash>`, so each deploy replaces the cache.
 
 All paths are relative, so the site works from any sub-path (it's served from `/squirm/` on Pages).
@@ -561,7 +563,12 @@ from a tab replaces that layer with `game`.
   then `gifts`: rows for what was earned (badges, hats, extras, colours, patterns, hint seeds: `hot`, honey; new hats and
   extras are compared with `wardSnap` taken in `startLevel`, so one a move earned on the way, like the 50th gate, shows too) and progress notes
   (chapter, streaks, next chapter), in a `.fade-scroll`. Next is the big button; Replay, Home and Share sit
-  under it. Badges earned by a win only play their jingle; the card lists them.
+  under it. Badges earned by a win only play their jingle; the card lists them. After a 3-star win without hints (a daily,
+  or a garden patch once 5 are grown), a player who has raced fewer than 3 times gets one Race a friend row a day at the
+  end of the list (`act: 'winRace'`, a `.gift.go` button; `progress.raceNudge` holds the day): it goes home and opens the
+  race dialog. Share text: `shareLine` for garden and meadow, `dailyShare` for the daily (spoiler-free like the word
+  games: a square per move, green within par and yellow past it, ten to a row, then moves, par, hints and the streak).
+  Every link the game shares carries `?ref=` (`shareURL`: `win`, `daily`, `meadow`, and `race` on race invites).
 - **Finale** (`ui/finale.js`): once every patch is cleared (`allCleared`), winning the last one offers "What's next?", which
   opens `finOv` (`showFinale` / `renderFinale`): totals plus choices built from progress (patches below 3
   stars via `shineable`, badges left, the meadow, today's daily). The home Play card turns into "Garden
@@ -680,7 +687,8 @@ from a tab replaces that layer with `game`.
 - **Anonymous stats** (`platform/stats.js`): the one outgoing request: GoatCounter counters via `stat(path)` (a beacon to
   `https://<STATS_CODE>.goatcounter.com/count`), no cookies and nothing personal. Off anywhere but https on a
   real host (so never in tests or local builds); players switch it off in Settings > About (`squirm-stats`,
-  device-specific, in `SAVE_SKIP` with `squirm-stats-v`). It sends a visit on boot, `launch/app` or
+  device-specific, in `SAVE_SKIP` with `squirm-stats-v`). It sends a visit on boot (with the page's query as `q`, read once at load as `bootQuery`, so a shared link's `?ref=`
+  shows under Campaigns; the `ref` is then taken out of the address bar), `launch/app` or
   `launch/browser`, `version/<x.y.z>` once per version, `install`, and on first clears `clear/<037>`,
   `chapter/<17>`, plus `daily`, `meadow/<difficulty>` and `seeds/empty` (the hint-seed pouch ran out), `start/new` (a
   new device, once), `days/<N>` (played on 2, 3, 7, 14, 30, 60 different days), `quit/<037>` (a never-cleared garden patch
