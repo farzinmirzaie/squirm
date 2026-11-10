@@ -1,6 +1,8 @@
 # dependencies and build output
 node_modules/
 dist/
+# the itch.io upload made by tools/itch.js
+squirm-itch.zip
 # candidate levels written by tools/curate.js
 gen/
 

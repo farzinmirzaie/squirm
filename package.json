@@ -24,7 +24,8 @@
     "analyze": "node tools/analyze.js",
     "curate": "node tools/curate.js",
     "harden": "node tools/harden.js",
-    "shots": "node .claude/skills/ui-check/store-shots.js"
+    "shots": "node .claude/skills/ui-check/store-shots.js",
+    "itch": "node tools/itch.js"
   },
   "devDependencies": {
     "@fontsource/baloo-2": "5.2.6",

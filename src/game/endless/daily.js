@@ -1,6 +1,6 @@
 // ---------- the daily patch ----------
 const todayKey=()=>dateKey(new Date());
-const GAME_URL=/^https?:$/.test(location.protocol)?location.origin+location.pathname.replace(/index\.html$/,''):'';
+const GAME_URL=ON_ITCH?SITE_URL:/^https?:$/.test(location.protocol)?location.origin+location.pathname.replace(/index\.html$/,''):'';
 const DAILY_OPTS={flags:true,fruit:true,keys:true,dry:true,portals:true};
 progress.daily=Object.assign({streak:0,best:0,last:null,results:{}},progress.daily||{});
 async function startDaily(){ if(generating) return; generating=true; hideAll(); show('genOv'); $('genText').textContent="Growing today's patch...";

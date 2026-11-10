@@ -71,6 +71,10 @@ const C = {
   portal:{ '1':0x7FCFEA, '2':0xC69CF7, '3':0xFFB877, '4':0x9BE39B }
 };
 // ---------- DOM helpers ----------
+// the game's home, and whether this copy is the one embedded on itch.io (an iframe on itch's own domain): there shared
+// links still point home, plays count as launch/itch, and there's no offline worker (each upload lives at a new path)
+const SITE_URL='https://farzinmirzaie.github.io/squirm/';
+const ON_ITCH=/(^|\.)itch\.(zone|io)$/.test(location.hostname);
 const $=id=>document.getElementById(id);
 const qa=(root,sel)=>[...root.querySelectorAll(sel)];
 // a milestone test that also reports [have, need], so badges and wardrobe items can show a progress bar

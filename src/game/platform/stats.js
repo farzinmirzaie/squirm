@@ -29,7 +29,7 @@ window.addEventListener('pagehide',noteQuit);
 function noteHint(){ stat('hint/'+(mode==='garden'?String(CHAPTERS.findIndex(ch=>li>=ch.from&&li<=ch.to)+1).padStart(2,'0'):L&&L.daily?'daily':'meadow')); }
 function noteDays(n){ if([2,3,7,14,30,60].includes(n)) stat('days/'+n); }
 function statsBoot(){ if(!statsOn()) return; stat('/',false); if(freshGarden&&!progress.stats.newSent){ progress.stats.newSent=1; save(); stat('start/new'); }
-  const app=matchMedia('(display-mode: standalone)').matches||navigator.standalone===true; stat(app?'launch/app':'launch/browser');
+  const app=matchMedia('(display-mode: standalone)').matches||navigator.standalone===true; stat(ON_ITCH?'launch/itch':app?'launch/app':'launch/browser');
   const v=NEWS[0][0]; if(store.get('squirm-stats-v')!==v){ store.set('squirm-stats-v',v); stat('version/'+v); } }
 window.addEventListener('appinstalled',()=>stat('install'));
 

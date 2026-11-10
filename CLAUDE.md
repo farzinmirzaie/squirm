@@ -52,6 +52,7 @@ npm run analyze      # par, state count, winnable % and a solution for every lev
 npm run curate -- …  # generate candidate levels (see the add-levels skill)
 npm run harden -- …  # make candidate levels harder (tools/harden.js)
 npm run shots        # refresh the install screenshots and link preview in public/ (after any visual change)
+npm run itch         # build and zip dist/ into squirm-itch.zip, the upload for the itch.io page (see "On itch.io")
 ```
 
 Node 22+ (CI uses `.nvmrc`). Every tool starts with a usage comment; read it before running one.
@@ -99,6 +100,7 @@ tools/verify-levels.js  solvable + par + pacing check for src/levels.js
 tools/load-generator.js runs src/game/endless/generator.js in Node (curate.js, tests)
 tools/curate.js   generates candidate levels with that generator, picks a difficulty spread -> gen/ (ignored)
 tools/harden.js   hill-climbs candidates to make them harder (big boards come out of the generator easy)
+tools/itch.js     builds and zips the game for itch.io (squirm-itch.zip, git-ignored)
 test/logic.test.js      rules, unique level names, stateKey
 test/generator.test.js  daily and endless generation (daily patches must not change)
 test/news.test.js       What's new vs package.json version, semver order
@@ -678,6 +680,11 @@ from a tab replaces that layer with `game`.
   Launch links: `?play=continue|daily|meadow|race` (the manifest's four shortcuts, the daily reminder) go through
   `launchPlay` in `core/boot.js`, at boot and, since `launch_handler` reuses an open window, from `launchQueue`.
   The manifest asks for portrait (`orientation`).
+- **On itch.io:** the same build, uploaded as an HTML game (`npm run itch`; the zip leaves out the worker, screenshots,
+  share card and sitemap). It runs in an iframe on itch's own domain, so `ON_ITCH` (`core/base.js`) changes three
+  things: `GAME_URL` is `SITE_URL` (shared links and race invites point at the main site), the visit counts as
+  `launch/itch`, and no service worker is registered (each upload lives at a new path). Progress there is separate from
+  the main site's (a different origin); save codes move it across.
 - **Daily reminder** (`platform/reminder.js`): no server, so no push. Where `PeriodicSyncManager` exists (installed Chrome on
   Android) the page registers periodic sync `squirm-daily`, and `sw.js` shows one notification a day if
   today's daily isn't done and it's past the chosen hour (quiet while the game is on screen). The worker
@@ -687,9 +694,9 @@ from a tab replaces that layer with `game`.
 - **Anonymous stats** (`platform/stats.js`): the one outgoing request: GoatCounter counters via `stat(path)` (a beacon to
   `https://<STATS_CODE>.goatcounter.com/count`), no cookies and nothing personal. Off anywhere but https on a
   real host (so never in tests or local builds); players switch it off in Settings > About (`squirm-stats`,
-  device-specific, in `SAVE_SKIP` with `squirm-stats-v`). It sends a visit on boot (with the page's query as `q`, read once at load as `bootQuery`, so a shared link's `?ref=`
-  shows under Campaigns; the `ref` is then taken out of the address bar), `launch/app` or
-  `launch/browser`, `version/<x.y.z>` once per version, `install`, and on first clears `clear/<037>`,
+  device-specific, in `SAVE_SKIP` with `squirm-stats-v`). It sends a visit on boot (from the itch.io embed its referrer is the itch page; with the page's query as `q`, read once at load as `bootQuery`, so a shared link's `?ref=`
+  shows under Campaigns; the `ref` is then taken out of the address bar), `launch/app`,
+  `launch/browser` or `launch/itch`, `version/<x.y.z>` once per version, `install`, and on first clears `clear/<037>`,
   `chapter/<17>`, plus `daily`, `meadow/<difficulty>` and `seeds/empty` (the hint-seed pouch ran out), `start/new` (a
   new device, once), `days/<N>` (played on 2, 3, 7, 14, 30, 60 different days), `quit/<037>` (a never-cleared garden patch
   left after 3+ moves without winning, once per patch per session: `noteQuit` from `loadLevel`, `showHome` and
