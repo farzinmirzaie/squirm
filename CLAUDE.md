@@ -124,7 +124,8 @@ order inside one function wrapper, so they share one scope and any file can call
   its licence file.
 - `manifest.webmanifest`, `icons/`, `screenshots/`, `share.png` from `public/`.
 - `sitemap.xml` (for Search Console; `robots.txt` only works at a host's root, so there's none) and, in `shell.html`'s
-  head, a canonical link and `VideoGame` structured data (JSON-LD) for search engines.
+  head, a canonical link, `VideoGame` structured data (JSON-LD) for search engines and the Google Search Console
+  verification tag (`google-site-verification`; keep it, Google re-checks it).
 - `sw.js`: precaches every file above except the screenshots, `share.png`, the sitemap and licence texts (only needed online)
   under `squirm-<content hash>`, so each deploy replaces the cache.
 
